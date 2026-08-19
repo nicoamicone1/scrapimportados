@@ -1,0 +1,130 @@
+{
+  "scrapedAt": "2026-08-19T18:00:00.000Z",
+  "source": "https://dazimportadora.com.ar",
+  "markup": 0.2,
+  "currency": "ARS",
+  "count": 5,
+  "categories": [
+    { "id": 128, "name": "Hogar", "slug": "hogar", "parent": 0 },
+    { "id": 130, "name": "Cocina", "slug": "cocina", "parent": 128 },
+    { "id": 141, "name": "Bazar", "slug": "bazar", "parent": 128 },
+    { "id": 155, "name": "Audio", "slug": "audio", "parent": 0 },
+    { "id": 162, "name": "Iluminación", "slug": "iluminacion", "parent": 0 },
+    { "id": 171, "name": "Climatización", "slug": "climatizacion", "parent": 128 }
+  ],
+  "products": [
+    {
+      "id": 128944,
+      "sku": "01060769",
+      "name": "Panchuquera Eléctrica 750W Antiadherente 6 Panchos",
+      "slug": "panchuquera-electrica-750w-antiadherente-6-panchos",
+      "permalink": "https://dazimportadora.com.ar/producto/panchuquera-electrica-750w-antiadherente-6-panchos/",
+      "image": "https://dazimportadora.com.ar/wp-content/uploads/2025/03/panchuquera-750w.png",
+      "images": [
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/03/panchuquera-750w.png",
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/03/panchuquera-750w-2.png"
+      ],
+      "categories": [
+        { "id": 130, "name": "Cocina", "slug": "cocina" },
+        { "id": 128, "name": "Hogar", "slug": "hogar" }
+      ],
+      "inStock": true,
+      "onSale": false,
+      "type": "simple",
+      "shortDescription": "Panchuquera eléctrica de 750W con placas antiadherentes para 6 panchos. Luz indicadora de encendido, base antideslizante y recogecable. Apta 220V.",
+      "prices": {
+        "efectivo": { "base": 29900, "final": 35880 },
+        "web": { "base": 31993, "final": 38392 }
+      }
+    },
+    {
+      "id": 129011,
+      "sku": "01071204",
+      "name": "Auriculares Inalámbricos Bluetooth 5.3 TWS con Estuche de Carga",
+      "slug": "auriculares-inalambricos-bluetooth-53-tws-estuche-carga",
+      "permalink": "https://dazimportadora.com.ar/producto/auriculares-inalambricos-bluetooth-53-tws-estuche-carga/",
+      "image": "https://dazimportadora.com.ar/wp-content/uploads/2025/04/auriculares-tws-53.png",
+      "images": [
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/04/auriculares-tws-53.png"
+      ],
+      "categories": [{ "id": 155, "name": "Audio", "slug": "audio" }],
+      "inStock": true,
+      "onSale": true,
+      "type": "simple",
+      "shortDescription": "Auriculares in-ear inalámbricos con Bluetooth 5.3, micrófono incorporado y estuche de carga con indicador LED. Hasta 4 horas de reproducción continua.",
+      "prices": {
+        "efectivo": { "base": 12500, "final": 15000 },
+        "web": { "base": 13375, "final": 16050 }
+      }
+    },
+    {
+      "id": 127488,
+      "sku": "01055310",
+      "name": "Ventilador de Pie 20\" 3 Velocidades Altura Regulable",
+      "slug": "ventilador-de-pie-20-3-velocidades-altura-regulable",
+      "permalink": "https://dazimportadora.com.ar/producto/ventilador-de-pie-20-3-velocidades-altura-regulable/",
+      "image": null,
+      "images": [],
+      "categories": [
+        { "id": 171, "name": "Climatización", "slug": "climatizacion" },
+        { "id": 128, "name": "Hogar", "slug": "hogar" }
+      ],
+      "inStock": false,
+      "onSale": false,
+      "type": "simple",
+      "shortDescription": "Ventilador de pie de 20 pulgadas con 3 velocidades, oscilación automática y altura regulable. Rejilla metálica desmontable para limpieza.",
+      "prices": {
+        "efectivo": { "base": 78900, "final": 94680 },
+        "web": null
+      }
+    },
+    {
+      "id": 130220,
+      "sku": "01080455",
+      "name": "Set de Ollas Antiadherentes 8 Piezas con Tapas de Vidrio",
+      "slug": "set-de-ollas-antiadherentes-8-piezas-tapas-vidrio",
+      "permalink": "https://dazimportadora.com.ar/producto/set-de-ollas-antiadherentes-8-piezas-tapas-vidrio/",
+      "image": "https://dazimportadora.com.ar/wp-content/uploads/2025/06/set-ollas-8-piezas.png",
+      "images": [
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/06/set-ollas-8-piezas.png",
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/06/set-ollas-8-piezas-detalle.png",
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/06/set-ollas-8-piezas-caja.png"
+      ],
+      "categories": [
+        { "id": 130, "name": "Cocina", "slug": "cocina" },
+        { "id": 141, "name": "Bazar", "slug": "bazar" }
+      ],
+      "inStock": true,
+      "onSale": false,
+      "type": "variable",
+      "shortDescription": "Set de 8 piezas con revestimiento antiadherente, mangos bakelita y tapas de vidrio templado. Disponible en varios colores. Apto para todo tipo de hornallas.",
+      "prices": {
+        "efectivo": { "base": 45000, "final": 54000 },
+        "web": { "base": 48150, "final": 57780 }
+      }
+    },
+    {
+      "id": 126903,
+      "sku": "01049872",
+      "name": "Lámpara LED Recargable de Escritorio con Brazo Flexible",
+      "slug": "lampara-led-recargable-escritorio-brazo-flexible",
+      "permalink": "https://dazimportadora.com.ar/producto/lampara-led-recargable-escritorio-brazo-flexible/",
+      "image": "https://dazimportadora.com.ar/wp-content/uploads/2025/01/lampara-led-recargable.png",
+      "images": [
+        "https://dazimportadora.com.ar/wp-content/uploads/2025/01/lampara-led-recargable.png"
+      ],
+      "categories": [
+        { "id": 162, "name": "Iluminación", "slug": "iluminacion" },
+        { "id": 128, "name": "Hogar", "slug": "hogar" }
+      ],
+      "inStock": true,
+      "onSale": true,
+      "type": "simple",
+      "shortDescription": "Lámpara de escritorio LED con batería recargable por USB-C, brazo flexible y 3 temperaturas de color con regulación de intensidad.",
+      "prices": {
+        "efectivo": { "base": 8900, "final": 10680 },
+        "web": { "base": 9523, "final": 11428 }
+      }
+    }
+  ]
+}

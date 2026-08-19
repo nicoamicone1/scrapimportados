@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Design system                                                       */
+/*                                                                     */
+/* Paleta: violeta profundo (marca / CTAs) + naranja cálido (precios,   */
+/* acentos). Neutros levemente cálidos para que la página no se vea     */
+/* "blanca y muerta". Todos los pares texto/fondo cumplen AA.           */
+/* ------------------------------------------------------------------ */
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Marca: violeta / índigo profundo */
+  --color-brand-50: #f4f2ff;
+  --color-brand-100: #e9e5ff;
+  --color-brand-200: #d5cdff;
+  --color-brand-300: #b8a9ff;
+  --color-brand-400: #9a7dfc;
+  --color-brand-500: #7d55f3;
+  --color-brand-600: #6535e0; /* primario (blanco encima: 6.6:1) */
+  --color-brand-700: #5326bd;
+  --color-brand-800: #442099;
+  --color-brand-900: #371c78;
+  --color-brand-950: #241150;
+
+  /* Acento: naranja cálido (precios, CTAs secundarios, barras de sección) */
+  --color-accent-50: #fff6ed;
+  --color-accent-100: #ffe9d5;
+  --color-accent-200: #fed0aa;
+  --color-accent-300: #fdb174;
+  --color-accent-400: #fb883c;
+  --color-accent-500: #f96a16;
+  --color-accent-600: #ea500c;
+  --color-accent-700: #c23c0c; /* precio "Efectivo" (sobre blanco: 5.4:1) */
+  --color-accent-800: #9a3111;
+  --color-accent-900: #7c2b11;
+
+  /* Neutros cálidos */
+  --color-page: #f7f5f2; /* fondo de página, gris cálido */
+  --color-surface: #ffffff; /* tarjetas */
+  --color-tint: #f5f3fb; /* fondo suave de imágenes / zonas */
+  --color-line: #e7e3ef; /* bordes 1px */
+  --color-ink: #1e1b2e; /* texto principal (15:1) */
+  --color-ink-soft: #453f5c; /* texto secundario fuerte (8.7:1) */
+  --color-muted: #6f6980; /* texto secundario (4.3:1) */
+
+  --shadow-card: 0 1px 2px rgb(30 27 46 / 0.05), 0 1px 3px rgb(30 27 46 / 0.06);
+  --shadow-lift: 0 10px 24px -8px rgb(30 27 46 / 0.22),
+    0 2px 6px -2px rgb(30 27 46 / 0.1);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Los sliders scrollean con el dedo / trackpad, pero sin barra visible. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Foco visible y coherente en toda la UI. */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
