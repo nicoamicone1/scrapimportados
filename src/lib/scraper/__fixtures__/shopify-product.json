@@ -1,0 +1,21 @@
+{
+  "id": 7001,
+  "title": "Zapatilla Runner",
+  "handle": "zapatilla-runner",
+  "body_html": "<p>Liviana y <strong>cómoda</strong>.</p>",
+  "vendor": "Allbirds",
+  "product_type": "Calzado",
+  "tags": ["running", "hombre"],
+  "variants": [
+    { "id": 1, "title": "Negro / 42", "option1": "Negro", "option2": "42", "option3": null, "sku": "RUN-NEG-42", "available": true, "price": "120.00", "compare_at_price": "150.00", "grams": 450, "featured_image": null },
+    { "id": 2, "title": "Negro / 43", "option1": "Negro", "option2": "43", "option3": null, "sku": "RUN-NEG-43", "available": false, "price": "120.00", "compare_at_price": null, "grams": 460, "featured_image": { "src": "https://cdn.shopify.com/runner-43.jpg" } }
+  ],
+  "images": [
+    { "id": 10, "src": "https://cdn.shopify.com/runner.jpg", "variant_ids": [1] },
+    { "id": 11, "src": "https://cdn.shopify.com/runner-side.jpg", "variant_ids": [] }
+  ],
+  "options": [
+    { "name": "Color", "position": 1, "values": ["Negro"] },
+    { "name": "Talle", "position": 2, "values": ["42", "43", "44"] }
+  ]
+}

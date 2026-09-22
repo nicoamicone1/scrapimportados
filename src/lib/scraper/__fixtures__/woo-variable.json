@@ -1,0 +1,62 @@
+{
+  "product": {
+    "id": 500,
+    "name": "Remera B&aacute;sica",
+    "slug": "remera-basica",
+    "type": "variable",
+    "permalink": "https://tienda.example/producto/remera-basica/",
+    "sku": "REM",
+    "short_description": "<p>Algodón peinado</p>",
+    "description": "<p>Remera de algodón.</p>",
+    "on_sale": true,
+    "prices": {
+      "price": "1000000",
+      "regular_price": "1200000",
+      "sale_price": "1000000",
+      "price_range": { "min_amount": "1000000", "max_amount": "1100000" },
+      "currency_code": "ARS",
+      "currency_minor_unit": 2
+    },
+    "images": [{ "src": "https://tienda.example/img/remera.jpg" }],
+    "categories": [{ "id": 31, "name": "Remeras", "slug": "remeras" }],
+    "tags": [],
+    "brands": [{ "id": 1, "name": "Marca Sur", "slug": "marca-sur" }],
+    "attributes": [
+      { "id": 1, "name": "Color", "taxonomy": "pa_color", "has_variations": true, "terms": [
+        { "id": 11, "name": "Negro", "slug": "negro" },
+        { "id": 12, "name": "Blanco", "slug": "blanco" }
+      ] },
+      { "id": 2, "name": "Talle", "taxonomy": "pa_talle", "has_variations": true, "terms": [
+        { "id": 21, "name": "S", "slug": "s" },
+        { "id": 22, "name": "M", "slug": "m" }
+      ] }
+    ],
+    "variations": [
+      { "id": 501, "attributes": [{ "name": "Color", "value": "negro" }, { "name": "Talle", "value": "s" }] },
+      { "id": 502, "attributes": [{ "name": "Color", "value": "blanco" }, { "name": "Talle", "value": "m" }] }
+    ],
+    "is_in_stock": true
+  },
+  "variations": [
+    {
+      "id": 501,
+      "name": "Remera Básica - Negro, S",
+      "type": "variation",
+      "sku": "REM-NEG-S",
+      "prices": { "price": "1000000", "regular_price": "1200000", "currency_minor_unit": 2 },
+      "images": [{ "src": "https://tienda.example/img/remera-negra.jpg" }],
+      "is_in_stock": true,
+      "low_stock_remaining": 3
+    },
+    {
+      "id": 502,
+      "name": "Remera Básica - Blanco, M",
+      "type": "variation",
+      "sku": "REM-BLA-M",
+      "prices": { "price": "1100000", "regular_price": "1100000", "currency_minor_unit": 2 },
+      "images": [],
+      "is_in_stock": false,
+      "low_stock_remaining": null
+    }
+  ]
+}

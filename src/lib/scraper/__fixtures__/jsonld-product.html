@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <title>Mate de calabaza | Tienda</title>
+  <link rel="canonical" href="https://tienda.example/productos/mate-calabaza/">
+  <meta property="og:title" content="Mate de calabaza (OG)">
+  <meta property="og:image" content="https://tienda.example/img/mate-og.jpg">
+  <meta property="product:price:amount" content="9999">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "BreadcrumbList", "itemListElement": [] },
+      {
+        "@type": "Product",
+        "name": "Mate de calabaza forrado",
+        "description": "Mate artesanal.\n\nIncluye bombilla.",
+        "sku": "MATE-01",
+        "gtin13": "7790000000001",
+        "brand": { "@type": "Brand", "name": "Pampa" },
+        "category": "Hogar > Mates",
+        "image": ["https://tienda.example/img/mate-1.jpg", { "@type": "ImageObject", "url": "/img/mate-2.jpg" }],
+        "offers": {
+          "@type": "Offer",
+          "price": "15990.00",
+          "priceCurrency": "ARS",
+          "availability": "https://schema.org/InStock",
+          "priceSpecification": [
+            { "@type": "UnitPriceSpecification", "price": "15990.00" },
+            { "@type": "UnitPriceSpecification", "priceType": "https://schema.org/StrikethroughPrice", "price": "18990.00" }
+          ]
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body><h1>Mate de calabaza</h1></body>
+</html>

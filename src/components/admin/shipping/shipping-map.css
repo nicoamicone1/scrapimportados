@@ -1,0 +1,113 @@
+/*
+ * Estilos de los mapas de envíos (Leaflet) dentro del admin.
+ * Se importa sólo desde los componentes de mapa (cargados con ssr:false).
+ */
+
+.shp-map.leaflet-container {
+  font: inherit;
+  font-size: 12px;
+  background: #e9e6df;
+  border-radius: var(--adm-radius, 6px);
+  outline: none;
+}
+
+.shp-map.leaflet-container:focus-visible {
+  box-shadow: var(--adm-focus);
+}
+
+.shp-map.is-drawing,
+.shp-map.is-picking {
+  cursor: crosshair;
+}
+
+.shp-map .leaflet-control-attribution {
+  font-size: 11px;
+  background: rgb(255 255 255 / 0.85);
+}
+
+.shp-map .leaflet-bar a {
+  color: var(--adm-fg, #1f1e1b);
+}
+
+/* Vértice editable: cuadrado blanco con borde del acento. */
+.shp-vertex {
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid var(--adm-accent, #2e4a3f);
+  border-radius: 2px;
+  cursor: move;
+  transition: transform 80ms ease-out;
+}
+
+.shp-vertex:hover {
+  background: var(--adm-accent, #2e4a3f);
+}
+
+/* Punto intermedio: click agrega un vértice. */
+.shp-midpoint {
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  background: rgb(255 255 255 / 0.75);
+  border: 1.5px solid var(--adm-accent, #2e4a3f);
+  border-radius: 50%;
+  cursor: copy;
+  opacity: 0.8;
+}
+
+.shp-midpoint:hover {
+  opacity: 1;
+  background: #fff;
+}
+
+/* Pin de punto (retiro / dirección probada). */
+.shp-pin {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.shp-pin::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--adm-accent, #2e4a3f);
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+.shp-pin::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.shp-pin.is-draggable {
+  cursor: grab;
+}
+
+.shp-tooltip.leaflet-tooltip {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border-color: var(--adm-border, #e2ded6);
+  color: var(--adm-fg, #1f1e1b);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shp-map .leaflet-zoom-anim .leaflet-zoom-animated,
+  .shp-map .leaflet-pan-anim .leaflet-tile {
+    transition: none !important;
+  }
+}

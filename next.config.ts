@@ -1,14 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Sitio 100% estático: `next build` genera la carpeta `out/`.
-  output: "export",
-  // Sin servidor de optimización de imágenes (las fotos vienen del proveedor).
+  // Cada agente/entorno puede usar su propio build dir (ej. NEXT_DIST_DIR=.next-f).
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "dazimportadora.com.ar" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
   },
-  // `/producto/foo` -> `out/producto/foo/index.html` (mejor para hostings estáticos).
-  trailingSlash: true,
+  experimental: {
+    serverActions: {
+      // Subida de imágenes desde el admin.
+      bodySizeLimit: "8mb",
+    },
+  },
 };
 
 export default nextConfig;

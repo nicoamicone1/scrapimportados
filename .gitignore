@@ -42,3 +42,7 @@ next-env.d.ts
 
 # claude / local
 /.claude/
+!/.claude/launch.json
+
+# dist dirs por agente (NEXT_DIST_DIR)
+/.next-*/

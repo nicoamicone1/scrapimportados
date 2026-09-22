@@ -1,0 +1,31 @@
+{
+  "id": 49545,
+  "name": "Caja de Pilas x60 Unidades OM AAA",
+  "slug": "caja-de-pilas-om-aaa",
+  "type": "simple",
+  "permalink": "https://dazimportadora.com.ar/producto/caja-de-pilas-om-aaa/",
+  "sku": "03050014",
+  "short_description": "",
+  "description": "<p>Caja con 60 pilas AAA &amp; blister.</p>",
+  "on_sale": false,
+  "prices": {
+    "price": "9000",
+    "regular_price": "9000",
+    "sale_price": "9000",
+    "price_range": null,
+    "currency_code": "ARS",
+    "currency_minor_unit": 0
+  },
+  "price_html": "<span><span class=\"woocommerce-Price-amount amount\"><span class=\"woocommerce-Price-currencySymbol\">&#036;</span>9.630</span></span><span><span class=\"woocommerce-Price-amount amount\"><span class=\"woocommerce-Price-currencySymbol\">&#036;</span>9.000</span> <small>Efectivo</small></span>",
+  "images": [{ "id": 49547, "src": "https://dazimportadora.com.ar/wp-content/uploads/2025/01/Flash-39.png", "alt": "PILAS OM AAA X CAJA" }],
+  "categories": [
+    { "id": 209, "name": "Ferretería", "slug": "ferreteria" },
+    { "id": 128, "name": "Hogar", "slug": "hogar" }
+  ],
+  "tags": [{ "id": 5, "name": "Pilas", "slug": "pilas" }],
+  "brands": [],
+  "attributes": [],
+  "variations": [],
+  "is_in_stock": true,
+  "low_stock_remaining": null
+}

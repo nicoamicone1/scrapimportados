@@ -1,0 +1,99 @@
+/*
+ * Tokens fijos del admin (docs/DESIGN.md §7). NO heredan el tema de la tienda.
+ * Mapeados a Tailwind en globals.css: bg-adm-bg, text-adm-fg, border-adm-border…
+ * Todo el admin se renderiza dentro de `.admin-root`.
+ */
+
+/* En @layer base: las utilidades de Tailwind siempre ganan sobre esto. */
+@layer base {
+  .admin-root {
+    --adm-bg: #f7f6f3;
+    --adm-surface: #ffffff;
+    --adm-surface-2: #f1efea;
+    --adm-hover: color-mix(in oklab, #f1efea 60%, #ffffff);
+    --adm-border: #e2ded6;
+    --adm-input-border: #cfcabf;
+    --adm-fg: #1f1e1b;
+    --adm-fg-muted: #6b6860;
+    --adm-accent: #2e4a3f;
+    --adm-accent-hover: #243c33;
+    --adm-accent-soft: #e4ebe7;
+    --adm-accent-fg: #ffffff;
+    --adm-danger: #b42318;
+    --adm-danger-soft: #f8e1de;
+    --adm-warning: #9a5b00;
+    --adm-success: #2f6b3f;
+    --adm-info: #2b5a84;
+    --adm-radius: 6px;
+    --adm-focus: 0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-accent);
+    --adm-shadow: 0 12px 32px -12px rgb(31 30 27 / 0.25), 0 0 0 1px var(--adm-border);
+
+    min-height: 100dvh;
+    background: var(--adm-bg);
+    color: var(--adm-fg);
+    font-family: var(--font-admin);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .admin-root :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--adm-focus);
+  }
+
+  /* Números: siempre tabulares en el admin (tablas, precios, stock, fechas). */
+  .admin-root :where(td, th, .tnum, input[type="number"], time) {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  .admin-root ::selection {
+    background: color-mix(in oklab, var(--adm-accent) 22%, transparent);
+  }
+
+  /* <dialog> nativo: backdrop y animación mínima. */
+  .admin-root dialog::backdrop,
+  dialog.adm-dialog::backdrop {
+    background: rgb(31 30 27 / 0.32);
+  }
+
+  dialog.adm-dialog[open] {
+    animation: adm-dialog-in 140ms ease-out;
+  }
+
+  dialog.adm-drawer[open] {
+    animation: adm-drawer-in 200ms ease-out;
+  }
+
+  dialog.adm-drawer.adm-drawer-left[open] {
+    animation-name: adm-drawer-in-left;
+  }
+
+  @keyframes adm-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  @keyframes adm-drawer-in {
+    from {
+      transform: translateX(16px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes adm-drawer-in-left {
+    from {
+      transform: translateX(-16px);
+      opacity: 0;
+    }
+  }
+
+  /* Scrollbars discretas en paneles. */
+  .admin-root .adm-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #d6d1c7 transparent;
+  }
+}

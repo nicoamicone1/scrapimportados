@@ -4,67 +4,73 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
 
-/* ------------------------------------------------------------------ */
-/* Tipos                                                               */
-/* ------------------------------------------------------------------ */
+import type { Coupon } from "@/lib/pricing";
+
+/**
+ * Carrito del storefront (client, localStorage). Ítems POR VARIANTE.
+ *
+ * Guarda el precio de LISTA (`unitPrice`). Los precios finales (promos,
+ * cupón, método de pago, envío) se calculan con `computeCart()` de
+ * `src/lib/pricing` para mostrar y se recalculan en el server al confirmar.
+ */
 
 export interface CartItem {
-  id: number;
+  variantId: string;
+  productId: string;
   slug: string;
   name: string;
-  sku: string;
+  /** null para la variante "Default". */
+  variantTitle: string | null;
+  sku: string | null;
   image: string | null;
-  /** Precios FINALES (con markup). El `base` del proveedor nunca llega acá. */
-  priceEfectivo: number;
-  priceWeb: number | null;
+  /** Precio de lista de la variante al momento de agregar. */
+  unitPrice: number;
   qty: number;
+  /** Para promos/cupones por categoría. */
+  categoryIds?: string[];
+  /** Tope por stock (si se controla). */
+  maxQty?: number | null;
+  /** Precio tachado propio de la variante (para el motor de precios). */
+  compareAtPrice?: number | null;
+  /** Alícuota de IVA del producto (null = default de la tienda), para el precio sin impuestos. */
+  vatPercent?: number | null;
 }
 
-/** Producto mínimo que se puede agregar al carrito (lo cumple `CatalogItem`). */
-export type Addable = {
-  id: number;
-  slug: string;
-  name: string;
-  sku: string;
-  image: string | null;
-  prices: {
-    efectivo: { final: number };
-    web: { final: number } | null;
-  };
-};
+/** Parche de validación contra la DB (`qty: 0` = quitar). */
+export interface CartItemPatch {
+  variantId: string;
+  qty: number;
+  unitPrice: number;
+  maxQty: number | null;
+  name?: string;
+  variantTitle?: string | null;
+  sku?: string | null;
+  image?: string | null;
+  slug?: string;
+  categoryIds?: string[];
+  vatPercent?: number | null;
+}
 
-export type PaymentMethod = "efectivo" | "web";
+export type AddableItem = Omit<CartItem, "qty">;
 
-export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
-  efectivo: "Efectivo",
-  web: "Precio web",
-};
-
-/* ------------------------------------------------------------------ */
-/* Store externo con persistencia en localStorage                      */
-/*                                                                     */
-/* Se usa `useSyncExternalStore`: durante el prerender / la hidratación */
-/* el snapshot es el vacío, así que no hay mismatch, y el contenido     */
-/* real aparece recién cuando el navegador puede leer localStorage.     */
-/* ------------------------------------------------------------------ */
-
-const STORAGE_KEY = "carrito";
-const PAYMENT_KEY = "carrito-pago";
+const STORAGE_KEY = "ecommy-cart-v1";
+const COUPON_KEY = "ecommy-coupon-v1";
+const MAX_QTY = 999;
 
 interface CartState {
   items: CartItem[];
-  payment: PaymentMethod;
-  /** `false` mientras no se leyó localStorage (prerender / hidratación). */
+  /** Cupón validado (se revalida en el server al confirmar). */
+  coupon: Coupon | null;
+  /** `false` mientras no se leyó localStorage (SSR / hidratación). */
   hydrated: boolean;
 }
 
-const EMPTY: CartState = { items: [], payment: "efectivo", hydrated: false };
+const EMPTY: CartState = { items: [], coupon: null, hydrated: false };
 
 let state: CartState = EMPTY;
 let loaded = false;
@@ -74,16 +80,17 @@ function isCartItem(value: unknown): value is CartItem {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (
-    typeof v.id === "number" &&
+    typeof v.variantId === "string" &&
+    typeof v.productId === "string" &&
     typeof v.slug === "string" &&
     typeof v.name === "string" &&
-    typeof v.priceEfectivo === "number" &&
+    typeof v.unitPrice === "number" &&
     typeof v.qty === "number" &&
     v.qty > 0
   );
 }
 
-function readItems(): CartItem[] {
+function read(): CartItem[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -94,185 +101,182 @@ function readItems(): CartItem[] {
   }
 }
 
-function readPayment(): PaymentMethod {
+function isCoupon(value: unknown): value is Coupon {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.code === "string" && typeof v.type === "string" && typeof v.value === "number" && Array.isArray(v.categoryIds);
+}
+
+function readCoupon(): Coupon | null {
   try {
-    const raw = window.localStorage.getItem(PAYMENT_KEY);
-    return raw === "web" || raw === "efectivo" ? raw : "efectivo";
+    const raw = window.localStorage.getItem(COUPON_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return isCoupon(parsed) ? parsed : null;
   } catch {
-    return "efectivo";
+    return null;
   }
 }
 
-function persist(next: CartState) {
+function persist(items: CartItem[], coupon: Coupon | null) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next.items));
-    window.localStorage.setItem(PAYMENT_KEY, next.payment);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (coupon) window.localStorage.setItem(COUPON_KEY, JSON.stringify(coupon));
+    else window.localStorage.removeItem(COUPON_KEY);
   } catch {
-    /* storage lleno o bloqueado: el carrito sigue funcionando en memoria */
+    // Storage lleno o bloqueado: el carrito sigue en memoria.
   }
 }
 
-function subscribe(listener: () => void): () => void {
+function subscribe(listener: () => void) {
   listeners.add(listener);
+  // Sincroniza entre pestañas.
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY || e.key === COUPON_KEY) {
+      state = { items: read(), coupon: readCoupon(), hydrated: true };
+      listener();
+    }
+  };
+  window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
   };
 }
 
-/** Snapshot del cliente: la primera lectura carga localStorage. */
 function getSnapshot(): CartState {
   if (!loaded) {
     loaded = true;
-    state = { items: readItems(), payment: readPayment(), hydrated: true };
+    state = { items: read(), coupon: readCoupon(), hydrated: true };
   }
   return state;
 }
 
-/** Snapshot del servidor / prerender: siempre vacío. */
 function getServerSnapshot(): CartState {
   return EMPTY;
 }
 
-function update(patch: Partial<Omit<CartState, "hydrated">>) {
-  state = { ...getSnapshot(), ...patch };
-  persist(state);
-  for (const listener of listeners) listener();
+function setState(items: CartItem[], coupon: Coupon | null) {
+  // Sin ítems no tiene sentido guardar el cupón.
+  const nextCoupon = items.length ? coupon : null;
+  state = { items, coupon: nextCoupon, hydrated: true };
+  persist(items, nextCoupon);
+  for (const l of listeners) l();
 }
 
-/* ------------------------------------------------------------------ */
-/* Provider                                                            */
-/* ------------------------------------------------------------------ */
+function setItems(items: CartItem[]) {
+  setState(items, getSnapshot().coupon);
+}
 
-interface CartContextValue extends CartState {
+function clampQty(qty: number, max?: number | null) {
+  const limit = max != null && max > 0 ? Math.min(max, MAX_QTY) : MAX_QTY;
+  return Math.max(0, Math.min(Math.floor(qty), limit));
+}
+
+interface CartContextValue {
+  items: CartItem[];
+  hydrated: boolean;
+  /** Cantidad total de unidades. */
   count: number;
-  total: number;
+  /** Σ unitPrice × qty (precio de lista, sin promos). */
+  listSubtotal: number;
   isOpen: boolean;
-  openCart: () => void;
-  closeCart: () => void;
-  setPayment: (payment: PaymentMethod) => void;
-  add: (product: Addable, qty?: number) => void;
-  setQty: (id: number, qty: number) => void;
-  remove: (id: number) => void;
+  open: () => void;
+  close: () => void;
+  add: (item: AddableItem, qty?: number) => void;
+  setQty: (variantId: string, qty: number) => void;
+  remove: (variantId: string) => void;
   clear: () => void;
-  /** Precio unitario según la forma de pago elegida. */
-  unitPrice: (item: CartItem) => number;
+  coupon: Coupon | null;
+  setCoupon: (coupon: Coupon | null) => void;
+  /** Aplica la validación contra la DB (precios, stock, quitados). */
+  applyPatches: (patches: CartItemPatch[]) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { items, payment, hydrated } = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const { items, coupon, hydrated } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [isOpen, setIsOpen] = useState(false);
 
-  // El drawer abierto bloquea el scroll del body.
-  useEffect(() => {
-    if (!isOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [isOpen]);
+  // El bloqueo de scroll y el foco los maneja el <Drawer> del carrito.
 
-  const openCart = useCallback(() => setIsOpen(true), []);
-  const closeCart = useCallback(() => setIsOpen(false), []);
+  const open = useCallback(() => setIsOpen(true), []);
+  const close = useCallback(() => setIsOpen(false), []);
 
-  const setPayment = useCallback((next: PaymentMethod) => {
-    update({ payment: next });
-  }, []);
-
-  const add = useCallback((product: Addable, qty = 1) => {
+  const add = useCallback((item: AddableItem, qty = 1) => {
     const current = getSnapshot().items;
-    const found = current.find((i) => i.id === product.id);
-    update({
-      items: found
+    const found = current.find((i) => i.variantId === item.variantId);
+    setItems(
+      found
         ? current.map((i) =>
-            i.id === product.id ? { ...i, qty: i.qty + qty } : i,
+            i.variantId === item.variantId
+              ? { ...i, ...item, qty: clampQty(i.qty + qty, item.maxQty ?? i.maxQty) }
+              : i,
           )
-        : [
-            ...current,
-            {
-              id: product.id,
-              slug: product.slug,
-              name: product.name,
-              sku: product.sku,
-              image: product.image,
-              priceEfectivo: product.prices.efectivo.final,
-              priceWeb: product.prices.web ? product.prices.web.final : null,
-              qty,
-            },
-          ],
-    });
+        : [...current, { ...item, qty: clampQty(qty, item.maxQty) }].filter((i) => i.qty > 0),
+    );
   }, []);
 
-  const setQty = useCallback((id: number, qty: number) => {
+  const setQty = useCallback((variantId: string, qty: number) => {
     const current = getSnapshot().items;
-    update({
-      items:
-        qty <= 0
-          ? current.filter((i) => i.id !== id)
-          : current.map((i) => (i.id === id ? { ...i, qty } : i)),
-    });
+    setItems(
+      current
+        .map((i) => (i.variantId === variantId ? { ...i, qty: clampQty(qty, i.maxQty) } : i))
+        .filter((i) => i.qty > 0),
+    );
   }, []);
 
-  const remove = useCallback((id: number) => {
-    update({ items: getSnapshot().items.filter((i) => i.id !== id) });
+  const remove = useCallback((variantId: string) => {
+    setItems(getSnapshot().items.filter((i) => i.variantId !== variantId));
   }, []);
 
-  const clear = useCallback(() => update({ items: [] }), []);
+  const clear = useCallback(() => setState([], null), []);
 
-  const unitPrice = useCallback(
-    (item: CartItem) =>
-      payment === "web" && item.priceWeb != null
-        ? item.priceWeb
-        : item.priceEfectivo,
-    [payment],
-  );
+  const setCoupon = useCallback((next: Coupon | null) => setState(getSnapshot().items, next), []);
 
-  const count = useMemo(() => items.reduce((acc, i) => acc + i.qty, 0), [items]);
-
-  const total = useMemo(
-    () => items.reduce((acc, i) => acc + unitPrice(i) * i.qty, 0),
-    [items, unitPrice],
-  );
+  const applyPatches = useCallback((patches: CartItemPatch[]) => {
+    const byId = new Map(patches.map((p) => [p.variantId, p]));
+    const next = getSnapshot()
+      .items.map((item) => {
+        const p = byId.get(item.variantId);
+        if (!p) return item;
+        return {
+          ...item,
+          qty: clampQty(p.qty, p.maxQty),
+          unitPrice: p.unitPrice,
+          maxQty: p.maxQty,
+          name: p.name || item.name,
+          variantTitle: p.variantTitle !== undefined ? p.variantTitle : item.variantTitle,
+          sku: p.sku !== undefined ? p.sku : item.sku,
+          image: p.image !== undefined && p.image !== null ? p.image : item.image,
+          slug: p.slug || item.slug,
+          categoryIds: p.categoryIds ?? item.categoryIds,
+          vatPercent: p.vatPercent !== undefined ? p.vatPercent : item.vatPercent,
+        };
+      })
+      .filter((i) => i.qty > 0);
+    setItems(next);
+  }, []);
 
   const value = useMemo<CartContextValue>(
     () => ({
       items,
-      payment,
       hydrated,
-      count,
-      total,
+      count: items.reduce((acc, i) => acc + i.qty, 0),
+      listSubtotal: items.reduce((acc, i) => acc + i.unitPrice * i.qty, 0),
       isOpen,
-      openCart,
-      closeCart,
-      setPayment,
+      open,
+      close,
       add,
       setQty,
       remove,
       clear,
-      unitPrice,
+      coupon,
+      setCoupon,
+      applyPatches,
     }),
-    [
-      items,
-      payment,
-      hydrated,
-      count,
-      total,
-      isOpen,
-      openCart,
-      closeCart,
-      setPayment,
-      add,
-      setQty,
-      remove,
-      clear,
-      unitPrice,
-    ],
+    [items, hydrated, isOpen, open, close, add, setQty, remove, clear, coupon, setCoupon, applyPatches],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
