@@ -83,7 +83,18 @@ export function StockAlertsTable({ rows, filter, available }: { rows: StockAlert
               description="Falta aplicar una actualización de la base de datos (migración 0016). Cuando esté, en la ficha de los productos agotados aparece el formulario y los pedidos llegan acá."
             />
           ) : rows.length === 0 ? (
-            <TableEmpty colSpan={6} title={empty.title} description={empty.description} />
+            <TableEmpty
+              colSpan={6}
+              title={empty.title}
+              description={empty.description}
+              action={
+                filter === "avisados" ? undefined : (
+                  <Link href="/admin/inventario?estado=agotado" className="text-[13px] font-medium text-adm-accent hover:underline">
+                    Ver productos sin stock
+                  </Link>
+                )
+              }
+            />
           ) : (
             rows.map((a) => {
               const title = a.variant && a.variant.title !== "Default" ? a.variant.title : null;

@@ -13,21 +13,30 @@
 -- 3. billing_events: una fila por notificación de MP (idempotencia por
 --    event_id). Sólo la lee el superadmin; la escribe el webhook con la
 --    service-role key.
--- 4. billing_start_checkout(): el DUEÑO marca que empezó un pago (provider =
+-- 4. billing_start_checkout(): marca que el dueño empezó un pago (provider =
 --    mercadopago, provider_ref = preapproval, provider_status = pending). NO
---    cambia plan ni estado.
+--    cambia plan ni estado. Sólo la ejecuta service_role: la llama la server
+--    action después de verificar que quien paga es el dueño (el plan que
+--    queda en provider_plan_code no lo elige nadie desde el navegador).
 -- 5. billing_apply_subscription(): aplica lo que dice MercadoPago. Sólo la
 --    ejecuta service_role (webhook /api/billing/mercadopago/webhook y la
 --    sincronización forzada del superadmin), nunca anon ni authenticated.
+--    Con p_adopt = true reemplaza provider_ref por un preapproval autorizado
+--    de la misma tienda si el actual quedó pendiente, cancelado o vencido.
 -- 6. current_plan(): una renovación cancelada cuenta como Free desde
---    current_period_end, y una suscripción de MP sin cobro confirmado cuenta
---    como Free 7 días después de current_period_end (aunque el cron no haya
---    corrido todavía). Devuelve además cancel_at_period_end.
+--    current_period_end, una suscripción de MP sin cobro confirmado cuenta
+--    como Free 7 días después de current_period_end, y una autorizada cuyo
+--    primer cobro no llegó (provider_status = 'authorized_unpaid', 7 días de
+--    gracia) cuenta como Free desde current_period_end (aunque el cron no
+--    haya corrido todavía). Devuelve además cancel_at_period_end.
 -- 7. run_daily_maintenance(): además pasa a Free esas mismas suscripciones
---    (billing_expire_subscriptions()).
+--    (billing_expire_subscriptions(); provider_status = 'expired' cuando es
+--    por falta de cobro).
 -- 8. platform_set_plan(): un cambio manual del superadmin (que no sea
 --    extender la prueba) pasa la tienda a provider = 'manual': desde ahí los
 --    avisos de MercadoPago no la tocan hasta que el dueño vuelva a pagar.
+--    Si la tienda tenía un débito automático vigente, la action del
+--    superadmin lo cancela en MercadoPago antes de llamar a esta función.
 --
 -- Orden de deploy: da igual. Sin esta migración la app no muestra el botón
 -- de MercadoPago (sigue el pedido por WhatsApp) y el webhook no aplica nada.
@@ -71,7 +80,7 @@ revoke all on public.billing_events from anon, authenticated;
 grant select on public.billing_events to authenticated;
 
 -- ---------------------------------------------------------------------
--- 4. billing_start_checkout (dueño)
+-- 4. billing_start_checkout (sólo service_role; la action ya verificó al dueño)
 -- ---------------------------------------------------------------------
 create or replace function public.billing_start_checkout(p_store_id uuid, p_plan_code text, p_provider_ref text)
 returns void
@@ -82,8 +91,8 @@ as $$
 declare
   v_sub public.subscriptions;
 begin
-  if not public.is_store_owner(p_store_id) then
-    raise exception 'Sólo el dueño de la tienda puede pagar el plan';
+  if p_store_id is null or not exists (select 1 from public.stores where id = p_store_id) then
+    raise exception 'La tienda no existe';
   end if;
   if p_plan_code is null or not exists (select 1 from public.plans where code = p_plan_code and mp_plan_id is not null) then
     raise exception 'Ese plan no se puede pagar con MercadoPago';
@@ -92,8 +101,10 @@ begin
     raise exception 'Referencia inválida';
   end if;
   select * into v_sub from public.subscriptions where store_id = p_store_id for update;
-  -- Con una suscripción de MP cobrando, primero hay que cancelar la renovación.
-  if found and v_sub.provider = 'mercadopago' and v_sub.provider_status in ('authorized', 'paused') and not v_sub.cancel_at_period_end then
+  -- Con una suscripción de MP cobrando (o autorizada esperando el primer
+  -- cobro), primero hay que cancelar la renovación.
+  if found and v_sub.provider = 'mercadopago' and v_sub.provider_status in ('authorized', 'authorized_unpaid', 'paused')
+     and not v_sub.cancel_at_period_end then
     raise exception 'Ya tenés una suscripción activa en MercadoPago: cancelá la renovación antes de cambiar de plan';
   end if;
   insert into public.subscriptions (store_id, plan_code, status, provider, provider_ref, provider_status, provider_plan_code)
@@ -109,7 +120,14 @@ $$;
 -- ---------------------------------------------------------------------
 -- 5. billing_apply_subscription (sólo service_role)
 --    p_status null = sólo se registra el estado de MP (no cambia el plan).
+--    p_adopt = true: p_provider_ref es un preapproval AUTORIZADO de esta
+--    tienda (external_reference) distinto del guardado; se adopta sólo si el
+--    guardado quedó pendiente, cancelado o vencido (el chequeo corre con la
+--    fila bloqueada: dos avisos a la vez no adoptan dos preapprovals).
 -- ---------------------------------------------------------------------
+-- La firma cambió (p_adopt): se borra la anterior por si se aplicó un borrador.
+drop function if exists public.billing_apply_subscription(uuid, text, text, text, timestamptz, timestamptz, text, boolean, timestamptz);
+
 create or replace function public.billing_apply_subscription(
   p_store_id uuid,
   p_plan_code text,
@@ -119,7 +137,8 @@ create or replace function public.billing_apply_subscription(
   p_period_end timestamptz,
   p_provider_status text,
   p_cancel_at_period_end boolean default false,
-  p_last_payment_at timestamptz default null
+  p_last_payment_at timestamptz default null,
+  p_adopt boolean default false
 )
 returns jsonb
 language plpgsql
@@ -138,8 +157,15 @@ begin
   end if;
   -- Doble control (la app ya lo verificó): el aviso tiene que ser del
   -- preapproval que inició esta tienda y la tienda tiene que estar en MP.
-  if v_sub.provider is distinct from 'mercadopago' or v_sub.provider_ref is distinct from p_provider_ref then
+  if v_sub.provider is distinct from 'mercadopago' then
     raise exception 'La suscripción no coincide con la referencia de MercadoPago';
+  end if;
+  if v_sub.provider_ref is distinct from p_provider_ref then
+    if not coalesce(p_adopt, false)
+       or coalesce(v_sub.provider_status, 'pending') not in ('pending', 'cancelled', 'expired')
+       or p_status is distinct from 'active' then
+      raise exception 'La suscripción no coincide con la referencia de MercadoPago';
+    end if;
   end if;
 
   if p_status is null then
@@ -159,6 +185,7 @@ begin
            status = p_status,
            current_period_start = coalesce(p_period_start, current_period_start),
            current_period_end = coalesce(p_period_end, current_period_end),
+           provider_ref = p_provider_ref,
            provider_status = coalesce(p_provider_status, provider_status),
            cancel_at_period_end = coalesce(p_cancel_at_period_end, false),
            last_payment_at = greatest(last_payment_at, p_last_payment_at),
@@ -171,6 +198,7 @@ begin
     'store_id', v_sub.store_id,
     'plan_code', v_sub.plan_code,
     'status', v_sub.status,
+    'provider_ref', v_sub.provider_ref,
     'provider_status', v_sub.provider_status,
     'current_period_end', v_sub.current_period_end,
     'cancel_at_period_end', v_sub.cancel_at_period_end
@@ -208,9 +236,15 @@ begin
     v_code := 'free';
     v_status := 'cancelled';
   -- 0015: renovación cancelada y período terminado.
-  elsif v_sub.cancel_at_period_end and v_sub.current_period_end is not null and v_sub.current_period_end < now() then
+  elsif v_sub.cancel_at_period_end and v_sub.status in ('active', 'past_due')
+        and v_sub.current_period_end is not null and v_sub.current_period_end < now() then
     v_code := 'free';
     v_status := 'cancelled';
+  -- 0015: MercadoPago autorizó pero el primer cobro no llegó en los 7 días de gracia.
+  elsif v_sub.provider = 'mercadopago' and v_sub.provider_status = 'authorized_unpaid' and v_sub.status in ('active', 'past_due')
+        and v_sub.current_period_end is not null and v_sub.current_period_end < now() then
+    v_code := 'free';
+    v_status := 'active';
   -- 0015: MercadoPago sin cobro confirmado 7 días después del fin del período.
   elsif v_sub.provider = 'mercadopago' and v_sub.status in ('active', 'past_due')
         and v_sub.current_period_end is not null and v_sub.current_period_end < now() - interval '7 days' then
@@ -245,22 +279,35 @@ language sql
 security definer
 set search_path = ''
 as $$
-  with upd as (
-    update public.subscriptions
-       set plan_code = 'free',
-           status = 'active',
-           cancel_at_period_end = false,
-           notes = trim(coalesce(notes, '') || ' ' ||
-             case when cancel_at_period_end then 'Renovación cancelada: pasó a Free el '
-                  else 'Sin cobro confirmado en MercadoPago: pasó a Free el ' end
-             || to_char(now(), 'YYYY-MM-DD') || '.')
+  -- Mismas condiciones que current_plan(). Por falta de cobro (no por
+  -- renovación cancelada) queda provider_status = 'expired': la pantalla Plan
+  -- deja de mostrar la suscripción de MP como vigente.
+  with due as (
+    select store_id,
+           (cancel_at_period_end and current_period_end < now()) as by_cancel
+      from public.subscriptions
      where plan_code <> 'free'
        and status in ('active', 'past_due')
        and current_period_end is not null
        and (
          (cancel_at_period_end and current_period_end < now())
+         or (provider = 'mercadopago' and provider_status = 'authorized_unpaid' and current_period_end < now())
          or (provider = 'mercadopago' and current_period_end < now() - interval '7 days')
        )
+     for update
+  ),
+  upd as (
+    update public.subscriptions s
+       set plan_code = 'free',
+           status = 'active',
+           cancel_at_period_end = false,
+           provider_status = case when due.by_cancel then s.provider_status else 'expired' end,
+           notes = trim(coalesce(s.notes, '') || ' ' ||
+             case when due.by_cancel then 'Renovación cancelada: pasó a Free el '
+                  else 'Sin cobro confirmado en MercadoPago: pasó a Free el ' end
+             || to_char(now(), 'YYYY-MM-DD') || '.')
+      from due
+     where s.store_id = due.store_id
     returning 1
   )
   select count(*)::int from upd;
@@ -328,12 +375,14 @@ $$;
 -- ---------------------------------------------------------------------
 -- Permisos
 -- ---------------------------------------------------------------------
-revoke execute on function public.billing_start_checkout(uuid, text, text) from public, anon;
-grant execute on function public.billing_start_checkout(uuid, text, text) to authenticated;
+-- billing_start_checkout: sólo service_role (antes la llamaba el dueño con su
+-- sesión y podía elegir el plan que quedaba registrado).
+revoke execute on function public.billing_start_checkout(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.billing_start_checkout(uuid, text, text) to service_role;
 
-revoke execute on function public.billing_apply_subscription(uuid, text, text, text, timestamptz, timestamptz, text, boolean, timestamptz)
+revoke execute on function public.billing_apply_subscription(uuid, text, text, text, timestamptz, timestamptz, text, boolean, timestamptz, boolean)
   from public, anon, authenticated;
-grant execute on function public.billing_apply_subscription(uuid, text, text, text, timestamptz, timestamptz, text, boolean, timestamptz)
+grant execute on function public.billing_apply_subscription(uuid, text, text, text, timestamptz, timestamptz, text, boolean, timestamptz, boolean)
   to service_role;
 
 revoke execute on function public.billing_expire_subscriptions() from public, anon, authenticated;

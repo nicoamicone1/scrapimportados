@@ -27,8 +27,10 @@ export interface BillingPanelProps {
 const MP_STATUS: Record<string, string> = {
   pending: "Pendiente (checkout sin terminar)",
   authorized: "Autorizada (cobra cada mes)",
+  authorized_unpaid: "Autorizada, sin primer cobro (7 días de gracia)",
   paused: "Pausada",
   cancelled: "Cancelada",
+  expired: "Vencida: pasó a Free sin cobro",
 };
 
 /** Estado de MercadoPago de la tienda y "Sincronizar con MercadoPago". */
@@ -39,9 +41,10 @@ export function BillingPanel({ storeId, billing, events, mpConfigured }: Billing
   if (!billing) {
     return <p className="px-4 py-3 text-[13px] text-adm-fg-muted">Falta aplicar la migración 0015 (cobro con MercadoPago).</p>;
   }
-  const rows: [string, string][] = [
+  // [etiqueta, valor, es un id (va en mono)]
+  const rows: [string, string, boolean?][] = [
     ["Cobro", billing.provider === "mercadopago" ? "MercadoPago" : billing.provider === "manual" ? "Manual" : "Sin definir"],
-    ["Suscripción de MP", billing.providerRef ?? "—"],
+    ["Suscripción de MP", billing.providerRef ?? "—", Boolean(billing.providerRef)],
     ["Estado en MP", billing.providerStatus ? (MP_STATUS[billing.providerStatus] ?? billing.providerStatus) : "—"],
     ["Plan elegido en MP", billing.providerPlanCode ?? "—"],
     ["Renovación", billing.cancelAtPeriodEnd ? "Cancelada: pasa a Free al terminar el período" : "Automática"],
@@ -52,10 +55,10 @@ export function BillingPanel({ storeId, billing, events, mpConfigured }: Billing
   return (
     <div>
       <dl className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5 px-4 py-3 text-[13px]">
-        {rows.map(([k, v]) => (
+        {rows.map(([k, v, id]) => (
           <div key={k} className="contents">
             <dt className="text-adm-fg-muted">{k}</dt>
-            <dd className="truncate font-mono text-xs leading-5">{v}</dd>
+            <dd className={id ? "truncate font-mono text-xs leading-5" : "truncate"}>{v}</dd>
           </div>
         ))}
       </dl>

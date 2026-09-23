@@ -17,16 +17,31 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  *   del manifest, con su `;`.
  * - La doc pide `data.id` en minúsculas si es alfanumérico; el SDK lo usa tal
  *   cual. Se acepta cualquiera de las dos variantes (ambas exigen el secreto).
- * - No se exige ventana de tiempo sobre `ts`: un reenvío sólo dispara una
- *   relectura del recurso en MP (nunca se confía en el cuerpo) y los eventos
- *   son idempotentes por `event_id`.
+ * - `ts` tiene que estar a menos de 10 minutos de la hora del servidor (en
+ *   segundos, como en la doc; si viene en milisegundos también se acepta).
+ *   Supuesto (verificar en sandbox): MP firma cada entrega, porque el
+ *   manifest lleva el `x-request-id` de ese envío, así que un reintento trae
+ *   un `ts` nuevo. Si alguno llegara con el `ts` viejo se rechaza con 401; el
+ *   estado se recupera con el próximo aviso o con "Sincronizar con
+ *   MercadoPago" en /platform/tiendas/<id>.
  */
+
+/** Diferencia máxima entre `ts` y la hora del servidor. */
+export const SIGNATURE_MAX_SKEW_MS = 10 * 60_000;
+
+/** `ts` de la firma → milisegundos (acepta segundos o milisegundos). */
+export function signatureTsMs(ts: string): number {
+  const n = Number(ts);
+  return ts.length >= 13 ? n : n * 1000;
+}
 
 export interface SignatureInput {
   xSignature: string | null | undefined;
   xRequestId: string | null | undefined;
   dataId: string | null | undefined;
   secret: string;
+  /** Hora de referencia para la ventana de `ts` (tests). */
+  now?: number;
 }
 
 /** `ts=…,v1=…` → partes (claves en minúscula; ignora las desconocidas). */
@@ -67,10 +82,11 @@ function safeEqualHex(a: string, b: string): boolean {
 }
 
 /** ¿La notificación la firmó MercadoPago con nuestro secreto? */
-export function verifyWebhookSignature({ xSignature, xRequestId, dataId, secret }: SignatureInput): boolean {
+export function verifyWebhookSignature({ xSignature, xRequestId, dataId, secret, now = Date.now() }: SignatureInput): boolean {
   if (!secret || !xSignature?.trim()) return false;
   const { ts, v1 } = parseSignatureHeader(xSignature);
-  if (!ts || !v1 || !/^\d+$/.test(ts) || !/^[0-9a-f]{64}$/i.test(v1)) return false;
+  if (!ts || !v1 || !/^\d{1,16}$/.test(ts) || !/^[0-9a-f]{64}$/i.test(v1)) return false;
+  if (!(Math.abs(now - signatureTsMs(ts)) <= SIGNATURE_MAX_SKEW_MS)) return false;
   const ids = new Set([dataId?.trim() ?? "", dataId?.trim().toLowerCase() ?? ""]);
   for (const id of ids) {
     if (safeEqualHex(signManifest(buildManifest(id, xRequestId, ts), secret), v1)) return true;

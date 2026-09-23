@@ -84,9 +84,10 @@ function mpErrorMessage(err: unknown): string | null {
 
 /**
  * "Pagar con MercadoPago": crea la suscripción en MP (preapproval con el
- * `mp_plan_id` del plan, `external_reference` = tienda) y devuelve el
- * `init_point` para redirigir. El plan NO se activa acá: lo activa el
- * webhook cuando MP confirma el cobro.
+ * `mp_plan_id` del plan, `external_reference` = `<tienda>:<plan>`) y devuelve
+ * el `init_point` para redirigir. El plan NO se activa acá: lo activa el
+ * webhook cuando MP confirma. `billing_start_checkout` sólo la puede ejecutar
+ * service_role: se llama con el cliente de service.ts DESPUÉS de `ownerOnly`.
  */
 export async function startMercadoPagoCheckout(input: { plan: string }): Promise<ActionResult<{ url: string }>> {
   return runAction(async () => {
@@ -98,6 +99,8 @@ export async function startMercadoPagoCheckout(input: { plan: string }): Promise
     if (!parsed.success) return fail("Plan inválido.");
     const payerEmail = ctx.user.email?.trim();
     if (!isEmail(payerEmail)) return fail("Tu cuenta no tiene un email válido para MercadoPago.");
+    const db = billingServiceClient();
+    if (!db) return fail("El pago con MercadoPago no está disponible. Pedí el plan por WhatsApp.");
 
     try {
       const res = await startCheckout(
@@ -111,19 +114,22 @@ export async function startMercadoPagoCheckout(input: { plan: string }): Promise
           loadSubscription: async () => {
             const { data, error } = await ctx.supabase
               .from("subscriptions")
-              .select("plan_code, status, provider, provider_status, cancel_at_period_end")
+              .select("plan_code, status, provider, provider_ref, provider_status, cancel_at_period_end")
               .eq("store_id", ctx.store.id)
               .maybeSingle();
             if (error) throw new Error(`subscriptions: ${error.message}`);
             return data;
           },
           recordCheckout: async ({ planCode, preapprovalId }) => {
-            const { error } = await ctx.supabase.rpc("billing_start_checkout", {
+            // Service role: la tienda sale de la sesión (ctx) y el plan, de la tabla plans.
+            const { error } = await db.rpc("billing_start_checkout", {
               p_store_id: ctx.store.id,
               p_plan_code: planCode,
               p_provider_ref: preapprovalId,
             });
-            return error ? error.message : null;
+            if (!error) return null;
+            console.error("[billing] billing_start_checkout:", error.message);
+            return error.code === "P0001" ? error.message : "No pudimos registrar el pago. Probá de nuevo en unos minutos.";
           },
         },
       );
@@ -133,7 +139,11 @@ export async function startMercadoPagoCheckout(input: { plan: string }): Promise
         entity: "subscription",
         entityId: ctx.store.id,
         summary: `Empezó el pago de ${PLAN_NAMES[parsed.data.plan as PlanCode]} con MercadoPago`,
-        diff: { plan: [ctx.plan.code, parsed.data.plan], preapproval: [null, res.preapprovalId] },
+        diff: {
+          plan: [ctx.plan.code, parsed.data.plan],
+          preapproval: [res.replaced?.id ?? null, res.preapprovalId],
+          ...(res.replaced ? { previous_cancelled: [false, res.replaced.cancelled] } : {}),
+        },
       });
       return ok({ url: res.url });
     } catch (err) {

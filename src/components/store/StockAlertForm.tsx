@@ -38,8 +38,10 @@ export function StockAlertForm({ productId, variantId }: { productId: string; va
       return;
     }
     setError(null);
+    // Honeypot: oculto para personas; si un bot lo completa, la action no anota nada.
+    const website = String(new FormData(e.currentTarget).get("website") ?? "");
     startTransition(async () => {
-      const res = await subscribeStockAlert({ productId, variantId, email: value });
+      const res = await subscribeStockAlert({ productId, variantId, email: value, ...(website ? { website } : {}) });
       if (res.ok) setDone(res.data);
       else setError(res.error);
     });
@@ -50,6 +52,12 @@ export function StockAlertForm({ productId, variantId }: { productId: string; va
       <label htmlFor={id} className="block text-sm text-fg-muted">
         ¿Querés que te avisemos cuando vuelva?
       </label>
+      <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label>
+          Sitio web
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
+        </label>
+      </div>
       <div className="mt-2 flex gap-2">
         <input
           id={id}

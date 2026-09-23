@@ -302,8 +302,9 @@ export async function saveProduct(input: unknown): Promise<ActionResult<{ produc
     });
 
     revalidateProducts(storeId, [slug, before?.slug], true);
-    // Avisos de stock: stock subido, seguimiento apagado o venta sin stock activada.
-    afterStockIncrease(ctx, [...keepIds]);
+    // Avisos de stock: stock subido, seguimiento apagado, venta sin stock activada o
+    // variantes regeneradas (las nuevas no tienen avisos propios: se pasa el producto).
+    afterStockIncrease(ctx, [...keepIds], [productId]);
     const product = await getAdminProduct(productId);
     if (!product) return fail("No se pudo leer el producto guardado.");
     return ok({ product });

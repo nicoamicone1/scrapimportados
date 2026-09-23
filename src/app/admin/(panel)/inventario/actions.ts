@@ -67,25 +67,31 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
     if (!variants?.length) return fail("Las variantes ya no existen.");
 
     let count = 0;
+    // Variantes a las que YA se les subió stock: si una tanda falla, las anteriores igual avisan.
     const increased: string[] = [];
-    for (let i = 0; i < variants.length; i += 10) {
-      const chunk = variants.slice(i, i + 10);
-      const results = await Promise.all(
-        chunk.map((v) => {
-          const delta = d.mode === "set" ? d.value - v.stock : d.value;
-          if (!delta) return Promise.resolve({ error: null });
-          count++;
-          if (delta > 0) increased.push(v.id);
-          return ctx.supabase.rpc("adjust_stock", {
-            p_variant_id: v.id,
-            p_delta: delta,
-            p_reason: d.reason,
-            p_note: d.note ?? undefined,
-          });
-        }),
-      );
-      const failed = results.find((r) => r.error);
-      if (failed?.error) throw new Error(failed.error.message);
+    try {
+      for (let i = 0; i < variants.length; i += 10) {
+        const chunk = variants.slice(i, i + 10);
+        const results = await Promise.all(
+          chunk.map(async (v) => {
+            const delta = d.mode === "set" ? d.value - v.stock : d.value;
+            if (!delta) return { error: null };
+            count++;
+            const res = await ctx.supabase.rpc("adjust_stock", {
+              p_variant_id: v.id,
+              p_delta: delta,
+              p_reason: d.reason,
+              p_note: d.note ?? undefined,
+            });
+            if (!res.error && delta > 0) increased.push(v.id);
+            return res;
+          }),
+        );
+        const failed = results.find((r) => r.error);
+        if (failed?.error) throw new Error(failed.error.message);
+      }
+    } finally {
+      afterStockIncrease(ctx, increased);
     }
 
     await logAudit(ctx, {
@@ -98,7 +104,6 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
       ctx.store.id,
       variants.map((v) => v.products?.slug),
     );
-    afterStockIncrease(ctx, increased);
     refresh();
     return ok({ count });
   });

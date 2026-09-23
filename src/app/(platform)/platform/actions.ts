@@ -7,6 +7,8 @@ import { z } from "zod";
 
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { ADMIN_STORE_COOKIE, ADMIN_STORE_COOKIE_OPTIONS, requirePlatformAdmin } from "@/lib/auth";
+import { billingEnabled, cancelPreapproval, MercadoPagoError } from "@/lib/billing/mercadopago";
+import { mercadoPagoDebitActive } from "@/lib/billing/state";
 import { storeTag } from "@/lib/cache-tags";
 import { PLANS_TAG } from "@/lib/plans/catalog";
 import { FEATURE_KEYS, LIMIT_KEYS } from "@/lib/plans";
@@ -39,9 +41,17 @@ const planSchema = z
     plan: z.string().min(1),
     status: z.enum(["trialing", "active", "past_due", "cancelled"]),
     trialEndsAt: z.string().optional().default(""),
+    /** El superadmin confirmó "Se cancelará el débito automático en MercadoPago". */
+    cancelMercadoPago: z.boolean().optional().default(false),
   })
   .refine((v) => v.status !== "trialing" || Boolean(v.trialEndsAt), { path: ["trialEndsAt"], message: "Indicá hasta cuándo dura la prueba." });
 
+/**
+ * Cambio manual de plan. Cualquier cambio que no sea extender la prueba deja
+ * la tienda en `provider = 'manual'` (los avisos de MP ya no la tocan): si
+ * tenía un débito automático vigente en MercadoPago, primero se cancela allá
+ * (con confirmación en el formulario), para que no siga cobrando.
+ */
 export async function setStorePlan(input: z.input<typeof planSchema>): Promise<ActionResult> {
   return runAction(async () => {
     const { supabase } = await requirePlatformAdmin();
@@ -49,6 +59,33 @@ export async function setStorePlan(input: z.input<typeof planSchema>): Promise<A
     if (!parsed.success) return zodFail(parsed.error);
     const v = parsed.data;
     const trial = v.status === "trialing" ? new Date(`${v.trialEndsAt}T23:59:59-03:00`).toISOString() : undefined;
+
+    let mpNote = "";
+    if (v.status !== "trialing") {
+      // Sin la migración 0015 no hay columnas de MP: no hay nada que cancelar.
+      const { data: sub, error: subError } = await supabase
+        .from("subscriptions")
+        .select("provider, provider_ref, provider_status")
+        .eq("store_id", v.storeId)
+        .maybeSingle();
+      if (!subError && sub && mercadoPagoDebitActive(sub) && sub.provider_ref) {
+        if (!v.cancelMercadoPago) return fail("La tienda paga con MercadoPago: confirmá que se cancela el débito automático.");
+        if (!billingEnabled()) {
+          return fail("Falta MP_ACCESS_TOKEN: no podemos cancelar el débito automático. Cancelalo en MercadoPago y después guardá el plan.");
+        }
+        try {
+          await cancelPreapproval(sub.provider_ref);
+          mpNote = ` · canceló el débito automático ${sub.provider_ref} en MercadoPago`;
+        } catch (err) {
+          if (!(err instanceof MercadoPagoError)) throw err;
+          console.error("[billing]", err.message);
+          // 404: MP ya no la tiene; se sigue. Cualquier otra falla: no se toca el plan.
+          if (err.status !== 404) return fail("MercadoPago no canceló el débito automático. Probá de nuevo en unos minutos; el plan no cambió.");
+          mpNote = ` · MercadoPago no encontró el débito automático ${sub.provider_ref}`;
+        }
+      }
+    }
+
     const { error } = await supabase.rpc("platform_set_plan", {
       p_store_id: v.storeId,
       p_plan_code: v.plan,
@@ -56,7 +93,7 @@ export async function setStorePlan(input: z.input<typeof planSchema>): Promise<A
       p_trial_ends_at: trial,
     });
     if (error) return fail(error.message);
-    await auditStore(v.storeId, "platform.plan", `Superadmin: plan ${v.plan} (${v.status})`);
+    await auditStore(v.storeId, "platform.plan", `Superadmin: plan ${v.plan} (${v.status})${mpNote}`);
     revalidatePath("/platform");
     return ok();
   });

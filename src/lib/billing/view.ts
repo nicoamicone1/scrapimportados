@@ -3,6 +3,7 @@ import "server-only";
 import type { ServerSupabase } from "@/lib/supabase/server";
 
 import { billingEnabled } from "./mercadopago";
+import { AUTHORIZED_UNPAID } from "./state";
 
 /*
  * Lo que necesita la pantalla Plan para ofrecer MercadoPago. Tolerante: si la
@@ -27,8 +28,14 @@ export interface BillingView {
   state: BillingState;
 }
 
-/** Estado de MP para mostrar (puro). */
+/**
+ * Estado de MP para mostrar (puro). Una tienda que ya volvió a Free (renovación
+ * vencida, sin cobro) no muestra la suscripción de MP como vigente, salvo un
+ * checkout pendiente. "active" incluye la gracia sin primer cobro
+ * (`authorized_unpaid`): el débito automático está autorizado igual.
+ */
 export function billingState(sub: {
+  plan_code: string;
   provider: string | null;
   provider_status: string | null;
   status: string;
@@ -36,9 +43,10 @@ export function billingState(sub: {
 }): BillingState {
   if (sub.provider !== "mercadopago" || !sub.provider_status) return "none";
   if (sub.provider_status === "pending") return "pending";
+  if (sub.plan_code === "free") return "none";
   if (sub.status === "past_due") return "past_due";
   if (sub.status === "active" && sub.cancel_at_period_end) return "cancelling";
-  if (sub.status === "active" && sub.provider_status === "authorized") return "active";
+  if (sub.status === "active" && (sub.provider_status === "authorized" || sub.provider_status === AUTHORIZED_UNPAID)) return "active";
   if (sub.status === "cancelled") return "cancelled";
   return "none";
 }
@@ -49,7 +57,7 @@ export async function loadBillingView(supabase: ServerSupabase, storeId: string)
       supabase.from("plans").select("code, mp_plan_id").eq("is_public", true),
       supabase
         .from("subscriptions")
-        .select("status, provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
+        .select("plan_code, status, provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
         .eq("store_id", storeId)
         .maybeSingle(),
     ]);

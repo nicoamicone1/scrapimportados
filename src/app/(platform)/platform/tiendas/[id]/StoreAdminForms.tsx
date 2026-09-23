@@ -17,6 +17,8 @@ export interface StoreAdminFormsProps {
   storeName: string;
   plans: { code: string; name: string }[];
   current: { plan: string; status: string; trialEndsAt: string; storeStatus: string };
+  /** La tienda tiene un débito automático de MercadoPago que puede cobrar: guardar un plan lo cancela. */
+  mercadoPagoDebit: boolean;
 }
 
 const SUB_OPTIONS = [
@@ -26,12 +28,13 @@ const SUB_OPTIONS = [
   { value: "cancelled", label: "Cancelada (cuenta como Free)" },
 ];
 
-export function StoreAdminForms({ storeId, storeName, plans, current }: StoreAdminFormsProps) {
+export function StoreAdminForms({ storeId, storeName, plans, current, mercadoPagoDebit }: StoreAdminFormsProps) {
   const router = useRouter();
   const [plan, setPlan] = useState(current.plan);
   const [status, setStatus] = useState(current.status);
   const [trial, setTrial] = useState(current.trialEndsAt);
   const [confirm, setConfirm] = useState<"suspended" | "deleted" | "active" | null>(null);
+  const [confirmMp, setConfirmMp] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const run = (fn: () => Promise<ActionResult>, success: string) =>
@@ -50,7 +53,11 @@ export function StoreAdminForms({ storeId, storeName, plans, current }: StoreAdm
       <Card>
         <CardHeader
           title="Plan"
-          description="Cambio manual. Si la tienda paga con MercadoPago, guardar un plan (salvo extender la prueba) la pasa a manual y los avisos de MP dejan de tocarla: cancelá antes la suscripción en MercadoPago."
+          description={
+            mercadoPagoDebit
+              ? "Cambio manual. La tienda paga con MercadoPago: guardar un plan (salvo extender la prueba) cancela el débito automático en MercadoPago y la pasa a manual."
+              : "Cambio manual. Guardar un plan (salvo extender la prueba) deja la tienda en cobro manual: los avisos de MercadoPago dejan de tocarla."
+          }
         />
         <CardBody className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -70,7 +77,10 @@ export function StoreAdminForms({ storeId, storeName, plans, current }: StoreAdm
             <Button
               variant="primary"
               loading={pending}
-              onClick={() => run(() => setStorePlan({ storeId, plan, status: status as "active", trialEndsAt: trial }), "Plan actualizado.")}
+              onClick={() => {
+                if (mercadoPagoDebit && status !== "trialing") setConfirmMp(true);
+                else run(() => setStorePlan({ storeId, plan, status: status as "active", trialEndsAt: trial }), "Plan actualizado.");
+              }}
             >
               Guardar plan
             </Button>
@@ -103,6 +113,26 @@ export function StoreAdminForms({ storeId, storeName, plans, current }: StoreAdm
           ) : null}
         </CardBody>
       </Card>
+
+      <ConfirmDialog
+        open={confirmMp}
+        onOpenChange={setConfirmMp}
+        title={`¿Guardar el plan de ${storeName}?`}
+        description="Se cancelará el débito automático en MercadoPago. La tienda queda con el plan que elegiste, en cobro manual."
+        confirmLabel="Cancelar débito y guardar"
+        cancelLabel="Volver"
+        destructive
+        onConfirm={async () => {
+          const res = await setStorePlan({ storeId, plan, status: status as "active", trialEndsAt: trial, cancelMercadoPago: true });
+          if (!res.ok) {
+            toast.error(res.error);
+            return;
+          }
+          toast.success("Plan actualizado y débito automático cancelado.");
+          setConfirmMp(false);
+          router.refresh();
+        }}
+      />
 
       <ConfirmDialog
         open={confirm !== null}

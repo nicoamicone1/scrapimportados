@@ -4,7 +4,7 @@ import { mpAccessToken, mpWebhookSecret } from "@/lib/billing/mercadopago";
 import { sendBillingEmail } from "@/lib/billing/notify";
 import { billingServiceClient } from "@/lib/billing/service";
 import { verifyWebhookSignature } from "@/lib/billing/signature";
-import { describeResult, processNotification, supabaseBillingRepo } from "@/lib/billing/sync";
+import { describeResult, isRetryableBillingError, processNotification, supabaseBillingRepo } from "@/lib/billing/sync";
 import { isSubscriptionEvent, type MpNotification } from "@/lib/billing/types";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -17,11 +17,14 @@ const ID = /^[A-Za-z0-9_-]{1,80}$/;
  * Webhook de MercadoPago Suscripciones (docs/BILLING.md).
  *
  * - Sin `MP_ACCESS_TOKEN` / `MP_WEBHOOK_SECRET` / `SUPABASE_SERVICE_ROLE_KEY` → 503.
- * - Firma `x-signature` inválida → 401 (src/lib/billing/signature.ts).
+ * - Firma `x-signature` inválida o con `ts` a más de 10 minutos → 401
+ *   (src/lib/billing/signature.ts).
  * - Firma válida → 200, aunque el aviso no nos interese (pagos sueltos,
- *   `subscription_preapproval_plan`, etc.). Excepción: si MP o la base fallan
- *   al procesar un aviso de suscripción → 500, para que MP lo reintente (el
- *   evento queda en `billing_events` sin `processed_at`).
+ *   `subscription_preapproval_plan`, etc.) o no se pueda aplicar (4xx de MP,
+ *   regla de negocio de la base): queda en `billing_events` como ignorado con
+ *   el motivo. Excepción: falla transitoria (MP caído o con 429, la base sin
+ *   responder) → 500, para que MP lo reintente (el evento queda sin
+ *   `processed_at`). Ver `isRetryableBillingError`.
  * - `subscription_preapproval` / `subscription_authorized_payment`: se relee el
  *   recurso en MP y se aplica (src/lib/billing/sync.ts). Idempotente por el
  *   `id` de la notificación.
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Los errores de MercadoPagoError ya vienen sin token.
     console.error(`[billing] ${type} ${dataId}:`, err instanceof Error ? err.message : err);
+    if (!isRetryableBillingError(err)) return NextResponse.json({ ok: true, outcome: "ignored" });
     return NextResponse.json({ error: "No se pudo procesar el aviso" }, { status: 500 });
   }
 }

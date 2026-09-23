@@ -10,8 +10,11 @@
 --    puede volver a anotarse si se agota de nuevo.
 -- 2. create_stock_alert(): alta PÚBLICA desde la ficha de producto (security
 --    definer). Valida tienda activa, producto publicado y que de verdad esté
---    sin stock. Cupos: 5 avisos por email y tienda por hora, 200 por tienda
---    por día. Devuelve {ok, duplicate}.
+--    sin stock. Cupos: 5 avisos por email y tienda por hora, 20 por IP (hash
+--    que calcula la server action, `p_ip_hash`) y tienda por día, 200 por
+--    tienda por día. Los cupos se cuentan con un advisory lock por tienda
+--    (dos altas simultáneas no pasan las dos con el último lugar).
+--    Devuelve {ok, duplicate}.
 -- 3. RLS: el equipo de la tienda (is_store_admin) lee, marca como avisado y
 --    borra. Nadie inserta directo: sólo por el RPC.
 --
@@ -33,8 +36,12 @@ create table if not exists public.stock_alerts (
   variant_id uuid references public.product_variants (id) on delete cascade,
   email text not null check (char_length(email) between 3 and 254 and email = lower(email)),
   created_at timestamptz not null default now(),
-  notified_at timestamptz
+  notified_at timestamptz,
+  -- sha256 truncado de la IP + día (lo calcula la server action); sólo para el cupo.
+  ip_hash text check (ip_hash is null or ip_hash ~ '^[0-9a-f]{16,64}$')
 );
+alter table public.stock_alerts add column if not exists ip_hash text
+  check (ip_hash is null or ip_hash ~ '^[0-9a-f]{16,64}$');
 
 -- Un solo aviso PENDIENTE por email y variante / por email y producto.
 create unique index if not exists stock_alerts_pending_variant_uniq
@@ -46,6 +53,9 @@ create unique index if not exists stock_alerts_pending_product_uniq
 create index if not exists stock_alerts_store_created_idx on public.stock_alerts (store_id, created_at desc);
 -- Cupo por email.
 create index if not exists stock_alerts_store_email_created_idx on public.stock_alerts (store_id, email, created_at desc);
+-- Cupo por IP.
+create index if not exists stock_alerts_store_ip_created_idx
+  on public.stock_alerts (store_id, ip_hash, created_at desc) where ip_hash is not null;
 -- Pendientes por producto (la detección busca por variante y por producto).
 create index if not exists stock_alerts_pending_product_idx
   on public.stock_alerts (product_id) where notified_at is null;
@@ -73,20 +83,25 @@ create policy "stock_alerts: admin borra" on public.stock_alerts
   using (store_id = any ((select public.admin_store_ids())::uuid[]) or (select public.is_platform_admin()));
 
 -- Los visitantes no tocan la tabla (el alta es por RPC). El equipo sólo puede
--- cambiar `notified_at` (marcar / desmarcar el aviso).
+-- cambiar `notified_at` (marcar / desmarcar el aviso) y no ve `ip_hash`.
 revoke all on public.stock_alerts from anon;
-revoke insert, update, truncate, references, trigger on public.stock_alerts from authenticated;
-grant select, delete on public.stock_alerts to authenticated;
+revoke select, insert, update, truncate, references, trigger on public.stock_alerts from authenticated;
+grant select (id, store_id, product_id, variant_id, email, created_at, notified_at) on public.stock_alerts to authenticated;
+grant delete on public.stock_alerts to authenticated;
 grant update (notified_at) on public.stock_alerts to authenticated;
 
 -- ---------------------------------------------------------------------
 -- create_stock_alert (público)
 -- ---------------------------------------------------------------------
+-- La firma cambió (p_ip_hash): se borra la anterior por si se aplicó un borrador.
+drop function if exists public.create_stock_alert(uuid, uuid, text, uuid);
+
 create or replace function public.create_stock_alert(
   p_store_id uuid,
   p_variant_id uuid,
   p_email text,
-  p_product_id uuid default null
+  p_product_id uuid default null,
+  p_ip_hash text default null
 )
 returns jsonb
 language plpgsql
@@ -99,7 +114,12 @@ declare
   v_available boolean;
   v_recent int;
   v_store_day int;
+  v_ip_day int;
+  v_ip text := nullif(lower(trim(coalesce(p_ip_hash, ''))), '');
 begin
+  if v_ip is not null and v_ip !~ '^[0-9a-f]{16,64}$' then
+    v_ip := null;
+  end if;
   if char_length(v_email) > 254 or v_email !~ '^[^@\s<>",;]+@[^@\s<>",;]+\.[^@\s<>",;]+$' then
     raise exception 'Revisá el email.';
   end if;
@@ -146,10 +166,21 @@ begin
     return jsonb_build_object('ok', true, 'duplicate', true);
   end if;
 
+  -- Cupos atómicos por tienda: las altas de una misma tienda se cuentan de a una.
+  perform pg_advisory_xact_lock(hashtext('stock_alerts:' || p_store_id::text));
+
   select count(*) into v_recent from public.stock_alerts
    where store_id = p_store_id and email = v_email and created_at > now() - interval '1 hour';
   if v_recent >= 5 then
     raise exception 'Ya pediste varios avisos con este email. Probá de nuevo en un rato.';
+  end if;
+
+  if v_ip is not null then
+    select count(*) into v_ip_day from public.stock_alerts
+     where store_id = p_store_id and ip_hash = v_ip and created_at > now() - interval '1 day';
+    if v_ip_day >= 20 then
+      raise exception 'Ya pediste varios avisos hoy. Probá de nuevo mañana.';
+    end if;
   end if;
 
   select count(*) into v_store_day from public.stock_alerts
@@ -159,8 +190,8 @@ begin
   end if;
 
   begin
-    insert into public.stock_alerts (store_id, product_id, variant_id, email)
-    values (p_store_id, v_product, p_variant_id, v_email);
+    insert into public.stock_alerts (store_id, product_id, variant_id, email, ip_hash)
+    values (p_store_id, v_product, p_variant_id, v_email, v_ip);
   exception
     when unique_violation then
       return jsonb_build_object('ok', true, 'duplicate', true);
@@ -170,8 +201,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.create_stock_alert(uuid, uuid, text, uuid) from public;
-grant execute on function public.create_stock_alert(uuid, uuid, text, uuid) to anon, authenticated;
+revoke execute on function public.create_stock_alert(uuid, uuid, text, uuid, text) from public;
+grant execute on function public.create_stock_alert(uuid, uuid, text, uuid, text) to anon, authenticated;
 
 -- Versión del esquema que espera el código (src/lib/version.ts → SCHEMA_VERSION).
 -- Sólo sube: si ya se aplicó una migración posterior (8), no la pisa.

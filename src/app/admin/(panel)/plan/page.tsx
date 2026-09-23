@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/dates";
 import { LIMITS, trialDaysLeft, type LimitKey } from "@/lib/plans";
 import { listPublicPlans, planPriceLabel } from "@/lib/plans/catalog";
 import { countUsage } from "@/lib/plans/server";
+import { AUTHORIZED_UNPAID } from "@/lib/billing/state";
 import { loadBillingView, type BillingView } from "@/lib/billing/view";
 
 import { CancelRenewalButton } from "./CancelRenewalButton";
@@ -60,8 +61,10 @@ function ReturnNotice({ mp, billing, planName }: { mp: string | undefined; billi
   }
   const text =
     billing?.state === "active"
-      ? `Listo: MercadoPago confirmó el cobro y tu plan ${planName} está activo. Te mandamos el comprobante por mail.`
-      : "Volviste de MercadoPago. Cuando confirme el cobro (suele tardar unos minutos) activamos el plan y te avisamos por mail; no hace falta que pagues de nuevo.";
+      ? billing.providerStatus === AUTHORIZED_UNPAID
+        ? `Listo: MercadoPago autorizó el débito automático y tu plan ${planName} está activo. El primer cobro se acredita en los próximos días; te avisamos por mail.`
+        : `Listo: MercadoPago confirmó el cobro y tu plan ${planName} está activo. Te avisamos por mail.`
+      : "Volviste de MercadoPago. Cuando confirme el pago (suele tardar unos minutos) activamos el plan y te avisamos por mail; no hace falta que pagues de nuevo.";
   return (
     <p role="status" className="mb-4 rounded-adm bg-adm-accent-soft px-3 py-2 text-[13px]">
       {text}
@@ -91,6 +94,10 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
   const periodEnd = billing?.currentPeriodEnd ?? plan.currentPeriodEnd;
   const pendingPlan = billing?.providerPlanCode ? (plans.find((p) => p.code === billing.providerPlanCode)?.name ?? null) : null;
   const mp = typeof query.mp === "string" ? query.mp : undefined;
+  const awaitingFirstCharge = mpState === "active" && billing?.providerStatus === AUTHORIZED_UNPAID;
+  // Se puede pagar el MISMO plan en prueba (para quedárselo) o con la renovación cancelada (para seguir).
+  const canRenewSamePlan = plan.status === "trialing" || mpState === "cancelling";
+  const payerEmail = ctx.user.email ?? null;
 
   return (
     <>
@@ -126,7 +133,15 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
             ) : plan.status === "past_due" ? (
               <p className="rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">Tenemos un pago pendiente. Escribinos para regularizarlo.</p>
             ) : null}
-            {mpState === "active" ? (
+            {awaitingFirstCharge ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-adm-fg-muted">
+                  Tu plan está activo: MercadoPago autorizó el débito automático y el primer cobro se acredita en los próximos días.
+                  {periodEnd ? ` Si no entra antes del ${formatDate(periodEnd)}, la tienda vuelve a Free.` : ""}
+                </p>
+                {isOwner ? <CancelRenewalButton planName={plan.name} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
+              </div>
+            ) : mpState === "active" ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-adm-fg-muted">
                   Se cobra con MercadoPago{periodEnd ? `. Próximo cobro: ${formatDate(periodEnd)}` : ""}.
@@ -137,7 +152,7 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
               <p className="rounded-adm bg-adm-accent-2-soft px-3 py-2 text-[13px]">
                 Cancelaste la renovación: seguís con {plan.name}
                 {periodEnd ? ` hasta el ${formatDate(periodEnd)}` : " hasta el final del período pago"}. Después la tienda pasa a Free sin borrar
-                nada.
+                nada. Si cambiaste de idea, volvé a suscribirte abajo: MercadoPago cobra desde que lo autorizás.
               </p>
             ) : mpState === "pending" ? (
               <p className="rounded-adm bg-adm-surface-2 px-3 py-2 text-[13px]">
@@ -168,7 +183,7 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
       <h2 className="mt-8 mb-3 text-[15px] font-semibold">Cambiar de plan</h2>
       <p className="mb-4 max-w-2xl text-[13px] text-adm-fg-muted">
         {anyMp
-          ? "Pagá con MercadoPago (tarjeta o dinero en cuenta, se renueva solo cada mes y lo cancelás cuando quieras) y el plan se activa apenas se confirma el cobro. Si preferís, pedilo por WhatsApp."
+          ? `Pagá con MercadoPago (tarjeta o dinero en cuenta, se renueva solo cada mes y lo cancelás cuando quieras) y el plan se activa apenas MercadoPago lo confirma. Entrá a MercadoPago con la cuenta de ${payerEmail ?? "tu email de Ecommy"}: el débito automático queda a nombre de ese email. Si preferís, pedilo por WhatsApp.`
           : mpLocked && billing?.enabled
             ? "Tu plan se cobra con MercadoPago. Para pasar a otro, cancelá la renovación arriba y después pagá el nuevo, o pedilo por WhatsApp."
             : hasWhatsApp
@@ -181,17 +196,18 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
         highlight={plan.code === "pro" ? undefined : "pro"}
         renderCta={(p) => {
           const mpHere = canPayWithMp(p.code);
-          if (p.code === plan.code && !(plan.status === "trialing" && mpHere)) {
+          if (p.code === plan.code && !(canRenewSamePlan && mpHere)) {
             return (
               <p className="text-center text-[13px] text-adm-fg-muted">{plan.status === "trialing" ? "Estás probando este plan" : "Es tu plan actual"}</p>
             );
           }
           if (p.code === plan.code) {
-            // En prueba: pagar el mismo plan para quedarse con él.
+            // En prueba: pagar el mismo plan para quedárselo. Renovación cancelada: volver a suscribirse.
+            const trial = plan.status === "trialing";
             return (
               <div className="space-y-2">
-                <MercadoPagoButton plan={p.code} primary />
-                <p className="text-center text-xs text-adm-fg-muted">Estás probando este plan</p>
+                <MercadoPagoButton plan={p.code} primary label={trial ? undefined : "Volver a suscribirme"} />
+                <p className="text-center text-xs text-adm-fg-muted">{trial ? "Estás probando este plan" : "Cancelaste la renovación de este plan"}</p>
               </div>
             );
           }

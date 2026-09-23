@@ -7,8 +7,11 @@ import { Button } from "@/components/ui/Button";
 
 import { startMercadoPagoCheckout } from "./actions";
 
-/** "Pagar con MercadoPago": crea la suscripción y lleva al checkout de MP (misma pestaña). */
-export function MercadoPagoButton({ plan, primary }: { plan: string; primary?: boolean }) {
+/**
+ * "Pagar con MercadoPago": crea la suscripción y lleva al checkout de MP (misma
+ * pestaña). El pago se hace con la cuenta de MP del email del dueño.
+ */
+export function MercadoPagoButton({ plan, primary, label = "Pagar con MercadoPago" }: { plan: string; primary?: boolean; label?: string }) {
   const [pending, startTransition] = useTransition();
   return (
     <Button
@@ -27,7 +30,7 @@ export function MercadoPagoButton({ plan, primary }: { plan: string; primary?: b
         })
       }
     >
-      Pagar con MercadoPago
+      {label}
     </Button>
   );
 }

@@ -10,10 +10,14 @@ import { z } from "zod";
  */
 
 /** Cupos del RPC `create_stock_alert` (espejo de 0016, para textos y tests). */
-export const STOCK_ALERT_LIMITS = { perEmailPerHour: 5, perStorePerDay: 200 } as const;
+export const STOCK_ALERT_LIMITS = { perEmailPerHour: 5, perIpPerDay: 20, perStorePerDay: 200 } as const;
 
-/** Mails por ajuste de stock: el resto queda pendiente para el próximo ajuste. */
-export const MAX_ALERT_EMAILS_PER_RUN = 100;
+/**
+ * Mails por reposición (corren en serie dentro de `after()`, ~0,5 s cada uno).
+ * Los que no entran quedan pendientes y salen en la próxima reposición de ese
+ * producto (o se mandan a mano desde la bandeja).
+ */
+export const MAX_ALERT_EMAILS_PER_RUN = 20;
 
 export const STOCK_ALERT_EMAIL_ERROR = "Revisá el email.";
 export const STOCK_ALERT_UNAVAILABLE = "No pudimos anotarte. Probá de nuevo en un rato.";
@@ -24,6 +28,8 @@ export const stockAlertInputSchema = z
   .object({
     productId: uuid,
     variantId: uuid.nullable(),
+    /** Honeypot: campo oculto de la ficha. Si viene con algo, es un bot. */
+    website: z.string().max(500).optional(),
     email: z
       .string()
       .trim()
@@ -165,6 +171,52 @@ export function pickAlertsToNotify(alerts: PendingAlert[], variants: AlertVarian
       alertIds: g.alertIds,
       variants: [...g.variants].sort((a, b) => a.position - b.position),
     }));
+}
+
+// ---------------------------------------------------------------------------
+// Envío: reclamar y mandar de a uno
+// ---------------------------------------------------------------------------
+
+export interface DeliverDeps {
+  /** Marca `notified_at` sólo en los que siguen pendientes; devuelve los que reclamó ESTE proceso. */
+  claim(alertIds: string[]): Promise<string[]>;
+  /** Manda el mail; true si el proveedor lo aceptó. */
+  send(notice: AlertNotice): Promise<boolean>;
+  /** Vuelve a dejar pendientes los avisos de un mail que no salió. */
+  release(alertIds: string[]): Promise<void>;
+}
+
+/**
+ * Por cada mail: reclama sus avisos (update condicional), lo manda y, si no
+ * salió, los libera. De a uno: si el proceso se corta a mitad de la tanda
+ * (límite de `after()`), lo que no se mandó sigue pendiente en vez de quedar
+ * marcado como avisado sin mail. Un error al mandar o liberar no frena el resto.
+ */
+export async function deliverNotices(notices: AlertNotice[], deps: DeliverDeps): Promise<{ sent: number; failed: number; skipped: number }> {
+  let sent = 0;
+  let failed = 0;
+  let skipped = 0;
+  for (const notice of notices) {
+    const claimed = await deps.claim(notice.alertIds);
+    if (!claimed.length) {
+      skipped++;
+      continue;
+    }
+    const mine = { ...notice, alertIds: notice.alertIds.filter((id) => claimed.includes(id)) };
+    let ok = false;
+    try {
+      ok = await deps.send(mine);
+    } catch {
+      ok = false;
+    }
+    if (ok) {
+      sent++;
+      continue;
+    }
+    failed++;
+    await deps.release(mine.alertIds).catch(() => undefined);
+  }
+  return { sent, failed, skipped };
 }
 
 /** "Talle M · Negro" o null para la variante única ("Default"). */

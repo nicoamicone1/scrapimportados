@@ -12,6 +12,7 @@ import { storeUrl } from "@/lib/tenant/urls";
 import { parseTheme } from "@/lib/theme";
 
 import {
+  deliverNotices,
   isMissingSchema,
   MAX_ALERT_EMAILS_PER_RUN,
   pickAlertsToNotify,
@@ -24,19 +25,27 @@ import {
 /*
  * "Avisame cuando haya stock" del lado del admin (migración 0016).
  *
- * `afterStockIncrease(ctx, variantIds)` es el ÚNICO punto de disparo: lo
- * llaman las actions del panel que pueden dejar una variante con stock
- * (ajuste manual y masivo en Inventario, ficha y edición rápida en Productos,
- * cancelación de pedidos). Después de responder (`after()`):
+ * `afterStockIncrease(ctx, variantIds, productIds?)` es el ÚNICO punto de
+ * disparo: lo llaman las actions del panel que pueden dejar una variante con
+ * stock (ajuste manual y masivo en Inventario, ficha y edición rápida en
+ * Productos, cancelación de pedidos). Acepta ids de variante y/o de producto
+ * (la ficha pasa el producto: si regeneró variantes, las nuevas no tienen
+ * avisos propios pero sí los del producto). Después de responder (`after()`):
  *   1. lee los avisos pendientes de esos productos y el estado actual de
  *      sus variantes;
- *   2. decide a quién avisar (`pickAlertsToNotify`, puro y testeado);
- *   3. marca `notified_at` con un update condicional (`notified_at is null`):
- *      si dos ajustes corren a la vez, cada aviso lo reclama uno solo;
- *   4. manda los mails desde `storeFrom(tienda)`; si Resend rechaza uno, lo
- *      vuelve a dejar pendiente.
+ *   2. decide a quién avisar (`pickAlertsToNotify`, puro y testeado), como
+ *      mucho MAX_ALERT_EMAILS_PER_RUN mails; el resto sale en la próxima
+ *      reposición;
+ *   3. por cada mail (`deliverNotices`): marca `notified_at` con un update
+ *      condicional (`notified_at is null`: si dos ajustes corren a la vez,
+ *      cada aviso lo reclama uno solo), lo manda desde `storeFrom(tienda)` y,
+ *      si Resend lo rechaza, lo vuelve a dejar pendiente.
  * Corre como el admin logueado (RLS de 0016). Sin `RESEND_API_KEY` no hace
  * nada (los avisos quedan pendientes); sin la migración, tampoco.
+ *
+ * NO disparan avisos: el vencimiento automático de pedidos impagos del cron
+ * (`expire_unpaid_orders`, devuelve stock en SQL) ni los cambios hechos
+ * directo en la base. Esos avisos salen en la próxima reposición desde el panel.
  */
 
 type Ctx = Pick<AdminContext, "supabase" | "store">;
@@ -68,14 +77,20 @@ function schedule(task: () => Promise<void>): void {
  * Después de subir (o poder haber subido) stock: avisa a quienes lo estaban
  * esperando. No lanza, no demora la respuesta y no hace nada si no hay avisos.
  */
-export function afterStockIncrease(ctx: Ctx, variantIds: readonly (string | null | undefined)[]): void {
-  const ids = [...new Set(variantIds.filter((id): id is string => Boolean(id)))];
-  if (!ids.length) return;
+export function afterStockIncrease(
+  ctx: Ctx,
+  variantIds: readonly (string | null | undefined)[],
+  productIds: readonly (string | null | undefined)[] = [],
+): void {
+  const clean = (list: readonly (string | null | undefined)[]) => [...new Set(list.filter((id): id is string => Boolean(id)))];
+  const variants = clean(variantIds);
+  const products = clean(productIds);
+  if (!variants.length && !products.length) return;
   if (!emailEnabled()) {
     warnEmailDisabled();
     return;
   }
-  schedule(() => notifyBackInStock(ctx, ids));
+  schedule(() => notifyBackInStock(ctx, variants, products));
 }
 
 interface VariantRow {
@@ -109,17 +124,21 @@ function toAlertVariant(v: VariantRow): AlertVariant | null {
   };
 }
 
-async function notifyBackInStock(ctx: Ctx, variantIds: string[]): Promise<void> {
+async function notifyBackInStock(ctx: Ctx, variantIds: string[], directProductIds: string[]): Promise<void> {
   const { supabase, store } = ctx;
 
-  // Productos de las variantes tocadas.
-  const { data: touched, error: touchedError } = await supabase
-    .from("product_variants")
-    .select("product_id")
-    .eq("store_id", store.id)
-    .in("id", variantIds);
-  if (touchedError) throw new Error(touchedError.message);
-  const productIds = [...new Set((touched ?? []).map((v) => v.product_id))];
+  // Productos de las variantes tocadas (más los que llegaron directo).
+  let touched: { product_id: string }[] = [];
+  if (variantIds.length) {
+    const { data, error: touchedError } = await supabase
+      .from("product_variants")
+      .select("product_id")
+      .eq("store_id", store.id)
+      .in("id", variantIds);
+    if (touchedError) throw new Error(touchedError.message);
+    touched = data ?? [];
+  }
+  const productIds = [...new Set([...directProductIds, ...touched.map((v) => v.product_id)])];
   if (!productIds.length) return;
 
   // Avisos pendientes de esos productos (por variante y por producto).
@@ -158,36 +177,28 @@ async function notifyBackInStock(ctx: Ctx, variantIds: string[]): Promise<void> 
   const notices = pickAlertsToNotify(alerts, variants, MAX_ALERT_EMAILS_PER_RUN).filter((n) => isEmail(n.email));
   if (!notices.length) return;
 
-  // Reclamar: sólo se avisa lo que este proceso marcó.
-  const { data: claimedRows, error: claimError } = await supabase
-    .from("stock_alerts")
-    .update({ notified_at: new Date().toISOString() })
-    .eq("store_id", store.id)
-    .is("notified_at", null)
-    .in(
-      "id",
-      notices.flatMap((n) => n.alertIds),
-    )
-    .select("id");
-  if (claimError) throw new Error(claimError.message);
-  const claimed = new Set((claimedRows ?? []).map((r) => r.id));
-  const toSend = notices
-    .map((n) => ({ ...n, alertIds: n.alertIds.filter((id) => claimed.has(id)) }))
-    .filter((n) => n.alertIds.length);
-  if (!toSend.length) return;
-
-  const context = await loadMailContext(ctx, [...new Set(toSend.map((n) => n.product.id))]);
-  let failed: string[] = [];
-  for (const notice of toSend) {
-    const sent = await sendNotice(ctx, notice, context);
-    if (!sent) failed = failed.concat(notice.alertIds);
-  }
-
-  // Los que Resend no aceptó vuelven a quedar pendientes (salen en el próximo ajuste).
-  if (failed.length) {
-    const { error } = await supabase.from("stock_alerts").update({ notified_at: null }).eq("store_id", store.id).in("id", failed);
-    if (error) console.error("[stock-alerts] No se pudieron liberar avisos:", error.message);
-  }
+  const context = await loadMailContext(ctx, [...new Set(notices.map((n) => n.product.id))]);
+  const result = await deliverNotices(notices, {
+    // Reclamar: sólo se avisa lo que este proceso marcó.
+    claim: async (ids) => {
+      const { data, error } = await supabase
+        .from("stock_alerts")
+        .update({ notified_at: new Date().toISOString() })
+        .eq("store_id", store.id)
+        .is("notified_at", null)
+        .in("id", ids)
+        .select("id");
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => r.id);
+    },
+    send: (notice) => sendNotice(ctx, notice, context),
+    // Los que Resend no aceptó vuelven a quedar pendientes (salen en la próxima reposición).
+    release: async (ids) => {
+      const { error } = await supabase.from("stock_alerts").update({ notified_at: null }).eq("store_id", store.id).in("id", ids);
+      if (error) console.error("[stock-alerts] No se pudieron liberar avisos:", error.message);
+    },
+  });
+  if (result.failed) console.error(`[stock-alerts] ${store.slug}: ${result.failed} mail(s) no salieron; quedan pendientes.`);
 }
 
 interface MailContext {

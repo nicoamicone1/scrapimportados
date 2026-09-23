@@ -19,15 +19,16 @@ import { NextRequest } from "next/server";
 
 import { POST } from "@/app/api/billing/mercadopago/webhook/route";
 
+import { MercadoPagoError } from "./mercadopago";
 import { sendBillingEmail } from "./notify";
-import { processNotification } from "./sync";
+import { BillingDbError, processNotification } from "./sync";
 
 const SECRET = "whsec_test";
 
-function request(opts: { dataId?: string; type?: string; body?: unknown; signature?: string | null; requestId?: string }) {
+function request(opts: { dataId?: string; type?: string; body?: unknown; signature?: string | null; requestId?: string; ts?: string }) {
   const dataId = opts.dataId ?? "pre_1";
   const requestId = opts.requestId ?? "req-1";
-  const ts = "1704908010";
+  const ts = opts.ts ?? String(Math.floor(Date.now() / 1000));
   const sig =
     opts.signature === undefined
       ? `ts=${ts},v1=${createHmac("sha256", SECRET).update(`id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`).digest("hex")}`
@@ -64,6 +65,8 @@ describe("POST /api/billing/mercadopago/webhook", () => {
   it("401 con firma inválida o ausente", async () => {
     expect((await POST(request({ signature: "ts=1,v1=" + "0".repeat(64) }))).status).toBe(401);
     expect((await POST(request({ signature: null }))).status).toBe(401);
+    // Firma válida pero de hace más de 10 minutos.
+    expect((await POST(request({ ts: String(Math.floor(Date.now() / 1000) - 11 * 60) }))).status).toBe(401);
     expect(processNotification).not.toHaveBeenCalled();
   });
 
@@ -97,8 +100,19 @@ describe("POST /api/billing/mercadopago/webhook", () => {
     expect(sendBillingEmail).toHaveBeenCalledTimes(1);
   });
 
-  it("500 si MP o la base fallan (MP reintenta)", async () => {
-    vi.mocked(processNotification).mockRejectedValueOnce(new Error("MercadoPago GET /preapproval/pre_1: HTTP 500"));
+  it("500 sólo ante fallas transitorias de MP o de la base (MP reintenta)", async () => {
+    vi.mocked(processNotification).mockRejectedValueOnce(new MercadoPagoError("GET", "/preapproval/pre_1", 500, "boom"));
     expect((await POST(request({}))).status).toBe(500);
+    vi.mocked(processNotification).mockRejectedValueOnce(new MercadoPagoError("GET", "/preapproval/pre_1", 429, ""));
+    expect((await POST(request({}))).status).toBe(500);
+    vi.mocked(processNotification).mockRejectedValueOnce(new BillingDbError("billing_events", { message: "fetch failed", code: "" }));
+    expect((await POST(request({}))).status).toBe(500);
+  });
+
+  it("200 ante errores que no se arreglan reintentando", async () => {
+    vi.mocked(processNotification).mockRejectedValueOnce(new MercadoPagoError("GET", "/preapproval/pre_1", 404, "not found"));
+    expect((await POST(request({}))).status).toBe(200);
+    vi.mocked(processNotification).mockRejectedValueOnce(new Error("inesperado"));
+    expect((await POST(request({}))).status).toBe(200);
   });
 });

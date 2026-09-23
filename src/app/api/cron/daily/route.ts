@@ -24,6 +24,9 @@ function authorized(header: string | null, secret: string | undefined): boolean 
 /**
  * Barrido diario (Vercel Cron, ver vercel.json): vence trials (→ Free) y
  * cancela pedidos impagos vencidos de TODAS las tiendas, devolviendo stock.
+ * Ese stock devuelto por `expire_unpaid_orders` NO dispara los avisos de
+ * "Avisame cuando haya stock" (los manda sólo el panel, ver
+ * src/lib/admin/inventory-alerts.ts): salen en la próxima reposición.
  * Protegido con `Authorization: Bearer $CRON_SECRET` (Vercel lo manda solo).
  * Corre como anon: `run_daily_maintenance()` es security definer y sólo
  * aplica reglas que ya correspondían (no recibe parámetros).

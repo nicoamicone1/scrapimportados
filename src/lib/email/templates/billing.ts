@@ -16,11 +16,17 @@ function hello(name: string | null | undefined): string {
 
 export interface PlanActivatedEmailData extends AccountEmailBase {
   planName: string;
-  /** Fin del período pago (próximo cobro). */
+  /** Fin del período pago (próximo cobro); sin cobro todavía, fin de la gracia. */
   periodEnd: string | null;
+  /**
+   * false: MercadoPago autorizó la suscripción pero todavía no confirmó el
+   * primer cobro (el mail no dice "cobramos"). Por defecto true.
+   */
+  charged?: boolean;
 }
 
 export function planActivatedEmail(d: PlanActivatedEmailData): EmailContent {
+  if (d.charged === false) return planActivatedUnpaidEmail(d);
   const until = d.periodEnd ? formatDate(d.periodEnd) : null;
   const subject = until ? `Tu plan ${d.planName} está activo hasta el ${until}` : `Tu plan ${d.planName} está activo`;
   return renderEmail({
@@ -52,6 +58,41 @@ export function planActivatedEmail(d: PlanActivatedEmailData): EmailContent {
         muted: true,
         content: "Podés cancelar la renovación cuando quieras desde Plan en el panel: el plan sigue activo hasta el final del período pago.",
       },
+    ],
+    footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
+  });
+}
+
+/** Activado sin cobro confirmado: el plan ya se usa y el primer cobro se acredita en unos días. */
+function planActivatedUnpaidEmail(d: PlanActivatedEmailData): EmailContent {
+  const grace = d.periodEnd ? formatDate(d.periodEnd) : null;
+  const subject = `Tu plan ${d.planName} está activo`;
+  return renderEmail({
+    subject,
+    preheader: `El débito automático de ${d.storeName} quedó autorizado en MercadoPago. El primer cobro se acredita en los próximos días.`,
+    brand: platformBrand(d.platformUrl),
+    blocks: [
+      { t: "heading", text: subject },
+      {
+        t: "p",
+        content: [
+          hello(d.ownerName),
+          ` Tu plan está activo: ya tenés todo lo del plan ${d.planName} en ${d.storeName}. MercadoPago autorizó el débito automático y el primer cobro se acredita en los próximos días; cuando entre, te queda el mes completo.`,
+        ],
+      },
+      grace && {
+        t: "p",
+        content: ["Si el cobro no entra antes del ", { b: grace }, ", la tienda vuelve a Free sin borrar nada."],
+      },
+      {
+        t: "rows",
+        rows: [
+          { label: "Tienda", value: d.storeName },
+          { label: "Plan", value: d.planName },
+          { label: "Medio de pago", value: "MercadoPago (débito automático)" },
+        ],
+      },
+      { t: "button", href: `${d.platformUrl}/admin/plan`, label: "Ver el plan" },
     ],
     footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
   });

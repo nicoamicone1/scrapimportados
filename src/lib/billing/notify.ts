@@ -6,6 +6,7 @@ import { PLAN_NAMES, type PlanCode } from "@/lib/plans";
 import { platformOrigin, storeUrl } from "@/lib/tenant/urls";
 
 import type { BillingDb } from "./service";
+import { AUTHORIZED_UNPAID } from "./state";
 import type { SyncResult } from "./sync";
 
 const GRACE_DAYS = 7;
@@ -42,13 +43,19 @@ export async function sendBillingEmail(db: BillingDb, result: SyncResult): Promi
       supportEmail: isEmail(support) ? support : null,
     };
     const periodEnd = decision.periodEnd ?? result.previous.current_period_end;
+    // Autorizada sin primer cobro: el período ES la gracia (no se suman 7 días más).
+    const unpaid = decision.providerStatus === AUTHORIZED_UNPAID;
     const content =
       decision.email === "activated"
-        ? planActivatedEmail({ ...base, planName, periodEnd })
+        ? planActivatedEmail({ ...base, planName, periodEnd, charged: !unpaid })
         : planPaymentFailedEmail({
             ...base,
             planName,
-            graceUntil: periodEnd ? new Date(new Date(periodEnd).getTime() + GRACE_DAYS * 86_400_000).toISOString() : null,
+            graceUntil: periodEnd
+              ? unpaid
+                ? new Date(periodEnd).toISOString()
+                : new Date(new Date(periodEnd).getTime() + GRACE_DAYS * 86_400_000).toISOString()
+              : null,
           });
     const ref = decision.email === "activated" ? periodEnd ?? "sin-periodo" : result.paymentId ?? periodEnd ?? "sin-periodo";
     await sendEmail({

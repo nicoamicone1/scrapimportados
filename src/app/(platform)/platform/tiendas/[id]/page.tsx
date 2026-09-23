@@ -7,6 +7,7 @@ import { enterAsStore } from "@/app/(platform)/platform/actions";
 import { platformPageGuard } from "@/app/(platform)/platform/guard";
 import { AppHeader } from "@/components/platform/AppHeader";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { mercadoPagoDebitActive } from "@/lib/billing/state";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatNumber } from "@/lib/money";
 import { ROLE_LABELS, isAdminRole } from "@/lib/auth";
@@ -115,6 +116,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
               trialEndsAt: toDateInput(sub?.trial_ends_at ?? null),
               storeStatus: store.status,
             }}
+            mercadoPagoDebit={mercadoPagoDebitActive(b)}
           />
         </div>
 

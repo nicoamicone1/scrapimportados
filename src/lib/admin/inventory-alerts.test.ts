@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  deliverNotices,
   isMissingSchema,
+  MAX_ALERT_EMAILS_PER_RUN,
   pickAlertsToNotify,
   readStockAlertRpc,
   STOCK_ALERT_EMAIL_ERROR,
@@ -9,6 +11,7 @@ import {
   stockAlertInputSchema,
   variantAvailable,
   variantLabel,
+  type AlertNotice,
   type AlertVariant,
   type PendingAlert,
 } from "./inventory-alerts-utils";
@@ -50,6 +53,11 @@ describe("stockAlertInputSchema", () => {
       expect(r.success).toBe(false);
       if (!r.success) expect(r.error.issues[0].message).toBe(STOCK_ALERT_EMAIL_ERROR);
     }
+  });
+
+  it("acepta el honeypot `website` (la action lo descarta)", () => {
+    const r = stockAlertInputSchema.safeParse({ productId: P1, variantId: null, email: "a@b.co", website: "http://spam.example" });
+    expect(r.success && r.data.website).toBe("http://spam.example");
   });
 
   it("no acepta ids que no son uuid ni campos de más (la tienda sale del request)", () => {
@@ -166,5 +174,68 @@ describe("pickAlertsToNotify", () => {
     expect(pickAlertsToNotify(alerts, variants)).toHaveLength(2);
     const capped = pickAlertsToNotify(alerts, variants, 1);
     expect(capped.map((n) => n.alertIds)).toEqual([["old"]]);
+  });
+});
+
+describe("deliverNotices (M3: reclamar y mandar de a uno)", () => {
+  const notice = (id: string, alertIds: string[]): AlertNotice => ({
+    email: `${id}@example.com`,
+    product: { id: "p1", name: "Remera", slug: "remera", status: "active" },
+    variants: [variant("m", "p1", { stock: 3 })],
+    alertIds,
+  });
+
+  it("marca, manda y libera sólo el mail que falló; sigue con el resto", async () => {
+    const log: string[] = [];
+    const claimed = new Set<string>();
+    const res = await deliverNotices([notice("a", ["a1", "a2"]), notice("b", ["b1"]), notice("c", ["c1"])], {
+      claim: async (ids) => {
+        log.push(`claim ${ids.join(",")}`);
+        const mine = ids.filter((id) => !claimed.has(id));
+        mine.forEach((id) => claimed.add(id));
+        return mine;
+      },
+      send: async (n) => {
+        log.push(`send ${n.email}`);
+        if (n.email.startsWith("b")) return false;
+        if (n.email.startsWith("c")) throw new Error("Resend caído");
+        return true;
+      },
+      release: async (ids) => {
+        log.push(`release ${ids.join(",")}`);
+        ids.forEach((id) => claimed.delete(id));
+      },
+    });
+    expect(res).toEqual({ sent: 1, failed: 2, skipped: 0 });
+    // De a uno: nunca hay dos avisos marcados sin mail en vuelo.
+    expect(log).toEqual([
+      "claim a1,a2",
+      "send a@example.com",
+      "claim b1",
+      "send b@example.com",
+      "release b1",
+      "claim c1",
+      "send c@example.com",
+      "release c1",
+    ]);
+    expect([...claimed]).toEqual(["a1", "a2"]);
+  });
+
+  it("no manda lo que otro proceso ya reclamó y manda sólo los avisos propios", async () => {
+    const sent: AlertNotice[] = [];
+    const res = await deliverNotices([notice("a", ["a1", "a2"]), notice("b", ["b1"])], {
+      claim: async (ids) => ids.filter((id) => id !== "a2" && id !== "b1"),
+      send: async (n) => {
+        sent.push(n);
+        return true;
+      },
+      release: async () => undefined,
+    });
+    expect(res).toEqual({ sent: 1, failed: 0, skipped: 1 });
+    expect(sent[0].alertIds).toEqual(["a1"]);
+  });
+
+  it("tope por reposición: 20 mails", () => {
+    expect(MAX_ALERT_EMAILS_PER_RUN).toBe(20);
   });
 });
