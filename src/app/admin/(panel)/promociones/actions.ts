@@ -6,14 +6,17 @@ import { z } from "zod";
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { getStoreTimezone } from "@/lib/admin/pricing";
 import { listAllPromotions } from "@/lib/admin/promotions";
+import { getSchemaStatus } from "@/lib/admin/settings";
 import { logAudit, shallowDiff } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
 import { tagFor } from "@/lib/cache-tags";
 import { assertFeature } from "@/lib/plans";
 import { assertUsage } from "@/lib/plans/server";
-import { applyPromotions, computeCart, zonedLocalToIso, type AppliedPromotion, type Promotion } from "@/lib/pricing";
+import { applyPromotions, computeCart, isQuantityType, zonedLocalToIso, type AppliedPromotion, type Promotion } from "@/lib/pricing";
 import { promotionSchema, type PromotionValues } from "@/lib/schemas/promotion";
 import type { Json } from "@/lib/supabase/database.types";
+
+import { isMissingQuantityMigration, type DbError } from "./quantity-migration";
 
 /*
  * Promociones (agente C). Se aplican AL LEER con el motor
@@ -29,12 +32,13 @@ const MISSING_MIGRATION =
   "Este tipo de promoción todavía no está habilitado en la base de datos de la tienda (falta la actualización 0017). Mientras tanto podés usar porcentaje o monto fijo.";
 
 /**
- * ¿El error es porque falta la migración 0017? (columna `config` inexistente
- * → PGRST204 / 42703, o el `check` viejo de `type` → 23514).
+ * ¿El error al guardar es porque falta la migración 0017? Sólo se consulta la
+ * versión del esquema cuando ya falló (y la promo es por cantidad).
  */
-function isMissingQuantityMigration(values: PromotionValues, error: { code?: string; message?: string } | null): boolean {
-  if (!error || (values.type !== "bxgy" && values.type !== "nth_unit_percent")) return false;
-  return error.code === "PGRST204" || error.code === "42703" || error.code === "23514" || /config|type_check/i.test(error.message ?? "");
+async function missingQuantityMigration(values: PromotionValues, error: DbError | null): Promise<boolean> {
+  if (!error || !isQuantityType(values.type)) return false;
+  const schema = await getSchemaStatus().catch(() => null);
+  return isMissingQuantityMigration(schema?.current ?? null, error);
 }
 
 function revalidate(storeId: string) {
@@ -88,7 +92,7 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
         .single();
       if (error || !data) {
         console.error("[promociones] insert", error?.message);
-        if (isMissingQuantityMigration(parsed.data, error)) return fail(MISSING_MIGRATION);
+        if (await missingQuantityMigration(parsed.data, error)) return fail(MISSING_MIGRATION);
         return fail("No se pudo crear la promoción. Probá de nuevo.");
       }
       await logAudit(ctx, {
@@ -111,10 +115,13 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
       .eq("id", pid.data)
       .maybeSingle();
     if (!before) return fail("La promoción ya no existe.");
-    const { error } = await ctx.supabase.from("promotions").update(row).eq("store_id", ctx.store.id).eq("id", pid.data);
+    // De 3x2 / N.ª unidad a % o monto: se limpian los parámetros viejos (si no,
+    // `config` queda con `buy`/`pay`/`nth` de una promo que ya no es por cantidad).
+    const update = isQuantityType(before.type) && !isQuantityType(row.type) ? { ...row, config: {} } : row;
+    const { error } = await ctx.supabase.from("promotions").update(update).eq("store_id", ctx.store.id).eq("id", pid.data);
     if (error) {
       console.error("[promociones] update", error.message);
-      if (isMissingQuantityMigration(parsed.data, error)) return fail(MISSING_MIGRATION);
+      if (await missingQuantityMigration(parsed.data, error)) return fail(MISSING_MIGRATION);
       return fail("No se pudo guardar la promoción. Probá de nuevo.");
     }
     const beforeSubset = Object.fromEntries(Object.keys(row).map((k) => [k, (before[k as keyof typeof before] ?? null) as Json]));

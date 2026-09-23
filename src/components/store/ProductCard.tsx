@@ -52,6 +52,11 @@ export function ProductCard({
   className,
 }: ProductCardProps) {
   const price = displayPrice(product, promotions);
+  // Promo por cantidad que NO se combina con la promo por unidad
+  // (`combinesWithPrice: false` siempre viene con una promo por unidad
+  // aplicada): la card muestra 1 unidad, donde el 3x2 no bonifica nada y gana
+  // la por unidad. Se ven su precio, su tachado y su badge, sin el "3x2".
+  const offer = price.offer?.combinesWithPrice === false && price.promotion ? null : price.offer;
   const panel = cards.style !== "flat";
   const contain = cards.imageRatio === "1:1" || cards.imageRatio === "16:9";
   const fit = contain ? "pcard-img-contain" : "pcard-img-cover";
@@ -87,9 +92,19 @@ export function ProductCard({
           {alt ? <Image src={alt.url} alt="" fill sizes={imageSizes} className={cn(fit, "pcard-alt")} aria-hidden /> : null}
         </div>
         {/* Un solo badge (DESIGN.md §6.1): la promo por cantidad ("3x2") manda sobre la etiqueta por unidad. */}
-        {price.offer?.badge || price.promotion?.badgeLabel ? (
+        {offer?.badge ? (
+          <>
+            <span
+              aria-hidden
+              className="store-badge absolute top-2 left-2 z-[1] rounded-sm bg-bg px-1.5 py-0.5 text-xs font-semibold text-accent"
+            >
+              {offer.badge}
+            </span>
+            <span className="sr-only">{offer.headline}</span>
+          </>
+        ) : price.promotion?.badgeLabel ? (
           <span className="store-badge absolute top-2 left-2 z-[1] rounded-sm bg-bg px-1.5 py-0.5 text-xs font-semibold text-accent">
-            {price.offer?.badge || price.promotion?.badgeLabel}
+            {price.promotion.badgeLabel}
           </span>
         ) : null}
         <QuickAdd

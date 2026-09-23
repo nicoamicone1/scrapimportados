@@ -148,20 +148,20 @@ curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
 - [ ] `/s/demo/` muestra la tienda demo con imágenes.
 - [ ] Registro → confirmación de email → `/app/nueva` → tienda creada → `/admin`.
 - [ ] `/admin/plan` muestra el trial; "Quiero este plan" abre WhatsApp.
+- [ ] Migración `0014_order_notify_quota.sql` aplicada (cupos de mails del checkout y del
+      arrepentimiento; `expire_trials()` ya no borra `trial_ends_at`).
 - [ ] Migración `0015_billing.sql` aplicada; con `MP_ACCESS_TOKEN` y los `mp_plan_id`
       cargados, el dueño ve "Pagar con MercadoPago" en `/admin/plan`, y el webhook de MP
       apunta a `/api/billing/mercadopago/webhook` (sin firma responde 401).
+- [ ] Migración `0016_stock_alerts.sql` aplicada ("Avisame cuando haya stock": tabla `stock_alerts`,
+      RPC `create_stock_alert` con cupo 5/h por email y 200/día por tienda; sin ella el formulario
+      de la ficha responde "No pudimos anotarte" y `/admin/inventario/avisos` lo avisa).
+- [ ] Migración `0017_promotions_bxgy.sql` aplicada (promos "Llevá X, pagá Y" y "N.ª unidad al Z %";
+      sin ella el panel no deja guardarlas y el resto de las promos sigue igual).
 - [ ] `/platform` (superadmin) lista las tiendas.
 - [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401.
 - [ ] Con `RESEND_API_KEY`: un pedido en `/s/demo/` manda "Recibimos tu pedido" al comprador
       y "Nuevo pedido" al email de contacto de la tienda.
-- [ ] Migración `0014_order_notify_quota.sql` aplicada (cupos de mails del checkout y del
-      arrepentimiento; `expire_trials()` ya no borra `trial_ends_at`).
-- [ ] Migración `0017_promotions_bxgy.sql` aplicada (promos "Llevá X, pagá Y" y "N.ª unidad al Z %";
-      sin ella el panel no deja guardarlas y el resto de las promos sigue igual).
-- [ ] Migración `0016_stock_alerts.sql` aplicada ("Avisame cuando haya stock": tabla `stock_alerts`,
-      RPC `create_stock_alert` con cupo 5/h por email y 200/día por tienda; sin ella el formulario
-      de la ficha responde "No pudimos anotarte" y `/admin/inventario/avisos` lo avisa).
 - [ ] Vercel → Firewall → Custom Rule "Rate limit server actions de tienda": si `Method`
       es `POST`, existe el header `next-action` y (el path empieza con `/s/` o el host es
       `*.ecommy.app` distinto de `www`, o un dominio propio) → Rate Limit fixed window,
@@ -188,6 +188,12 @@ curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
    `custom_domain` (memoriza 60 s). Gate de plan: `domain.custom` (Pro).
 
 ## 7. Rollback
+
+Antes de hacer rollback del código a una versión sin promos por cantidad (anterior a la
+0017: "Llevá X, pagá Y" y "N.ª unidad al Z %"), pausá esas promos en `/admin/promociones`.
+Esa versión lee cualquier tipo desconocido como porcentaje: una "2.ª unidad al 50 %"
+activa se mostraría como 50 % off en todas las unidades (y un 3x2, con `value` 0,
+dejaría de aplicarse sin aviso).
 
 Vercel → Deployments → "Promote to production" del deploy anterior. La 0011 no tiene
 rollback automático: si hiciera falta, restaurá el backup diario de Supabase (Point in

@@ -141,7 +141,8 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
                 <TD numeric>{p.priority}</TD>
                 <TD className="text-adm-fg-muted">{p.stackable ? "Sí" : "No"}</TD>
                 <TD>
-                  <PromoStatusBadge status={p.status} />
+                  {/* Tipo que esta versión no conoce (o parámetros inválidos): el motor la ignora. */}
+                  {p.type === "unsupported" ? <Badge tone="neutral">No se aplica</Badge> : <PromoStatusBadge status={p.status} />}
                 </TD>
                 <TD className="text-right">
                   <PromotionActions id={p.id} name={p.name} isActive={p.isActive} />

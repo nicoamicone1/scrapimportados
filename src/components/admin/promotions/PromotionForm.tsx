@@ -18,7 +18,7 @@ import { SaveBar } from "@/components/ui/SaveBar";
 import type { PickerProduct } from "@/lib/admin/pricing";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/dates";
-import { formatMoney, formatNumber } from "@/lib/money";
+import { formatMoney, formatNumber, formatPercent } from "@/lib/money";
 import { quantityBadge, quantityDescription, type CategoryLite } from "@/lib/pricing";
 import {
   BADGE_MAX,
@@ -193,6 +193,14 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
       : draft.type === "nth_unit_percent"
         ? !clientErrors.nth && !clientErrors.value
         : false;
+  // Regla de agrupado (la misma que el motor): grupos de X, de la más cara a la más barata.
+  const quantityRule = !quantityReady
+    ? "Se agrupan las unidades del alcance, de la más cara a la más barata, y en cada grupo se bonifican las más baratas."
+    : draft.type === "bxgy"
+      ? `Se agrupan de a ${input.buy} unidades del alcance, de la más cara a la más barata, y en cada grupo ${
+          (input.buy ?? 0) - (input.pay ?? 0) === 1 ? "sale gratis la más barata" : `salen gratis las ${(input.buy ?? 0) - (input.pay ?? 0)} más baratas`
+        }.`
+      : `Se agrupan de a ${input.nth} unidades del alcance, de la más cara a la más barata, y en cada grupo la más barata tiene ${formatPercent(valueNumber ?? 0)} de descuento.`;
   // Badge automático (sin etiqueta propia): "3x2", "2.ª al 50 %", "-20 %".
   const autoBadge = isQuantity
     ? quantityReady
@@ -297,8 +305,8 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
                 <div className="rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-2.5 text-[13px]">
                   <p className="font-medium">{quantityReady ? `${quantityDescription(quantityParams)}.` : "Completá las cantidades para ver la regla."}</p>
                   <p className="mt-1 text-adm-fg-muted">
-                    Cuentan juntas todas las unidades del alcance, aunque sean productos distintos; se bonifican las más baratas. En el
-                    carrito se ve como una línea aparte y se aplica antes del cupón y del descuento por medio de pago.
+                    {quantityRule} Cuentan juntas aunque sean productos distintos. En el carrito se ve como una línea aparte y se aplica
+                    antes del cupón y del descuento por medio de pago.
                   </p>
                 </div>
               ) : null}
