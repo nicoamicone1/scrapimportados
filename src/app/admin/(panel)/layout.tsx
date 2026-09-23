@@ -7,8 +7,10 @@ import { SIDEBAR_COOKIE } from "@/components/admin/nav";
 import { PendingApproval } from "@/components/admin/PendingApproval";
 import { SidebarPlanChip } from "@/components/admin/Sidebar";
 import { StoreSwitcher } from "@/components/admin/StoreSwitcher";
+import { TrialBanner } from "@/components/admin/TrialBanner";
 import { getAdminState, getSession, listMyStores, ROLE_LABELS } from "@/lib/auth";
 import { getPlanChip } from "@/lib/plans/chip";
+import { FREE_BANNER_COOKIE, trialBannerState } from "@/lib/plans/trial-banner";
 import { storeHref, storeUrl } from "@/lib/tenant/urls";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +34,22 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
   const [cookieStore, myStores] = await Promise.all([cookies(), listMyStores()]);
   const chip = getPlanChip(ctx);
   const switcherStores = myStores.filter((s) => s.is_active).map((s) => ({ id: s.id, name: s.name, slug: s.slug, role: s.role }));
+  // Franja de prueba/Free (sólo para quien decide el plan).
+  const activeSub = myStores.find((s) => s.id === ctx.store.id);
+  const banner =
+    ctx.membership.role === "owner"
+      ? trialBannerState({
+          status: ctx.plan.status,
+          trialEndsAt: ctx.plan.trialEndsAt,
+          planCode: ctx.plan.code,
+          planName: ctx.plan.name,
+          limits: ctx.plan.limits,
+          trialExpired: Boolean(
+            activeSub?.plan_status === "trialing" && activeSub.trial_ends_at && new Date(activeSub.trial_ends_at) < new Date(),
+          ),
+        })
+      : ({ kind: "none" } as const);
+  const showBanner = banner.kind === "trial" || (banner.kind === "free" && !cookieStore.get(FREE_BANNER_COOKIE));
   if (ctx.membership.impersonating) switcherStores.unshift({ id: ctx.store.id, name: ctx.store.name, slug: ctx.store.slug, role: "owner" });
 
   return (
@@ -74,6 +92,7 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
           roleLabel: ctx.membership.impersonating ? "Superadmin" : ROLE_LABELS[ctx.membership.role],
         }}
       >
+        {showBanner ? <TrialBanner state={banner} /> : null}
         {children}
       </AdminShell>
     </AdminStoreProvider>

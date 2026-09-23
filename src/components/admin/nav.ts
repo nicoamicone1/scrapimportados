@@ -13,6 +13,7 @@ import {
   Receipt,
   ScrollText,
   Settings,
+  Share2,
   ShieldCheck,
   Tag,
   Ticket,
@@ -87,6 +88,8 @@ export const NAV: NavGroup[] = [
       { label: "Cupones", href: "/admin/cupones", icon: Ticket, keywords: ["códigos", "descuentos"] },
       // C: precios masivos
       { label: "Precios", href: "/admin/precios", icon: Tag, keywords: ["aumento", "masivo", "listas"] },
+      // Activación: link, QR y mensajes listos para Instagram y WhatsApp
+      { label: "Compartir", href: "/admin/compartir", icon: Share2, keywords: ["link", "qr", "instagram", "whatsapp", "difundir", "bio"] },
     ],
   },
   {

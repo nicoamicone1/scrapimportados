@@ -67,7 +67,7 @@ export async function OnboardingChecklist({ ctx }: { ctx: Pick<AdminContext, "su
               </div>
             </div>
             {s.id === "shared" ? (
-              s.done ? null : <ShareStoreLink url={url} storeName={ctx.store.name} />
+              s.done ? null : <ShareStoreLink url={url} storeName={ctx.store.name} moreHref={s.href} />
             ) : s.done ? null : (
               <ButtonLink href={s.href} size="sm" variant={s.id === nextId ? "accent" : "secondary"}>
                 {s.cta}

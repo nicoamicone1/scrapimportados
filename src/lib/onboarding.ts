@@ -112,8 +112,8 @@ export async function getOnboardingStatus(ctx: Pick<AdminContext, "supabase" | "
       id: "shared",
       title: "Compartí el link de tu tienda",
       description: "Mandalo por WhatsApp o ponelo en tu Instagram.",
-      href: "/admin",
-      cta: "Copiar link",
+      href: "/admin/compartir",
+      cta: "Ver link, QR y mensajes",
       done: f.shared === true,
     },
   ];

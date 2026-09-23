@@ -1,6 +1,7 @@
 "use client";
 
 import { Copy, MessageCircle } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -8,8 +9,11 @@ import { toast } from "sonner";
 import { markOnboardingStep } from "@/app/admin/(panel)/onboarding-actions";
 import { Button } from "@/components/ui/Button";
 
-/** "Compartí tu link": copiar o mandar por WhatsApp (y tildar el paso). */
-export function ShareStoreLink({ url, storeName }: { url: string; storeName: string }) {
+/**
+ * "Compartí tu link": copiar o mandar por WhatsApp (y tildar el paso), más
+ * el acceso a `/admin/compartir` (QR y mensajes listos).
+ */
+export function ShareStoreLink({ url, storeName, moreHref }: { url: string; storeName: string; moreHref?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const mark = () =>
@@ -45,6 +49,11 @@ export function ShareStoreLink({ url, storeName }: { url: string; storeName: str
         <MessageCircle className="size-3.5" aria-hidden />
         Mandar por WhatsApp
       </a>
+      {moreHref ? (
+        <Link href={moreHref} className="text-[13px] font-medium text-adm-accent underline-offset-2 hover:underline">
+          QR y mensajes listos
+        </Link>
+      ) : null}
     </div>
   );
 }
