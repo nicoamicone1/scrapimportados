@@ -22,6 +22,7 @@ export async function adjustStock(input: unknown): Promise<ActionResult<{ stock:
     const { data: v } = await ctx.supabase
       .from("product_variants")
       .select("id, stock, title, products(name, slug)")
+      .eq("store_id", ctx.store.id)
       .eq("id", d.variantId)
       .maybeSingle();
     if (!v) return fail("La variante ya no existe.");
@@ -44,7 +45,7 @@ export async function adjustStock(input: unknown): Promise<ActionResult<{ stock:
       summary: `${MOVEMENT_REASON_LABELS[d.reason]}: ${delta > 0 ? "+" : ""}${delta} en ${name}`,
       diff: { stock: [v.stock, after] },
     });
-    revalidateProducts([v.products?.slug]);
+    revalidateProducts(ctx.store.id, [v.products?.slug]);
     refresh();
     return ok({ stock: after });
   });
@@ -59,6 +60,7 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
     const { data: variants } = await ctx.supabase
       .from("product_variants")
       .select("id, stock, products(slug)")
+      .eq("store_id", ctx.store.id)
       .in("id", d.variantIds);
     if (!variants?.length) return fail("Las variantes ya no existen.");
 
@@ -88,7 +90,10 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
       summary: `${MOVEMENT_REASON_LABELS[d.reason]} masivo: ${d.mode === "set" ? `fijó ${d.value}` : `${d.value > 0 ? "+" : ""}${d.value}`} en ${count} variantes`,
       diff: { variantIds: d.variantIds, mode: d.mode, value: d.value },
     });
-    revalidateProducts(variants.map((v) => v.products?.slug));
+    revalidateProducts(
+      ctx.store.id,
+      variants.map((v) => v.products?.slug),
+    );
     refresh();
     return ok({ count });
   });

@@ -27,8 +27,13 @@ const SELECT =
   "id, name, type, value, scope, category_ids, product_ids, starts_at, ends_at, is_active, priority, badge_label, stackable, created_at, updated_at";
 
 export async function listAllPromotions(): Promise<AdminPromotion[]> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("promotions").select(SELECT).order("priority", { ascending: false }).order("created_at", { ascending: false });
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("promotions")
+    .select(SELECT)
+    .eq("store_id", store.id)
+    .order("priority", { ascending: false })
+    .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   const now = new Date();
   return (data ?? []).map((row) => {
@@ -61,8 +66,8 @@ export async function listPromotions(filters: { q: string; status: ScheduleStatu
 }
 
 export async function getPromotion(id: string): Promise<AdminPromotion | null> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("promotions").select(SELECT).eq("id", id).maybeSingle();
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase.from("promotions").select(SELECT).eq("store_id", store.id).eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
   const promo = promotionFromRow(data);

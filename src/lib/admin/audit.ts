@@ -86,9 +86,9 @@ export function auditFilterParams(filters: Omit<AuditFilters, "page">, timeZone:
 }
 
 export async function listAudit(filters: AuditFilters, timeZone: string): Promise<{ rows: AuditRow[]; total: number }> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const f = auditFilterParams(filters, timeZone);
-  let query = supabase.from("audit_log").select("*", { count: "exact" });
+  let query = supabase.from("audit_log").select("*", { count: "exact" }).eq("store_id", store.id);
   if (f.actor) query = query.eq("actor_id", f.actor);
   if (f.action) query = query.ilike("action", `${escapeLike(f.action)}%`);
   if (f.entity) query = query.eq("entity", f.entity);
@@ -104,21 +104,33 @@ export async function listAudit(filters: AuditFilters, timeZone: string): Promis
   };
 }
 
-/** Opciones para los filtros: usuarios, prefijos de acción y entidades usadas. */
+/**
+ * Opciones para los filtros: usuarios (miembros de la tienda + quien figure
+ * en el registro reciente, ej. un ex miembro o soporte), prefijos de acción
+ * y entidades usadas.
+ */
 export async function getAuditFacets(): Promise<{ actors: { id: string; label: string }[]; actions: string[]; entities: string[] }> {
-  const { supabase } = await requireAdmin();
-  const [{ data: profiles }, { data: recent }] = await Promise.all([
-    supabase.from("profiles").select("id, name, email").order("created_at"),
-    supabase.from("audit_log").select("action, entity").order("created_at", { ascending: false }).limit(2000),
+  const { supabase, store } = await requireAdmin();
+  const [{ data: members }, { data: recent }] = await Promise.all([
+    supabase.rpc("admin_list_users", { p_store_id: store.id }),
+    supabase
+      .from("audit_log")
+      .select("action, entity, actor_id, actor_email")
+      .eq("store_id", store.id)
+      .order("created_at", { ascending: false })
+      .limit(2000),
   ]);
   const actions = new Set<string>();
   const entities = new Set<string>();
+  const actors = new Map<string, string>();
+  for (const m of members ?? []) actors.set(m.id, m.name ? `${m.name} (${m.email})` : m.email);
   for (const r of recent ?? []) {
     actions.add(r.action.split(".")[0]);
     if (r.entity) entities.add(r.entity);
+    if (r.actor_id && !actors.has(r.actor_id)) actors.set(r.actor_id, r.actor_email ?? r.actor_id);
   }
   return {
-    actors: (profiles ?? []).map((p) => ({ id: p.id, label: p.name ? `${p.name} (${p.email})` : p.email })),
+    actors: [...actors].map(([id, label]) => ({ id, label })),
     actions: [...actions].sort(),
     entities: [...entities].sort(),
   };

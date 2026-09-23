@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Dialog } from "@/components/ui/Dialog";
@@ -212,7 +213,7 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
         )}
       </div>
 
-      <Table containerClassName="max-h-[calc(100dvh-15rem)] min-h-40">
+      <Table containerClassName="max-h-[calc(100dvh-15rem)] min-h-40" pending={bulkPending || undefined}>
         <THead>
           <tr>
             <TH className="w-10 pr-0">
@@ -318,7 +319,9 @@ function ProductRow({
     setSingle(p.single);
   }
 
-  const storeUrl = `/producto/${p.slug}`;
+  const { store } = useAdminStore();
+  const productPath = `/producto/${p.slug}`;
+  const storeUrl = `${store.href}${productPath}`;
   const previewUrl = `${storeUrl}?preview=1`;
   const price =
     p.min_price === null
@@ -442,7 +445,7 @@ function ProductRow({
             icon={<Link2 />}
             onSelect={() => {
               void navigator.clipboard
-                .writeText(`${window.location.origin}${storeUrl}`)
+                .writeText(`${store.url}${productPath}`)
                 .then(() => toast.success("Link copiado"))
                 .catch(() => toast.error("No se pudo copiar el link"));
             }}

@@ -17,15 +17,15 @@ const FILTERS: { value: WithdrawalStatus | "todas"; label: string }[] = [
 ];
 
 export default async function WithdrawalsPage({ searchParams }: PageProps<"/admin/pedidos/arrepentimientos">) {
-  const { supabase } = await requireAdmin();
+  const { supabase, store: active } = await requireAdmin();
   const sp = await searchParams;
   const raw = typeof sp.estado === "string" ? sp.estado : "new";
   const current = FILTERS.find((f) => f.value === raw)?.value ?? "new";
 
   const [rows, newCount, store] = await Promise.all([
-    listWithdrawals(supabase, current === "todas" ? null : current),
-    countNewWithdrawals(supabase),
-    getStoreInfo(supabase),
+    listWithdrawals(supabase, active.id, current === "todas" ? null : current),
+    countNewWithdrawals(supabase, active.id),
+    getStoreInfo(supabase, active.id),
   ]);
 
   return (

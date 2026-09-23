@@ -1,12 +1,13 @@
 /**
- * Crea un usuario admin con `signUp` (cliente anon).
+ * Crea un usuario con `signUp` (cliente anon).
  *
  *   ADMIN_EMAIL=admin@ecommy.local ADMIN_PASSWORD='Ecommy-2026!' npx tsx scripts/create-admin.mts
  *
- * Si todavía no hay owner, el trigger `handle_new_user` lo convierte en owner
- * activo. Si ya hay owner, queda `pending` hasta que lo aprueben en
- * /admin/usuarios. Si el proyecto exige confirmar email, el script lo avisa
- * (ver docs/DEV-ACCESS.md para el alta por SQL).
+ * Multi-tienda (spec §14): ya no hay roles globales. El script sólo crea el
+ * usuario (y su `profiles` por el trigger `handle_new_user`); la tienda se
+ * crea después desde /app/nueva (el usuario queda como dueño), o lo suma un
+ * dueño existente desde /admin/usuarios. Si el proyecto exige confirmar
+ * email, el script lo avisa (ver docs/DEV-ACCESS.md para el alta por SQL).
  */
 import { createClient } from "@supabase/supabase-js";
 
@@ -46,10 +47,11 @@ if (error) {
   );
   process.exitCode = 2;
 } else {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, is_active")
-    .eq("id", data.session.user.id)
-    .single();
-  console.info(`Listo: ${email} (rol ${profile?.role ?? "?"}, activo ${profile?.is_active ?? "?"})`);
+  const { data: stores } = await supabase.from("store_members").select("store_id, role").eq("user_id", data.session.user.id);
+  console.info(`Listo: ${email} creado.`);
+  if (stores?.length) {
+    console.info(`Ya es miembro de ${stores.length} tienda(s): ${stores.map((s) => `${s.store_id} (${s.role})`).join(", ")}.`);
+  } else {
+    console.info("Todavía no tiene tiendas: entrá con ese usuario y creá la tuya desde /app/nueva.");
+  }
 }

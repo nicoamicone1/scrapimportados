@@ -7,26 +7,79 @@
 /* En @layer base: las utilidades de Tailwind siempre ganan sobre esto. */
 @layer base {
   .admin-root {
-    --adm-bg: #f7f6f3;
+    /* Base: crema cálida + superficies blancas (spec §14.6). */
+    --adm-bg: #efeae1;
     --adm-surface: #ffffff;
-    --adm-surface-2: #f1efea;
-    --adm-hover: color-mix(in oklab, #f1efea 60%, #ffffff);
-    --adm-border: #e2ded6;
-    --adm-input-border: #cfcabf;
-    --adm-fg: #1f1e1b;
-    --adm-fg-muted: #6b6860;
+    --adm-surface-2: #f4f1ea;
+    --adm-hover: #faf8f3;
+    --adm-border: #e2dbcd;
+    --adm-input-border: #d9d2c3;
+    --adm-input-border-hover: #c2b9a6;
+    --adm-fg: #1c1917;
+    --adm-fg-muted: #6b6860; /* 4.64:1 sobre bg, 5.07:1 sobre table-head */
+    --adm-fg-subtle: #c9c1b0; /* iconos lineales de empty states (decorativo) */
+
+    /* Acento primario: pino. */
     --adm-accent: #2e4a3f;
     --adm-accent-hover: #243c33;
-    --adm-accent-soft: #e4ebe7;
-    --adm-accent-fg: #ffffff;
+    --adm-accent-soft: #e6efe9;
+    --adm-accent-fg: #ffffff; /* 9.69:1 */
+
+    /* Acento secundario: ámbar (foco, progreso, "nuevo", highlights, CTA de onboarding). */
+    --adm-accent-2: #e0a458;
+    --adm-accent-2-hover: #d3954a;
+    --adm-accent-2-soft: #f8ecd9;
+    --adm-accent-2-fg: #1a2320; /* 7.37:1 sobre ámbar */
+    --adm-accent-2-ink: #8a5a12; /* ámbar legible como texto/icono (5.07:1 sobre soft) */
+
     --adm-danger: #b42318;
     --adm-danger-soft: #f8e1de;
     --adm-warning: #9a5b00;
     --adm-success: #2f6b3f;
     --adm-info: #2b5a84;
+
+    /* Sidebar oscuro. */
+    --adm-sidebar-bg: #1a2320;
+    --adm-sidebar-fg: #e8e6df; /* 12.9:1 */
+    --adm-sidebar-muted: #8fa39a; /* 6.03:1 sobre sidebar-bg */
+    --adm-sidebar-hover: #232e2a;
+    --adm-sidebar-active: #2e4a3f; /* texto sidebar-fg encima: 7.76:1 */
+    --adm-sidebar-border: #2a3531;
+
+    /* Tintas por sección: franja (base), fondo del icono (-bg) e icono (-fg). */
+    --adm-tint-orders: #e0a458;
+    --adm-tint-orders-bg: #f8ecd9;
+    --adm-tint-orders-fg: #8a5a12;
+    --adm-tint-catalog: #2e4a3f;
+    --adm-tint-catalog-bg: #e6efe9;
+    --adm-tint-catalog-fg: #2e4a3f;
+    --adm-tint-marketing: #b8542a;
+    --adm-tint-marketing-bg: #f6e3da;
+    --adm-tint-marketing-fg: #9e4520;
+    --adm-tint-store: #3d5a80;
+    --adm-tint-store-bg: #e3e9f1;
+    --adm-tint-store-fg: #3d5a80;
+    --adm-tint-system: #6b6860;
+    --adm-tint-system-bg: #ebe8e1;
+    --adm-tint-system-fg: #5c5952;
+
+    /* Tablas. */
+    --adm-table-head: #f7f4ee;
+    --adm-row-hover: #faf8f3;
+
+    /* Skeletons. */
+    --adm-skeleton: #e4ddcf;
+    --adm-skeleton-shine: #f3efe7;
+
     --adm-radius: 6px;
-    --adm-focus: 0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-accent);
+    --adm-focus-ring: #b97a2e; /* ámbar oscuro: 3.57:1 sobre blanco */
+    --adm-focus: 0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-focus-ring);
+    --adm-shadow-surface: 0 1px 2px rgb(20 25 22 / 0.06);
     --adm-shadow: 0 12px 32px -12px rgb(31 30 27 / 0.25), 0 0 0 1px var(--adm-border);
+
+    /* Skeletons compartidos (globals.css `.sk`). */
+    --sk-base: var(--adm-skeleton);
+    --sk-shine: var(--adm-skeleton-shine);
 
     min-height: 100dvh;
     background: var(--adm-bg);
@@ -87,6 +140,29 @@
   @keyframes adm-drawer-in-left {
     from {
       transform: translateX(-16px);
+      opacity: 0;
+    }
+  }
+
+  /* Sidebar oscuro: foco ámbar claro (7.4:1 sobre sidebar-bg). */
+  .admin-root .adm-dark {
+    --adm-focus: 0 0 0 2px var(--adm-sidebar-bg), 0 0 0 4px var(--adm-accent-2);
+    color-scheme: dark;
+  }
+
+  /* Controles de formulario: foco = borde + halo ámbar (no el anillo doble). */
+  .admin-root :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea):focus-visible {
+    border-color: var(--adm-focus-ring);
+    box-shadow: 0 0 0 3px rgb(224 164 88 / 0.35);
+  }
+
+  /* Overlay "cargando" de tablas y paneles (useUrlTransition / prop pending). */
+  .admin-root .adm-pending-overlay {
+    animation: adm-fade-in 120ms ease-out;
+  }
+
+  @keyframes adm-fade-in {
+    from {
       opacity: 0;
     }
   }

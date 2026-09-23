@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import type { CategoryTile } from "@/lib/blocks/select";
 import { cn } from "@/lib/cn";
 
@@ -46,9 +46,9 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
         <ul className="blk-row-scroll" style={{ gap: "8px" }}>
           {tiles.map((t) => (
             <li key={t.id} className="shrink-0">
-              <Link href={t.href} className="blk-chip">
+              <StoreLink href={t.href} className="blk-chip">
                 {t.name}
-              </Link>
+              </StoreLink>
             </li>
           ))}
         </ul>
@@ -63,12 +63,12 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
         <ul className="blk-row-scroll" style={{ gap: "calc(var(--gap-grid) * 1.5)" }}>
           {tiles.map((t) => (
             <li key={t.id} className="w-[104px] shrink-0">
-              <Link href={t.href} className="group flex flex-col items-center gap-2 text-center">
+              <StoreLink href={t.href} className="group flex flex-col items-center gap-2 text-center">
                 <span className="relative size-24 overflow-hidden rounded-full bg-surface ring-1 ring-border transition-[box-shadow] duration-150 group-hover:ring-fg">
                   <TileImage tile={t} sizes="96px" />
                 </span>
                 <span className="text-sm leading-tight group-hover:underline">{t.name}</span>
-              </Link>
+              </StoreLink>
             </li>
           ))}
         </ul>
@@ -83,7 +83,7 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
       <ul className="blk-cols" style={{ "--m-cols": 2, "--t-cols": Math.min(cols, 3), "--cols": cols } as CSSProperties}>
         {tiles.map((t) => (
           <li key={t.id} className="min-w-0">
-            <Link href={t.href} className="group block">
+            <StoreLink href={t.href} className="group block">
               <span className="relative block overflow-hidden rounded-lg bg-surface" style={{ aspectRatio: "1 / 1" }}>
                 <TileImage
                   tile={t}
@@ -95,7 +95,7 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
                 {t.name}
               </span>
               {t.productCount ? <span className="mt-0.5 block text-sm text-fg-muted">{countLabel(t.productCount)}</span> : null}
-            </Link>
+            </StoreLink>
           </li>
         ))}
       </ul>

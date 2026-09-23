@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useStorePath } from "@/components/store/StoreBase";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { track } from "@/lib/store/analytics";
@@ -43,6 +44,7 @@ export function SearchBox({
   variant?: "field" | "overlay";
 }) {
   const router = useRouter();
+  const toPath = useStorePath();
   const listId = useId();
   const [q, setQ] = useState("");
   const [data, setData] = useState<SearchResponse | null>(null);
@@ -63,7 +65,7 @@ export function SearchBox({
     const timer = window.setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/buscar?q=${encodeURIComponent(term)}`, { signal: controller.signal });
+        const res = await fetch(toPath(`/buscar?q=${encodeURIComponent(term)}`), { signal: controller.signal });
         if (res.ok) {
           setData((await res.json()) as SearchResponse);
           setActive(-1);
@@ -78,7 +80,7 @@ export function SearchBox({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [q]);
+  }, [q, toPath]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -95,7 +97,7 @@ export function SearchBox({
   const go = (href: string) => {
     setOpen(false);
     onNavigate?.();
-    router.push(href);
+    router.push(toPath(href));
   };
 
   const submit = () => {
@@ -130,7 +132,7 @@ export function SearchBox({
     <div ref={wrapRef} className={cn("relative", className)}>
       <form
         role="search"
-        action="/productos"
+        action={toPath("/productos")}
         onSubmit={(e) => {
           e.preventDefault();
           submit();

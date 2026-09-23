@@ -4,20 +4,21 @@ import { requireAdmin } from "@/lib/auth";
 import { DEFAULT_TIMEZONE } from "@/lib/dates";
 import type { CategoryLite } from "@/lib/pricing";
 import { scopeToRpc, type PriceScope } from "@/lib/schemas/price-update";
-import { getSettings } from "@/lib/store/settings";
 import { escapeLike } from "@/lib/store/utils";
 import type { Json } from "@/lib/supabase/database.types";
 
 /*
  * Lecturas del admin de precios, promociones y cupones (agente C).
- * Sin caché, bajo RLS del admin logueado.
+ * Sin caché, bajo RLS del admin logueado, siempre de la tienda activa
+ * (`requireAdmin()` está memoizado por request).
  */
 
-/** Zona horaria de la tienda (para los datetime-local de promos y cupones). */
+/** Zona horaria de la tienda activa (para los datetime-local de promos y cupones). */
 export async function getStoreTimezone(): Promise<string> {
   try {
-    const s = await getSettings();
-    return s.timezone || DEFAULT_TIMEZONE;
+    const { supabase, store } = await requireAdmin();
+    const { data } = await supabase.from("store_settings").select("timezone").eq("store_id", store.id).maybeSingle();
+    return data?.timezone || DEFAULT_TIMEZONE;
   } catch {
     return DEFAULT_TIMEZONE;
   }
@@ -25,8 +26,12 @@ export async function getStoreTimezone(): Promise<string> {
 
 /** Todas las categorías (livianas) para los selectores de alcance. */
 export async function getCategoryOptions(): Promise<CategoryLite[]> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("categories").select("id, name, parent_id, position").order("position");
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name, parent_id, position")
+    .eq("store_id", store.id)
+    .order("position");
   if (error) throw new Error(error.message);
   return (data ?? []).map((c) => ({ id: c.id, name: c.name, parentId: c.parent_id, position: c.position }));
 }
@@ -49,8 +54,8 @@ function parseFacet(value: Json | undefined): FacetOption[] {
 
 /** Marcas y etiquetas existentes (para "por marca" / "por etiqueta"). */
 export async function getScopeFacets(): Promise<{ brands: FacetOption[]; tags: FacetOption[] }> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.rpc("pricing_scope_facets");
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase.rpc("pricing_scope_facets", { p_store_id: store.id });
   if (error) throw new Error(error.message);
   const obj = data && typeof data === "object" && !Array.isArray(data) ? data : {};
   return { brands: parseFacet(obj.brands), tags: parseFacet(obj.tags) };
@@ -74,8 +79,8 @@ export interface ScopeVariant {
 
 /** Variantes alcanzadas por un alcance (productos no archivados). */
 export async function getScopeVariants(scope: PriceScope): Promise<ScopeVariant[]> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.rpc("pricing_scope_variants", { p_scope: scopeToRpc(scope) });
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase.rpc("pricing_scope_variants", { p_store_id: store.id, p_scope: scopeToRpc(scope) });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => ({
     id: r.variant_id,
@@ -128,12 +133,23 @@ const PICKER_SELECT = "id, name, status, product_images(url, position), product_
 
 /** Búsqueda para el selector de productos (nombre o SKU). */
 export async function searchPickerProducts(q: string, limit = 20): Promise<PickerProduct[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const term = escapeLike(q.trim().slice(0, 80));
-  let query = supabase.from("products").select(PICKER_SELECT).neq("status", "archived").order("name").limit(limit);
+  let query = supabase
+    .from("products")
+    .select(PICKER_SELECT)
+    .eq("store_id", store.id)
+    .neq("status", "archived")
+    .order("name")
+    .limit(limit);
   if (term) {
     // SKU: ids de productos con variantes que matchean.
-    const { data: bySku } = await supabase.from("product_variants").select("product_id").ilike("sku", `%${term}%`).limit(50);
+    const { data: bySku } = await supabase
+      .from("product_variants")
+      .select("product_id")
+      .eq("store_id", store.id)
+      .ilike("sku", `%${term}%`)
+      .limit(50);
     const skuIds = [...new Set((bySku ?? []).map((v) => v.product_id))];
     query = skuIds.length
       ? query.or(`name.ilike.%${term}%,id.in.(${skuIds.join(",")})`)
@@ -147,10 +163,14 @@ export async function searchPickerProducts(q: string, limit = 20): Promise<Picke
 /** Productos por id (para mostrar la selección guardada). Mantiene el orden pedido. */
 export async function getPickerProductsByIds(ids: readonly string[]): Promise<PickerProduct[]> {
   if (!ids.length) return [];
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const out: PickerProduct[] = [];
   for (let i = 0; i < ids.length; i += 150) {
-    const { data, error } = await supabase.from("products").select(PICKER_SELECT).in("id", ids.slice(i, i + 150));
+    const { data, error } = await supabase
+      .from("products")
+      .select(PICKER_SELECT)
+      .eq("store_id", store.id)
+      .in("id", ids.slice(i, i + 150));
     if (error) throw new Error(error.message);
     out.push(...((data ?? []) as PickerRow[]).map(toPicker));
   }
@@ -170,10 +190,11 @@ export interface AdminPaymentMethod {
 
 /** Métodos de pago (activos e inactivos). La configuración la hace H en /admin/configuracion/pagos. */
 export async function getPaymentMethodsAdmin(): Promise<AdminPaymentMethod[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("payment_methods")
     .select("id, code, name, type, discount_percent, is_active, position")
+    .eq("store_id", store.id)
     .order("position");
   if (error) throw new Error(error.message);
   return (data ?? []).map((m) => ({
@@ -211,11 +232,12 @@ function parseUndo(value: Json | null): PriceBatchRow["undoResult"] {
 }
 
 export async function listPriceBatches(page: number): Promise<{ rows: PriceBatchRow[]; total: number }> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const from = (page - 1) * BATCHES_PER_PAGE;
   const { data, error, count } = await supabase
     .from("price_batch_list")
     .select("*", { count: "exact" })
+    .eq("store_id", store.id)
     .order("created_at", { ascending: false })
     .range(from, from + BATCHES_PER_PAGE - 1);
   if (error) throw new Error(error.message);
@@ -257,12 +279,13 @@ const num = (v: number | null | undefined) => (v === null || v === undefined ? n
 
 /** Detalle por variante de un batch. */
 export async function getPriceBatchChanges(batchId: string): Promise<PriceChangeDetail[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("price_changes")
     .select(
       "id, variant_id, old_price, new_price, old_compare_at, new_compare_at, product_variants(title, sku, price, compare_at_price, product_id, products(name))",
     )
+    .eq("store_id", store.id)
     .eq("batch_id", batchId)
     .order("created_at")
     .limit(5000);

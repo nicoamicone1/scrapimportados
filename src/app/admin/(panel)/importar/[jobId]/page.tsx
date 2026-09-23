@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: PageProps<"/admin/importar/[j
   const { jobId } = await params;
   if (!z.string().uuid().safeParse(jobId).success) return { title: "Importación" };
   const ctx = await requireAdmin();
-  const job = await getJob(ctx.supabase, jobId);
+  const job = await getJob(ctx, jobId);
   return { title: job ? `Importación · ${jobTitle(job)}` : "Importación" };
 }
 
@@ -19,7 +19,7 @@ export default async function ImportJobPage({ params }: PageProps<"/admin/import
   const { jobId } = await params;
   if (!z.string().uuid().safeParse(jobId).success) notFound();
   const ctx = await requireAdmin();
-  const job = await getJob(ctx.supabase, jobId);
+  const job = await getJob(ctx, jobId);
   if (!job) notFound();
   return <JobDetailView key={job.id} initialJob={job} />;
 }

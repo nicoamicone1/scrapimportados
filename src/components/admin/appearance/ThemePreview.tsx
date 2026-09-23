@@ -295,10 +295,15 @@ function Showcase({ theme, transferPercent }: { theme: Theme; transferPercent: n
 }
 
 /** Preview completo con el tema sin guardar. */
-export async function ThemePreview({ theme, device }: { theme: Theme; device: PreviewDevice }) {
-  const [ctx, settings, menus, home] = await Promise.all([previewContext(device, theme), getSettings(), getMenus(), getPublishedPage("home")]);
+export async function ThemePreview({ storeId, theme, device }: { storeId: string; theme: Theme; device: PreviewDevice }) {
+  const [ctx, settings, menus, home] = await Promise.all([
+    previewContext(storeId, device, theme),
+    getSettings(storeId),
+    getMenus(storeId),
+    getPublishedPage(storeId, "home"),
+  ]);
   const blocks = [heroFrom(home?.blocks), SLIDER, BANNERS];
-  ctx.data = await resolveBlockData(blocks, ctx.promotions);
+  ctx.data = await resolveBlockData(storeId, blocks, ctx.promotions);
   return (
     <>
       <PreviewHeader theme={theme} settings={settings} menu={menus.header} />

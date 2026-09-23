@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import { cn } from "@/lib/cn";
 import { isDarkTheme, type Theme } from "@/lib/theme";
 
@@ -65,13 +65,13 @@ export function StoreButtonLink({
     );
   }
   return (
-    <Link href={href || "/"} className={cn("sbtn", className)} {...attrs}>
+    <StoreLink href={href || "/"} className={cn("sbtn", className)} {...attrs}>
       {children}
-    </Link>
+    </StoreLink>
   );
 }
 
-/** Link genérico: externo con `<a>`, interno con `next/link`. */
+/** Link genérico: externo con `<a>`, interno con `StoreLink` (prefijo de la tienda). */
 export function SmartLink({ href, className, children, ariaLabel }: { href: string; className?: string; children: ReactNode; ariaLabel?: string }) {
   if (isExternal(href)) {
     return (
@@ -81,8 +81,8 @@ export function SmartLink({ href, className, children, ariaLabel }: { href: stri
     );
   }
   return (
-    <Link href={href || "/"} className={className} aria-label={ariaLabel}>
+    <StoreLink href={href || "/"} className={className} aria-label={ariaLabel}>
       {children}
-    </Link>
+    </StoreLink>
   );
 }

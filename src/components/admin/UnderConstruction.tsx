@@ -1,5 +1,7 @@
-import { PageHeader, EmptyState } from "@/components/ui/display";
+import { Hammer } from "lucide-react";
+
 import { ButtonLink } from "@/components/ui/Button";
+import { EmptyState, PageHeader } from "@/components/ui/display";
 
 /**
  * Placeholder de F para las secciones que construyen otros agentes.
@@ -19,6 +21,7 @@ export function UnderConstruction({
     <>
       <PageHeader title={title} description={description} />
       <EmptyState
+        icon={<Hammer />}
         title="En construcción"
         description={`Esta sección llega en la próxima entrega (agente ${owner}). Mientras tanto podés recorrer el resto del panel.`}
         actions={

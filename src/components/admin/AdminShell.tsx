@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { Drawer } from "@/components/ui/Dialog";
+import { NavigationProgress } from "@/components/ui/NavigationProgress";
+import { UrlPendingScope } from "@/components/ui/useUrlTransition";
 import { cn } from "@/lib/cn";
 
 import { CommandPalette } from "./CommandPalette";
@@ -16,6 +18,12 @@ export interface AdminShellProps {
   isOwner: boolean;
   /** Estado inicial leído de la cookie (evita salto al hidratar). */
   initialCollapsed: boolean;
+  /** Slot: chip del plan debajo del nombre de la tienda en el sidebar (M). */
+  planChip?: ReactNode;
+  /** Slot: selector de tienda en el topbar (M: `<StoreSwitcher>`). */
+  storeSwitcher?: ReactNode;
+  /** Link de "Ver tienda" (M: `storeHref(store)`, relativo en modo fallback). */
+  storeHref?: string;
   children: ReactNode;
 }
 
@@ -31,10 +39,12 @@ function useIsMac() {
 }
 
 /**
- * Shell del admin: sidebar colapsable (desktop), drawer (mobile), topbar y
- * command palette con Ctrl/⌘ K.
+ * Shell del admin: sidebar oscuro colapsable (desktop), drawer (mobile),
+ * topbar, command palette con Ctrl/⌘ K, barra de progreso de navegación y
+ * `UrlPendingScope` (los filtros de la página y sus tablas comparten el
+ * estado "cargando").
  */
-export function AdminShell({ storeName, user, isOwner, initialCollapsed, children }: AdminShellProps) {
+export function AdminShell({ storeName, user, isOwner, initialCollapsed, planChip, storeSwitcher, storeHref, children }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -61,13 +71,20 @@ export function AdminShell({ storeName, user, isOwner, initialCollapsed, childre
 
   return (
     <div className="flex min-h-dvh">
+      <NavigationProgress />
       <aside
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 border-r border-adm-border transition-[width] duration-150 md:block",
+          "sticky top-0 hidden h-dvh shrink-0 bg-adm-sidebar-bg transition-[width] duration-150 md:block",
           collapsed ? "w-14" : "w-[232px]",
         )}
       >
-        <Sidebar storeName={storeName} isOwner={isOwner} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+        <Sidebar
+          storeName={storeName}
+          isOwner={isOwner}
+          planChip={planChip}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+        />
       </aside>
 
       <Drawer
@@ -77,9 +94,9 @@ export function AdminShell({ storeName, user, isOwner, initialCollapsed, childre
         width="w-[264px]"
         hideClose
         label="Menú"
-        className="md:hidden"
+        className="bg-adm-sidebar-bg md:hidden"
       >
-        <Sidebar storeName={storeName} isOwner={isOwner} onNavigate={() => setMobileOpen(false)} />
+        <Sidebar storeName={storeName} isOwner={isOwner} planChip={planChip} onNavigate={() => setMobileOpen(false)} />
       </Drawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -88,9 +105,11 @@ export function AdminShell({ storeName, user, isOwner, initialCollapsed, childre
           onOpenMenu={() => setMobileOpen(true)}
           onOpenPalette={() => setPaletteOpen(true)}
           shortcutLabel={isMac ? "⌘" : "Ctrl"}
+          storeSwitcher={storeSwitcher}
+          storeHref={storeHref}
         />
         <main id="contenido" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 md:px-6 md:py-6">
-          {children}
+          <UrlPendingScope>{children}</UrlPendingScope>
         </main>
       </div>
 

@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { SeoFields } from "@/components/admin/SeoFields";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -23,6 +24,8 @@ import { DropdownItem, DropdownMenu, DropdownSeparator } from "@/components/ui/D
 import { Field } from "@/components/ui/Field";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
+import { withPendingToast } from "@/components/ui/feedback";
+import { SaveBar } from "@/components/ui/SaveBar";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/dates";
 import type { CategoryNodeInput } from "@/lib/admin/category-tree";
@@ -87,6 +90,7 @@ export interface ProductFormProps {
 
 export function ProductForm({ product, categories, brands, tags, siteName }: ProductFormProps) {
   const router = useRouter();
+  const { store } = useAdminStore();
   const initial = useMemo(() => (product ? formStateFromProduct(product) : emptyFormState()), [product]);
   const [state, setState] = useState<ProductFormState>(initial);
   const [baseline, setBaseline] = useState(() => snapshot(initial));
@@ -228,7 +232,9 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
   };
 
   const savedSlug = meta?.slug ?? "";
-  const storePath = savedSlug ? `/producto/${savedSlug}` : "";
+  const productPath = savedSlug ? `/producto/${savedSlug}` : "";
+  // Link a la tienda activa (relativo en modo /s/<slug>, absoluto en subdominio).
+  const storePath = productPath ? `${store.href}${productPath}` : "";
   const isActive = meta?.status === "active";
   const usedImages = new Set(state.variants.map((v) => v.image_id).filter((x): x is string => Boolean(x)));
   const title = state.name.trim() || (productId ? "Producto sin nombre" : "Nuevo producto");
@@ -279,7 +285,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                   icon={<Link2 />}
                   onSelect={() => {
                     void navigator.clipboard
-                      .writeText(`${window.location.origin}${storePath}`)
+                      .writeText(`${store.url}${productPath}`)
                       .then(() => toast.success("Link copiado"))
                       .catch(() => toast.error("No se pudo copiar el link"));
                   }}
@@ -289,7 +295,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                 <DropdownSeparator />
                 {meta.status === "archived" ? (
                   <>
-                    <DropdownItem icon={<ArchiveRestore />} onSelect={() => void changeStatusNow("draft")}>
+                    <DropdownItem icon={<ArchiveRestore />} onSelect={() => void withPendingToast("Pasando a borrador…", () => changeStatusNow("draft"))}>
                       Restaurar como borrador
                     </DropdownItem>
                     <DropdownItem icon={<Trash2 />} danger disabled={meta.has_orders} onSelect={() => setDeleteOpen(true)}>
@@ -297,7 +303,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                     </DropdownItem>
                   </>
                 ) : (
-                  <DropdownItem icon={<Archive />} onSelect={() => void changeStatusNow("archived")}>
+                  <DropdownItem icon={<Archive />} onSelect={() => void withPendingToast("Archivando…", () => changeStatusNow("archived"))}>
                     Archivar
                   </DropdownItem>
                 )}
@@ -449,6 +455,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                 fallbackTitle={state.name}
                 fallbackDescription={state.short_description || stripHtml(state.description_html).slice(0, 160)}
                 pathPrefix="/producto/"
+                siteUrl={store.url}
                 siteName={siteName}
                 errors={{ title: err("seo.title"), description: err("seo.description"), slug: err("slug") }}
                 slugHint={
@@ -553,22 +560,15 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
         </div>
 
         {/* Barra de guardado */}
-        <div
-          className={cn(
-            "sticky bottom-0 z-20 -mx-4 items-center justify-end gap-2 border-t border-adm-border bg-adm-surface px-4 py-2.5 md:-mx-6 md:px-6 lg:col-span-2",
-            dirty ? "flex" : "flex md:hidden",
-          )}
-        >
-          {dirty ? <span className="mr-auto text-[13px] text-adm-fg-muted">Cambios sin guardar</span> : null}
-          {dirty && productId ? (
-            <Button variant="ghost" onClick={discard} disabled={saving}>
-              Descartar
-            </Button>
-          ) : null}
-          <Button type="submit" variant="primary" loading={saving} disabled={!dirty && Boolean(productId)}>
-            {productId ? "Guardar" : "Crear producto"}
-          </Button>
-        </div>
+        <SaveBar
+          className={cn("mt-0 lg:col-span-2", !dirty && "md:hidden")}
+          message={dirty ? "Cambios sin guardar" : productId ? "Sin cambios" : "Producto nuevo"}
+          onDiscard={dirty && productId ? discard : undefined}
+          saving={saving}
+          saveLabel={productId ? "Guardar" : "Crear producto"}
+          savingLabel={productId ? "Guardando…" : "Creando…"}
+          saveDisabled={!dirty && Boolean(productId)}
+        />
       </form>
 
       {meta ? (

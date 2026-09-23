@@ -1,6 +1,7 @@
 import { Import, Plus } from "lucide-react";
 import type { Metadata } from "next";
 
+import { LimitBanner } from "@/components/admin/LimitBanner";
 import { ProductsTable } from "@/components/admin/products/ProductsTable";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, PageHeader } from "@/components/ui/display";
@@ -8,7 +9,9 @@ import { TabsNav } from "@/components/ui/Tabs";
 import { listCategoryOptions } from "@/lib/admin/categories";
 import { categoryPath, flattenTree } from "@/lib/admin/category-tree";
 import { getProductCounts, listAdminProducts, parseProductFilters } from "@/lib/admin/products";
+import { requireAdmin } from "@/lib/auth";
 import { formatNumber } from "@/lib/money";
+import { countUsage } from "@/lib/plans/server";
 
 export const metadata: Metadata = { title: "Productos" };
 
@@ -32,10 +35,12 @@ function hrefWith(params: Params, patch: Record<string, string | null>) {
 export default async function ProductsPage({ searchParams }: PageProps<"/admin/productos">) {
   const params = (await searchParams) as Params;
   const filters = parseProductFilters(params);
-  const [list, counts, categoryRows] = await Promise.all([
+  const ctx = await requireAdmin();
+  const [list, counts, categoryRows, productsUsed] = await Promise.all([
     listAdminProducts(filters),
     getProductCounts(),
     listCategoryOptions(),
+    countUsage(ctx, "products"),
   ]);
 
   const categories = flattenTree(categoryRows).map((f) => ({
@@ -96,6 +101,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
           ]}
         />
       </PageHeader>
+      <LimitBanner limit="products" used={productsUsed} className="mb-3" />
       <ProductsTable
         // La selección se reinicia al cambiar filtros o página.
         key={JSON.stringify(filters)}

@@ -44,7 +44,7 @@ Un sitio "hecho con IA" se reconoce en dos segundos porque repite los mismos def
 | --- | --- |
 | Dashboard con 4 stat cards de colores pastel, cada una con ícono en círculo | Franja única con números tipográficos grandes separados por reglas verticales (§7.8). |
 | Gráficos de área con gradiente, donuts de 6 colores | Tablas y listas primero. Si hay gráfico: barras monocromas `--adm-fg` al 80 %, sin gradiente ni animación. |
-| Sidebar oscura con logo brillante o gradiente | Sidebar en `--adm-surface-2` (mismo neutro cálido), item activo con fondo `--adm-surface` y borde 1px. |
+| Sidebar oscura con logo brillante o gradiente | Sidebar plano `--adm-sidebar-bg` (verde-tinta), marca sin brillo, ítem activo `--adm-sidebar-active` + barra izquierda ámbar de 3px (§7.3). |
 | Tablas con avatar circular de colores en cada fila | Texto. En productos, miniatura cuadrada 32px de la foto real; iniciales 20px grises sólo para usuarios del equipo. |
 | Toasts con ícono gigante y fondo saturado | `sonner` neutro: superficie, borde, texto; sólo el ícono 16px lleva color semántico. |
 | Badges de estado con 7 colores saturados | Paleta de estados de §7.7 (fondos lavados, texto oscuro, punto de 6px). |
@@ -631,30 +631,50 @@ Clase propia `.prose-store` (no el plugin typography por defecto):
 
 Herramienta de trabajo: neutra, densa, rápida. **No** hereda el tema de la tienda (salvo dentro del preview). Tokens fijos bajo `.admin-root`.
 
-### 7.1 Paleta fija
+### 7.1 Paleta fija (v0.1, spec §14.6)
+
+El admin deja de ser "hoja blanca": fondo crema, superficies blancas, sidebar verde-tinta, primario pino y acento ámbar. Fuente de verdad: `src/app/admin/admin.css` (mapeados en `globals.css` como `bg-adm-*`, `text-adm-*`, `shadow-adm-card`).
 
 ```css
 .admin-root {
-  --adm-bg:        #F7F6F3; /* fondo general, neutro cálido */
-  --adm-surface:   #FFFFFF; /* paneles, tablas, dialogs */
-  --adm-surface-2: #F1EFEA; /* sidebar, header de tabla, fila seleccionada, readonly */
-  --adm-border:    #E2DED6; /* reglas y bordes de paneles */
-  --adm-fg:        #1F1E1B; /* texto (15.4:1 sobre bg) */
-  --adm-fg-muted:  #6B6860; /* secundario (5.2:1 sobre bg, 4.8:1 sobre surface-2) */
-  --adm-accent:    #2E4A3F; /* verde pino: primario, links, foco, activo */
-  --adm-accent-fg: #FFFFFF; /* 9.7:1 sobre accent */
-  --adm-danger:    #B42318; /* 6.6:1 sobre surface */
-  --adm-warning:   #9A5B00; /* 5.4:1 */
-  --adm-success:   #2F6B3F; /* 6.4:1 */
-  --adm-info:      #2B5A84; /* 7.3:1 */
-  --adm-input-border: #CFCABF; /* ≥ 3:1 sobre surface */
-  --adm-radius:    6px;
-  --adm-focus:     0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-accent);
-  --adm-shadow:    0 12px 32px -12px rgb(31 30 27 / .25), 0 0 0 1px var(--adm-border);
+  --adm-bg:           #EFEAE1; /* fondo del contenido: crema cálida */
+  --adm-surface:      #FFFFFF; /* paneles, tablas, dialogs, topbar */
+  --adm-surface-2:    #F4F1EA; /* buscador del topbar, readonly, chips */
+  --adm-border:       #E2DBCD;
+  --adm-input-border: #D9D2C3; /* hover #C2B9A6 */
+  --adm-fg:           #1C1917; /* tinta (14.6:1 sobre bg) */
+  --adm-fg-muted:     #6B6860; /* 4.64:1 sobre bg, 5.07:1 sobre table-head */
+  --adm-fg-subtle:    #C9C1B0; /* sólo iconos decorativos de empty states */
+  --adm-accent:       #2E4A3F; /* pino: botón primario, links, tabs activas */
+  --adm-accent-soft:  #E6EFE9; /* tarjeta de onboarding */
+  --adm-accent-2:     #E0A458; /* ámbar: foco, progreso, badge de pedidos, CTA "accent" */
+  --adm-accent-2-fg:  #1A2320; /* texto sobre ámbar (7.37:1) */
+  --adm-accent-2-ink: #8A5A12; /* ámbar legible como texto/icono */
+  --adm-focus-ring:   #B97A2E; /* anillo de foco sobre claro (3.57:1); en el sidebar #E0A458 */
+  --adm-sidebar-bg:     #1A2320;
+  --adm-sidebar-fg:     #E8E6DF; /* 12.9:1 */
+  --adm-sidebar-muted:  #8FA39A; /* grupos e iconos: 6.03:1 */
+  --adm-sidebar-hover:  #232E2A;
+  --adm-sidebar-active: #2E4A3F; /* texto encima 7.76:1 */
+  --adm-table-head:   #F7F4EE;
+  --adm-row-hover:    #FAF8F3;
+  --adm-shadow-surface: 0 1px 2px rgb(20 25 22 / .06); /* cards, tablas, stats */
+  --adm-skeleton: #E4DDCF; --adm-skeleton-shine: #F3EFE7;
+  /* danger/warning/success/info y badges de estado: sin cambios (§7.7). */
 }
 ```
 
-Hover de filas e ítems: `color-mix(in oklab, var(--adm-surface-2) 60%, var(--adm-surface))`. Sombra (`--adm-shadow`) sólo en dialogs, dropdowns, popovers y command palette.
+**Tinta por sección** (`NavGroup.section` en `nav.ts`, `sectionFor(pathname)`): icono de `PageHeader` con fondo tintado + franja de 3px en el borde inferior del topbar. Sin gradientes.
+
+| Sección | Grupo del menú | Franja | Fondo icono | Icono |
+| --- | --- | --- | --- | --- |
+| `orders` | Principal (dashboard, pedidos, clientes) | `#E0A458` | `#F8ECD9` | `#8A5A12` |
+| `catalog` | Catálogo | `#2E4A3F` | `#E6EFE9` | `#2E4A3F` |
+| `marketing` | Marketing | `#B8542A` | `#F6E3DA` | `#9E4520` |
+| `store` | Tienda | `#3D5A80` | `#E3E9F1` | `#3D5A80` |
+| `system` | Sistema | `#6B6860` | `#EBE8E1` | `#5C5952` |
+
+Reglas: foco = anillo ámbar (`--adm-focus`); en inputs, borde `--adm-focus-ring` + halo ámbar 35 %. Sombra `--adm-shadow` (grande) sólo en dialogs, dropdowns y command palette; las superficies llevan `--adm-shadow-surface`. Ámbar nunca como texto chico sobre blanco (usar `--adm-accent-2-ink`). Botones: `primary` pino, `secondary` blanco con borde, `ghost`, `danger`, `accent` ámbar (máximo uno por pantalla, para "empezá por acá").
 
 ### 7.2 Tipografía y densidad
 
@@ -665,8 +685,11 @@ Hover de filas e ítems: `color-mix(in oklab, var(--adm-surface-2) 60%, var(--ad
 
 ### 7.3 Shell
 
-- Sidebar 232px, `bg --adm-surface-2`, borde derecho `--adm-border`. Arriba: nombre de la tienda 14px/600 + "Ecommy 0.0.0" 12px muted. Ítems 32px, ícono lucide 16px `--adm-fg-muted`, texto 14px; activo: `bg --adm-surface`, borde 1px, texto 500. Grupos con título 11px uppercase muted: "Catálogo", "Ventas", "Tienda online", "Configuración".
-- Topbar 48px: disparador de la command palette ("Buscar o ir a…  Ctrl K"), "Ver tienda" (externo), menú de usuario.
+- Sidebar 232px, `bg --adm-sidebar-bg`. Arriba: marca "Ecommy" (cuadrado ámbar con "e" + nombre en blanco), debajo el nombre de la tienda 13px y el slot `planChip` (`SidebarPlanChip`). Ítems 32px, ícono 16px `--adm-sidebar-muted`, texto `--adm-sidebar-fg`; activo: fondo `--adm-sidebar-active`, texto blanco 500, ícono ámbar y barra izquierda ámbar de 3px. Grupos 11px uppercase `--adm-sidebar-muted`. Badge de pedidos nuevos en ámbar. Al pie, versión en `--adm-sidebar-muted`.
+- Topbar 48px, `--adm-surface` con borde inferior y franja de 3px de la sección: slot `storeSwitcher`, breadcrumb, buscador con fondo `--adm-surface-2` ("Buscar o ir a…  Ctrl K"), "Ver tienda", menú de usuario (avatar pino).
+- Barra de progreso de navegación ámbar de 2px arriba de todo (`NavigationProgress`).
+- Guardado: `SaveBar` sticky inferior con fondo `--adm-sidebar-bg`, texto claro, "Descartar" (ghost claro) y "Guardar" (ámbar).
+- Carga: cada ruta tiene `loading.tsx` con skeletons que imitan la página (`src/components/ui/skeletons.tsx`, shimmer `.sk`); los filtros usan `useUrlTransition` y la tabla muestra un velo con spinner chico mientras llega el resultado.
 
 ### 7.4 PageHeader
 
@@ -674,7 +697,7 @@ Título 20px/600 a la izquierda + descripción opcional 14px muted con dato úti
 
 ### 7.5 Tablas
 
-- Panel `--adm-surface`, borde 1px, radio 6px. Header **sticky** 36px, `bg --adm-surface-2`, 12px/500 muted, sin uppercase. Filas **40px**, 13px, regla inferior `--adm-border`, hover sutil, seleccionada `--adm-surface-2`.
+- Panel `--adm-surface`, borde 1px, radio 6px. Header **sticky** 36px, `bg --adm-table-head`, 12px/500 muted, sin uppercase. Filas **40px**, 13px, `tabular-nums`, regla inferior `--adm-border`, hover `--adm-row-hover`, seleccionada ámbar lavado (`--adm-accent-2-soft` 60 %). Prop `pending` (o el `UrlPendingScope` de la página): velo blanco 60 % + spinner chico.
 - Primera columna = identidad clickeable (miniatura 32px radio 4px + nombre 500 + SKU mono 12px muted). Números a la derecha. Fechas relativas ("hace 2 h") con `title` absoluto.
 - Acciones de fila en menú "…" al final (visible al hover y al foco). Al seleccionar, la barra de filtros se reemplaza por la de acciones masivas: "3 seleccionados · Cambiar estado · Archivar · Exportar CSV".
 - Filtros arriba: búsqueda 280px + selects 32px + "Limpiar filtros". Paginación abajo: "1–50 de 312" + anterior/siguiente.
@@ -707,7 +730,7 @@ Alto 20px, radio 4px, 12px/500, punto de 6px del color del texto + etiqueta: el 
 
 ### 7.8 Dashboard
 
-- Arriba, **una** franja `--adm-surface` con 4 métricas separadas por reglas verticales: etiqueta 12px muted ("Ventas hoy", "Pedidos por confirmar", "Ticket promedio 7 días", "Por cobrar") + número 28px/600 `tabular-nums` + delta 12px muted ("+12 % vs. semana anterior"). Sin íconos ni fondos de color; el delta se colorea sólo si es alerta (`--adm-warning`).
+- Arriba, **una** franja `--adm-surface` con 4 métricas separadas por reglas verticales: etiqueta 12px muted ("Ventas hoy", "Pedidos por confirmar", "Ticket promedio 7 días", "Por cobrar") + número 28px/600 `tabular-nums` + delta 12px ("+12 % vs. semana anterior") en verde `--adm-success` si sube, rojo `--adm-danger` si baja, muted si no hay comparación; `--adm-warning` si es alerta. Sin íconos ni fondos de color.
 - Debajo, 8/4: "Pedidos que requieren acción" (tabla: por confirmar, pagos sin acreditar, para despachar) y "Stock bajo" (lista con cantidad y link a inventario).
 - Gráfico opcional "Ventas de los últimos 30 días": barras verticales `--adm-fg` al 80 %, hoy en `--adm-accent`, 3 líneas guía `--adm-border`, sin gradiente ni animación, tooltip con monto exacto. Nada de áreas, donuts ni radar.
 

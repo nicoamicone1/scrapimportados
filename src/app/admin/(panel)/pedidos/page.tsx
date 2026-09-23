@@ -25,22 +25,25 @@ import {
   sweepExpiredOrders,
 } from "@/lib/admin/orders";
 import { formatNumber } from "@/lib/money";
+import { storeHref } from "@/lib/tenant/urls";
 
 export const metadata: Metadata = { title: "Pedidos" };
 
 export default async function OrdersPage({ searchParams }: PageProps<"/admin/pedidos">) {
-  const { supabase } = await requireAdmin();
+  const ctx = await requireAdmin();
+  const { supabase } = ctx;
+  const storeId = ctx.store.id;
   const sp = await searchParams;
   const filters = parseOrderFilters(sp);
 
   // Barrido perezoso de reservas vencidas antes de leer (P0-06).
-  const [expired, store] = await Promise.all([sweepExpiredOrders(supabase), getStoreInfo(supabase)]);
+  const [expired, store] = await Promise.all([sweepExpiredOrders(supabase, storeId), getStoreInfo(supabase, storeId)]);
 
   const [methods, counts, { rows, total }, withdrawalsNew] = await Promise.all([
-    listPaymentMethods(supabase),
-    getOrderTabCounts(supabase),
-    listOrders(supabase, filters, store.timezone),
-    countNewWithdrawals(supabase),
+    listPaymentMethods(supabase, storeId),
+    getOrderTabCounts(supabase, storeId),
+    listOrders(supabase, storeId, filters, store.timezone),
+    countNewWithdrawals(supabase, storeId),
   ]);
 
   const tabHref = (tab: string) => {
@@ -109,7 +112,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ped
                   <ButtonLink href="/admin/pedidos/nuevo" variant="primary">
                     Crear pedido manual
                   </ButtonLink>
-                  <ButtonLink href="/" external>
+                  <ButtonLink href={storeHref(ctx.store, "/")} external>
                     Ver la tienda
                   </ButtonLink>
                 </>

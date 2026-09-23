@@ -8,15 +8,16 @@ import { SCHEMA_VERSION } from "@/lib/version";
 
 /*
  * Lecturas de Configuración para el admin (sin caché, con la sesión del
- * usuario). Las escrituras están en src/app/admin/(panel)/configuracion/actions.ts.
+ * usuario), siempre de la tienda activa. Las escrituras están en
+ * src/app/admin/(panel)/configuracion/actions.ts.
  */
 
 export type SettingsRow = Tables<"store_settings">;
 
-/** Fila cruda de `store_settings` (para mergear jsonb sin perder claves). */
+/** Fila cruda de `store_settings` de la tienda activa (para mergear jsonb sin perder claves). */
 export async function getSettingsRow(): Promise<SettingsRow> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("store_settings").select("*").eq("id", 1).single();
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase.from("store_settings").select("*").eq("store_id", store.id).single();
   if (error || !data) throw new Error(`No se pudo leer store_settings: ${error?.message ?? "sin fila"}`);
   return data;
 }
@@ -38,10 +39,11 @@ export interface AdminPaymentMethod {
 }
 
 export async function listPaymentMethodsAdmin(): Promise<AdminPaymentMethod[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("payment_methods")
     .select("id, code, type, name, is_active, discount_percent, instructions_md, position")
+    .eq("store_id", store.id)
     .order("position")
     .order("created_at");
   if (error) throw new Error(error.message);
@@ -62,8 +64,8 @@ export type RedirectRow = Tables<"redirects">;
 export const REDIRECTS_PER_PAGE = 50;
 
 export async function listRedirects({ q, page }: { q?: string; page: number }): Promise<{ rows: RedirectRow[]; total: number }> {
-  const { supabase } = await requireAdmin();
-  let query = supabase.from("redirects").select("*", { count: "exact" });
+  const { supabase, store } = await requireAdmin();
+  let query = supabase.from("redirects").select("*", { count: "exact" }).eq("store_id", store.id);
   const term = q?.trim();
   if (term) {
     const t = escapeLike(term);

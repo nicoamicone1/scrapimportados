@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 
 import { NewPageDialog } from "@/components/admin/builder/NewPageDialog";
 import { PagesTable } from "@/components/admin/builder/PagesTable";
+import { LimitBanner } from "@/components/admin/LimitBanner";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -44,7 +46,9 @@ export default async function PagesPage({ searchParams }: PageProps<"/admin/pagi
                 Editar portada
               </ButtonLink>
             ) : null}
-            <NewPageDialog />
+            <PlanGate feature="content.landings" mode="inline" label="Nueva página">
+              <NewPageDialog />
+            </PlanGate>
           </>
         }
       >
@@ -57,6 +61,7 @@ export default async function PagesPage({ searchParams }: PageProps<"/admin/pagi
           }))}
         />
       </PageHeader>
+      <LimitBanner limit="pages" used={all.length} className="mb-3" />
       <div className="mb-3 flex items-center gap-2">
         <SearchInput placeholder="Buscar por título o dirección" className="w-full max-w-[280px]" aria-label="Buscar páginas" />
       </div>

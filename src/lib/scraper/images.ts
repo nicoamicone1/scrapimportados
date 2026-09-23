@@ -3,13 +3,15 @@ import "server-only";
 /**
  * Fase "images": descarga las imágenes del origen, las normaliza con sharp
  * (máx. 1600 px, WebP q82) y las sube al bucket `media`
- * (`products/<productId>/<hash>.webp`). Idempotente: las URLs de origen ya
- * procesadas quedan en `products.metadata.imagesRemote` y no se re-bajan.
+ * (`<store_id>/products/<productId>/<hash>.webp`). Idempotente: las URLs de
+ * origen ya procesadas quedan en `products.metadata.imagesRemote` y no se
+ * re-bajan. Respeta el límite `images_per_product` del plan (recorta, no falla).
  */
 import { createHash } from "node:crypto";
 
 import sharp from "sharp";
 
+import { MEDIA_BUCKET, mediaPath } from "@/lib/media";
 import type { Json } from "@/lib/supabase/database.types";
 import type { ServerSupabase } from "@/lib/supabase/server";
 
@@ -50,6 +52,7 @@ export interface ImageResult {
 /** Descarga y sube una imagen; devuelve la URL pública y el tamaño final. */
 async function processOne(
   db: ServerSupabase,
+  storeId: string,
   productId: string,
   remote: string,
 ): Promise<{ url: string; width: number; height: number }> {
@@ -60,14 +63,14 @@ async function processOne(
     .webp({ quality: 82 })
     .toBuffer({ resolveWithObject: true });
   const hash = createHash("sha1").update(remote).digest("hex").slice(0, 16);
-  const path = `products/${productId}/${hash}.webp`;
-  const up = await db.storage.from("media").upload(path, data, {
+  const path = mediaPath(storeId, "products", productId, `${hash}.webp`);
+  const up = await db.storage.from(MEDIA_BUCKET).upload(path, data, {
     contentType: "image/webp",
     upsert: true,
     cacheControl: "31536000",
   });
   if (up.error) throw new Error(up.error.message);
-  return { url: db.storage.from("media").getPublicUrl(path).data.publicUrl, width: info.width, height: info.height };
+  return { url: db.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl, width: info.width, height: info.height };
 }
 
 /**
@@ -77,17 +80,21 @@ async function processOne(
  */
 export async function importProductImages(
   db: ServerSupabase,
+  storeId: string,
   productId: string,
   product: NormalizedProduct,
+  /** Límite `images_per_product` del plan (`null` = sin límite propio). */
+  maxImages: number | null = null,
 ): Promise<ImageResult> {
+  const cap = Math.min(MAX_IMAGES_PER_PRODUCT, maxImages ?? MAX_IMAGES_PER_PRODUCT);
   const variantImages = product.variants.map((v) => v.image_url).filter((u): u is string => Boolean(u));
-  const remote = [...new Set([...product.images, ...variantImages])].slice(0, MAX_IMAGES_PER_PRODUCT);
+  const remote = [...new Set([...product.images, ...variantImages])].slice(0, cap);
   const result: ImageResult = { uploaded: 0, failed: 0, skipped: false, errors: [] };
   if (!remote.length) return { ...result, skipped: true };
 
   const [prodRes, imgRes] = await Promise.all([
-    db.from("products").select("id, name, metadata").eq("id", productId).maybeSingle(),
-    db.from("product_images").select("id, position").eq("product_id", productId),
+    db.from("products").select("id, name, metadata").eq("store_id", storeId).eq("id", productId).maybeSingle(),
+    db.from("product_images").select("id, position").eq("store_id", storeId).eq("product_id", productId),
   ]);
   if (!prodRes.data) return { ...result, skipped: true };
   const meta: Record<string, Json | undefined> = isRecord(prodRes.data.metadata) ? { ...prodRes.data.metadata } : {};
@@ -96,16 +103,18 @@ export async function importProductImages(
 
   if (seen === null && existingImages.length > 0) {
     meta.imagesRemote = remote;
-    await db.from("products").update({ metadata: toJson(meta) }).eq("id", productId);
+    await db.from("products").update({ metadata: toJson(meta) }).eq("store_id", storeId).eq("id", productId);
     return { ...result, skipped: true };
   }
 
-  const todo = remote.filter((u) => !(seen ?? []).includes(u));
+  // Lugar libre según el plan: las que no entran se omiten (no se marcan como vistas).
+  const room = Math.max(0, cap - existingImages.length);
+  const todo = remote.filter((u) => !(seen ?? []).includes(u)).slice(0, room);
   if (!todo.length) return { ...result, skipped: true };
 
   const done = await pool(todo, CONCURRENCY, async (u) => {
     try {
-      return { remote: u, ...(await processOne(db, productId, u)) };
+      return { remote: u, ...(await processOne(db, storeId, productId, u)) };
     } catch (err) {
       result.failed += 1;
       result.errors.push(`${u}: ${err instanceof Error ? err.message : String(err)}`);
@@ -114,7 +123,7 @@ export async function importProductImages(
   });
   // La ruta en el bucket es determinística (hash de la URL de origen): si otro
   // job concurrente ya registró la misma imagen, no se duplica la fila.
-  const already = await db.from("product_images").select("url, position").eq("product_id", productId);
+  const already = await db.from("product_images").select("url, position").eq("store_id", storeId).eq("product_id", productId);
   const knownUrls = new Set((already.data ?? []).map((i) => i.url));
   const ok = done.filter((d): d is NonNullable<typeof d> => d !== null && !knownUrls.has(d.url));
 
@@ -122,7 +131,17 @@ export async function importProductImages(
     let position = (already.data ?? existingImages).reduce((m, i) => Math.max(m, i.position), -1) + 1;
     const inserted = await db
       .from("product_images")
-      .insert(ok.map((d) => ({ product_id: productId, url: d.url, alt: prodRes.data!.name, position: position++, width: d.width, height: d.height })))
+      .insert(
+        ok.map((d) => ({
+          store_id: storeId,
+          product_id: productId,
+          url: d.url,
+          alt: prodRes.data!.name,
+          position: position++,
+          width: d.width,
+          height: d.height,
+        })),
+      )
       .select("id, url");
     if (inserted.error) throw new Error(`imágenes: ${inserted.error.message}`);
     result.uploaded = ok.length;
@@ -131,20 +150,24 @@ export async function importProductImages(
     const idByRemote = new Map(ok.map((d) => [d.remote, inserted.data.find((r) => r.url === d.url)?.id ?? null]));
     const wanted = product.variants.filter((v) => v.image_url && idByRemote.get(v.image_url));
     if (wanted.length) {
-      const vars = await db.from("product_variants").select("id, option_values, image_id").eq("product_id", productId);
+      const vars = await db
+        .from("product_variants")
+        .select("id, option_values, image_id")
+        .eq("store_id", storeId)
+        .eq("product_id", productId);
       const byKey = new Map((vars.data ?? []).map((v) => [optionKey(v.option_values), v]));
       for (const v of wanted) {
         const row = byKey.get(optionKey(v.option_values));
         const imageId = idByRemote.get(v.image_url!);
         if (row && imageId && !row.image_id) {
-          await db.from("product_variants").update({ image_id: imageId }).eq("id", row.id);
+          await db.from("product_variants").update({ image_id: imageId }).eq("store_id", storeId).eq("id", row.id);
         }
       }
     }
   }
 
   meta.imagesRemote = [...new Set([...(seen ?? []), ...done.flatMap((d) => (d ? [d.remote] : []))])];
-  const up = await db.from("products").update({ metadata: toJson(meta) }).eq("id", productId);
+  const up = await db.from("products").update({ metadata: toJson(meta) }).eq("store_id", storeId).eq("id", productId);
   if (up.error) throw new Error(`metadata: ${up.error.message}`);
   return result;
 }

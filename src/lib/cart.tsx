@@ -17,6 +17,13 @@ import type { Coupon } from "@/lib/pricing";
  * Guarda el precio de LISTA (`unitPrice`). Los precios finales (promos,
  * cupón, método de pago, envío) se calculan con `computeCart()` de
  * `src/lib/pricing` para mostrar y se recalculan en el server al confirmar.
+ *
+ * Multi-tienda: un carrito POR TIENDA (`ecommy:cart:<storeId>` /
+ * `ecommy:coupon:<storeId>` en localStorage), porque en modo fallback
+ * (`/s/<slug>`) todas las tiendas comparten origen. Las claves viejas de
+ * una sola tienda (`ecommy-cart-v1` / `ecommy-coupon-v1`) se migran SÓLO a
+ * la tienda `demo` (la que heredó los datos de v0) la primera vez que se
+ * abre; para cualquier otra tienda se ignoran.
  */
 
 export interface CartItem {
@@ -58,9 +65,15 @@ export interface CartItemPatch {
 
 export type AddableItem = Omit<CartItem, "qty">;
 
-const STORAGE_KEY = "ecommy-cart-v1";
-const COUPON_KEY = "ecommy-coupon-v1";
+const LEGACY_CART_KEY = "ecommy-cart-v1";
+const LEGACY_COUPON_KEY = "ecommy-coupon-v1";
+/** Tienda que hereda el carrito de v0 (una sola tienda por deploy). */
+const LEGACY_STORE_SLUG = "demo";
 const MAX_QTY = 999;
+
+export function cartStorageKeys(storeId: string): { cart: string; coupon: string } {
+  return { cart: `ecommy:cart:${storeId}`, coupon: `ecommy:coupon:${storeId}` };
+}
 
 interface CartState {
   items: CartItem[];
@@ -71,10 +84,6 @@ interface CartState {
 }
 
 const EMPTY: CartState = { items: [], coupon: null, hydrated: false };
-
-let state: CartState = EMPTY;
-let loaded = false;
-const listeners = new Set<() => void>();
 
 function isCartItem(value: unknown): value is CartItem {
   if (!value || typeof value !== "object") return false;
@@ -90,9 +99,15 @@ function isCartItem(value: unknown): value is CartItem {
   );
 }
 
-function read(): CartItem[] {
+function isCoupon(value: unknown): value is Coupon {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.code === "string" && typeof v.type === "string" && typeof v.value === "number" && Array.isArray(v.categoryIds);
+}
+
+function readItems(key: string): CartItem[] {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter(isCartItem) : [];
@@ -101,15 +116,9 @@ function read(): CartItem[] {
   }
 }
 
-function isCoupon(value: unknown): value is Coupon {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return typeof v.code === "string" && typeof v.type === "string" && typeof v.value === "number" && Array.isArray(v.categoryIds);
-}
-
-function readCoupon(): Coupon | null {
+function readCoupon(key: string): Coupon | null {
   try {
-    const raw = window.localStorage.getItem(COUPON_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     return isCoupon(parsed) ? parsed : null;
@@ -118,54 +127,93 @@ function readCoupon(): Coupon | null {
   }
 }
 
-function persist(items: CartItem[], coupon: Coupon | null) {
+/** Mueve el carrito de v0 a las claves de la tienda `demo` (una sola vez). */
+function migrateLegacy(keys: { cart: string; coupon: string }) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    if (coupon) window.localStorage.setItem(COUPON_KEY, JSON.stringify(coupon));
-    else window.localStorage.removeItem(COUPON_KEY);
+    const ls = window.localStorage;
+    const legacyCart = ls.getItem(LEGACY_CART_KEY);
+    const legacyCoupon = ls.getItem(LEGACY_COUPON_KEY);
+    if (legacyCart === null && legacyCoupon === null) return;
+    if (ls.getItem(keys.cart) === null && legacyCart !== null) ls.setItem(keys.cart, legacyCart);
+    if (ls.getItem(keys.coupon) === null && legacyCoupon !== null) ls.setItem(keys.coupon, legacyCoupon);
+    ls.removeItem(LEGACY_CART_KEY);
+    ls.removeItem(LEGACY_COUPON_KEY);
   } catch {
-    // Storage lleno o bloqueado: el carrito sigue en memoria.
+    // Storage bloqueado: se arranca con el carrito vacío.
   }
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  // Sincroniza entre pestañas.
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY || e.key === COUPON_KEY) {
-      state = { items: read(), coupon: readCoupon(), hydrated: true };
-      listener();
+/** Store externo (useSyncExternalStore) del carrito de UNA tienda. */
+interface CartStore {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => CartState;
+  setState: (items: CartItem[], coupon: Coupon | null) => void;
+}
+
+function createCartStore(storeId: string, slug: string): CartStore {
+  const keys = cartStorageKeys(storeId);
+  let state: CartState = EMPTY;
+  let loaded = false;
+  const listeners = new Set<() => void>();
+
+  const load = (): CartState => ({ items: readItems(keys.cart), coupon: readCoupon(keys.coupon), hydrated: true });
+
+  const getSnapshot = (): CartState => {
+    if (!loaded) {
+      loaded = true;
+      if (slug === LEGACY_STORE_SLUG) migrateLegacy(keys);
+      state = load();
     }
+    return state;
   };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener("storage", onStorage);
+
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    // Sincroniza entre pestañas (sólo las claves de esta tienda).
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === keys.cart || e.key === keys.coupon) {
+        state = load();
+        listener();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      listeners.delete(listener);
+      window.removeEventListener("storage", onStorage);
+    };
   };
+
+  const setState = (items: CartItem[], coupon: Coupon | null) => {
+    // Sin ítems no tiene sentido guardar el cupón.
+    const nextCoupon = items.length ? coupon : null;
+    state = { items, coupon: nextCoupon, hydrated: true };
+    try {
+      window.localStorage.setItem(keys.cart, JSON.stringify(items));
+      if (nextCoupon) window.localStorage.setItem(keys.coupon, JSON.stringify(nextCoupon));
+      else window.localStorage.removeItem(keys.coupon);
+    } catch {
+      // Storage lleno o bloqueado: el carrito sigue en memoria.
+    }
+    for (const l of listeners) l();
+  };
+
+  return { subscribe, getSnapshot, setState };
 }
 
-function getSnapshot(): CartState {
-  if (!loaded) {
-    loaded = true;
-    state = { items: read(), coupon: readCoupon(), hydrated: true };
+/** Un store por tienda (se conserva al navegar entre tiendas en la misma pestaña). */
+const stores = new Map<string, CartStore>();
+
+function cartStoreFor(storeId: string, slug: string): CartStore {
+  let store = stores.get(storeId);
+  if (!store) {
+    store = createCartStore(storeId, slug);
+    stores.set(storeId, store);
   }
-  return state;
+  return store;
 }
 
 function getServerSnapshot(): CartState {
   return EMPTY;
-}
-
-function setState(items: CartItem[], coupon: Coupon | null) {
-  // Sin ítems no tiene sentido guardar el cupón.
-  const nextCoupon = items.length ? coupon : null;
-  state = { items, coupon: nextCoupon, hydrated: true };
-  persist(items, nextCoupon);
-  for (const l of listeners) l();
-}
-
-function setItems(items: CartItem[]) {
-  setState(items, getSnapshot().coupon);
 }
 
 function clampQty(qty: number, max?: number | null) {
@@ -195,14 +243,30 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { items, coupon, hydrated } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+/**
+ * `storeId`/`slug` identifican el carrito de la tienda. Sin ellos (vista previa
+ * del admin) se usa un carrito aparte (`ecommy:cart:preview`).
+ */
+export function CartProvider({
+  storeId = "preview",
+  slug = "",
+  children,
+}: {
+  storeId?: string;
+  slug?: string;
+  children: React.ReactNode;
+}) {
+  const store = cartStoreFor(storeId, slug);
+  const { getSnapshot, setState } = store;
+  const { items, coupon, hydrated } = useSyncExternalStore(store.subscribe, getSnapshot, getServerSnapshot);
   const [isOpen, setIsOpen] = useState(false);
 
   // El bloqueo de scroll y el foco los maneja el <Drawer> del carrito.
 
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
+
+  const setItems = useCallback((next: CartItem[]) => setState(next, getSnapshot().coupon), [getSnapshot, setState]);
 
   const add = useCallback((item: AddableItem, qty = 1) => {
     const current = getSnapshot().items;
@@ -216,7 +280,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           )
         : [...current, { ...item, qty: clampQty(qty, item.maxQty) }].filter((i) => i.qty > 0),
     );
-  }, []);
+  }, [getSnapshot, setItems]);
 
   const setQty = useCallback((variantId: string, qty: number) => {
     const current = getSnapshot().items;
@@ -225,15 +289,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         .map((i) => (i.variantId === variantId ? { ...i, qty: clampQty(qty, i.maxQty) } : i))
         .filter((i) => i.qty > 0),
     );
-  }, []);
+  }, [getSnapshot, setItems]);
 
   const remove = useCallback((variantId: string) => {
     setItems(getSnapshot().items.filter((i) => i.variantId !== variantId));
-  }, []);
+  }, [getSnapshot, setItems]);
 
-  const clear = useCallback(() => setState([], null), []);
+  const clear = useCallback(() => setState([], null), [setState]);
 
-  const setCoupon = useCallback((next: Coupon | null) => setState(getSnapshot().items, next), []);
+  const setCoupon = useCallback((next: Coupon | null) => setState(getSnapshot().items, next), [getSnapshot, setState]);
 
   const applyPatches = useCallback((patches: CartItemPatch[]) => {
     const byId = new Map(patches.map((p) => [p.variantId, p]));
@@ -257,7 +321,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       })
       .filter((i) => i.qty > 0);
     setItems(next);
-  }, []);
+  }, [getSnapshot, setItems]);
 
   const value = useMemo<CartContextValue>(
     () => ({

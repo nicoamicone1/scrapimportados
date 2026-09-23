@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type DragEvent, type FormEvent } from "react";
 
 import { createImportJob } from "@/app/admin/(panel)/importar/actions";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { Badge, Button, Card, CardBody, Field, Input, Select, Tabs, toast } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber } from "@/lib/money";
@@ -32,8 +33,32 @@ export function NewImportPanel({ categories }: { categories: CategoryOption[] })
       <CardBody className="pt-2">
         <Tabs
           items={[
-            { value: "url", label: "Desde una tienda online", content: <UrlImportForm categories={categories} /> },
-            { value: "csv", label: "Archivo CSV", content: <CsvImportForm categories={categories} /> },
+            {
+              value: "url",
+              label: "Desde una tienda online",
+              content: (
+                <PlanGate
+                  feature="catalog.import_web"
+                  className="mt-3"
+                  description="Traé el catálogo de una tienda WooCommerce, Shopify o cualquier sitio con datos estructurados."
+                >
+                  <UrlImportForm categories={categories} />
+                </PlanGate>
+              ),
+            },
+            {
+              value: "csv",
+              label: "Archivo CSV",
+              content: (
+                <PlanGate
+                  feature="catalog.import_csv"
+                  className="mt-3"
+                  description="Creá productos o actualizá precios y stock por SKU desde una planilla."
+                >
+                  <CsvImportForm categories={categories} />
+                </PlanGate>
+              ),
+            },
           ]}
         />
       </CardBody>

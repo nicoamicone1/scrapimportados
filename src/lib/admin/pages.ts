@@ -55,10 +55,11 @@ function asType(v: string): PageType {
 export type PageFilter = "todas" | "publicadas" | "borradores";
 
 export async function listAdminPages({ q = "", estado = "todas" }: { q?: string; estado?: PageFilter } = {}): Promise<AdminPageListItem[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   let query = supabase
     .from("pages")
     .select("id, title, slug, type, status, blocks, show_in_menu, updated_at, published_at")
+    .eq("store_id", store.id)
     .order("updated_at", { ascending: false });
   if (estado === "publicadas") query = query.eq("status", "published");
   if (estado === "borradores") query = query.eq("status", "draft");
@@ -82,16 +83,22 @@ export async function listAdminPages({ q = "", estado = "todas" }: { q?: string;
 }
 
 export async function getAdminPage(id: string): Promise<AdminPage | null> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("pages")
     .select("id, title, slug, type, status, blocks, seo, show_in_menu, updated_at, published_at")
+    .eq("store_id", store.id)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
   const { blocks, errors } = parseBlocks(data.blocks);
-  const { data: draftRow } = await supabase.from("page_drafts").select("data, updated_at").eq("page_id", id).maybeSingle();
+  const { data: draftRow } = await supabase
+    .from("page_drafts")
+    .select("data, updated_at")
+    .eq("store_id", store.id)
+    .eq("page_id", id)
+    .maybeSingle();
   let draft: AdminPage["draft"] = null;
   if (draftRow) {
     const d = draftRow.data && typeof draftRow.data === "object" && !Array.isArray(draftRow.data) ? draftRow.data : {};
@@ -124,8 +131,8 @@ export async function getAdminPage(id: string): Promise<AdminPage | null> {
 }
 
 export async function getHomePageId(ctx?: AdminContext): Promise<string | null> {
-  const { supabase } = ctx ?? (await requireAdmin());
-  const { data } = await supabase.from("pages").select("id").eq("slug", "home").maybeSingle();
+  const { supabase, store } = ctx ?? (await requireAdmin());
+  const { data } = await supabase.from("pages").select("id").eq("store_id", store.id).eq("slug", "home").maybeSingle();
   return data?.id ?? null;
 }
 
@@ -146,10 +153,11 @@ export interface CategoryOption {
 
 /** Categorías en orden de árbol con su ruta completa (para selects y buscadores). */
 export async function listCategoryOptions(ctx?: AdminContext): Promise<CategoryOption[]> {
-  const { supabase } = ctx ?? (await requireAdmin());
+  const { supabase, store } = ctx ?? (await requireAdmin());
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug, parent_id, position, is_visible")
+    .eq("store_id", store.id)
     .order("position")
     .order("name");
   if (error) throw new Error(error.message);
@@ -199,12 +207,23 @@ const PRODUCT_OPTION_SELECT = "id, name, slug, status, product_images(url, posit
 
 /** Búsqueda de productos por nombre o SKU (picker manual y menús). */
 export async function searchProductOptions(q: string, ctx?: AdminContext, limit = 20): Promise<ProductOption[]> {
-  const { supabase } = ctx ?? (await requireAdmin());
+  const { supabase, store } = ctx ?? (await requireAdmin());
   const term = q.trim().replace(/[%_,()]/g, " ").trim();
-  let query = supabase.from("products").select(PRODUCT_OPTION_SELECT).neq("status", "archived").order("updated_at", { ascending: false }).limit(limit);
+  let query = supabase
+    .from("products")
+    .select(PRODUCT_OPTION_SELECT)
+    .eq("store_id", store.id)
+    .neq("status", "archived")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
   if (term) {
     // SKU exacto o parcial: se busca en variantes y se une con el nombre.
-    const { data: bySku } = await supabase.from("product_variants").select("product_id").ilike("sku", `%${term}%`).limit(limit);
+    const { data: bySku } = await supabase
+      .from("product_variants")
+      .select("product_id")
+      .eq("store_id", store.id)
+      .ilike("sku", `%${term}%`)
+      .limit(limit);
     const ids = [...new Set((bySku ?? []).map((v) => v.product_id))];
     query = ids.length ? query.or(`name.ilike.%${term}%,id.in.(${ids.join(",")})`) : query.ilike("name", `%${term}%`);
   }
@@ -216,8 +235,8 @@ export async function searchProductOptions(q: string, ctx?: AdminContext, limit 
 /** Productos por id, en el orden pedido (etiquetas del picker manual). */
 export async function getProductOptions(ids: string[], ctx?: AdminContext): Promise<ProductOption[]> {
   if (!ids.length) return [];
-  const { supabase } = ctx ?? (await requireAdmin());
-  const { data, error } = await supabase.from("products").select(PRODUCT_OPTION_SELECT).in("id", ids);
+  const { supabase, store } = ctx ?? (await requireAdmin());
+  const { data, error } = await supabase.from("products").select(PRODUCT_OPTION_SELECT).eq("store_id", store.id).in("id", ids);
   if (error) throw new Error(error.message);
   const byId = new Map(((data ?? []) as ProductRow[]).map((p) => [p.id, toOption(p)]));
   return ids.map((id) => byId.get(id)).filter((p): p is ProductOption => !!p);
@@ -231,16 +250,16 @@ export interface PageOption {
 }
 
 export async function listPageOptions(ctx?: AdminContext): Promise<PageOption[]> {
-  const { supabase } = ctx ?? (await requireAdmin());
-  const { data, error } = await supabase.from("pages").select("id, title, slug, status").order("title");
+  const { supabase, store } = ctx ?? (await requireAdmin());
+  const { data, error } = await supabase.from("pages").select("id, title, slug, status").eq("store_id", store.id).order("title");
   if (error) throw new Error(error.message);
   return (data ?? []).map((p) => ({ id: p.id, title: p.title, slug: p.slug, status: p.status === "published" ? "published" : "draft" }));
 }
 
 /** Tags usados en productos (para sugerir en la fuente "por etiqueta"). */
 export async function listProductTags(ctx?: AdminContext): Promise<string[]> {
-  const { supabase } = ctx ?? (await requireAdmin());
-  const { data } = await supabase.from("products").select("tags").neq("status", "archived").limit(2000);
+  const { supabase, store } = ctx ?? (await requireAdmin());
+  const { data } = await supabase.from("products").select("tags").eq("store_id", store.id).neq("status", "archived").limit(2000);
   const set = new Set<string>();
   for (const row of data ?? []) for (const t of row.tags ?? []) if (t) set.add(t);
   return [...set].sort((a, b) => a.localeCompare(b, "es"));

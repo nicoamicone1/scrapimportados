@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { checkCart } from "@/app/(store)/actions";
+import { checkCart } from "@/app/s/[store]/actions";
 import { useCart } from "@/lib/cart";
 
 /**

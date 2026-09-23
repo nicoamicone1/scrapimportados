@@ -28,16 +28,17 @@ import {
 } from "@/lib/admin/order-utils";
 import {
   getOrderDetail,
-  getSiteUrl,
   getStoreInfo,
   listPaymentMethods,
   markOrderSeen,
   orderPublicPath,
+  orderPublicUrl,
   paymentMethodName,
 } from "@/lib/admin/orders";
 import { whatsAppTemplateFor } from "@/lib/admin/whatsapp";
 import { formatDateTime } from "@/lib/dates";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/money";
+import { storeHref } from "@/lib/tenant/urls";
 
 import { saveInternalNotesFor } from "../actions";
 
@@ -46,25 +47,24 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function generateMetadata({ params }: PageProps<"/admin/pedidos/[id]">): Promise<Metadata> {
   const { id } = await params;
   if (!UUID.test(id)) return { title: "Pedido" };
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase.from("orders").select("number").eq("id", id).maybeSingle();
+  const { supabase, store } = await requireAdmin();
+  const { data } = await supabase.from("orders").select("number").eq("id", id).eq("store_id", store.id).maybeSingle();
   return { title: data ? `Pedido #${data.number}` : "Pedido" };
 }
 
 export default async function OrderDetailPage({ params }: PageProps<"/admin/pedidos/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase, store: active } = await requireAdmin();
 
-  const [detail, store, methods, siteUrl] = await Promise.all([
-    getOrderDetail(supabase, id),
-    getStoreInfo(supabase),
-    listPaymentMethods(supabase),
-    getSiteUrl(),
+  const [detail, store, methods] = await Promise.all([
+    getOrderDetail(supabase, active.id, id),
+    getStoreInfo(supabase, active.id),
+    listPaymentMethods(supabase, active.id),
   ]);
   if (!detail) notFound();
   const { order, customer, items, events, payments, pickup, customerRecord } = detail;
-  const seenNow = await markOrderSeen(supabase, order);
+  const seenNow = await markOrderSeen(supabase, active.id, order);
 
   const tz = store.timezone;
   const money = (v: number) => formatMoney(v, { currency: order.currency });
@@ -72,7 +72,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
   const paid = amountPaid(payments);
   const balance = order.status === "cancelled" ? 0 : balanceDue(Number(order.total), paid);
   const address = parseAddress(order.shipping_address);
-  const publicUrl = `${siteUrl}${orderPublicPath(order.public_token)}`;
+  // URL absoluta de la tienda (WhatsApp / copiar) y href de navegación desde el panel.
+  const publicUrl = orderPublicUrl(active, order.public_token);
+  const publicHref = storeHref(active, orderPublicPath(order.public_token));
   const extra = otherDiscount({
     subtotal: Number(order.subtotal),
     promo_total: Number(order.promo_total),
@@ -401,7 +403,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
               <p className="font-mono text-xs break-all text-adm-fg-muted">{publicUrl}</p>
               <div className="flex flex-wrap gap-2">
                 <CopyButton value={publicUrl} label="Copiar link" />
-                <ButtonLink href={orderPublicPath(order.public_token)} external size="sm" icon={<ExternalLink />}>
+                <ButtonLink href={publicHref} external size="sm" icon={<ExternalLink />}>
                   Abrir
                 </ButtonLink>
               </div>

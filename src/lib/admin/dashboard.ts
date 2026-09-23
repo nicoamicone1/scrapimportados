@@ -15,7 +15,10 @@ import { amountPaid } from "@/lib/admin/order-utils";
 import { toListItem, type OrderListItem, type StoreInfo } from "@/lib/admin/orders";
 import type { Tables } from "@/lib/supabase/database.types";
 
-/** Lecturas del dashboard del admin (sin caché). */
+/**
+ * Lecturas del dashboard del admin (sin caché). La tienda sale de
+ * `store.storeId` (lo completa `getStoreInfo()`): toda consulta filtra por ella.
+ */
 
 type Supa = AdminContext["supabase"];
 
@@ -39,8 +42,9 @@ export interface DashboardData {
 const LIST_COLUMNS =
   "id, number, created_at, customer, status, payment_status, payment_method_code, fulfillment, total, currency, expires_at, seen_at, source, order_items(qty)";
 
-async function series(supabase: Supa, from: Date, to: Date, bucket: "hour" | "day", tz: string) {
+async function series(supabase: Supa, storeId: string, from: Date, to: Date, bucket: "hour" | "day", tz: string) {
   const { data, error } = await supabase.rpc("admin_sales_series", {
+    p_store_id: storeId,
     p_from: from.toISOString(),
     p_to: to.toISOString(),
     p_bucket: bucket,
@@ -57,6 +61,7 @@ export async function getDashboard(
   now: Date = new Date(),
 ): Promise<DashboardData> {
   const tz = store.timezone;
+  const sid = store.storeId;
   const period = resolvePeriod(key, now, tz);
 
   const [
@@ -75,37 +80,55 @@ export async function getDashboard(
     zones,
     pickups,
   ] = await Promise.all([
-    series(supabase, period.from, period.to, period.bucket, tz),
-    series(supabase, period.prevFrom, period.prevTo, "day", tz),
+    series(supabase, sid, period.from, period.to, period.bucket, tz),
+    series(supabase, sid, period.prevFrom, period.prevTo, "day", tz),
     supabase
       .from("orders")
       .select("id, total, payment_status")
+      .eq("store_id", sid)
       .neq("status", "cancelled")
       .in("payment_status", ["pending", "partial"])
       .limit(1000),
-    supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("orders").select("id", { count: "exact", head: true }).in("status", ["confirmed", "preparing"]),
-    supabase.from("orders").select(LIST_COLUMNS).order("created_at", { ascending: false }).limit(8),
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("store_id", sid).eq("status", "pending"),
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", sid)
+      .in("status", ["confirmed", "preparing"]),
+    supabase.from("orders").select(LIST_COLUMNS).eq("store_id", sid).order("created_at", { ascending: false }).limit(8),
     supabase
       .from("orders")
       .select(LIST_COLUMNS)
+      .eq("store_id", sid)
       .eq("status", "pending")
       .eq("payment_status", "pending")
       .not("expires_at", "is", null)
       .order("expires_at", { ascending: true })
       .limit(6),
-    supabase.from("low_stock_variants").select("*", { count: "exact" }).order("stock").order("product_name").limit(8),
-    supabase.rpc("admin_top_products", { p_from: period.from.toISOString(), p_to: period.to.toISOString(), p_limit: 5 }),
+    supabase
+      .from("low_stock_variants")
+      .select("*", { count: "exact" })
+      .eq("store_id", sid)
+      .order("stock")
+      .order("product_name")
+      .limit(8),
+    supabase.rpc("admin_top_products", {
+      p_store_id: sid,
+      p_from: period.from.toISOString(),
+      p_to: period.to.toISOString(),
+      p_limit: 5,
+    }),
     supabase
       .from("withdrawal_requests")
       .select("id, code, name, order_number, created_at", { count: "exact" })
+      .eq("store_id", sid)
       .eq("status", "new")
       .order("created_at", { ascending: false })
       .limit(5),
-    supabase.from("orders").select("id", { count: "exact", head: true }),
-    supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("shipping_zones").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("pickup_locations").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("store_id", sid),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", sid).eq("status", "active"),
+    supabase.from("shipping_zones").select("id", { count: "exact", head: true }).eq("store_id", sid).eq("is_active", true),
+    supabase.from("pickup_locations").select("id", { count: "exact", head: true }).eq("store_id", sid).eq("is_active", true),
   ]);
 
   const points = fillSeries(period.buckets, current, period.bucket);
@@ -118,7 +141,7 @@ export async function getDashboard(
   const unpaidList = unpaidRows.data ?? [];
   const partialIds = unpaidList.filter((o) => o.payment_status === "partial").map((o) => o.id);
   const { data: partialPayments } = partialIds.length
-    ? await supabase.from("order_payments").select("order_id, amount").in("order_id", partialIds)
+    ? await supabase.from("order_payments").select("order_id, amount").eq("store_id", sid).in("order_id", partialIds)
     : { data: [] as { order_id: string; amount: number }[] };
   const unpaidAmount = unpaidList.reduce((sum, o) => {
     const paid = o.payment_status === "partial" ? amountPaid((partialPayments ?? []).filter((p) => p.order_id === o.id)) : 0;

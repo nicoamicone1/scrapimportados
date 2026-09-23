@@ -76,11 +76,11 @@ export type ProductListItem = AdminProductRow & {
 };
 
 export async function listAdminProducts(filters: ProductListFilters) {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const db = catalogDb(supabase);
   const from = (filters.page - 1) * PRODUCTS_PER_PAGE;
 
-  let query = db.from("admin_products").select("*", { count: "exact" });
+  let query = db.from("admin_products").select("*", { count: "exact" }).eq("store_id", store.id);
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.categoryId) query = query.contains("category_ids", [filters.categoryId]);
   if (filters.source) query = query.eq("source", filters.source);
@@ -128,6 +128,7 @@ export async function listAdminProducts(filters: ProductListFilters) {
     const { data: vs } = await supabase
       .from("product_variants")
       .select("id, price, compare_at_price, stock, track_inventory")
+      .eq("store_id", store.id)
       .in("id", singleIds);
     for (const v of vs ?? []) singles.set(v.id, v);
   }
@@ -156,15 +157,16 @@ export async function listAdminProducts(filters: ProductListFilters) {
 
 /** Conteos por estado (pestañas) + sin stock. */
 export async function getProductCounts() {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const db = catalogDb(supabase);
   const head = { count: "exact" as const, head: true };
+  const products = () => supabase.from("products").select("id", head).eq("store_id", store.id);
   const [all, active, draft, archived, out] = await Promise.all([
-    supabase.from("products").select("id", head),
-    supabase.from("products").select("id", head).eq("status", "active"),
-    supabase.from("products").select("id", head).eq("status", "draft"),
-    supabase.from("products").select("id", head).eq("status", "archived"),
-    db.from("admin_products").select("id", head).eq("stock_state", "out").neq("status", "archived"),
+    products(),
+    products().eq("status", "active"),
+    products().eq("status", "draft"),
+    products().eq("status", "archived"),
+    db.from("admin_products").select("id", head).eq("store_id", store.id).eq("stock_state", "out").neq("status", "archived"),
   ]);
   return {
     all: all.count ?? 0,
@@ -273,10 +275,11 @@ function parseSeo(value: Json): { title: string; description: string } {
 /** Resumen (nombre, miniatura, SKU) de varios productos, en el orden pedido. */
 export async function getProductSummaries(ids: string[]): Promise<ProductSummary[]> {
   if (!ids.length) return [];
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data } = await catalogDb(supabase)
     .from("admin_products")
     .select("id, name, slug, status, image_url, skus")
+    .eq("store_id", store.id)
     .in("id", ids);
   const byId = new Map((data ?? []).map((p) => [p.id, p]));
   return ids
@@ -294,12 +297,13 @@ export async function getProductSummaries(ids: string[]): Promise<ProductSummary
 
 export async function getAdminProduct(id: string): Promise<AdminProductDetail | null> {
   if (!isUuid(id)) return null;
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data: p, error } = await supabase
     .from("products")
     .select(
       "*, product_variants(*), product_images(id, url, alt, position, width, height, created_at), product_categories(category_id, position)",
     )
+    .eq("store_id", store.id)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -307,7 +311,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 
   const [related, orders] = await Promise.all([
     getProductSummaries(p.related_ids ?? []),
-    supabase.from("order_items").select("id", { count: "exact", head: true }).eq("product_id", id),
+    supabase.from("order_items").select("id", { count: "exact", head: true }).eq("store_id", store.id).eq("product_id", id),
   ]);
 
   const variants = [...(p.product_variants ?? [])]
@@ -364,8 +368,8 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
 
 /** Marcas usadas (para sugerencias en el form). */
 export async function listBrands(): Promise<string[]> {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase.from("products").select("brand").not("brand", "is", null).limit(2000);
+  const { supabase, store } = await requireAdmin();
+  const { data } = await supabase.from("products").select("brand").eq("store_id", store.id).not("brand", "is", null).limit(2000);
   return [...new Set((data ?? []).map((r) => r.brand).filter((b): b is string => Boolean(b)))].sort((a, b) =>
     a.localeCompare(b, "es"),
   );
@@ -373,8 +377,8 @@ export async function listBrands(): Promise<string[]> {
 
 /** Etiquetas usadas (sugerencias). */
 export async function listTags(): Promise<string[]> {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase.from("products").select("tags").not("tags", "eq", "{}").limit(2000);
+  const { supabase, store } = await requireAdmin();
+  const { data } = await supabase.from("products").select("tags").eq("store_id", store.id).not("tags", "eq", "{}").limit(2000);
   const set = new Set<string>();
   for (const r of data ?? []) for (const t of r.tags ?? []) set.add(t);
   return [...set].sort((a, b) => a.localeCompare(b, "es"));

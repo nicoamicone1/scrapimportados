@@ -2,6 +2,26 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.1.0 — 2026-09-22 · Plataforma multi-tienda
+
+### Agregado
+
+- Plataforma multi-tienda, registro y planes: cualquier persona se registra, crea su tienda en tres pasos y la administra desde su propio panel.
+- Sitio de Ecommy con planes (Free, Starter, Pro y Business), registro, ingreso y recuperación de contraseña.
+- Mis tiendas: hasta tres tiendas por cuenta y selector de tienda en el panel.
+- Planes con funciones y límites por tienda; cada tienda nueva arranca con 14 días de Pro gratis.
+- Pantalla Plan en el panel: uso contra los límites, comparación y pedido de cambio de plan por WhatsApp.
+- Checklist de primeros pasos en el dashboard, que se tilda solo a medida que dejás lista la tienda.
+- Equipo por tienda: invitaciones por link, roles por tienda y quitar a alguien del equipo.
+- Panel de la plataforma para administrar tiendas, planes y pruebas.
+- Barrido diario automático de pruebas vencidas y reservas sin pagar.
+
+### Cambiado
+
+- Cada tienda tiene sus propios productos, pedidos, clientes, páginas, imágenes y configuración, aislados del resto.
+- El ingreso pasó de /admin/login a /login, y el alta del primer dueño se reemplazó por el registro.
+- Las tiendas se ven en su subdominio o, mientras no haya dominio propio, en /s/<tienda>.
+
 ## v0.0.0 — 2026-09-22 · Primera versión de Ecommy
 
 ### Agregado

@@ -1,18 +1,22 @@
 "use client";
 
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useEffect, useSyncExternalStore } from "react";
 
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { createClient } from "@/lib/supabase/client";
 
 /*
- * Aviso de pedidos nuevos (P0-07): cuenta los pedidos con `seen_at is null`
- * y no cancelados. Un único store por pestaña (aunque el badge se monte dos
- * veces: sidebar de escritorio y drawer mobile):
+ * Aviso de pedidos nuevos (P0-07): cuenta los pedidos de la TIENDA ACTIVA
+ * (`useAdminStore().store.id`) con `seen_at is null` y no cancelados. Un
+ * único store por pestaña (aunque el badge se monte dos veces: sidebar de
+ * escritorio y drawer mobile); si cambia la tienda activa se reinicia:
  * - polling cada 60 s + al volver a la pestaña,
- * - Supabase Realtime (INSERT en `orders`, filtrado por RLS de admin) para
- *   enterarse al instante; si el canal falla, queda el polling,
+ * - Supabase Realtime (INSERT en `orders` con filtro `store_id=eq.<id>`,
+ *   además de la RLS) para enterarse al instante; si el canal falla, queda
+ *   el polling,
  * - prefijo "(N) " en `document.title`,
  * - notificación del navegador si el admin la habilitó (NotificationsToggle).
  */
@@ -30,6 +34,9 @@ interface LatestOrder {
 let count = 0;
 let started = false;
 let knownMaxNumber: number | null = null;
+/** Tienda cuyos pedidos se cuentan (la fija `bindStore` desde el hook). */
+let storeId: string | null = null;
+let channel: RealtimeChannel | null = null;
 const listeners = new Set<() => void>();
 let titleObserver: MutationObserver | null = null;
 
@@ -64,15 +71,19 @@ function notify(latest: LatestOrder, newCount: number) {
 
 /** Relee el conteo. Se puede llamar desde afuera (ej. al abrir un pedido). */
 export async function refreshNewOrdersCount(): Promise<void> {
+  const sid = storeId;
+  if (!sid) return;
   const supabase = createClient();
   const { data, count: c, error } = await supabase
     .from("orders")
     .select("id, number, customer, total, currency", { count: "exact" })
+    .eq("store_id", sid)
     .is("seen_at", null)
     .neq("status", "cancelled")
     .order("number", { ascending: false })
     .limit(1);
-  if (error) return;
+  // Si mientras tanto cambió la tienda activa, la respuesta ya no sirve.
+  if (error || sid !== storeId) return;
   const next = c ?? 0;
   const top = data?.[0];
   if (top) {
@@ -114,19 +125,46 @@ function start() {
 }
 
 /**
- * Realtime respeta la RLS de `orders` (is_admin()): hay que pasarle el JWT
- * del admin ANTES de suscribirse (si no, el canal queda como anónimo y no
- * llega nada). Probado: con el token, el INSERT llega en ~1 s.
+ * Fija la tienda activa. Si cambia (selector de tienda del topbar), reinicia
+ * el conteo y el canal realtime para no mezclar pedidos de otra tienda.
+ */
+function bindStore(id: string) {
+  if (id === storeId) return;
+  storeId = id;
+  knownMaxNumber = null;
+  if (count !== 0) {
+    count = 0;
+    emit();
+  }
+  if (started) {
+    void refreshNewOrdersCount();
+    void subscribeRealtime();
+  }
+}
+
+/**
+ * Realtime respeta la RLS de `orders` (is_store_admin(store_id)): hay que
+ * pasarle el JWT del admin ANTES de suscribirse (si no, el canal queda como
+ * anónimo y no llega nada). Además se filtra por `store_id` de la tienda
+ * activa: un admin de varias tiendas sólo escucha la que está operando.
  */
 async function subscribeRealtime() {
+  const sid = storeId;
+  if (!sid) return;
   try {
     const supabase = createClient();
+    if (channel) {
+      const old = channel;
+      channel = null;
+      await supabase.removeChannel(old);
+    }
     const { data } = await supabase.auth.getSession();
-    if (!data.session) return;
+    if (!data.session || sid !== storeId) return;
     await supabase.realtime.setAuth(data.session.access_token);
-    supabase
-      .channel("admin-new-orders")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders" }, () => {
+    if (sid !== storeId || channel) return;
+    channel = supabase
+      .channel(`admin-new-orders:${sid}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: `store_id=eq.${sid}` }, () => {
         void refreshNewOrdersCount();
       })
       .subscribe();
@@ -142,6 +180,10 @@ function subscribe(listener: () => void) {
 }
 
 export function useNewOrdersCount(): number {
+  const { store } = useAdminStore();
+  useEffect(() => {
+    bindStore(store.id);
+  }, [store.id]);
   return useSyncExternalStore(
     subscribe,
     () => count,
@@ -156,14 +198,14 @@ export function OrdersBadge({ collapsed = false }: { collapsed?: boolean }) {
   const label = `${n} ${n === 1 ? "pedido nuevo" : "pedidos nuevos"}`;
   if (collapsed) {
     return (
-      <span className="absolute top-1 right-1 size-2 rounded-full bg-adm-accent" title={label}>
+      <span className="absolute top-1 right-1 size-2 rounded-full bg-adm-accent-2" title={label}>
         <span className="sr-only">{label}</span>
       </span>
     );
   }
   return (
     <span
-      className={cn("tnum ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-adm-accent px-1 text-[11px] font-medium text-adm-accent-fg")}
+      className={cn("tnum ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-adm-accent-2 px-1 text-[11px] font-semibold text-adm-accent-2-fg")}
       title={label}
     >
       {n > 99 ? "99+" : n}
@@ -174,8 +216,10 @@ export function OrdersBadge({ collapsed = false }: { collapsed?: boolean }) {
 
 /** Refresca el badge al montar (ej. después de marcar un pedido como visto). */
 export function RefreshOrdersBadge() {
+  const { store } = useAdminStore();
   useEffect(() => {
+    bindStore(store.id);
     void refreshNewOrdersCount();
-  }, []);
+  }, [store.id]);
   return null;
 }

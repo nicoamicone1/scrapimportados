@@ -8,7 +8,10 @@ import { requireAdmin } from "@/lib/auth";
 import { customerNotesSchema, customerSchema } from "@/lib/schemas/customer";
 import type { Json } from "@/lib/supabase/database.types";
 
-/** Alta y edición de clientes. Los clientes no afectan la caché pública. */
+/**
+ * Alta y edición de clientes de la tienda activa (`ctx.store.id`). Los
+ * clientes no afectan la caché pública.
+ */
 
 export async function saveCustomer(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
@@ -29,16 +32,21 @@ export async function saveCustomer(input: unknown): Promise<ActionResult<{ id: s
     };
 
     if (v.email) {
-      let dup = ctx.supabase.from("customers").select("id").eq("email", v.email);
+      let dup = ctx.supabase.from("customers").select("id").eq("store_id", ctx.store.id).eq("email", v.email);
       if (v.id) dup = dup.neq("id", v.id);
       const { data } = await dup.maybeSingle();
       if (data) return fail("Ya hay un cliente con ese email.", { email: ["Ya hay un cliente con ese email"] });
     }
 
     if (v.id) {
-      const { data: before } = await ctx.supabase.from("customers").select("*").eq("id", v.id).maybeSingle();
+      const { data: before } = await ctx.supabase
+        .from("customers")
+        .select("*")
+        .eq("id", v.id)
+        .eq("store_id", ctx.store.id)
+        .maybeSingle();
       if (!before) return fail("El cliente no existe.");
-      const { error } = await ctx.supabase.from("customers").update(row).eq("id", v.id);
+      const { error } = await ctx.supabase.from("customers").update(row).eq("id", v.id).eq("store_id", ctx.store.id);
       if (error) return fail("No se pudo guardar el cliente.");
       await logAudit(ctx, {
         action: "customer.update",
@@ -63,7 +71,11 @@ export async function saveCustomer(input: unknown): Promise<ActionResult<{ id: s
       return ok({ id: v.id });
     }
 
-    const { data: created, error } = await ctx.supabase.from("customers").insert(row).select("id").single();
+    const { data: created, error } = await ctx.supabase
+      .from("customers")
+      .insert({ ...row, store_id: ctx.store.id })
+      .select("id")
+      .single();
     if (error || !created) {
       if (error?.code === "23505") return fail("Ya hay un cliente con ese email.", { email: ["Ya existe"] });
       return fail("No se pudo crear el cliente.");
@@ -93,6 +105,7 @@ export async function saveCustomerNotes(input: unknown): Promise<ActionResult> {
       .from("customers")
       .update({ notes: parsed.data.notes.trim() || null })
       .eq("id", parsed.data.id)
+      .eq("store_id", ctx.store.id)
       .select("name")
       .maybeSingle();
     if (error || !data) return fail("No se pudieron guardar las notas.");

@@ -49,6 +49,38 @@
   --color-adm-warning: var(--adm-warning);
   --color-adm-success: var(--adm-success);
   --color-adm-info: var(--adm-info);
+  --color-adm-fg-subtle: var(--adm-fg-subtle);
+  --color-adm-input-border-hover: var(--adm-input-border-hover);
+  --color-adm-accent-2: var(--adm-accent-2);
+  --color-adm-accent-2-hover: var(--adm-accent-2-hover);
+  --color-adm-accent-2-soft: var(--adm-accent-2-soft);
+  --color-adm-accent-2-fg: var(--adm-accent-2-fg);
+  --color-adm-accent-2-ink: var(--adm-accent-2-ink);
+  --color-adm-sidebar-bg: var(--adm-sidebar-bg);
+  --color-adm-sidebar-fg: var(--adm-sidebar-fg);
+  --color-adm-sidebar-muted: var(--adm-sidebar-muted);
+  --color-adm-sidebar-hover: var(--adm-sidebar-hover);
+  --color-adm-sidebar-active: var(--adm-sidebar-active);
+  --color-adm-sidebar-border: var(--adm-sidebar-border);
+  --color-adm-tint-orders: var(--adm-tint-orders);
+  --color-adm-tint-orders-bg: var(--adm-tint-orders-bg);
+  --color-adm-tint-orders-fg: var(--adm-tint-orders-fg);
+  --color-adm-tint-catalog: var(--adm-tint-catalog);
+  --color-adm-tint-catalog-bg: var(--adm-tint-catalog-bg);
+  --color-adm-tint-catalog-fg: var(--adm-tint-catalog-fg);
+  --color-adm-tint-marketing: var(--adm-tint-marketing);
+  --color-adm-tint-marketing-bg: var(--adm-tint-marketing-bg);
+  --color-adm-tint-marketing-fg: var(--adm-tint-marketing-fg);
+  --color-adm-tint-store: var(--adm-tint-store);
+  --color-adm-tint-store-bg: var(--adm-tint-store-bg);
+  --color-adm-tint-store-fg: var(--adm-tint-store-fg);
+  --color-adm-tint-system: var(--adm-tint-system);
+  --color-adm-tint-system-bg: var(--adm-tint-system-bg);
+  --color-adm-tint-system-fg: var(--adm-tint-system-fg);
+  --color-adm-table-head: var(--adm-table-head);
+  --color-adm-row-hover: var(--adm-row-hover);
+  --color-adm-skeleton: var(--adm-skeleton);
+  --shadow-adm-card: var(--adm-shadow-surface);
 }
 
 @theme {
@@ -60,7 +92,7 @@
   --radius-pill: 9999px;
   --radius-adm: 6px;
   --radius-adm-sm: 4px;
-  --shadow-adm: 0 12px 32px -12px rgb(31 30 27 / 0.25), 0 0 0 1px #e2ded6;
+  --shadow-adm: 0 12px 32px -12px rgb(31 30 27 / 0.25), 0 0 0 1px #e2dbcd;
   --container-store: var(--container, 1280px);
 }
 
@@ -173,6 +205,48 @@ body {
   .prose-store :where(img) {
     border-radius: var(--radius-lg);
   }
+}
+
+/*
+ * Skeletons con shimmer sutil (admin y storefront). Colores por variables:
+ * admin → `--sk-base/--sk-shine` en `.admin-root`; storefront → tema.
+ */
+.sk {
+  background-color: var(--sk-base, color-mix(in oklab, var(--border, #e7e2d8) 65%, var(--bg, #fff)));
+  background-image: linear-gradient(
+    90deg,
+    transparent 0,
+    var(--sk-shine, color-mix(in oklab, var(--surface, #fff) 70%, transparent)) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  background-position: 150% 0;
+  animation: sk-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-shimmer {
+  to {
+    background-position: -50% 0;
+  }
+}
+
+/* Barra de progreso de navegación (NavigationProgress). */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 1000;
+  height: 2px;
+  pointer-events: none;
+}
+.nav-progress > span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--nav-progress-color, #e0a458);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--p, 0));
+  transition: transform 200ms ease-out, opacity 240ms ease-out 80ms;
 }
 
 /* Sliders con scroll-snap sin barra visible. */

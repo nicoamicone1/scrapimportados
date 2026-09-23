@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { Check } from "lucide-react";
 import { useState } from "react";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import { useCart } from "@/lib/cart";
 import { track } from "@/lib/store/analytics";
 
@@ -41,9 +42,9 @@ export function QuickAdd({ product, variant, hasOptions, available, whatsappHref
   }
   if (hasOptions || !variant) {
     return (
-      <Link href={`/producto/${product.slug}`} className={cls} tabIndex={-1}>
+      <StoreLink href={`/producto/${product.slug}`} className={cls} tabIndex={-1}>
         Elegir opciones
-      </Link>
+      </StoreLink>
     );
   }
 
@@ -70,12 +71,13 @@ export function QuickAdd({ product, variant, hasOptions, available, whatsappHref
       items: [{ item_id: variant.sku || variant.id, item_name: product.name, item_brand: product.brand, price: variant.price, quantity: 1 }],
     });
     setAdded(true);
-    window.setTimeout(() => setAdded(false), 1500);
+    window.setTimeout(() => setAdded(false), 1200);
     open();
   };
 
   return (
-    <button type="button" onClick={onAdd} className={cls} aria-label={`Agregar ${product.name} al carrito`}>
+    <button type="button" onClick={onAdd} className={cls} aria-label={added ? `${product.name} agregado al carrito` : `Agregar ${product.name} al carrito`}>
+      {added ? <Check className="size-4" aria-hidden /> : null}
       {added ? "Agregado" : "Agregar al carrito"}
     </button>
   );

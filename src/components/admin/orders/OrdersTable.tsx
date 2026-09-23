@@ -89,7 +89,7 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
   };
 
   return (
-    <div className={cn(pending && "opacity-80")}>
+    <div aria-busy={pending || undefined}>
       <div className="mb-3 min-h-8">
         {sel.length ? (
           <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Acciones masivas">
@@ -132,7 +132,7 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
         )}
       </div>
 
-      <Table>
+      <Table pending={pending || undefined}>
         <THead>
           <tr>
             <TH className="w-9 pr-0">

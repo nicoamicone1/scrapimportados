@@ -41,6 +41,7 @@ import {
   THead,
   toast,
 } from "@/components/ui";
+import { withPendingToast } from "@/components/ui/feedback";
 import type { AdminShippingZone } from "@/lib/admin/shipping";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber } from "@/lib/money";
@@ -323,7 +324,7 @@ export function ZonesList({ zones: initialZones }: { zones: AdminShippingZone[] 
             shadowedBy={shadow[i]}
             busy={busyId === z.id}
             onToggle={(active) => void toggle(z, active)}
-            onDuplicate={() => void duplicate(z)}
+            onDuplicate={() => void withPendingToast("Duplicando zona…", () => duplicate(z))}
             onDelete={() => setToDelete(z)}
           />
         ))}

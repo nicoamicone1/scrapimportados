@@ -58,6 +58,13 @@ describe("markdown", () => {
     expect(markdownToHtml("[Defensa](https://www.argentina.gob.ar)")).toContain('rel="noopener noreferrer"');
   });
 
+  it("links internos llevan el prefijo de la tienda (modo /s/<slug>); externos no", () => {
+    const html = markdownToHtml("[Envíos](/politicas/envios) y [IG](https://instagram.com/x)", "/s/demo");
+    expect(html).toContain('href="/s/demo/politicas/envios"');
+    expect(html).toContain('href="https://instagram.com/x"');
+    expect(markdownToHtml("[Envíos](/politicas/envios)")).toContain('href="/politicas/envios"');
+  });
+
   it("texto plano para metadescripciones", () => {
     expect(markdownToText("## Hola\n\n**Mundo** [link](/x)", 50)).toBe("Hola Mundo link");
   });

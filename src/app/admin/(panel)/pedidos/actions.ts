@@ -5,6 +5,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { ok, fail, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
+import { tagFor } from "@/lib/cache-tags";
 import { applyStatusChange, deductOrderStock, insertOrderEvent, recordOrderPayment } from "@/lib/admin/order-ops";
 import {
   amountPaid,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/admin/order-utils";
 import { getStoreInfo } from "@/lib/admin/orders";
 import { formatDateTime } from "@/lib/dates";
+import { isStoreMediaPath, mediaPathFromUrl } from "@/lib/media";
 import { formatMoney } from "@/lib/money";
 import {
   bulkStatusSchema,
@@ -34,8 +36,9 @@ import type { Json, TablesInsert } from "@/lib/supabase/database.types";
 
 /*
  * Server Actions de pedidos (spec §5): requireAdmin → zod → escribir →
- * logAudit → revalidateTag (sólo `products` cuando cambia el stock: los
- * pedidos no se cachean en el storefront) → ActionResult.
+ * logAudit → revalidateTag (sólo `products:<storeId>` cuando cambia el
+ * stock: los pedidos no se cachean en el storefront) → ActionResult.
+ * Toda lectura/escritura filtra por la tienda activa (`ctx.store.id`).
  */
 
 const LIST_PATH = "/admin/pedidos";
@@ -47,8 +50,16 @@ function revalidateOrder(id?: string) {
 }
 
 async function loadOrder(ctx: AdminContext, id: string) {
-  const { data } = await ctx.supabase.from("orders").select("*").eq("id", id).maybeSingle();
+  const { data } = await ctx.supabase.from("orders").select("*").eq("id", id).eq("store_id", ctx.store.id).maybeSingle();
   return data;
+}
+
+/** De los ids pedidos, los que pertenecen a la tienda activa (en el mismo orden). */
+async function storeOrderIds(ctx: AdminContext, ids: readonly string[]): Promise<string[]> {
+  if (!ids.length) return [];
+  const { data } = await ctx.supabase.from("orders").select("id").eq("store_id", ctx.store.id).in("id", [...ids]);
+  const mine = new Set((data ?? []).map((o) => o.id));
+  return ids.filter((id) => mine.has(id));
 }
 
 // ---------------------------------------------------------------------
@@ -80,7 +91,7 @@ export async function changeOrderStatus(input: unknown): Promise<ActionResult<{ 
       summary: `#${order.number}: ${orderStatusLabel(res.data.from, order.fulfillment)} → ${orderStatusLabel(v.status, order.fulfillment)}`,
       diff: { status: [res.data.from, v.status], ...(v.reason ? { reason: v.reason } : {}) },
     });
-    if (res.data.stockDelta) revalidateTag("products", "max");
+    if (res.data.stockDelta) revalidateTag(tagFor("products", ctx.store.id), "max");
     revalidateOrder(order.id);
     return ok({ stockDelta: res.data.stockDelta });
   });
@@ -95,7 +106,12 @@ export async function bulkChangeOrderStatus(
     if (!parsed.success) return zodFail(parsed.error);
     const { ids, status, reason } = parsed.data;
 
-    const { data: orders } = await ctx.supabase.from("orders").select("*").in("id", ids).order("number");
+    const { data: orders } = await ctx.supabase
+      .from("orders")
+      .select("*")
+      .eq("store_id", ctx.store.id)
+      .in("id", ids)
+      .order("number");
     let updated = 0;
     let stockChanged = false;
     const skipped: { number: number; error: string }[] = [];
@@ -118,7 +134,7 @@ export async function bulkChangeOrderStatus(
         diff: { ids, status, ...(reason ? { reason } : {}) },
       });
     }
-    if (stockChanged) revalidateTag("products", "max");
+    if (stockChanged) revalidateTag(tagFor("products", ctx.store.id), "max");
     revalidateOrder();
     return ok({ updated, skipped });
   });
@@ -136,7 +152,8 @@ export async function updateOrderTracking(input: unknown): Promise<ActionResult>
     const { error } = await ctx.supabase
       .from("orders")
       .update({ tracking_carrier: v.carrier, tracking_number: v.trackingNumber, tracking_url: v.trackingUrl })
-      .eq("id", order.id);
+      .eq("id", order.id)
+      .eq("store_id", ctx.store.id);
     if (error) return fail("No se pudo guardar el seguimiento.");
 
     const parts = ["Actualizamos el seguimiento del envío."];
@@ -173,8 +190,13 @@ export async function recordPayment(input: unknown): Promise<ActionResult<{ paym
     const order = await loadOrder(ctx, v.orderId);
     if (!order) return fail("El pedido no existe.");
     if (order.status === "cancelled") return fail("El pedido está cancelado: reabrilo para registrar pagos.");
+    // Un comprobante subido a nuestro bucket tiene que ser de esta tienda.
+    const receiptPath = v.receiptUrl ? mediaPathFromUrl(v.receiptUrl) : null;
+    if (receiptPath && !isStoreMediaPath(receiptPath, ctx.store.id)) {
+      return fail("El comprobante no es de esta tienda.", { receiptUrl: ["Subí el comprobante de nuevo"] });
+    }
 
-    const store = await getStoreInfo(ctx.supabase);
+    const store = await getStoreInfo(ctx.supabase, ctx.store.id);
     const amountLabel = formatMoney(v.amount, { currency: order.currency });
     const res = await recordOrderPayment(ctx, order, v, { inventoryPolicy: store.inventoryPolicy, amountLabel });
     if (!res.ok) return fail(res.error);
@@ -186,7 +208,7 @@ export async function recordPayment(input: unknown): Promise<ActionResult<{ paym
       summary: `#${order.number}: pago de ${amountLabel}${v.reference ? ` (ref. ${v.reference})` : ""}`,
       diff: { amount: v.amount, method: v.methodCode, payment_status: [order.payment_status, res.data.paymentStatus] },
     });
-    if (res.data.stockDelta) revalidateTag("products", "max");
+    if (res.data.stockDelta) revalidateTag(tagFor("products", ctx.store.id), "max");
     revalidateOrder(order.id);
     return ok({ paymentStatus: res.data.paymentStatus });
   });
@@ -200,9 +222,9 @@ export async function markOrdersPaid(input: unknown): Promise<ActionResult<{ upd
     if (!parsed.success) return zodFail(parsed.error);
 
     const [{ data: orders }, { data: payments }, store] = await Promise.all([
-      ctx.supabase.from("orders").select("*").in("id", parsed.data.ids),
-      ctx.supabase.from("order_payments").select("order_id, amount").in("order_id", parsed.data.ids),
-      getStoreInfo(ctx.supabase),
+      ctx.supabase.from("orders").select("*").eq("store_id", ctx.store.id).in("id", parsed.data.ids),
+      ctx.supabase.from("order_payments").select("order_id, amount").eq("store_id", ctx.store.id).in("order_id", parsed.data.ids),
+      getStoreInfo(ctx.supabase, ctx.store.id),
     ]);
 
     let updated = 0;
@@ -233,7 +255,7 @@ export async function markOrdersPaid(input: unknown): Promise<ActionResult<{ upd
         diff: { ids: parsed.data.ids },
       });
     }
-    if (stockChanged) revalidateTag("products", "max");
+    if (stockChanged) revalidateTag(tagFor("products", ctx.store.id), "max");
     revalidateOrder(parsed.data.ids.length === 1 ? parsed.data.ids[0] : undefined);
     return ok({ updated });
   });
@@ -248,10 +270,11 @@ export async function deletePayment(input: unknown): Promise<ActionResult> {
       .from("order_payments")
       .select("id, order_id, amount, orders(number, currency)")
       .eq("id", id)
+      .eq("store_id", ctx.store.id)
       .maybeSingle();
     if (!payment) return fail("El pago no existe.");
 
-    const { error } = await ctx.supabase.from("order_payments").delete().eq("id", id);
+    const { error } = await ctx.supabase.from("order_payments").delete().eq("id", id).eq("store_id", ctx.store.id);
     if (error) return fail("No se pudo eliminar el pago.");
 
     const label = formatMoney(Number(payment.amount), { currency: payment.orders?.currency ?? "ARS" });
@@ -307,6 +330,7 @@ export async function saveInternalNotes(input: unknown): Promise<ActionResult> {
       .from("orders")
       .update({ internal_notes: notes.trim() || null })
       .eq("id", orderId)
+      .eq("store_id", ctx.store.id)
       .select("number")
       .maybeSingle();
     if (error || !data) return fail("No se pudieron guardar las notas.");
@@ -338,10 +362,14 @@ export async function extendReservation(input: unknown): Promise<ActionResult<{ 
     }
 
     const expiresAt = extendedExpiry(order.expires_at, hours).toISOString();
-    const { error } = await ctx.supabase.from("orders").update({ expires_at: expiresAt }).eq("id", order.id);
+    const { error } = await ctx.supabase
+      .from("orders")
+      .update({ expires_at: expiresAt })
+      .eq("id", order.id)
+      .eq("store_id", ctx.store.id);
     if (error) return fail("No se pudo extender la reserva.");
 
-    const store = await getStoreInfo(ctx.supabase);
+    const store = await getStoreInfo(ctx.supabase, ctx.store.id);
     await insertOrderEvent(ctx, {
       orderId: order.id,
       type: "reservation_extended",
@@ -367,6 +395,7 @@ export async function logWhatsAppOpened(input: unknown): Promise<ActionResult> {
     const o = typeof input === "object" && input ? (input as { orderId?: unknown; template?: unknown }) : {};
     const orderId = String(o.orderId ?? "");
     if (!/^[0-9a-f-]{36}$/i.test(orderId)) return fail("Pedido inválido.");
+    if (!(await storeOrderIds(ctx, [orderId])).length) return fail("El pedido no existe.");
     await insertOrderEvent(ctx, {
       orderId,
       type: "whatsapp_opened",
@@ -384,7 +413,10 @@ export async function logOrdersPrinted(input: unknown): Promise<ActionResult<{ l
     const ctx = await requireAdmin();
     const parsed = idsSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
-    const rows: TablesInsert<"order_events">[] = parsed.data.ids.map((id) => ({
+    const ids = await storeOrderIds(ctx, parsed.data.ids);
+    if (!ids.length) return ok({ logged: 0 });
+    const rows: TablesInsert<"order_events">[] = ids.map((id) => ({
+      store_id: ctx.store.id,
       order_id: id,
       type: "printed",
       message: "Se imprimió el remito.",
@@ -400,8 +432,8 @@ export async function logOrdersPrinted(input: unknown): Promise<ActionResult<{ l
 /** Tras el barrido de reservas vencidas: refresca la caché de productos (stock). */
 export async function revalidateAfterExpiry(): Promise<ActionResult> {
   return runAction(async () => {
-    await requireAdmin();
-    revalidateTag("products", "max");
+    const ctx = await requireAdmin();
+    revalidateTag(tagFor("products", ctx.store.id), "max");
     return ok();
   });
 }
@@ -429,6 +461,7 @@ export async function searchCustomersForOrder(query: string): Promise<ActionResu
     const { data } = await ctx.supabase
       .from("customers")
       .select("id, name, email, phone, doc_number, default_address, orders_count")
+      .eq("store_id", ctx.store.id)
       .or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like},doc_number.ilike.${like}`)
       .order("updated_at", { ascending: false })
       .limit(8);
@@ -467,8 +500,20 @@ export async function searchVariantsForOrder(query: string): Promise<ActionResul
     if (q.length < 2) return ok([]);
 
     const [bySku, byName] = await Promise.all([
-      ctx.supabase.from("product_variants").select("id").eq("is_active", true).ilike("sku", `%${q}%`).limit(20),
-      ctx.supabase.from("products").select("id").neq("status", "archived").ilike("name", `%${q}%`).limit(20),
+      ctx.supabase
+        .from("product_variants")
+        .select("id")
+        .eq("store_id", ctx.store.id)
+        .eq("is_active", true)
+        .ilike("sku", `%${q}%`)
+        .limit(20),
+      ctx.supabase
+        .from("products")
+        .select("id")
+        .eq("store_id", ctx.store.id)
+        .neq("status", "archived")
+        .ilike("name", `%${q}%`)
+        .limit(20),
     ]);
     const variantIds = (bySku.data ?? []).map((v) => v.id);
     const productIds = (byName.data ?? []).map((p) => p.id);
@@ -482,6 +527,7 @@ export async function searchVariantsForOrder(query: string): Promise<ActionResul
       .select(
         "id, product_id, title, sku, price, stock, track_inventory, allow_backorder, image_id, position, products(name, status)",
       )
+      .eq("store_id", ctx.store.id)
       .eq("is_active", true)
       .or(ors.join(","))
       .order("position")
@@ -489,7 +535,12 @@ export async function searchVariantsForOrder(query: string): Promise<ActionResul
 
     const pids = Array.from(new Set((variants ?? []).map((v) => v.product_id)));
     const { data: images } = pids.length
-      ? await ctx.supabase.from("product_images").select("id, product_id, url, position").in("product_id", pids).order("position")
+      ? await ctx.supabase
+          .from("product_images")
+          .select("id, product_id, url, position")
+          .eq("store_id", ctx.store.id)
+          .in("product_id", pids)
+          .order("position")
       : { data: [] as { id: string; product_id: string; url: string; position: number }[] };
 
     const hits: VariantHit[] = (variants ?? [])
@@ -520,7 +571,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     const parsed = manualOrderSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const v = parsed.data;
-    const store = await getStoreInfo(ctx.supabase);
+    const store = await getStoreInfo(ctx.supabase, ctx.store.id);
 
     // ---------- Variantes y stock ----------
     const qtyByVariant = new Map<string, number>();
@@ -528,6 +579,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     const { data: variants } = await ctx.supabase
       .from("product_variants")
       .select("id, product_id, title, sku, price, stock, track_inventory, allow_backorder, image_id, products(name)")
+      .eq("store_id", ctx.store.id)
       .in("id", [...qtyByVariant.keys()]);
     const byId = new Map((variants ?? []).map((x) => [x.id, x]));
     for (const [id, qty] of qtyByVariant) {
@@ -545,6 +597,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     const { data: images } = await ctx.supabase
       .from("product_images")
       .select("id, product_id, url, position")
+      .eq("store_id", ctx.store.id)
       .in("product_id", pids)
       .order("position");
 
@@ -552,6 +605,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     const { data: method } = await ctx.supabase
       .from("payment_methods")
       .select("code, discount_percent")
+      .eq("store_id", ctx.store.id)
       .eq("code", v.paymentMethodCode)
       .maybeSingle();
     if (!method) return fail("El método de pago no existe.", { paymentMethodCode: ["Elegí un método válido"] });
@@ -565,6 +619,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
         .from("customers")
         .select("id, name, email, phone, doc_number")
         .eq("id", v.customer.id)
+        .eq("store_id", ctx.store.id)
         .maybeSingle();
       if (!c) return fail("El cliente elegido no existe.");
       customerId = c.id;
@@ -573,7 +628,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
       const nc = v.customer;
       snapshot = { name: nc.name, email: nc.email, phone: nc.phone, doc: nc.doc };
       const existing = nc.email
-        ? (await ctx.supabase.from("customers").select("id").eq("email", nc.email).maybeSingle()).data
+        ? (await ctx.supabase.from("customers").select("id").eq("store_id", ctx.store.id).eq("email", nc.email).maybeSingle()).data
         : null;
       if (existing) {
         customerId = existing.id;
@@ -581,6 +636,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
         const { data: created, error } = await ctx.supabase
           .from("customers")
           .insert({
+            store_id: ctx.store.id,
             name: nc.name,
             email: nc.email,
             phone: nc.phone,
@@ -597,11 +653,22 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     // ---------- Envío ----------
     let zoneName: string | null = null;
     if (v.fulfillment === "delivery" && v.shippingZoneId) {
-      const { data: zone } = await ctx.supabase.from("shipping_zones").select("name").eq("id", v.shippingZoneId).maybeSingle();
-      zoneName = zone?.name ?? null;
+      const { data: zone } = await ctx.supabase
+        .from("shipping_zones")
+        .select("name")
+        .eq("id", v.shippingZoneId)
+        .eq("store_id", ctx.store.id)
+        .maybeSingle();
+      if (!zone) return fail("La zona de envío no existe.");
+      zoneName = zone.name;
     }
     if (v.fulfillment === "pickup" && v.pickupLocationId) {
-      const { data: pl } = await ctx.supabase.from("pickup_locations").select("id").eq("id", v.pickupLocationId).maybeSingle();
+      const { data: pl } = await ctx.supabase
+        .from("pickup_locations")
+        .select("id")
+        .eq("id", v.pickupLocationId)
+        .eq("store_id", ctx.store.id)
+        .maybeSingle();
       if (!pl) return fail("El punto de retiro no existe.");
     }
 
@@ -619,9 +686,12 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     });
 
     // ---------- Pedido ----------
+    // Sin `number`: el trigger `orders_assign_number` toma el siguiente de la
+    // tienda (`stores.next_order_number`) y lo leemos del returning.
     const { data: order, error: orderError } = await ctx.supabase
       .from("orders")
       .insert({
+        store_id: ctx.store.id,
         customer_id: customerId,
         customer: snapshot,
         payment_method_code: method.code,
@@ -653,6 +723,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
 
     const { error: itemsError } = await ctx.supabase.from("order_items").insert(
       lines.map(({ it, variant, listPrice }) => ({
+        store_id: ctx.store.id,
         order_id: order.id,
         product_id: variant.product_id,
         variant_id: variant.id,
@@ -671,14 +742,14 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
     );
     if (itemsError) {
       // Compensación: sin ítems el pedido no sirve.
-      await ctx.supabase.from("orders").delete().eq("id", order.id);
+      await ctx.supabase.from("orders").delete().eq("id", order.id).eq("store_id", ctx.store.id);
       console.error("[orders.manual.items]", itemsError.message);
       return fail("No se pudo crear el pedido.");
     }
 
     // La DB fija un vencimiento a los pedidos impagos; en los manuales es opcional.
     if (!v.reserve && order.expires_at) {
-      await ctx.supabase.from("orders").update({ expires_at: null }).eq("id", order.id);
+      await ctx.supabase.from("orders").update({ expires_at: null }).eq("id", order.id).eq("store_id", ctx.store.id);
     }
 
     await insertOrderEvent(ctx, {
@@ -714,7 +785,7 @@ export async function createManualOrder(input: unknown): Promise<ActionResult<{ 
       entityId: order.id,
       summary: `Creó el pedido manual #${order.number} por ${formatMoney(totals.total, { currency: store.currency })}`,
     });
-    if (stockDelta) revalidateTag("products", "max");
+    if (stockDelta) revalidateTag(tagFor("products", ctx.store.id), "max");
     revalidateOrder();
     return ok({ id: order.id, number: order.number });
   });
@@ -731,7 +802,12 @@ export async function resolveWithdrawal(input: unknown): Promise<ActionResult<{ 
     if (!parsed.success) return zodFail(parsed.error);
     const v = parsed.data;
 
-    const { data: w } = await ctx.supabase.from("withdrawal_requests").select("*").eq("id", v.id).maybeSingle();
+    const { data: w } = await ctx.supabase
+      .from("withdrawal_requests")
+      .select("*")
+      .eq("id", v.id)
+      .eq("store_id", ctx.store.id)
+      .maybeSingle();
     if (!w) return fail("La solicitud no existe.");
 
     let cancelled = false;
@@ -741,7 +817,7 @@ export async function resolveWithdrawal(input: unknown): Promise<ActionResult<{ 
         const res = await applyStatusChange(ctx, order, "cancelled", { reason: "arrepentimiento" });
         if (!res.ok) return fail(res.error);
         cancelled = true;
-        if (res.data.stockDelta) revalidateTag("products", "max");
+        if (res.data.stockDelta) revalidateTag(tagFor("products", ctx.store.id), "max");
       }
     }
 
@@ -753,7 +829,8 @@ export async function resolveWithdrawal(input: unknown): Promise<ActionResult<{ 
         processed_by: ctx.user.id,
         processed_at: new Date().toISOString(),
       })
-      .eq("id", w.id);
+      .eq("id", w.id)
+      .eq("store_id", ctx.store.id);
     if (error) return fail("No se pudo actualizar la solicitud.");
 
     if (w.order_id) {
@@ -789,7 +866,8 @@ export async function saveWithdrawalNotes(input: unknown): Promise<ActionResult>
     const { error } = await ctx.supabase
       .from("withdrawal_requests")
       .update({ admin_notes: parsed.data.notes.trim() || null })
-      .eq("id", parsed.data.id);
+      .eq("id", parsed.data.id)
+      .eq("store_id", ctx.store.id);
     if (error) return fail("No se pudieron guardar las notas.");
     revalidatePath(`${LIST_PATH}/arrepentimientos`);
     return ok();

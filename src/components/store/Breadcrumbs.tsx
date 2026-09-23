@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { StoreLink } from "@/components/store/StoreLink";
 
 /** Ruta de navegación (texto `--fg-muted`, el último sin link). */
 export function Breadcrumbs({ items }: { items: { name: string; href?: string }[] }) {
@@ -9,9 +9,9 @@ export function Breadcrumbs({ items }: { items: { name: string; href?: string }[
           <li key={`${item.name}-${i}`} className="flex items-center gap-1.5">
             {i > 0 ? <span aria-hidden>/</span> : null}
             {item.href && i < items.length - 1 ? (
-              <Link href={item.href} className="hover:text-fg">
+              <StoreLink href={item.href} className="hover:text-fg">
                 {item.name}
-              </Link>
+              </StoreLink>
             ) : (
               <span aria-current={i === items.length - 1 ? "page" : undefined} className={i === items.length - 1 ? "text-fg" : undefined}>
                 {item.name}

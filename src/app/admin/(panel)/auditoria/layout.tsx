@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 
 import { NoPermission } from "@/components/admin/settings/NoPermission";
 import { can } from "@/lib/admin/permissions";
-import { getProfile } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
-/** Auditoría: sólo owner y admin. */
+/** Auditoría de la tienda activa: sólo owner y admin. */
 export default async function AuditoriaLayout({ children }: { children: ReactNode }) {
-  const profile = await getProfile();
-  if (!can(profile, "audit.read")) {
+  const ctx = await requireAdmin();
+  if (!can(ctx.membership, "audit.read")) {
     return <NoPermission title="Auditoría" />;
   }
   return children;

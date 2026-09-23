@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 
+import { useOptionalAdminStore } from "@/components/admin/AdminStoreContext";
 import { Field } from "@/components/ui/Field";
 import { Input, Textarea } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
@@ -44,7 +45,7 @@ export interface SeoFieldsProps {
   fallbackDescription?: string;
   /** Prefijo de la URL pública: "/producto/", "/categoria/", "/". */
   pathPrefix?: string;
-  /** Origen para la vista previa (default: NEXT_PUBLIC_SITE_URL o el del navegador). */
+  /** Origen para la vista previa (default: la URL pública de la tienda activa del panel). */
   siteUrl?: string;
   /** Nombre de la tienda que se agrega al título en la vista previa (" | Tienda"). */
   siteName?: string;
@@ -94,7 +95,8 @@ export function SeoFields({
   const previewId = useId();
   const slugId = useId();
   const slugError = Array.isArray(errors?.slug) ? errors?.slug[0] : errors?.slug;
-  const host = hostOf(siteUrl);
+  const adminStore = useOptionalAdminStore();
+  const host = hostOf(siteUrl || adminStore?.store.url);
   const shownTitle = value.title.trim() || fallbackTitle.trim() || "Título de la página";
   const titleWithSite = siteName && !value.title.trim() ? `${shownTitle} | ${siteName}` : shownTitle;
   const shownDescription =

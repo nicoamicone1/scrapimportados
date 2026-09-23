@@ -10,11 +10,11 @@ import { ProductMultiPicker } from "@/components/admin/pricing/ProductMultiPicke
 import { discountLabel, parseNumberInput, Thumb } from "@/components/admin/pricing/shared";
 import { toast } from "@/components/ui";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Input, Select } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
+import { SaveBar } from "@/components/ui/SaveBar";
 import type { PickerProduct } from "@/lib/admin/pricing";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/dates";
@@ -376,29 +376,17 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
         </div>
       </div>
 
-      {dirty || !id ? (
-        <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-adm-border bg-adm-surface/95 px-4 py-3 backdrop-blur-[2px] md:-mx-6 md:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className={cn("text-sm", showErrors && !parsed.success ? "text-adm-danger" : "text-adm-fg")} role="status">
-              {showErrors && !parsed.success ? "Revisá los campos marcados." : id ? "Cambios sin guardar" : "Promoción nueva"}
-            </p>
-            <div className="flex items-center gap-2">
-              {id ? (
-                <Button onClick={discard} disabled={saving}>
-                  Descartar
-                </Button>
-              ) : (
-                <Button onClick={() => router.push("/admin/promociones")} disabled={saving}>
-                  Cancelar
-                </Button>
-              )}
-              <Button variant="primary" onClick={save} loading={saving}>
-                {id ? "Guardar" : "Crear promoción"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <SaveBar
+        visible={dirty || !id}
+        error={showErrors && !parsed.success}
+        message={showErrors && !parsed.success ? "Revisá los campos marcados." : id ? "Cambios sin guardar" : "Promoción nueva"}
+        onDiscard={id ? discard : () => router.push("/admin/promociones")}
+        discardLabel={id ? "Descartar" : "Cancelar"}
+        onSave={save}
+        saving={saving}
+        saveLabel={id ? "Guardar" : "Crear promoción"}
+        savingLabel={id ? "Guardando…" : "Creando…"}
+      />
     </div>
   );
 }

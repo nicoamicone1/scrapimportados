@@ -27,8 +27,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function CustomerPage({ params }: PageProps<"/admin/clientes/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const { supabase } = await requireAdmin();
-  const [detail, store] = await Promise.all([getCustomerDetail(supabase, id), getStoreInfo(supabase)]);
+  const { supabase, store: currentStore } = await requireAdmin();
+  const [detail, store] = await Promise.all([getCustomerDetail(supabase, currentStore.id, id), getStoreInfo(supabase, currentStore.id)]);
   if (!detail) notFound();
   const { customer: c, orders, pending } = detail;
   const money = (v: number) => formatMoney(v, { currency: store.currency });

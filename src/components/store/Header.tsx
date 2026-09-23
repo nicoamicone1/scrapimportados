@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { StoreLink } from "@/components/store/StoreLink";
 import type { MenuItem } from "@/lib/store/menus";
 import type { StoreSettings } from "@/lib/store/settings";
 
@@ -30,9 +29,9 @@ export function StoreHeader({
           style={{ background: safeColor(announcement.bg), color: safeColor(announcement.fg) }}
         >
           {announcement.href ? (
-            <Link href={announcement.href} className="link-quiet">
+            <StoreLink href={announcement.href} className="link-quiet">
               {announcement.text}
-            </Link>
+            </StoreLink>
           ) : (
             <p>{announcement.text}</p>
           )}

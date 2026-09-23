@@ -171,7 +171,7 @@ export function ProductView({
       ],
     });
     setAdded(true);
-    window.setTimeout(() => setAdded(false), 1500);
+    window.setTimeout(() => setAdded(false), 1200);
     open();
   };
 
@@ -266,7 +266,7 @@ export function ProductView({
 
             <div className="flex gap-3">
               {canBuy ? <QtyStepper value={qty} max={maxQty} size="md" label={product.name} onChange={(q) => setQty(Math.max(1, q))} /> : null}
-              <button type="button" onClick={onAdd} disabled={!canBuy} className="btn btn-primary flex-1">
+              <button type="button" onClick={onAdd} disabled={!canBuy} className="btn btn-primary flex-1" aria-live="polite">
                 {added ? <Check className="size-4" aria-hidden /> : null}
                 {soldOut ? "Sin stock" : missing ? choosePrompt(missing.name) : !canBuy ? "Sin stock" : added ? "Agregado" : "Agregar al carrito"}
               </button>

@@ -30,11 +30,11 @@ function obj(value: Json | undefined): Record<string, Json | undefined> {
 const s = (v: Json | undefined) => (typeof v === "string" ? v : "");
 
 export async function getAppearanceData(): Promise<AppearanceData> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("store_settings")
     .select("name, tagline, logo_url, favicon_url, announcement, theme, timezone, whatsapp_phone, social, contact_email, address")
-    .eq("id", 1)
+    .eq("store_id", store.id)
     .single();
   if (error || !data) throw new Error(error?.message ?? "No hay configuración de la tienda.");
   const theme = parseTheme(data.theme);

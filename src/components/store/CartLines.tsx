@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import type { CartItem } from "@/lib/cart";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
@@ -36,7 +36,7 @@ export function CartLines({
         const onSale = line ? line.unitPrice < line.listPrice : false;
         return (
           <li key={item.variantId} className="flex gap-3 py-4 sm:gap-4">
-            <Link
+            <StoreLink
               href={`/producto/${item.slug}`}
               onClick={onNavigate}
               className={cn("relative shrink-0 overflow-hidden rounded-sm bg-surface", thumb)}
@@ -44,13 +44,13 @@ export function CartLines({
               aria-hidden
             >
               {item.image ? <Image src={item.image} alt="" fill sizes={size === "sm" ? "64px" : "96px"} className="object-contain p-1" /> : null}
-            </Link>
+            </StoreLink>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <Link href={`/producto/${item.slug}`} onClick={onNavigate} className="link-quiet line-clamp-2 text-sm font-medium">
+                  <StoreLink href={`/producto/${item.slug}`} onClick={onNavigate} className="link-quiet line-clamp-2 text-sm font-medium">
                     {item.name}
-                  </Link>
+                  </StoreLink>
                   {item.variantTitle ? <p className="text-xs text-fg-muted">{item.variantTitle}</p> : null}
                   <p className="tnum mt-0.5 text-xs">
                     <span className={onSale ? "text-accent" : "text-fg-muted"}>{formatMoney(unit)}</span>

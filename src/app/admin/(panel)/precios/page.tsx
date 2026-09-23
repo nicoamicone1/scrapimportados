@@ -1,6 +1,7 @@
 import { History } from "lucide-react";
 import type { Metadata } from "next";
 
+import { PlanGate } from "@/components/admin/PlanGate";
 import { BulkPriceWizard } from "@/components/admin/pricing/BulkPriceWizard";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
@@ -21,7 +22,12 @@ export default async function PreciosPage() {
           </ButtonLink>
         }
       />
-      <BulkPriceWizard categories={categories} brands={facets.brands} tags={facets.tags} />
+      <PlanGate
+        feature="pricing.bulk"
+        description="Aumentos por porcentaje, redondeos y ofertas sobre todo el catálogo o una parte, con vista previa y deshacer."
+      >
+        <BulkPriceWizard categories={categories} brands={facets.brands} tags={facets.tags} />
+      </PlanGate>
     </>
   );
 }

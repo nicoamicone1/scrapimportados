@@ -10,25 +10,37 @@ import { logAudit } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
 import { templateById } from "@/lib/blocks/defaults";
 import { blockSchema, type Block } from "@/lib/blocks/schema";
+import { tagFor, type CacheTagBase } from "@/lib/cache-tags";
+import { assertFeature } from "@/lib/plans";
+import { assertUsage } from "@/lib/plans/server";
 import { createPageSchema, savePageSchema, type SavePageData } from "@/lib/schemas/page";
 import type { Json } from "@/lib/supabase/database.types";
 
 /*
  * Actions del builder de páginas (agente E). Siempre: requireAdmin → zod →
- * escribir → revalidar → ActionResult.
+ * escribir → revalidar → ActionResult. Todo sobre la tienda activa (los
+ * slugs son únicos POR TIENDA). Plan: crear/duplicar páginas que no son la
+ * portada exige `content.landings` y el límite `pages`.
  */
 
 /** Expira ya (el dueño quiere ver el cambio al abrir la tienda). */
-function expire(...tags: string[]) {
-  for (const tag of new Set(tags)) revalidateTag(tag, { expire: 0 });
+function expire(storeId: string, ...bases: CacheTagBase[]) {
+  for (const base of new Set(bases)) revalidateTag(tagFor(base, storeId), { expire: 0 });
 }
 
-function revalidatePage(slug: string, ...more: string[]) {
-  expire("pages", `page:${slug}`, ...more.map((s) => `page:${s}`), ...(slug === "home" ? ["settings"] : []));
+function revalidatePage(storeId: string, slug: string, ...more: string[]) {
+  expire(storeId, "pages", ...(slug === "home" ? (["settings"] as const) : []));
+  for (const s of new Set([slug, ...more])) revalidateTag(tagFor("page", storeId, s), { expire: 0 });
+}
+
+/** Alta de una página extra (todo lo que no es la portada): plan + límite. */
+async function assertCanAddPage(ctx: AdminContext) {
+  assertFeature(ctx, "content.landings");
+  await assertUsage(ctx, "pages");
 }
 
 async function slugTaken(ctx: AdminContext, slug: string, exceptId?: string): Promise<boolean> {
-  let q = ctx.supabase.from("pages").select("id").eq("slug", slug);
+  let q = ctx.supabase.from("pages").select("id").eq("store_id", ctx.store.id).eq("slug", slug);
   if (exceptId) q = q.neq("id", exceptId);
   const { data } = await q.maybeSingle();
   return Boolean(data);
@@ -46,12 +58,21 @@ export async function createPage(input: unknown): Promise<ActionResult<{ id: str
     const parsed = createPageSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const v = parsed.data;
+    await assertCanAddPage(ctx);
     if (await slugTaken(ctx, v.slug)) return fail(SLUG_TAKEN, { slug: [SLUG_TAKEN] });
 
     const blocks = templateById(v.template).build();
     const { data, error } = await ctx.supabase
       .from("pages")
-      .insert({ title: v.title, slug: v.slug, type: v.type, status: "draft", blocks: blocks as unknown as Json, seo: { title: "", description: "", og_image_url: "" } })
+      .insert({
+        store_id: ctx.store.id,
+        title: v.title,
+        slug: v.slug,
+        type: v.type,
+        status: "draft",
+        blocks: blocks as unknown as Json,
+        seo: { title: "", description: "", og_image_url: "" },
+      })
       .select("id")
       .single();
     if (error || !data) {
@@ -60,7 +81,7 @@ export async function createPage(input: unknown): Promise<ActionResult<{ id: str
       throw new Error(error?.message ?? "insert pages");
     }
     await logAudit(ctx, { action: "page.create", entity: "page", entityId: data.id, summary: `Creó la página «${v.title}» (/${v.slug})` });
-    expire("pages");
+    expire(ctx.store.id, "pages");
     return ok({ id: data.id });
   });
 }
@@ -68,9 +89,20 @@ export async function createPage(input: unknown): Promise<ActionResult<{ id: str
 export async function duplicatePage(id: string): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
-    const { data: page } = await ctx.supabase.from("pages").select("title, slug, type, blocks, seo").eq("id", id).maybeSingle();
+    const { data: page } = await ctx.supabase
+      .from("pages")
+      .select("title, slug, type, blocks, seo")
+      .eq("store_id", ctx.store.id)
+      .eq("id", id)
+      .maybeSingle();
     if (!page) return fail("No encontramos la página.");
-    const { data: draft } = await ctx.supabase.from("page_drafts").select("data").eq("page_id", id).maybeSingle();
+    await assertCanAddPage(ctx);
+    const { data: draft } = await ctx.supabase
+      .from("page_drafts")
+      .select("data")
+      .eq("store_id", ctx.store.id)
+      .eq("page_id", id)
+      .maybeSingle();
     const draftData = draft?.data && typeof draft.data === "object" && !Array.isArray(draft.data) ? draft.data : null;
 
     const base = page.slug === "home" ? "portada" : page.slug;
@@ -80,6 +112,7 @@ export async function duplicatePage(id: string): Promise<ActionResult<{ id: stri
     const { data, error } = await ctx.supabase
       .from("pages")
       .insert({
+        store_id: ctx.store.id,
         title: `${page.title} (copia)`,
         slug,
         type: page.type === "home" ? "landing" : page.type,
@@ -91,7 +124,7 @@ export async function duplicatePage(id: string): Promise<ActionResult<{ id: stri
       .single();
     if (error || !data) throw new Error(error?.message ?? "duplicate page");
     await logAudit(ctx, { action: "page.duplicate", entity: "page", entityId: data.id, summary: `Duplicó «${page.title}» como /${slug}` });
-    expire("pages");
+    expire(ctx.store.id, "pages");
     return ok({ id: data.id });
   });
 }
@@ -99,13 +132,13 @@ export async function duplicatePage(id: string): Promise<ActionResult<{ id: stri
 export async function deletePage(id: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
-    const { data: page } = await ctx.supabase.from("pages").select("title, slug").eq("id", id).maybeSingle();
+    const { data: page } = await ctx.supabase.from("pages").select("title, slug").eq("store_id", ctx.store.id).eq("id", id).maybeSingle();
     if (!page) return fail("No encontramos la página.");
     if (page.slug === "home") return fail("La portada no se puede borrar.");
-    const { error } = await ctx.supabase.from("pages").delete().eq("id", id);
+    const { error } = await ctx.supabase.from("pages").delete().eq("store_id", ctx.store.id).eq("id", id);
     if (error) throw new Error(error.message);
     await logAudit(ctx, { action: "page.delete", entity: "page", entityId: id, summary: `Borró la página «${page.title}» (/${page.slug})` });
-    revalidatePage(page.slug);
+    revalidatePage(ctx.store.id, page.slug);
     return ok();
   });
 }
@@ -140,7 +173,12 @@ export async function savePage(input: unknown, mode: SaveMode): Promise<ActionRe
     if (!parsed.success) return zodFail(parsed.error, "Revisá los datos de la página: hay campos o bloques inválidos.");
     const v = parsed.data;
 
-    const { data: current } = await ctx.supabase.from("pages").select("id, slug, type, status, title").eq("id", v.id).maybeSingle();
+    const { data: current } = await ctx.supabase
+      .from("pages")
+      .select("id, slug, type, status, title")
+      .eq("store_id", ctx.store.id)
+      .eq("id", v.id)
+      .maybeSingle();
     if (!current) return fail("No encontramos la página. Puede que la hayan borrado.");
     const isHome = current.slug === "home";
     if (isHome && (v.slug !== "home" || v.type !== "home")) return fail("La portada siempre es «home».");
@@ -152,7 +190,7 @@ export async function savePage(input: unknown, mode: SaveMode): Promise<ActionRe
     if (current.status === "published" && mode === "draft") {
       const { error } = await ctx.supabase
         .from("page_drafts")
-        .upsert({ page_id: v.id, data: draftPayload(v), updated_at: now, updated_by: ctx.user.id });
+        .upsert({ store_id: ctx.store.id, page_id: v.id, data: draftPayload(v), updated_at: now, updated_by: ctx.user.id });
       if (error) throw new Error(error.message);
       await logAudit(ctx, { action: "page.draft", entity: "page", entityId: v.id, summary: `Guardó un borrador de «${v.title}»` });
       return ok({ status: "published", hasDraft: true, slug: current.slug, updatedAt: now });
@@ -170,6 +208,7 @@ export async function savePage(input: unknown, mode: SaveMode): Promise<ActionRe
         blocks: v.blocks as unknown as Json,
         ...(publish ? { status: "published", published_at: now } : {}),
       })
+      .eq("store_id", ctx.store.id)
       .eq("id", v.id)
       .select("updated_at, status")
       .single();
@@ -177,15 +216,18 @@ export async function savePage(input: unknown, mode: SaveMode): Promise<ActionRe
       if (error.code === "23505") return fail(SLUG_TAKEN, { slug: [SLUG_TAKEN] });
       throw new Error(error.message);
     }
-    await ctx.supabase.from("page_drafts").delete().eq("page_id", v.id);
+    await ctx.supabase.from("page_drafts").delete().eq("store_id", ctx.store.id).eq("page_id", v.id);
 
     // Slug nuevo en una página que ya era pública: 301 desde el viejo (spec §13 · P0-02).
     if (current.status === "published" && v.slug !== current.slug) {
       const { error: redirectError } = await ctx.supabase
         .from("redirects")
-        .upsert({ from_path: `/${current.slug}`, to_path: `/${v.slug}` }, { onConflict: "from_path" });
+        .upsert(
+          { store_id: ctx.store.id, from_path: `/${current.slug}`, to_path: `/${v.slug}` },
+          { onConflict: "store_id,from_path" },
+        );
       if (redirectError) console.error("[pages] redirect", redirectError.message);
-      expire("redirects");
+      expire(ctx.store.id, "redirects");
     }
 
     await logAudit(ctx, {
@@ -195,7 +237,7 @@ export async function savePage(input: unknown, mode: SaveMode): Promise<ActionRe
       summary: publish ? `Publicó «${v.title}» (/${v.slug})` : `Editó «${v.title}»`,
       diff: { blocks: v.blocks.length, slug: current.slug === v.slug ? v.slug : [current.slug, v.slug] } as Json,
     });
-    revalidatePage(v.slug, current.slug);
+    revalidatePage(ctx.store.id, v.slug, current.slug);
     return ok({ status: updated.status === "published" ? "published" : "draft", hasDraft: false, slug: v.slug, updatedAt: updated.updated_at });
   });
 }
@@ -203,12 +245,18 @@ export async function savePage(input: unknown, mode: SaveMode): Promise<ActionRe
 export async function setPageStatus(id: string, status: "draft" | "published"): Promise<ActionResult<{ status: "draft" | "published" }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
-    const { data: page } = await ctx.supabase.from("pages").select("title, slug, published_at").eq("id", id).maybeSingle();
+    const { data: page } = await ctx.supabase
+      .from("pages")
+      .select("title, slug, published_at")
+      .eq("store_id", ctx.store.id)
+      .eq("id", id)
+      .maybeSingle();
     if (!page) return fail("No encontramos la página.");
     if (page.slug === "home" && status === "draft") return fail("La portada no se puede despublicar: es la página de inicio de la tienda.");
     const { error } = await ctx.supabase
       .from("pages")
       .update({ status, ...(status === "published" ? { published_at: page.published_at ?? new Date().toISOString() } : {}) })
+      .eq("store_id", ctx.store.id)
       .eq("id", id);
     if (error) throw new Error(error.message);
     await logAudit(ctx, {
@@ -217,7 +265,7 @@ export async function setPageStatus(id: string, status: "draft" | "published"): 
       entityId: id,
       summary: `${status === "published" ? "Publicó" : "Despublicó"} «${page.title}»`,
     });
-    revalidatePage(page.slug);
+    revalidatePage(ctx.store.id, page.slug);
     return ok({ status });
   });
 }
@@ -225,7 +273,7 @@ export async function setPageStatus(id: string, status: "draft" | "published"): 
 export async function discardDraft(id: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
-    const { error } = await ctx.supabase.from("page_drafts").delete().eq("page_id", id);
+    const { error } = await ctx.supabase.from("page_drafts").delete().eq("store_id", ctx.store.id).eq("page_id", id);
     if (error) throw new Error(error.message);
     await logAudit(ctx, { action: "page.draft_discard", entity: "page", entityId: id, summary: "Descartó el borrador de una página" });
     return ok();
@@ -245,7 +293,7 @@ export interface PreviewResult {
 /** Renderiza los bloques (sin guardar) con los componentes reales de la tienda. */
 export async function previewBlocks(input: unknown, device: PreviewDevice): Promise<ActionResult<PreviewResult>> {
   return runAction(async () => {
-    await requireAdmin();
+    const ctx = await requireAdmin();
     if (!Array.isArray(input)) return fail("Bloques inválidos.");
     const valid: Block[] = [];
     const invalid: PreviewResult["invalid"] = [];
@@ -258,7 +306,7 @@ export async function previewBlocks(input: unknown, device: PreviewDevice): Prom
         invalid.push({ id, message: `${issue.path.join(".")}: ${issue.message}` });
       }
     }
-    const nodes = await renderBlockPreviews(valid, device === "mobile" ? "mobile" : "desktop");
+    const nodes = await renderBlockPreviews(ctx.store.id, valid, device === "mobile" ? "mobile" : "desktop");
     return ok({ nodes, invalid });
   });
 }

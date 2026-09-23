@@ -90,8 +90,12 @@ export interface CouponListResult {
 }
 
 export async function listCoupons(filters: { q: string; status: CouponStatus | null; page: number }): Promise<CouponListResult> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("coupons").select(SELECT).order("created_at", { ascending: false });
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("coupons")
+    .select(SELECT)
+    .eq("store_id", store.id)
+    .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   const now = new Date();
   const all = (data ?? []).map((r) => toCoupon(r, now));
@@ -104,8 +108,8 @@ export async function listCoupons(filters: { q: string; status: CouponStatus | n
 }
 
 export async function getCoupon(id: string): Promise<AdminCoupon | null> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("coupons").select(SELECT).eq("id", id).maybeSingle();
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase.from("coupons").select(SELECT).eq("store_id", store.id).eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data ? toCoupon(data, new Date()) : null;
 }
@@ -120,10 +124,11 @@ export interface CouponRedemption {
 }
 
 export async function getCouponRedemptions(couponId: string): Promise<CouponRedemption[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("coupon_redemptions")
     .select("id, created_at, customer_email, order_id, orders(number, total)")
+    .eq("store_id", store.id)
     .eq("coupon_id", couponId)
     .order("created_at", { ascending: false })
     .limit(500);

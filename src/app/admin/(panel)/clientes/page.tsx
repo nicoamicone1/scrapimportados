@@ -16,9 +16,9 @@ import { formatMoney, formatNumber } from "@/lib/money";
 export const metadata: Metadata = { title: "Clientes" };
 
 export default async function CustomersPage({ searchParams }: PageProps<"/admin/clientes">) {
-  const { supabase } = await requireAdmin();
+  const { supabase, store: active } = await requireAdmin();
   const filters = parseCustomerFilters(await searchParams);
-  const [{ rows, total }, store] = await Promise.all([listCustomers(supabase, filters), getStoreInfo(supabase)]);
+  const [{ rows, total }, store] = await Promise.all([listCustomers(supabase, active.id, filters), getStoreInfo(supabase, active.id)]);
   const filtered = Boolean(filters.q || filters.tag);
 
   return (

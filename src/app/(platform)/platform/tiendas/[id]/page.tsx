@@ -1,0 +1,123 @@
+import { ExternalLink } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { enterAsStore } from "@/app/(platform)/platform/actions";
+import { platformPageGuard } from "@/app/(platform)/platform/guard";
+import { AppHeader } from "@/components/platform/AppHeader";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+import { formatDate, formatDateTime } from "@/lib/dates";
+import { formatNumber } from "@/lib/money";
+import { ROLE_LABELS, isAdminRole } from "@/lib/auth";
+import { storeDisplayHost, storeHref } from "@/lib/tenant/urls";
+
+import { StoreAdminForms } from "./StoreAdminForms";
+
+export const metadata: Metadata = { title: "Tienda · Plataforma" };
+export const dynamic = "force-dynamic";
+
+function toDateInput(iso: string | null): string {
+  if (!iso) return new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
+  return iso.slice(0, 10);
+}
+
+export default async function PlatformStorePage({ params }: PageProps<"/platform/tiendas/[id]">) {
+  const { id } = await params;
+  const { supabase, user, profile } = await platformPageGuard(`/platform/tiendas/${id}`);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+
+  const [{ data: store }, { data: sub }, { data: plans }, { data: members }, stats, { data: audit }] = await Promise.all([
+    supabase.from("stores").select("id, slug, name, status, owner_id, custom_domain, custom_domain_verified, created_at").eq("id", id).maybeSingle(),
+    supabase.from("subscriptions").select("plan_code, status, trial_ends_at, current_period_start, notes").eq("store_id", id).maybeSingle(),
+    supabase.from("plans").select("code, name").order("position"),
+    supabase.rpc("admin_list_users", { p_store_id: id }),
+    supabase.rpc("platform_list_stores").then((r) => (r.data ?? []).find((s) => s.id === id) ?? null),
+    supabase.from("audit_log").select("id, action, summary, actor_email, created_at").eq("store_id", id).order("created_at", { ascending: false }).limit(12),
+  ]);
+  if (!store) notFound();
+
+  return (
+    <div className="min-h-dvh">
+      <AppHeader email={user.email ?? ""} isPlatformAdmin={profile.is_platform_admin} section="platform" />
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <p className="text-[13px] text-adm-fg-muted">
+          <Link href="/platform" className="hover:underline">
+            Plataforma
+          </Link>{" "}
+          / Tienda
+        </p>
+        <div className="mt-1 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">{store.name}</h1>
+            <p className="mt-0.5 text-sm text-adm-fg-muted">
+              {storeDisplayHost(store)} · creada el {formatDate(store.created_at)}
+              {stats ? ` · ${formatNumber(stats.products)} productos · ${formatNumber(stats.orders)} pedidos` : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href={storeHref(store)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-8 items-center gap-1.5 rounded-adm border border-adm-input-border bg-adm-surface px-3 text-sm hover:bg-adm-hover"
+            >
+              Ver tienda
+              <ExternalLink className="size-3.5" aria-hidden />
+            </a>
+            <form action={enterAsStore}>
+              <input type="hidden" name="storeId" value={store.id} />
+              <SubmitButton pendingText="Entrando…">Entrar como admin</SubmitButton>
+            </form>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <StoreAdminForms
+            storeId={store.id}
+            storeName={store.name}
+            plans={plans ?? []}
+            current={{
+              plan: sub?.plan_code ?? "free",
+              status: sub?.status ?? "active",
+              trialEndsAt: toDateInput(sub?.trial_ends_at ?? null),
+              storeStatus: store.status,
+            }}
+          />
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <section className="rounded-adm border border-adm-border bg-adm-surface">
+            <h2 className="border-b border-adm-border px-4 py-2.5 text-sm font-semibold">Equipo</h2>
+            <ul className="divide-y divide-adm-border text-[13px]">
+              {(members ?? []).map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-2">
+                  <span className="truncate">{m.email}</span>
+                  <span className="text-adm-fg-muted">
+                    {isAdminRole(m.role) ? ROLE_LABELS[m.role] : m.role}
+                    {m.is_active ? "" : " · pausado"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="rounded-adm border border-adm-border bg-adm-surface">
+            <h2 className="border-b border-adm-border px-4 py-2.5 text-sm font-semibold">Actividad reciente</h2>
+            <ul className="divide-y divide-adm-border text-[13px]">
+              {(audit ?? []).map((a) => (
+                <li key={a.id} className="px-4 py-2">
+                  <div>{a.summary ?? a.action}</div>
+                  <div className="text-xs text-adm-fg-muted">
+                    {a.actor_email ?? "sistema"} · {formatDateTime(a.created_at)}
+                  </div>
+                </li>
+              ))}
+              {!audit?.length ? <li className="px-4 py-4 text-adm-fg-muted">Sin actividad registrada.</li> : null}
+            </ul>
+          </section>
+        </div>
+        {sub?.notes ? <p className="mt-4 text-xs text-adm-fg-muted">Notas de la suscripción: {sub.notes}</p> : null}
+      </main>
+    </div>
+  );
+}

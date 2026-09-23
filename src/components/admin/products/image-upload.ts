@@ -2,6 +2,8 @@
 
 import { nanoid } from "nanoid";
 
+import { getClientStoreId } from "@/components/admin/AdminStoreContext";
+import { mediaPath } from "@/lib/media";
 import { createClient } from "@/lib/supabase/client";
 
 /*
@@ -49,13 +51,13 @@ async function toWebp(file: File): Promise<{ blob: Blob; width: number; height: 
   return { blob, width, height, ext: type === "image/webp" ? "webp" : type.split("/")[1] || "png", type };
 }
 
-/** Procesa y sube una imagen a `<folder>/<nanoid>.<ext>`. */
+/** Procesa y sube una imagen a `<store_id>/<folder>/<nanoid>.<ext>` (tienda activa del panel). */
 export async function uploadImage(file: File, folder: string): Promise<UploadedImage> {
   if (!isAcceptedImage(file)) throw new Error(`«${file.name}» no es una imagen compatible (JPG, PNG, WebP, GIF, AVIF o SVG).`);
   if (file.size > 25 * 1024 * 1024) throw new Error(`«${file.name}» pesa más de 25 MB.`);
   const processed = await toWebp(file);
   if (processed.blob.size > MAX_UPLOAD_BYTES) throw new Error(`«${file.name}» sigue pesando más de 10 MB después de optimizarla.`);
-  const path = `${folder.replace(/\/+$/, "")}/${nanoid(12)}.${processed.ext}`;
+  const path = mediaPath(getClientStoreId(), folder, `${nanoid(12)}.${processed.ext}`);
   const supabase = createClient();
   const { error } = await supabase.storage.from("media").upload(path, processed.blob, {
     contentType: processed.type,

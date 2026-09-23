@@ -1,22 +1,28 @@
 import type { Metadata } from "next";
 
+import { storeUrl, type StoreUrlTarget } from "@/lib/tenant/urls";
+
 /**
  * SEO del storefront (P0-01 / P0-03): metadata con OG/Twitter y JSON-LD.
  * Puro (sin I/O): las páginas le pasan los datos ya leídos.
+ *
+ * Multi-tienda: toda URL absoluta sale de `storeUrl(store, path)` (dominio
+ * propio > subdominio > `/s/<slug>` en la plataforma), así el canonical, OG y
+ * JSON-LD apuntan a la URL pública de ESA tienda.
  */
 
-/** Base absoluta del sitio (sin barra final). */
-export function siteBase(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
-}
+/** Tienda para armar URLs absolutas (`tenant.store` sirve). */
+export type SeoStore = StoreUrlTarget;
 
-/** URL absoluta de un path ("/producto/x" → "https://tienda.com/producto/x"). */
-export function absoluteUrl(path: string): string {
+/** URL absoluta de un path de la tienda ("/producto/x" → "https://x.ecommy.app/producto/x"). */
+export function absoluteUrl(store: SeoStore, path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
-  return `${siteBase()}${path.startsWith("/") ? path : `/${path}`}`;
+  return storeUrl(store, path.startsWith("/") ? path : `/${path}`);
 }
 
 export interface BuildMetadataInput {
+  /** Tienda (para canonical/OG absolutos). */
+  store: SeoStore;
   title: string;
   description?: string | null;
   /** Path canónico ("/producto/mate"). */
@@ -39,15 +45,15 @@ function clip(text: string | null | undefined, max: number): string | undefined 
 export function buildMetadata(input: BuildMetadataInput): Metadata {
   const description = clip(input.description, 160);
   const title = clip(input.title, 70) ?? input.siteName;
-  const images = input.image ? [{ url: absoluteUrl(input.image), alt: input.imageAlt ?? title }] : undefined;
+  const images = input.image ? [{ url: absoluteUrl(input.store, input.image), alt: input.imageAlt ?? title }] : undefined;
   return {
     title: input.absoluteTitle ? { absolute: title } : title,
     description,
-    alternates: { canonical: absoluteUrl(input.path) },
+    alternates: { canonical: absoluteUrl(input.store, input.path) },
     openGraph: {
       title,
       description,
-      url: absoluteUrl(input.path),
+      url: absoluteUrl(input.store, input.path),
       siteName: input.siteName,
       locale: "es_AR",
       type: input.type ?? "website",
@@ -75,6 +81,7 @@ export function serializeJsonLd(data: JsonLd | JsonLd[]): string {
 }
 
 export interface ProductJsonLdInput {
+  store: SeoStore;
   name: string;
   slug: string;
   description?: string | null;
@@ -95,7 +102,7 @@ export interface ProductJsonLdInput {
 }
 
 export function productJsonLd(p: ProductJsonLdInput): JsonLd {
-  const url = absoluteUrl(`/producto/${p.slug}`);
+  const url = absoluteUrl(p.store, `/producto/${p.slug}`);
   const availability = p.available ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
   const offers: JsonLd =
     p.lowPrice !== undefined && p.highPrice !== undefined && p.lowPrice !== p.highPrice
@@ -123,7 +130,7 @@ export function productJsonLd(p: ProductJsonLdInput): JsonLd {
     name: p.name,
     url,
     ...(p.description ? { description: clip(p.description, 5000) } : {}),
-    ...(p.images.length ? { image: p.images.map(absoluteUrl) } : {}),
+    ...(p.images.length ? { image: p.images.map((img) => absoluteUrl(p.store, img)) } : {}),
     ...(p.sku ? { sku: p.sku } : {}),
     ...(p.brand ? { brand: { "@type": "Brand", name: p.brand } } : {}),
     ...(p.specs?.length
@@ -133,7 +140,7 @@ export function productJsonLd(p: ProductJsonLdInput): JsonLd {
   };
 }
 
-export function breadcrumbJsonLd(items: { name: string; path: string }[]): JsonLd {
+export function breadcrumbJsonLd(store: SeoStore, items: { name: string; path: string }[]): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -141,12 +148,13 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]): JsonL
       "@type": "ListItem",
       position: i + 1,
       name: item.name,
-      item: absoluteUrl(item.path),
+      item: absoluteUrl(store, item.path),
     })),
   };
 }
 
 export interface OrganizationInput {
+  store: SeoStore;
   name: string;
   logoUrl?: string | null;
   email?: string | null;
@@ -161,8 +169,8 @@ export function organizationJsonLd(o: OrganizationInput): JsonLd {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: o.name,
-    url: absoluteUrl("/"),
-    ...(o.logoUrl ? { logo: absoluteUrl(o.logoUrl) } : {}),
+    url: absoluteUrl(o.store, "/"),
+    ...(o.logoUrl ? { logo: absoluteUrl(o.store, o.logoUrl) } : {}),
     ...(o.email ? { email: o.email } : {}),
     ...(o.phone ? { telephone: o.phone } : {}),
     ...(o.address ? { address: o.address } : {}),
@@ -170,15 +178,15 @@ export function organizationJsonLd(o: OrganizationInput): JsonLd {
   };
 }
 
-export function websiteJsonLd(name: string): JsonLd {
+export function websiteJsonLd(store: SeoStore, name: string): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name,
-    url: absoluteUrl("/"),
+    url: absoluteUrl(store, "/"),
     potentialAction: {
       "@type": "SearchAction",
-      target: `${absoluteUrl("/productos")}?q={search_term_string}`,
+      target: `${absoluteUrl(store, "/productos")}?q={search_term_string}`,
       "query-input": "required name=search_term_string",
     },
   };

@@ -13,16 +13,18 @@ export interface AuditEntry {
 }
 
 /**
- * Registra una acción en `audit_log`. Nunca rompe la action que la llama:
+ * Registra una acción en `audit_log` de la tienda activa (`ctx.store.id`).
+ * Nunca rompe la action que la llama:
  * si falla, sólo loguea el error.
  *
  *   await logAudit(ctx, { action: "product.update", entity: "product", entityId: id, summary: `Editó ${name}` });
  */
 export async function logAudit(
-  ctx: Pick<AdminContext, "supabase" | "user">,
+  ctx: Pick<AdminContext, "supabase" | "user" | "store">,
   entry: AuditEntry,
 ): Promise<void> {
   const { error } = await ctx.supabase.from("audit_log").insert({
+    store_id: ctx.store.id,
     actor_id: ctx.user.id,
     actor_email: ctx.user.email ?? null,
     action: entry.action,

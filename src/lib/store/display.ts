@@ -71,13 +71,13 @@ async function devThemeOverride(settings: StoreSettings): Promise<StoreSettings>
   return settings;
 }
 
-export async function getStoreDisplay(): Promise<StoreDisplay> {
+export async function getStoreDisplay(storeId: string): Promise<StoreDisplay> {
   const [rawSettings, paymentMethods, promotions, zones, pickups] = await Promise.all([
-    getSettings(),
-    getPaymentMethods(),
-    getActivePromotions(),
-    getShippingZones(),
-    getPickupLocations(),
+    getSettings(storeId),
+    getPaymentMethods(storeId),
+    getActivePromotions(storeId),
+    getShippingZones(storeId),
+    getPickupLocations(storeId),
   ]);
   const settings = await devThemeOverride(rawSettings);
   const best = bestPaymentDiscount(paymentMethods);

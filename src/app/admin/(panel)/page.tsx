@@ -1,8 +1,10 @@
-import { Check, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { NotificationsToggle } from "@/components/admin/dashboard/NotificationsToggle";
+import { OnboardingChecklist } from "@/components/admin/dashboard/OnboardingChecklist";
 import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { ExpireSweep } from "@/components/admin/orders/ExpireSweep";
 import { ExpiryText, OrderStatusBadge, PaymentStatusBadge, RelativeTime } from "@/components/admin/orders/OrderBadges";
@@ -17,6 +19,8 @@ import { parsePeriod, PERIOD_LABELS, PERIODS } from "@/lib/admin/dashboard-utils
 import { getStoreInfo, sweepExpiredOrders } from "@/lib/admin/orders";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber } from "@/lib/money";
+import { getPlanChip } from "@/lib/plans/chip";
+import { storeHref } from "@/lib/tenant/urls";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -24,7 +28,8 @@ const SALES_LABEL = { hoy: "Ventas de hoy", "7d": "Ventas 7 días", "30d": "Vent
 
 /** Dashboard (DESIGN.md §7.8): franja de números, barras de ventas y listas de acción. */
 export default async function DashboardPage({ searchParams }: PageProps<"/admin">) {
-  const { supabase, profile } = await requireAdmin();
+  const ctx = await requireAdmin();
+  const { supabase, profile } = ctx;
   const sp = await searchParams;
   const period = parsePeriod(typeof sp.periodo === "string" ? sp.periodo : undefined);
 
@@ -33,14 +38,29 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
   const money = (v: number) => formatMoney(v, { currency: store.currency });
   const firstName = (profile.name ?? "").split(" ")[0];
 
+  // Slots para M (multi-tienda): chip del plan junto al nombre de la tienda y
+  // checklist de primeros pasos arriba de todo (`<OnboardingChecklist />`).
+  const chip = getPlanChip(ctx);
+  const planChip: ReactNode = (
+    <Link href="/admin/plan" className="rounded-adm-sm text-[0px] leading-none" title="Ver plan">
+      <Badge tone={chip.tone === "trial" ? "amber" : chip.tone === "warning" ? "red" : "accent"}>{chip.label}</Badge>
+    </Link>
+  );
+  const onboarding: ReactNode = <OnboardingChecklist ctx={ctx} />;
+
   const header = (
     <PageHeader
-      title="Dashboard"
-      description={firstName ? `Hola, ${firstName}. Así está ${store.name}.` : `Así está ${store.name}.`}
+      title={
+        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span>{ctx.store.name}</span>
+          {planChip}
+        </span>
+      }
+      description={firstName ? `Hola, ${firstName}. Así viene tu tienda.` : "Así viene tu tienda."}
       actions={
         <>
           <NotificationsToggle />
-          <ButtonLink href="/" external icon={<ExternalLink />}>
+          <ButtonLink href={storeHref(ctx.store)} external icon={<ExternalLink />}>
             Ver tienda
           </ButtonLink>
         </>
@@ -61,74 +81,23 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
 
   // ---------- Sin pedidos todavía: qué hacer primero ----------
   if (!d.totalOrders) {
-    const steps = [
-      {
-        done: d.onboarding.products > 0,
-        title: "Cargá tus productos",
-        text: d.onboarding.products
-          ? `${formatNumber(d.onboarding.products)} productos publicados.`
-          : "Cargalos a mano o importalos desde otra tienda.",
-        href: d.onboarding.products ? "/admin/productos" : "/admin/importar",
-        cta: d.onboarding.products ? "Ver productos" : "Importar catálogo",
-      },
-      {
-        done: d.onboarding.transferReady,
-        title: "Configurá cómo te pagan",
-        text: d.onboarding.transferReady
-          ? "Los datos de transferencia están cargados."
-          : "Cargá CBU o alias para que tus clientes puedan transferir.",
-        href: "/admin/configuracion",
-        cta: "Configurar pagos",
-      },
-      {
-        done: d.onboarding.shippingReady,
-        title: "Definí envíos o retiro",
-        text: d.onboarding.shippingReady ? "Hay zonas de envío o puntos de retiro activos." : "Dibujá tus zonas de envío o agregá un punto de retiro.",
-        href: "/admin/envios",
-        cta: "Configurar envíos",
-      },
-    ];
     return (
       <>
         <ExpireSweep expired={expired} />
         {header}
-        <Card>
+        {onboarding}
+        <Card className={cn(onboarding ? "mt-4" : "", "border-[#cfdcd3] bg-adm-accent-soft")}>
           <CardHeader
+            className="border-[#cfdcd3]"
+            eyebrow="Pedidos"
             title="Todavía no hay pedidos"
-            description="Cuando alguien compre en tu tienda lo vas a ver acá. Mientras tanto, dejá lista la tienda:"
+            description="Cuando alguien compre en tu tienda lo vas a ver acá. Si vendés por otro lado, cargalo como pedido manual."
             actions={
               <ButtonLink href="/admin/pedidos/nuevo" variant="primary">
                 Crear pedido manual
               </ButtonLink>
             }
           />
-          <ol className="divide-y divide-adm-border">
-            {steps.map((s, i) => (
-              <li key={s.title} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-medium",
-                      s.done ? "border-adm-success bg-adm-success text-white" : "border-adm-input-border text-adm-fg-muted",
-                    )}
-                  >
-                    {s.done ? <Check className="size-3" /> : i + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      {s.title}
-                      <span className="sr-only">{s.done ? " (listo)" : " (pendiente)"}</span>
-                    </p>
-                    <p className="text-[13px] text-adm-fg-muted">{s.text}</p>
-                  </div>
-                </div>
-                <ButtonLink href={s.href} size="sm" variant={s.done ? "ghost" : "secondary"}>
-                  {s.cta}
-                </ButtonLink>
-              </li>
-            ))}
-          </ol>
         </Card>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <LowStockCard d={d} />
@@ -144,11 +113,18 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
     <>
       <ExpireSweep expired={expired} />
       {header}
+      <div className="mb-4 empty:hidden">{onboarding}</div>
 
       <StatStrip>
-        <Stat label={SALES_LABEL[period]} value={money(d.sales.value)} delta={d.sales.comparison.text} />
-        <Stat label="Pedidos" value={formatNumber(d.orders.value)} delta={d.orders.comparison.text} href="/admin/pedidos" />
-        <Stat label="Ticket promedio" value={money(d.ticket.value)} delta={d.ticket.comparison.text} />
+        <Stat label={SALES_LABEL[period]} value={money(d.sales.value)} delta={d.sales.comparison.text} trend={d.sales.comparison.percent === null ? undefined : d.sales.comparison.direction} />
+        <Stat
+          label="Pedidos"
+          value={formatNumber(d.orders.value)}
+          delta={d.orders.comparison.text}
+          trend={d.orders.comparison.percent === null ? undefined : d.orders.comparison.direction}
+          href="/admin/pedidos"
+        />
+        <Stat label="Ticket promedio" value={money(d.ticket.value)} delta={d.ticket.comparison.text} trend={d.ticket.comparison.percent === null ? undefined : d.ticket.comparison.direction} />
         <Stat
           label="Por cobrar"
           value={money(d.unpaid.amount)}
@@ -273,9 +249,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
 
 function ActionLink({ href, count, label }: { href: string; count: number; label: string }) {
   return (
-    <Link href={href} className="block px-4 py-3 hover:bg-adm-hover">
-      <span className={cn("tnum block text-xl font-semibold", count ? "text-adm-fg" : "text-adm-fg-muted")}>{formatNumber(count)}</span>
-      <span className="text-xs text-adm-fg-muted">{label}</span>
+    <Link href={href} className="group block px-4 py-3 transition-colors hover:bg-adm-row-hover">
+      <span className="flex items-center gap-2">
+        {count ? <span aria-hidden className="size-1.5 rounded-full bg-adm-accent-2" /> : null}
+        <span className={cn("tnum block text-xl font-semibold", count ? "text-adm-fg" : "text-adm-fg-muted")}>{formatNumber(count)}</span>
+      </span>
+      <span className="text-xs text-adm-fg-muted group-hover:text-adm-fg">{label}</span>
     </Link>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { savePaymentsSettings } from "@/app/admin/(panel)/configuracion/actions";
+import { useOptionalAdminStore } from "@/components/admin/AdminStoreContext";
 import { Badge } from "@/components/ui/Badge";
 import { Card, FormSection } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
@@ -37,7 +38,6 @@ const TYPE_LABEL: Record<Method["type"], string> = {
   other: "Otro",
 };
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 
 interface StoreInfo {
   name: string;
@@ -56,6 +56,8 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
   const form = useSettingsForm(initial, savePaymentsSettings);
   const { values: v, set, error } = form;
   const money = (n: number) => formatMoney(n, { currency: store.currency, locale: store.locale });
+  // URL pública de la tienda activa (subdominio, dominio propio o /s/<slug>) para los ejemplos.
+  const site = (useOptionalAdminStore()?.store.url ?? "").replace(/\/+$/, "");
 
   const move = (index: number, delta: -1 | 1) => {
     const target = index + delta;
@@ -79,16 +81,16 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
         total: 48500,
         delivery: "Envío a Av. Santa Fe 3253, CABA",
         payment: "Acordar con el vendedor",
-        url: `${SITE}/pedido/ejemplo`,
+        url: `${site}/pedido/ejemplo`,
         currency: store.currency,
         locale: store.locale,
       }),
-    [v.whatsapp_template, store],
+    [v.whatsapp_template, store, site],
   );
 
   const fabPreview = buildProductMessage(v.whatsapp_button.message_template, {
     name: "Remera básica",
-    url: `${SITE}/producto/remera-basica`,
+    url: `${site}/producto/remera-basica`,
   });
 
   const transferMethod = v.methods.find((m) => m.type === "transfer");

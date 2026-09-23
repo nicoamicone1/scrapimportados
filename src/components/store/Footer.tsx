@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { StoreLink } from "@/components/store/StoreLink";
 import { cn } from "@/lib/cn";
 import type { MenuItem } from "@/lib/store/menus";
 import type { StorePaymentMethod } from "@/lib/store/payment-methods";
@@ -33,9 +32,9 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
       {children}
     </a>
   ) : (
-    <Link href={href} className="text-fg-muted hover:text-fg">
+    <StoreLink href={href} className="text-fg-muted hover:text-fg">
       {children}
-    </Link>
+    </StoreLink>
   );
 }
 
@@ -49,9 +48,9 @@ function LegalBand({ settings, year }: { settings: StoreSettings; year: number }
         <div className="space-y-2">
           <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
             <li>
-              <Link href="/arrepentimiento" className="font-medium text-fg underline underline-offset-2">
+              <StoreLink href="/arrepentimiento" className="font-medium text-fg underline underline-offset-2">
                 Botón de arrepentimiento
-              </Link>
+              </StoreLink>
             </li>
             {policies.map((p) => (
               <li key={p.key}>

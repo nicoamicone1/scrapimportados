@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ job
   const { jobId } = await params;
   if (!z.string().uuid().safeParse(jobId).success) return jsonError("Importación inexistente.", 404);
   return withAdmin(async (ctx) => {
-    const job = await getJob(ctx.supabase, jobId);
+    const job = await getJob(ctx, jobId);
     if (!job) return jsonError("Importación inexistente.", 404);
     return NextResponse.json({ ok: true as const, job });
   });

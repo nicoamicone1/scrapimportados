@@ -9,12 +9,22 @@ import { getStoreInfo, listPaymentMethods } from "@/lib/admin/orders";
 export const metadata: Metadata = { title: "Crear pedido" };
 
 export default async function NewOrderPage() {
-  const { supabase } = await requireAdmin();
+  const { supabase, store: currentStore } = await requireAdmin();
   const [store, methods, pickups, zones] = await Promise.all([
-    getStoreInfo(supabase),
-    listPaymentMethods(supabase),
-    supabase.from("pickup_locations").select("id, name, address").eq("is_active", true).order("position"),
-    supabase.from("shipping_zones").select("id, name, cost").eq("is_active", true).order("position"),
+    getStoreInfo(supabase, currentStore.id),
+    listPaymentMethods(supabase, currentStore.id),
+    supabase
+      .from("pickup_locations")
+      .select("id, name, address")
+      .eq("store_id", currentStore.id)
+      .eq("is_active", true)
+      .order("position"),
+    supabase
+      .from("shipping_zones")
+      .select("id, name, cost")
+      .eq("store_id", currentStore.id)
+      .eq("is_active", true)
+      .order("position"),
   ]);
   const active = methods.filter((m) => m.isActive);
 

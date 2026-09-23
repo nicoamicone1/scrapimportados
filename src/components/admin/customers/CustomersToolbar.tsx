@@ -1,10 +1,9 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
-
 import { Select } from "@/components/ui/Input";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { useUrlTransition } from "@/components/ui/useUrlTransition";
+import { cn } from "@/lib/cn";
 
 const SORTS = [
   { value: "recientes", label: "Más recientes" },
@@ -15,19 +14,9 @@ const SORTS = [
 
 /** Búsqueda + orden del listado de clientes (en la URL). */
 export function CustomersToolbar() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const [, startTransition] = useTransition();
+  const { searchParams: params, setParams, pending } = useUrlTransition();
 
-  const setSort = (value: string) => {
-    const next = new URLSearchParams(params.toString());
-    if (value && value !== "recientes") next.set("orden", value);
-    else next.delete("orden");
-    next.delete("page");
-    const qs = next.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
-  };
+  const setSort = (value: string) => setParams({ orden: value && value !== "recientes" ? value : null });
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -35,7 +24,7 @@ export function CustomersToolbar() {
       <Select
         size="sm"
         aria-label="Orden"
-        className="w-40"
+        className={cn("w-40 transition-opacity", pending && "opacity-70")}
         value={params.get("orden") ?? "recientes"}
         onChange={(e) => setSort(e.target.value)}
         options={SORTS}

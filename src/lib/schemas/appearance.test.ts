@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 
+import { defaultPlan } from "@/lib/plans";
 import { PRESETS } from "@/lib/theme/presets";
 
-import { announcementSchema, CUSTOM_CSS_MAX_BYTES, saveThemeSchema, validateCustomCss } from "./appearance";
+import {
+  announcementSchema,
+  basePresetOf,
+  CUSTOM_CSS_MAX_BYTES,
+  isPresetAllowed,
+  saveThemeSchema,
+  themePlanViolation,
+  validateCustomCss,
+} from "./appearance";
 
 describe("validateCustomCss", () => {
   it("acepta CSS común", () => {
@@ -53,5 +62,30 @@ describe("announcementSchema", () => {
     expect(announcementSchema.safeParse({ enabled: true, text: "Envíos gratis", bg: "#000000" }).success).toBe(false);
     expect(announcementSchema.safeParse({ enabled: true, text: "Envíos gratis", bg: "#000000", fg: "#FFFFFF" }).success).toBe(true);
     expect(announcementSchema.safeParse({ enabled: false, text: "", href: "javascript:alert(1)" }).success).toBe(false);
+  });
+});
+
+describe("tema vs. plan", () => {
+  const free = defaultPlan("free");
+  const pro = defaultPlan("pro");
+
+  it("Free guarda sólo nordico/mercado (o un custom derivado de ellos)", () => {
+    expect(themePlanViolation(free, PRESETS.nordico)).toBeNull();
+    expect(themePlanViolation(free, PRESETS.mercado)).toBeNull();
+    expect(themePlanViolation(free, PRESETS.atelier)).toBe("theme.all_presets");
+    const fromMercado = { ...PRESETS.mercado, preset: "custom" as const, colors: { ...PRESETS.mercado.colors, primary: "#123456" } };
+    expect(basePresetOf(fromMercado)).toBe("mercado");
+    expect(themePlanViolation(free, fromMercado)).toBeNull();
+    const fromNeon = { ...PRESETS.neon, preset: "custom" as const, radius: PRESETS.neon.radius };
+    expect(basePresetOf(fromNeon)).toBe("neon");
+    expect(themePlanViolation(free, fromNeon)).toBe("theme.all_presets");
+  });
+
+  it("CSS personalizado sólo con theme.custom_css", () => {
+    expect(themePlanViolation(free, { ...PRESETS.nordico, custom_css: "h1{color:red}" })).toBe("theme.custom_css");
+    expect(themePlanViolation(free, { ...PRESETS.nordico, custom_css: "   " })).toBeNull();
+    expect(themePlanViolation(pro, { ...PRESETS.neon, custom_css: "h1{color:red}" })).toBeNull();
+    expect(isPresetAllowed(pro, "atelier")).toBe(true);
+    expect(isPresetAllowed(free, "atelier")).toBe(false);
   });
 });

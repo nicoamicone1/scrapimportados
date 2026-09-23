@@ -15,6 +15,7 @@ import { GripVertical, ImagePlus, Loader2, MoreHorizontal, Star, Trash2, Type } 
 import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { toast } from "sonner";
 
+import { LimitBanner } from "@/components/admin/LimitBanner";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Dialog } from "@/components/ui/Dialog";
@@ -158,6 +159,8 @@ export function ImageManager({ productId, images, onChange, ensureProductId, use
           e.target.value = "";
         }}
       />
+
+      <LimitBanner limit="images_per_product" used={images.length} className="mb-3" />
 
       {images.length === 0 && !uploading ? (
         <button

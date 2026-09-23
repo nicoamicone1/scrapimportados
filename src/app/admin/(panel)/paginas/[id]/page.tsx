@@ -7,6 +7,7 @@ import type { LinkSuggestion } from "@/components/admin/builder/fields";
 import { getAdminPage, isUuidLike, listCategoryOptions, listPageOptions, listProductTags } from "@/lib/admin/pages";
 import { requireAdmin } from "@/lib/auth";
 import { getSettings } from "@/lib/store/settings";
+import { storeUrl } from "@/lib/tenant/urls";
 
 export async function generateMetadata({ params }: PageProps<"/admin/paginas/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -27,7 +28,7 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
   const ctx = await requireAdmin();
   const [page, settings, categories, pages, tags] = await Promise.all([
     getAdminPage(id),
-    getSettings(),
+    getSettings(ctx.store.id),
     listCategoryOptions(ctx),
     listPageOptions(ctx),
     listProductTags(ctx),
@@ -35,7 +36,7 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
   if (!page) notFound();
 
   const startBlocks = page.draft?.blocks ?? page.blocks;
-  const initialNodes = await renderBlockPreviews(startBlocks, "desktop");
+  const initialNodes = await renderBlockPreviews(ctx.store.id, startBlocks, "desktop");
 
   const links: LinkSuggestion[] = [
     ...STORE_ROUTES,
@@ -48,7 +49,7 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
       page={page}
       theme={settings.theme}
       options={{ categories, tags, links, timezone: settings.timezone }}
-      siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? ""}
+      siteUrl={storeUrl(ctx.store)}
       storeName={settings.name}
       initialNodes={initialNodes}
     />

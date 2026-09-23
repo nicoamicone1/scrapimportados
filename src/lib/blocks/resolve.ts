@@ -12,8 +12,10 @@ export type { CategoryTile } from "./select";
 /**
  * Datos que necesitan los bloques, resueltos en el server (agente E).
  * Contrato con el storefront (S): la página llama
- *   `const data = await resolveBlockData(page.blocks, promotions)`
+ *   `const data = await resolveBlockData(store.id, page.blocks, promotions)`
  * y se lo pasa tal cual a `<BlockRenderer data={data} … />`.
+ * Los `href` de las tiles son paths de la tienda SIN prefijo (`/categoria/x`):
+ * el prefijo `/s/<slug>` lo agrega `StoreLink` al renderizar.
  */
 export interface ResolvedBlockData {
   /** blockId → productos (product_slider / product_grid). */
@@ -40,6 +42,7 @@ export interface ResolveOptions {
 }
 
 export async function resolveBlockData(
+  storeId: string,
   blocks: Block[],
   promotions: Promotion[],
   { includeHidden = false, now = new Date() }: ResolveOptions = {},
@@ -52,12 +55,12 @@ export async function resolveBlockData(
   const categoryBlocks = visible.filter((b): b is Extract<Block, { type: "category_list" }> => b.type === "category_list");
   if (!productBlocks.length && !categoryBlocks.length) return { products: {}, categories: {} };
 
-  const [index, categories] = await Promise.all([getCatalogIndex(), listCategories()]);
+  const [index, categories] = await Promise.all([getCatalogIndex(storeId), listCategories(storeId)]);
   const opts = { categories, promotions, now };
 
   const products = Object.fromEntries(
     await Promise.all(
-      productBlocks.map(async (b) => [b.id, await getProductCards(selectProductIds(effectiveSource(b), index, opts))] as const),
+      productBlocks.map(async (b) => [b.id, await getProductCards(storeId, selectProductIds(effectiveSource(b), index, opts))] as const),
     ),
   );
 
@@ -65,7 +68,7 @@ export async function resolveBlockData(
     categoryBlocks.map(async (b) => {
       const picks = selectCategories(b.settings.categoryIds, categories, index);
       const coverIds = picks.filter((p) => !p.category.imageUrl).flatMap((p) => p.coverCandidates);
-      const cards = new Map((await getProductCards(coverIds)).map((p) => [p.id, p.image?.url ?? null]));
+      const cards = new Map((await getProductCards(storeId, coverIds)).map((p) => [p.id, p.image?.url ?? null]));
       const coverFor = (ids: string[]) => ids.map((id) => cards.get(id)).find((url): url is string => !!url) ?? null;
       const tiles: CategoryTile[] = picks.map((p) => ({
         id: p.category.id,

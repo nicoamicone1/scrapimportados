@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { discardDraft, savePage, setPageStatus, type SaveMode } from "@/app/admin/(panel)/paginas/actions";
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { SeoFields } from "@/components/admin/SeoFields";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -83,6 +84,7 @@ export function PageEditor({
   initialNodes: BlockPreviewNode[];
 }) {
   const router = useRouter();
+  const storeRoot = useAdminStore().store.href;
   const isHome = page.type === "home";
 
   const liveContent: Content = useMemo(
@@ -262,7 +264,8 @@ export function PageEditor({
     return () => window.removeEventListener("keydown", onKey);
   }, [duplicateBlock, save, selectedId]);
 
-  const publicUrl = isHome ? "/" : `/${live.meta.slug}`;
+  // "Ver en la tienda": URL de la tienda activa (`/s/<slug>/…` en modo fallback).
+  const publicUrl = isHome ? storeRoot : `${storeRoot.replace(/\/+$/, "")}/${live.meta.slug}`;
   const deleting = blocks.find((b) => b.id === confirmDelete);
 
   return (

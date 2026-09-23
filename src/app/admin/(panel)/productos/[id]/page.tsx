@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/products/ProductForm";
 import { listCategoryOptions } from "@/lib/admin/categories";
 import { getAdminProduct, listBrands, listTags } from "@/lib/admin/products";
+import { requireAdmin } from "@/lib/auth";
 import { getSettings } from "@/lib/store/settings";
 
 export async function generateMetadata({ params }: PageProps<"/admin/productos/[id]">): Promise<Metadata> {
@@ -14,12 +15,13 @@ export async function generateMetadata({ params }: PageProps<"/admin/productos/[
 
 export default async function EditProductPage({ params }: PageProps<"/admin/productos/[id]">) {
   const { id } = await params;
+  const { store } = await requireAdmin();
   const [product, categories, brands, tags, siteName] = await Promise.all([
     getAdminProduct(id),
     listCategoryOptions(),
     listBrands(),
     listTags(),
-    getSettings()
+    getSettings(store.id)
       .then((s) => s.name)
       .catch(() => undefined),
   ]);

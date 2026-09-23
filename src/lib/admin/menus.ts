@@ -37,8 +37,12 @@ function parseItems(value: Json | undefined, depth = 0): MenuItemInput[] {
 export type AdminMenus = Record<MenuHandle, { items: MenuItemInput[]; updatedAt: string | null }>;
 
 export async function getAdminMenus(): Promise<AdminMenus> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("menus").select("handle, items, updated_at").in("handle", [...MENU_HANDLES]);
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("menus")
+    .select("handle, items, updated_at")
+    .eq("store_id", store.id)
+    .in("handle", [...MENU_HANDLES]);
   if (error) throw new Error(error.message);
   const out: AdminMenus = { header: { items: [], updatedAt: null }, footer: { items: [], updatedAt: null } };
   for (const row of data ?? []) {

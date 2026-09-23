@@ -6,19 +6,24 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { deletePage, duplicatePage } from "@/app/admin/(panel)/paginas/actions";
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DropdownItem, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
 import { Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { toast } from "@/components/ui";
+import { withPendingToast } from "@/components/ui/feedback";
 import type { AdminPageListItem } from "@/lib/admin/pages";
 import { formatDateTime, formatRelative } from "@/lib/dates";
 import { PAGE_TYPE_LABELS } from "@/lib/schemas/page";
 
 export function PagesTable({ pages, filtered }: { pages: AdminPageListItem[]; filtered: boolean }) {
   const router = useRouter();
+  const { store } = useAdminStore();
   const [toDelete, setToDelete] = useState<AdminPageListItem | null>(null);
+  /** Link a la página en la tienda activa (`/s/<slug>/…` en modo fallback, absoluto con subdominio). */
+  const storeLink = (path: string) => (path === "/" ? store.href : `${store.href.replace(/\/+$/, "")}${path}`);
 
   const duplicate = async (p: AdminPageListItem) => {
     const r = await duplicatePage(p.id);
@@ -63,7 +68,7 @@ export function PagesTable({ pages, filtered }: { pages: AdminPageListItem[]; fi
                 </TD>
                 <TD>
                   {p.status === "published" ? (
-                    <a href={path} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-adm-fg-muted hover:text-adm-accent hover:underline">
+                    <a href={storeLink(path)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-adm-fg-muted hover:text-adm-accent hover:underline">
                       {path}
                       <ExternalLink className="size-3" aria-hidden />
                     </a>
@@ -92,11 +97,11 @@ export function PagesTable({ pages, filtered }: { pages: AdminPageListItem[]; fi
                     <DropdownItem icon={<Pencil />} href={`/admin/paginas/${p.id}`}>
                       Editar
                     </DropdownItem>
-                    <DropdownItem icon={<Copy />} onSelect={() => void duplicate(p)}>
+                    <DropdownItem icon={<Copy />} onSelect={() => void withPendingToast("Duplicando página…", () => duplicate(p))}>
                       Duplicar
                     </DropdownItem>
                     {p.status === "published" ? (
-                      <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(path, "_blank", "noopener")}>
+                      <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(storeLink(path), "_blank", "noopener")}>
                         Ver en la tienda
                       </DropdownItem>
                     ) : null}

@@ -14,6 +14,7 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Switch } from "@/components/ui/Switch";
 import { Table, TBody, TD, TH, THead, TR, TableEmpty } from "@/components/ui/Table";
 import { toast } from "@/components/ui";
+import { withPendingToast } from "@/components/ui/feedback";
 import type { FacetOption, PickerProduct, ScopeVariant } from "@/lib/admin/pricing";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/money";
@@ -656,7 +657,7 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
                 {lastBatch.partial ? " El proceso se cortó antes de terminar: revisá el historial." : ""}
               </span>
               <span className="ml-auto flex gap-2">
-                <Button size="sm" onClick={() => void undo(lastBatch.batchId)}>
+                <Button size="sm" onClick={() => void withPendingToast("Restaurando precios…", () => undo(lastBatch.batchId))}>
                   Deshacer
                 </Button>
                 <ButtonLink size="sm" variant="ghost" href="/admin/precios/historial">

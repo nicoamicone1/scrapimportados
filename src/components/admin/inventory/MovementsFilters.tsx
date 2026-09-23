@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { MOVEMENT_REASON_LABELS, MOVEMENT_REASONS } from "@/lib/schemas/inventory";
 
 const dateClass =
-  "h-8 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-sm text-adm-fg hover:border-[#bdb7ab] [color-scheme:light]";
+  "h-8 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-sm text-adm-fg hover:border-adm-input-border-hover [color-scheme:light]";
 
 /** Filtros del historial: motivo, rango de fechas y variante (chip). */
 export function MovementsFilters({ variantLabel }: { variantLabel: string | null }) {

@@ -6,9 +6,11 @@ import { z } from "zod";
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
+import { assertFeature } from "@/lib/plans";
+import { assertUsage } from "@/lib/plans/server";
 import { detectAdapter } from "@/lib/scraper/adapters";
 import { assertPublicUrl, ScrapeError } from "@/lib/scraper/http";
-import { readCursor, toJson, type JobCursor, type LogLine } from "@/lib/scraper/job";
+import { importFeatureFor, readCursor, toJson, type JobCursor, type LogLine } from "@/lib/scraper/job";
 import { hostOf } from "@/lib/scraper/text";
 import type { UrlAdapterId } from "@/lib/scraper/types";
 import { createJobSchema, readImportOptions, selectItemsSchema, type CreateJobInput } from "@/lib/schemas/import";
@@ -23,12 +25,25 @@ function line(msg: string, level: LogLine["level"] = "info"): LogLine {
 export async function createImportJob(input: CreateJobInput): Promise<ActionResult<{ jobId: string }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    assertFeature(ctx, "catalog.import_web");
     const parsed = createJobSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const { url, options } = parsed.data;
     if (options.category_mode === "single" && !options.default_category_id) {
       return fail("Elegí la categoría donde van los productos.", { "options.default_category_id": ["Elegí una categoría."] });
     }
+    if (options.default_category_id) {
+      const cat = await ctx.supabase
+        .from("categories")
+        .select("id")
+        .eq("store_id", ctx.store.id)
+        .eq("id", options.default_category_id)
+        .maybeSingle();
+      if (!cat.data) {
+        return fail("La categoría elegida ya no existe.", { "options.default_category_id": ["Elegí otra categoría."] });
+      }
+    }
+    await assertUsage(ctx, "import_jobs_month");
 
     let adapter: UrlAdapterId;
     try {
@@ -43,6 +58,7 @@ export async function createImportJob(input: CreateJobInput): Promise<ActionResu
     const r = await ctx.supabase
       .from("import_jobs")
       .insert({
+        store_id: ctx.store.id,
         source_url: url,
         adapter,
         status: "queued",
@@ -70,7 +86,12 @@ export async function pauseImportJob(jobId: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!idSchema.safeParse(jobId).success) return fail("Importación inexistente.");
-    const job = await ctx.supabase.from("import_jobs").select("id, status, log, cursor").eq("id", jobId).maybeSingle();
+    const job = await ctx.supabase
+      .from("import_jobs")
+      .select("id, status, log, cursor")
+      .eq("store_id", ctx.store.id)
+      .eq("id", jobId)
+      .maybeSingle();
     if (!job.data) return fail("Importación inexistente.");
     if (job.data.status !== "running" && job.data.status !== "queued") return fail("La importación no está en curso.");
     const cursor = readCursor(job.data.cursor);
@@ -81,6 +102,7 @@ export async function pauseImportJob(jobId: string): Promise<ActionResult> {
         cursor: toJson({ ...cursor, lockUntil: null }),
         log: [...job.data.log, toJson(line("Pausada por el usuario.", "warn"))].slice(-200),
       })
+      .eq("store_id", ctx.store.id)
       .eq("id", jobId);
     if (r.error) throw new Error(r.error.message);
     revalidatePath(`/admin/importar/${jobId}`);
@@ -93,8 +115,14 @@ export async function resumeImportJob(jobId: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!idSchema.safeParse(jobId).success) return fail("Importación inexistente.");
-    const job = await ctx.supabase.from("import_jobs").select("id, status, log, cursor, finished_at").eq("id", jobId).maybeSingle();
+    const job = await ctx.supabase
+      .from("import_jobs")
+      .select("id, adapter, status, log, cursor, finished_at")
+      .eq("store_id", ctx.store.id)
+      .eq("id", jobId)
+      .maybeSingle();
     if (!job.data) return fail("Importación inexistente.");
+    assertFeature(ctx, importFeatureFor(job.data.adapter));
     if (job.data.status !== "cancelled" && job.data.status !== "failed") return fail("La importación no está pausada.");
     if (job.data.status === "cancelled" && job.data.finished_at) return fail("Esta importación se descartó. Creá una nueva.");
     const cursor = readCursor(job.data.cursor);
@@ -107,6 +135,7 @@ export async function resumeImportJob(jobId: string): Promise<ActionResult> {
         cursor: toJson({ ...cursor, lockUntil: null }),
         log: [...job.data.log, toJson(line("Reanudada."))].slice(-200),
       })
+      .eq("store_id", ctx.store.id)
       .eq("id", jobId);
     if (r.error) throw new Error(r.error.message);
     return ok();
@@ -118,13 +147,21 @@ export async function resyncImportJob(jobId: string): Promise<ActionResult<{ job
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!idSchema.safeParse(jobId).success) return fail("Importación inexistente.");
-    const job = await ctx.supabase.from("import_jobs").select("source_url, adapter, options").eq("id", jobId).maybeSingle();
+    const job = await ctx.supabase
+      .from("import_jobs")
+      .select("source_url, adapter, options")
+      .eq("store_id", ctx.store.id)
+      .eq("id", jobId)
+      .maybeSingle();
     if (!job.data) return fail("Importación inexistente.");
     if (job.data.adapter === "csv") return fail("Las importaciones de CSV no se re-sincronizan: subí el archivo nuevo.");
+    assertFeature(ctx, "catalog.import_web");
+    await assertUsage(ctx, "import_jobs_month");
     const options = readImportOptions(job.data.options);
     const r = await ctx.supabase
       .from("import_jobs")
       .insert({
+        store_id: ctx.store.id,
         source_url: job.data.source_url,
         adapter: job.data.adapter,
         status: "queued",
@@ -158,14 +195,25 @@ export async function importSelectedItems(input: z.input<typeof selectItemsSchem
     if (!parsed.success) return zodFail(parsed.error);
     const { jobId, itemIds, all } = parsed.data;
 
-    const job = await ctx.supabase.from("import_jobs").select("id, status, cursor, log, stats").eq("id", jobId).maybeSingle();
+    const storeId = ctx.store.id;
+    const job = await ctx.supabase
+      .from("import_jobs")
+      .select("id, status, cursor, log, stats")
+      .eq("store_id", storeId)
+      .eq("id", jobId)
+      .maybeSingle();
     if (!job.data) return fail("Importación inexistente.");
     const cursor = readCursor(job.data.cursor);
     if (cursor.phase !== "review" || job.data.status !== "running") return fail("Esta importación no está esperando revisión.");
 
     let selected = 0;
     if (all) {
-      const c = await ctx.supabase.from("import_items").select("id", { count: "exact", head: true }).eq("job_id", jobId).eq("status", "pending");
+      const c = await ctx.supabase
+        .from("import_items")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", storeId)
+        .eq("job_id", jobId)
+        .eq("status", "pending");
       selected = c.count ?? 0;
     } else {
       if (!itemIds.length) return fail("Elegí al menos un producto.");
@@ -175,6 +223,7 @@ export async function importSelectedItems(input: z.input<typeof selectItemsSchem
         const page = await ctx.supabase
           .from("import_items")
           .select("id")
+          .eq("store_id", storeId)
           .eq("job_id", jobId)
           .eq("status", "pending")
           .order("id")
@@ -190,12 +239,17 @@ export async function importSelectedItems(input: z.input<typeof selectItemsSchem
         const r = await ctx.supabase
           .from("import_items")
           .update({ status: "skipped", error: "No seleccionado." })
+          .eq("store_id", storeId)
           .in("id", drop.slice(i, i + 200));
         if (r.error) throw new Error(r.error.message);
       }
       const stats = job.data.stats && typeof job.data.stats === "object" && !Array.isArray(job.data.stats) ? job.data.stats : {};
       const skipped = Number((stats as Record<string, unknown>).skipped ?? 0) + drop.length;
-      await ctx.supabase.from("import_jobs").update({ stats: toJson({ ...stats, skipped }) }).eq("id", jobId);
+      await ctx.supabase
+        .from("import_jobs")
+        .update({ stats: toJson({ ...stats, skipped }) })
+        .eq("store_id", storeId)
+        .eq("id", jobId);
     }
     if (!selected) return fail("No hay nada para aplicar.");
 
@@ -205,6 +259,7 @@ export async function importSelectedItems(input: z.input<typeof selectItemsSchem
         cursor: toJson({ ...cursor, phase: "apply", lockUntil: null }),
         log: [...job.data.log, toJson(line(`Revisión: ${selected} seleccionados para aplicar.`))].slice(-200),
       })
+      .eq("store_id", storeId)
       .eq("id", jobId);
     if (r.error) throw new Error(r.error.message);
     return ok({ selected });
@@ -216,7 +271,12 @@ export async function discardImportJob(jobId: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!idSchema.safeParse(jobId).success) return fail("Importación inexistente.");
-    const job = await ctx.supabase.from("import_jobs").select("id, status, cursor, log").eq("id", jobId).maybeSingle();
+    const job = await ctx.supabase
+      .from("import_jobs")
+      .select("id, status, cursor, log")
+      .eq("store_id", ctx.store.id)
+      .eq("id", jobId)
+      .maybeSingle();
     if (!job.data) return fail("Importación inexistente.");
     const r = await ctx.supabase
       .from("import_jobs")
@@ -226,11 +286,13 @@ export async function discardImportJob(jobId: string): Promise<ActionResult> {
         cursor: toJson({ ...readCursor(job.data.cursor), lockUntil: null }),
         log: [...job.data.log, toJson(line("Descartada por el usuario.", "warn"))].slice(-200),
       })
+      .eq("store_id", ctx.store.id)
       .eq("id", jobId);
     if (r.error) throw new Error(r.error.message);
     const pend = await ctx.supabase
       .from("import_items")
       .update({ status: "skipped", error: "Importación descartada." })
+      .eq("store_id", ctx.store.id)
       .eq("job_id", jobId)
       .eq("status", "pending");
     if (pend.error) throw new Error(pend.error.message);

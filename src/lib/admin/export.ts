@@ -10,7 +10,8 @@ import { CSV_BOM, csvLine, isoDate, zonedDayRange, type CsvValue } from "./csv";
  * Exportaciones CSV del admin (P0-04). Cada export es un generador de filas
  * que pagina la base; `csvStream()` lo convierte en un `ReadableStream`
  * (UTF-8 con BOM, separador `,`, fechas ISO). Lo sirve
- * src/app/admin/api/export/[file]/route.ts.
+ * src/app/admin/api/export/[file]/route.ts. Toda consulta filtra por la
+ * tienda activa (`storeId`).
  */
 
 export const EXPORTS = {
@@ -126,9 +127,9 @@ function optionNames(options: Json): string[] {
     .slice(0, 3);
 }
 
-export async function* productRows(supabase: ServerSupabase): AsyncGenerator<CsvValue[]> {
+export async function* productRows(supabase: ServerSupabase, storeId: string): AsyncGenerator<CsvValue[]> {
   const categories = await fetchAll<CategoryNode>((a, b) =>
-    supabase.from("categories").select("id, name, parent_id").order("id").range(a, b),
+    supabase.from("categories").select("id, name, parent_id").eq("store_id", storeId).order("id").range(a, b),
   );
   const catById = new Map(categories.map((c) => [c.id, c]));
 
@@ -136,6 +137,7 @@ export async function* productRows(supabase: ServerSupabase): AsyncGenerator<Csv
     const { data: products, error } = await supabase
       .from("products")
       .select("id, slug, name, status, tags, brand, options, seo, description_html")
+      .eq("store_id", storeId)
       .order("created_at")
       .order("id")
       .range(offset, offset + 99);
@@ -148,16 +150,29 @@ export async function* productRows(supabase: ServerSupabase): AsyncGenerator<Csv
         supabase
           .from("product_variants")
           .select("id, product_id, option_values, sku, barcode, price, compare_at_price, cost, stock, weight_grams, image_id, position")
+          .eq("store_id", storeId)
           .in("product_id", ids)
           .order("product_id")
           .order("position")
           .range(a, b),
       ),
       fetchAll((a, b) =>
-        supabase.from("product_images").select("id, product_id, url, position").in("product_id", ids).order("position").range(a, b),
+        supabase
+          .from("product_images")
+          .select("id, product_id, url, position")
+          .eq("store_id", storeId)
+          .in("product_id", ids)
+          .order("position")
+          .range(a, b),
       ),
       fetchAll((a, b) =>
-        supabase.from("product_categories").select("product_id, category_id, position").in("product_id", ids).order("position").range(a, b),
+        supabase
+          .from("product_categories")
+          .select("product_id, category_id, position")
+          .eq("store_id", storeId)
+          .in("product_id", ids)
+          .order("position")
+          .range(a, b),
       ),
     ]);
 
@@ -203,11 +218,12 @@ export async function* productRows(supabase: ServerSupabase): AsyncGenerator<Csv
 // Inventario
 // ---------------------------------------------------------------------
 
-export async function* inventoryRows(supabase: ServerSupabase): AsyncGenerator<CsvValue[]> {
+export async function* inventoryRows(supabase: ServerSupabase, storeId: string): AsyncGenerator<CsvValue[]> {
   for (let offset = 0; ; offset += MAX_ROWS) {
     const { data, error } = await supabase
       .from("admin_inventory")
       .select("sku, product_name, variant_title, stock, threshold, track_inventory, cost, product_id, position")
+      .eq("store_id", storeId)
       .order("product_name")
       .order("product_id")
       .order("position")
@@ -234,8 +250,13 @@ export interface OrderExportFilters {
 const ORDER_STATUSES = ["pending", "confirmed", "preparing", "shipped", "delivered", "cancelled"];
 const PAYMENT_STATUSES = ["pending", "paid", "partial", "refunded"];
 
-export async function* orderRows(supabase: ServerSupabase, filters: OrderExportFilters, timeZone: string): AsyncGenerator<CsvValue[]> {
-  const { data: methods } = await supabase.from("payment_methods").select("code, name");
+export async function* orderRows(
+  supabase: ServerSupabase,
+  storeId: string,
+  filters: OrderExportFilters,
+  timeZone: string,
+): AsyncGenerator<CsvValue[]> {
+  const { data: methods } = await supabase.from("payment_methods").select("code, name").eq("store_id", storeId);
   const methodName = new Map((methods ?? []).map((m) => [m.code, m.name]));
   const range = zonedDayRange(filters.from, filters.to, timeZone);
 
@@ -244,7 +265,8 @@ export async function* orderRows(supabase: ServerSupabase, filters: OrderExportF
       .from("orders")
       .select(
         "number, created_at, status, payment_status, payment_method_code, customer, subtotal, promo_total, coupon_code, coupon_discount, payment_discount, shipping_cost, total, fulfillment, shipping_zone_name, shipping_address, tracking_carrier, tracking_number, tracking_url, order_items(qty)",
-      );
+      )
+      .eq("store_id", storeId);
     if (range.fromIso) query = query.gte("created_at", range.fromIso);
     if (range.toIso) query = query.lt("created_at", range.toIso);
     if (filters.status && ORDER_STATUSES.includes(filters.status)) query = query.eq("status", filters.status);
@@ -277,11 +299,12 @@ export async function* orderRows(supabase: ServerSupabase, filters: OrderExportF
 // Clientes
 // ---------------------------------------------------------------------
 
-export async function* customerRows(supabase: ServerSupabase): AsyncGenerator<CsvValue[]> {
+export async function* customerRows(supabase: ServerSupabase, storeId: string): AsyncGenerator<CsvValue[]> {
   for (let offset = 0; ; offset += MAX_ROWS) {
     const { data, error } = await supabase
       .from("customers")
       .select("email, name, phone, doc_number, orders_count, total_spent, tags, created_at, id")
+      .eq("store_id", storeId)
       .order("created_at")
       .order("id")
       .range(offset, offset + MAX_ROWS - 1);
@@ -306,11 +329,19 @@ export interface AuditExportFilters {
   q?: string | null;
 }
 
-export async function* auditRows(supabase: ServerSupabase, filters: AuditExportFilters, timeZone: string): AsyncGenerator<CsvValue[]> {
+export async function* auditRows(
+  supabase: ServerSupabase,
+  storeId: string,
+  filters: AuditExportFilters,
+  timeZone: string,
+): AsyncGenerator<CsvValue[]> {
   const range = zonedDayRange(filters.from, filters.to, timeZone);
   const q = filters.q?.trim() ? escapeLike(filters.q.trim()) : null;
   for (let offset = 0; ; offset += MAX_ROWS) {
-    let query = supabase.from("audit_log").select("created_at, actor_email, action, entity, entity_id, summary, diff");
+    let query = supabase
+      .from("audit_log")
+      .select("created_at, actor_email, action, entity, entity_id, summary, diff")
+      .eq("store_id", storeId);
     if (filters.actor) query = query.eq("actor_id", filters.actor);
     if (filters.action?.trim()) query = query.ilike("action", `${escapeLike(filters.action.trim())}%`);
     if (filters.entity) query = query.eq("entity", filters.entity);

@@ -4,8 +4,10 @@ import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useSyncExternalStore } from "react";
 
+import { useStoreBase } from "@/components/store/StoreBase";
 import { cn } from "@/lib/cn";
 import { buildProductMessage, waLink } from "@/lib/store/whatsapp";
+import { stripStoreBase } from "@/lib/tenant/urls";
 
 /*
  * Botón flotante de WhatsApp (P0-19). En la ficha el mensaje es contextual
@@ -47,7 +49,8 @@ export interface WhatsAppFabProps {
 const HIDDEN_ON = [/^\/checkout/, /^\/pedido\//];
 
 export function WhatsAppFab({ phone, template, position, showOnMobile, showOnDesktop }: WhatsAppFabProps) {
-  const pathname = usePathname();
+  const { basePath } = useStoreBase();
+  const pathname = stripStoreBase(usePathname(), basePath);
   const product = useSyncExternalStore(subscribe, () => context, () => null);
   if (!phone || HIDDEN_ON.some((re) => re.test(pathname))) return null;
   if (!showOnMobile && !showOnDesktop) return null;

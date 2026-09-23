@@ -7,12 +7,12 @@ import { requireAdmin } from "@/lib/auth";
 export const metadata: Metadata = { title: "Exportar · Configuración" };
 
 export default async function ExportarPage() {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const [products, variants, orders, customers] = await Promise.all([
-    supabase.from("products").select("id", { count: "exact", head: true }),
-    supabase.from("product_variants").select("id", { count: "exact", head: true }),
-    supabase.from("orders").select("id", { count: "exact", head: true }),
-    supabase.from("customers").select("id", { count: "exact", head: true }),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", store.id),
+    supabase.from("product_variants").select("id", { count: "exact", head: true }).eq("store_id", store.id),
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("store_id", store.id),
+    supabase.from("customers").select("id", { count: "exact", head: true }).eq("store_id", store.id),
   ]);
 
   return (

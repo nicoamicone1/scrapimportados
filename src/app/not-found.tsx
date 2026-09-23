@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Página no encontrada", robots: { in
 /**
  * 404 raíz (fuera del layout del storefront: rutas que no matchean nada,
  * ej. dentro de /admin). El storefront tiene su propio 404 con el tema en
- * `(store)/not-found.tsx` y su catch-all `[slug]/[...rest]` que prueba las
+ * `s/[store]/not-found.tsx` y su catch-all `[slug]/[...rest]` que prueba las
  * redirecciones 301.
  */
 export default function NotFound() {

@@ -5,7 +5,7 @@ import { toListItem, type OrderListItem } from "@/lib/admin/orders";
 import { sanitizeSearch } from "@/lib/admin/order-utils";
 import type { Tables } from "@/lib/supabase/database.types";
 
-/** Lecturas del admin para clientes (sin caché, bajo RLS de admin). */
+/** Lecturas del admin para clientes (sin caché, bajo RLS de admin, filtradas por tienda). */
 
 type Supa = AdminContext["supabase"];
 
@@ -52,9 +52,10 @@ export interface CustomerListItem extends CustomerRow {
 
 export async function listCustomers(
   supabase: Supa,
+  storeId: string,
   f: CustomerFilters,
 ): Promise<{ rows: CustomerListItem[]; total: number }> {
-  let query = supabase.from("customers").select("*", { count: "exact" });
+  let query = supabase.from("customers").select("*", { count: "exact" }).eq("store_id", storeId);
   const q = sanitizeSearch(f.q);
   if (q) {
     const like = `*${q}*`;
@@ -76,6 +77,7 @@ export async function listCustomers(
     const { data: orders } = await supabase
       .from("orders")
       .select("customer_id, created_at")
+      .eq("store_id", storeId)
       .in("customer_id", ids)
       .order("created_at", { ascending: false })
       .limit(1000);
@@ -91,9 +93,10 @@ export async function listCustomers(
 
 export async function getCustomerDetail(
   supabase: Supa,
+  storeId: string,
   id: string,
 ): Promise<{ customer: CustomerRow; orders: OrderListItem[]; pending: number } | null> {
-  const { data: customer } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
+  const { data: customer } = await supabase.from("customers").select("*").eq("id", id).eq("store_id", storeId).maybeSingle();
   if (!customer) return null;
   const { data: orders } = await supabase
     .from("orders")
@@ -101,6 +104,7 @@ export async function getCustomerDetail(
       "id, number, created_at, customer, status, payment_status, payment_method_code, fulfillment, total, currency, expires_at, seen_at, source, order_items(qty)",
     )
     .eq("customer_id", id)
+    .eq("store_id", storeId)
     .order("created_at", { ascending: false })
     .limit(200);
   const list = (orders ?? []).map(toListItem);

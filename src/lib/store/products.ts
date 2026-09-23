@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
+import { tagFor } from "@/lib/cache-tags";
 import { applyPromotions, type PriceResult, type Promotion } from "@/lib/pricing";
 import { slugify } from "@/lib/slug";
 import type { Json } from "@/lib/supabase/database.types";
@@ -25,6 +26,10 @@ import { asArray, asObject, asString, CACHE_REVALIDATE } from "./utils";
  * activas que trae el índice (una sola query cacheada con tag `products`),
  * en vez de consultar la DB por cada combinación de filtros. El índice GIN
  * de `product_variants.option_values` queda para consultas SQL directas.
+ *
+ * Multi-tienda: toda función que consulta recibe `storeId` primero y filtra
+ * `.eq("store_id", storeId)`; las keys de `unstable_cache` llevan el
+ * `storeId` y las tags son `tagFor(base, storeId[, slug])`.
  *
  * IMPORTANTE (RLS/grants): `anon` NO puede leer `product_variants.cost`, así
  * que las queries públicas listan columnas explícitas (nunca `*`).
@@ -263,70 +268,74 @@ const DETAIL_SELECT = `${CARD_SELECT}, status, updated_at, description_html, sho
 // Índice del catálogo
 // ---------------------------------------------------------------------------
 
-/** Índice liviano de TODOS los productos activos. Tag: `products`. */
-export const getCatalogIndex = unstable_cache(
-  async (): Promise<CatalogIndexItem[]> => {
-    const supabase = createPublicClient();
-    const out: CatalogIndexItem[] = [];
-    const PAGE = 1000;
-    for (let from = 0; ; from += PAGE) {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, slug, name, brand, featured, tags, created_at, updated_at, product_images(url, position), product_variants(sku, price, compare_at_price, stock, track_inventory, allow_backorder, is_active, option_values), product_categories(category_id)",
-        )
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .order("id")
-        .range(from, from + PAGE - 1);
-      if (error) throw new Error(`No se pudo leer el catálogo: ${error.message}`);
-      for (const p of data ?? []) {
-        const variants = p.product_variants.filter((v) => v.is_active);
-        if (!variants.length) continue;
-        const prices = variants.map((v) => Number(v.price));
-        const skus = variants.map((v) => v.sku ?? "").filter(Boolean);
-        const firstImage = [...p.product_images].sort((a, b) => a.position - b.position)[0];
-        out.push({
-          id: p.id,
-          slug: p.slug,
-          name: p.name,
-          brand: p.brand,
-          search: searchText({ name: p.name, brand: p.brand, skus, tags: p.tags }),
-          skus,
-          categoryIds: p.product_categories.map((c) => c.category_id),
-          minPrice: Math.min(...prices),
-          maxPrice: Math.max(...prices),
-          hasCompareAt: variants.some((v) => v.compare_at_price != null && Number(v.compare_at_price) > Number(v.price)),
-          available: variants.some(isAvailable),
-          featured: p.featured,
-          tags: p.tags,
-          createdAt: p.created_at,
-          updatedAt: p.updated_at,
-          image: firstImage?.url ?? null,
-          variants: variants.map((v) => ({ o: optionRecord(v.option_values), a: isAvailable(v), p: Number(v.price) })),
-        });
-      }
-      if (!data || data.length < PAGE) break;
+/** Índice liviano de TODOS los productos activos de la tienda. Tag: `products:<storeId>`. */
+async function fetchCatalogIndex(storeId: string): Promise<CatalogIndexItem[]> {
+  const supabase = createPublicClient();
+  const out: CatalogIndexItem[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        "id, slug, name, brand, featured, tags, created_at, updated_at, product_images(url, position), product_variants(sku, price, compare_at_price, stock, track_inventory, allow_backorder, is_active, option_values), product_categories(category_id)",
+      )
+      .eq("store_id", storeId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(`No se pudo leer el catálogo: ${error.message}`);
+    for (const p of data ?? []) {
+      const variants = p.product_variants.filter((v) => v.is_active);
+      if (!variants.length) continue;
+      const prices = variants.map((v) => Number(v.price));
+      const skus = variants.map((v) => v.sku ?? "").filter(Boolean);
+      const firstImage = [...p.product_images].sort((a, b) => a.position - b.position)[0];
+      out.push({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        brand: p.brand,
+        search: searchText({ name: p.name, brand: p.brand, skus, tags: p.tags }),
+        skus,
+        categoryIds: p.product_categories.map((c) => c.category_id),
+        minPrice: Math.min(...prices),
+        maxPrice: Math.max(...prices),
+        hasCompareAt: variants.some((v) => v.compare_at_price != null && Number(v.compare_at_price) > Number(v.price)),
+        available: variants.some(isAvailable),
+        featured: p.featured,
+        tags: p.tags,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+        image: firstImage?.url ?? null,
+        variants: variants.map((v) => ({ o: optionRecord(v.option_values), a: isAvailable(v), p: Number(v.price) })),
+      });
     }
-    return out;
-  },
-  ["store-catalog-index-v2"],
-  { tags: ["products"], revalidate: CACHE_REVALIDATE },
-);
+    if (!data || data.length < PAGE) break;
+  }
+  return out;
+}
 
-/** Cards para una lista de ids (respeta el orden pedido). Tag: `products`. */
-export function getProductCards(ids: string[]): Promise<ProductCardData[]> {
+export function getCatalogIndex(storeId: string): Promise<CatalogIndexItem[]> {
+  return unstable_cache(() => fetchCatalogIndex(storeId), ["store-catalog-index-v2", storeId], {
+    tags: [tagFor("products", storeId)],
+    revalidate: CACHE_REVALIDATE,
+  })();
+}
+
+/** Cards para una lista de ids (respeta el orden pedido). Tag: `products:<storeId>`. */
+export function getProductCards(storeId: string, ids: string[]): Promise<ProductCardData[]> {
   if (!ids.length) return Promise.resolve([]);
   return unstable_cache(
     async (): Promise<ProductCardData[]> => {
       const supabase = createPublicClient();
-      const { data, error } = await supabase.from("products").select(CARD_SELECT).in("id", ids).eq("status", "active");
+      const { data, error } = await supabase.from("products").select(CARD_SELECT).eq("store_id", storeId).in("id", ids).eq("status", "active");
       if (error) throw new Error(`No se pudieron leer los productos: ${error.message}`);
       const byId = new Map((data ?? []).map((row) => [row.id, toCard(row as CardRow)]));
       return ids.map((id) => byId.get(id)).filter((p): p is ProductCardData => !!p && p.variants.length > 0);
     },
-    ["store-product-cards-v2", ids.join(",")],
-    { tags: ["products"], revalidate: CACHE_REVALIDATE },
+    ["store-product-cards-v2", storeId, ids.join(",")],
+    { tags: [tagFor("products", storeId)], revalidate: CACHE_REVALIDATE },
   )();
 }
 
@@ -438,10 +447,10 @@ function passes(p: CatalogIndexItem, pr: Predicates, skip?: FacetKey): boolean {
   return true;
 }
 
-async function buildPredicates(filters: ProductFilters): Promise<Predicates | null> {
+async function buildPredicates(storeId: string, filters: ProductFilters): Promise<Predicates | null> {
   let categoryIds: Set<string> | null = null;
   if (filters.category || filters.categoryId) {
-    const categories = await listCategories();
+    const categories = await listCategories(storeId);
     const root = filters.categoryId ?? categories.find((c) => c.slug === filters.category)?.id;
     if (!root) return null;
     categoryIds = new Set(descendantIds(categories, root));
@@ -518,15 +527,15 @@ function paginate(items: CatalogIndexItem[], filters: ProductFilters) {
 }
 
 /** Listado paginado para `/productos`, categorías y bloques. */
-export async function listProducts(filters: ProductFilters = {}): Promise<ProductList> {
+export async function listProducts(storeId: string, filters: ProductFilters = {}): Promise<ProductList> {
   const perPage = Math.min(Math.max(filters.perPage ?? 24, 1), 96);
-  const predicates = await buildPredicates(filters);
+  const predicates = await buildPredicates(storeId, filters);
   if (!predicates) return { items: [], total: 0, page: 1, perPage, pageCount: 0 };
-  const base = filterBase(await getCatalogIndex(), filters);
+  const base = filterBase(await getCatalogIndex(storeId), filters);
   const matched = base.filter((p) => passes(p, predicates));
   const sorted = filters.ids ? matched : sortItems(matched, filters, predicates.tokens);
   const { page, pageCount, slice } = paginate(sorted, filters);
-  return { items: await getProductCards(slice.map((p) => p.id)), total: sorted.length, page, perPage, pageCount };
+  return { items: await getProductCards(storeId, slice.map((p) => p.id)), total: sorted.length, page, perPage, pageCount };
 }
 
 function facetValues(counts: Map<string, number>, selected: Set<string>): FacetValue[] {
@@ -549,13 +558,16 @@ function sortOptionValues(values: FacetValue[]): FacetValue[] {
  * Listado + facetas (P0-10). Cada faceta se cuenta con TODOS los filtros
  * menos el suyo (facetas "disjuntivas"), así se puede sumar un segundo talle.
  */
-export async function searchCatalog(filters: ProductFilters): Promise<{ list: ProductList; facets: CatalogFacets }> {
+export async function searchCatalog(
+  storeId: string,
+  filters: ProductFilters,
+): Promise<{ list: ProductList; facets: CatalogFacets }> {
   const perPage = Math.min(Math.max(filters.perPage ?? 24, 1), 96);
   const empty: CatalogFacets = { options: [], brands: [], price: null, categoryCounts: {}, inStockCount: 0 };
-  const predicates = await buildPredicates(filters);
+  const predicates = await buildPredicates(storeId, filters);
   if (!predicates) return { list: { items: [], total: 0, page: 1, perPage, pageCount: 0 }, facets: empty };
 
-  const base = filterBase(await getCatalogIndex(), filters);
+  const base = filterBase(await getCatalogIndex(storeId), filters);
   const matched = base.filter((p) => passes(p, predicates));
   const sorted = sortItems(matched, filters, predicates.tokens);
   const { page, pageCount, slice } = paginate(sorted, filters);
@@ -607,7 +619,7 @@ export async function searchCatalog(filters: ProductFilters): Promise<{ list: Pr
   const inStockCount = base.filter((p) => passes(p, { ...predicates, inStock: true }, undefined)).length;
 
   return {
-    list: { items: await getProductCards(slice.map((p) => p.id)), total: sorted.length, page, perPage, pageCount },
+    list: { items: await getProductCards(storeId, slice.map((p) => p.id)), total: sorted.length, page, perPage, pageCount },
     facets: {
       options,
       brands: brands.length > 1 || predicates.brands ? brands : [],
@@ -619,19 +631,19 @@ export async function searchCatalog(filters: ProductFilters): Promise<{ list: Pr
 }
 
 /** Query param → nombre de opción ("talle" → "Talle"), sobre todo el catálogo activo. */
-export async function getOptionParamMap(): Promise<Map<string, string>> {
+export async function getOptionParamMap(storeId: string): Promise<Map<string, string>> {
   const map = new Map<string, string>();
-  for (const p of await getCatalogIndex()) {
+  for (const p of await getCatalogIndex(storeId)) {
     for (const v of p.variants) for (const name of Object.keys(v.o)) if (!map.has(optionParam(name))) map.set(optionParam(name), name);
   }
   return map;
 }
 
 /** Sugerencias del buscador del header (máx. `limit`). */
-export async function searchSuggestions(q: string, limit = 8, outOfStock: OutOfStockDisplay = "show_last") {
+export async function searchSuggestions(storeId: string, q: string, limit = 8, outOfStock: OutOfStockDisplay = "show_last") {
   const tokens = searchTokens(q);
   if (!tokens.length) return { items: [], total: 0 };
-  let items = (await getCatalogIndex()).filter((p) => matchesTokens(p.search, tokens));
+  let items = (await getCatalogIndex(storeId)).filter((p) => matchesTokens(p.search, tokens));
   if (outOfStock === "hide") items = items.filter((p) => p.available);
   const sorted = sortItems(items, { sort: "relevancia", outOfStock }, tokens);
   return {
@@ -683,32 +695,38 @@ function toDetail(data: DetailRow): ProductDetail | null {
   };
 }
 
-/** Producto activo por slug (o `null`). Tags: `products`, `product:<slug>`. */
-export function getProduct(slug: string): Promise<ProductDetail | null> {
+/** Producto activo por slug (o `null`). Tags: `products:<storeId>`, `product:<storeId>:<slug>`. */
+export function getProduct(storeId: string, slug: string): Promise<ProductDetail | null> {
   return unstable_cache(
     async (): Promise<ProductDetail | null> => {
       const supabase = createPublicClient();
       const { data, error } = await supabase
         .from("products")
         .select(DETAIL_SELECT)
+        .eq("store_id", storeId)
         .eq("slug", slug)
         .eq("status", "active")
         .maybeSingle();
       if (error) throw new Error(`No se pudo leer el producto ${slug}: ${error.message}`);
       return data ? toDetail(data as unknown as DetailRow) : null;
     },
-    ["store-product-v2", slug],
-    { tags: ["products", `product:${slug}`], revalidate: CACHE_REVALIDATE },
+    ["store-product-v2", storeId, slug],
+    { tags: [tagFor("products", storeId), tagFor("product", storeId, slug)], revalidate: CACHE_REVALIDATE },
   )();
 }
 
 /**
  * Vista previa (P0-13): cualquier estado, SIN cache, con la sesión del
- * usuario (RLS deja leer todo a `is_admin()`). El que llama verifica que sea admin.
+ * usuario (RLS deja leer todo a `is_store_admin(store_id)`). El que llama verifica que sea admin.
  */
-export async function getProductPreview(slug: string): Promise<ProductDetail | null> {
+export async function getProductPreview(storeId: string, slug: string): Promise<ProductDetail | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("products").select(DETAIL_SELECT).eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase
+    .from("products")
+    .select(DETAIL_SELECT)
+    .eq("store_id", storeId)
+    .eq("slug", slug)
+    .maybeSingle();
   if (error) {
     console.error(`[preview] ${slug}: ${error.message}`);
     return null;
@@ -722,10 +740,11 @@ export async function getProductPreview(slug: string): Promise<ProductDetail | n
  * agotados.
  */
 export async function getRelated(
+  storeId: string,
   product: Pick<ProductDetail, "id" | "categoryIds" | "tags" | "relatedIds">,
   limit = 8,
 ): Promise<ProductCardData[]> {
-  const index = await getCatalogIndex();
+  const index = await getCatalogIndex(storeId);
   const byId = new Map(index.map((p) => [p.id, p]));
   const picked: string[] = [];
   const add = (id: string) => {
@@ -742,7 +761,7 @@ export async function getRelated(
     const tags = new Set(product.tags);
     for (const p of index) if (p.tags.some((t) => tags.has(t))) add(p.id);
   }
-  return getProductCards(picked);
+  return getProductCards(storeId, picked);
 }
 
 // ---------------------------------------------------------------------------
@@ -772,7 +791,7 @@ interface FreshRow {
 }
 
 /** Estado actual de las variantes (precio, stock, activo) para validar el carrito y crear el pedido. */
-export async function getFreshVariants(variantIds: string[]): Promise<Map<string, FreshVariant>> {
+export async function getFreshVariants(storeId: string, variantIds: string[]): Promise<Map<string, FreshVariant>> {
   const ids = [...new Set(variantIds)].filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 100);
   const out = new Map<string, FreshVariant>();
   if (!ids.length) return out;
@@ -782,6 +801,7 @@ export async function getFreshVariants(variantIds: string[]): Promise<Map<string
     .select(
       "id, title, sku, price, compare_at_price, stock, track_inventory, allow_backorder, is_active, image_id, products(id, slug, name, status, vat_percent, product_images(id, url, position), product_categories(category_id))",
     )
+    .eq("store_id", storeId)
     .in("id", ids);
   if (error) throw new Error(`No se pudieron leer las variantes: ${error.message}`);
   for (const row of (data ?? []) as unknown as FreshRow[]) {

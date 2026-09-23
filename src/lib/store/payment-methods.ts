@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
+import { tagFor } from "@/lib/cache-tags";
 import { createPublicClient } from "@/lib/supabase/server";
 
 import { CACHE_REVALIDATE } from "./utils";
@@ -17,11 +18,12 @@ export interface StorePaymentMethod {
 }
 
 /** Lectura SIN cache (checkout: precios/costos tienen que ser los actuales). */
-export async function fetchPaymentMethodsFresh(): Promise<StorePaymentMethod[]> {
+export async function fetchPaymentMethodsFresh(storeId: string): Promise<StorePaymentMethod[]> {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("payment_methods")
     .select("id, code, name, type, discount_percent, instructions_md, position")
+    .eq("store_id", storeId)
     .eq("is_active", true)
     .order("position");
   if (error) throw new Error(`No se pudieron leer los métodos de pago: ${error.message}`);
@@ -36,14 +38,16 @@ export async function fetchPaymentMethodsFresh(): Promise<StorePaymentMethod[]> 
   }));
 }
 
-export const getPaymentMethods = unstable_cache(
-  () => fetchPaymentMethodsFresh(),
-  ["store-payment-methods"],
-  { tags: ["payment-methods"], revalidate: CACHE_REVALIDATE },
-);
+/** Métodos de pago activos. Tag: `payment-methods:<storeId>`. */
+export function getPaymentMethods(storeId: string): Promise<StorePaymentMethod[]> {
+  return unstable_cache(() => fetchPaymentMethodsFresh(storeId), ["store-payment-methods", storeId], {
+    tags: [tagFor("payment-methods", storeId)],
+    revalidate: CACHE_REVALIDATE,
+  })();
+}
 
 /** Mayor % de descuento de transferencia (para la línea "con transferencia" de las cards). */
-export async function getTransferDiscountPercent(): Promise<number> {
-  const methods = await getPaymentMethods();
+export async function getTransferDiscountPercent(storeId: string): Promise<number> {
+  const methods = await getPaymentMethods(storeId);
   return methods.filter((m) => m.type === "transfer").reduce((max, m) => Math.max(max, m.discountPercent), 0);
 }

@@ -4,7 +4,7 @@ import { forwardRef, type ComponentPropsWithoutRef, type ReactNode } from "react
 import { cn } from "@/lib/cn";
 
 export const controlClass =
-  "w-full rounded-adm border border-adm-input-border bg-adm-surface text-sm text-adm-fg placeholder:text-adm-fg-muted/70 transition-colors hover:border-[#bdb7ab] disabled:cursor-not-allowed disabled:bg-adm-surface-2 disabled:text-adm-fg-muted read-only:bg-adm-surface-2 aria-invalid:border-adm-danger";
+  "w-full rounded-adm border border-adm-input-border bg-adm-surface text-sm text-adm-fg placeholder:text-adm-fg-muted/70 transition-colors hover:border-adm-input-border-hover disabled:cursor-not-allowed disabled:bg-adm-surface-2 disabled:text-adm-fg-muted read-only:bg-adm-surface-2 aria-invalid:border-adm-danger";
 
 type ControlSize = "sm" | "md";
 

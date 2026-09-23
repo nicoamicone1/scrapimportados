@@ -5,16 +5,21 @@ import { revalidateTag } from "next/cache";
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { mapPickupRow, mapZoneRow, type AdminPickupLocation, type AdminShippingZone } from "@/lib/admin/shipping";
 import { logAudit, shallowDiff } from "@/lib/audit";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, type AdminContext } from "@/lib/auth";
+import { tagFor } from "@/lib/cache-tags";
+import { assertFeature } from "@/lib/plans";
 import { pickupLocationSchema, reorderSchema, shippingZoneSchema, testAddressSchema } from "@/lib/schemas/shipping";
 import { EXAMPLE_PICKUP, EXAMPLE_ZONES } from "@/lib/shipping/examples";
 import { geocodeAddress, reverseGeocode, searchPlaces, type GeocodeResult } from "@/lib/shipping/geocode";
 import type { Json, TablesInsert } from "@/lib/supabase/database.types";
 
-const TAG = "shipping";
+function revalidate(ctx: AdminContext) {
+  revalidateTag(tagFor("shipping", ctx.store.id), "max");
+}
 
-function revalidate() {
-  revalidateTag(TAG, "max");
+/** Zonas dibujadas en el mapa: feature `shipping.polygons` del plan. */
+function assertZoneType(ctx: AdminContext, type: string) {
+  if (type === "polygon") assertFeature(ctx, "shipping.polygons");
 }
 
 const uuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -30,6 +35,7 @@ export async function saveShippingZone(id: string | null, input: unknown): Promi
     const parsed = shippingZoneSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const z = parsed.data;
+    assertZoneType(ctx, z.type);
     const row = {
       name: z.name,
       type: z.type,
@@ -45,9 +51,14 @@ export async function saveShippingZone(id: string | null, input: unknown): Promi
 
     if (id) {
       if (!uuid(id)) return fail("Zona inválida.");
-      const { data: before } = await ctx.supabase.from("shipping_zones").select("*").eq("id", id).maybeSingle();
+      const { data: before } = await ctx.supabase
+        .from("shipping_zones")
+        .select("*")
+        .eq("store_id", ctx.store.id)
+        .eq("id", id)
+        .maybeSingle();
       if (!before) return fail("La zona ya no existe.");
-      const { error } = await ctx.supabase.from("shipping_zones").update(row).eq("id", id);
+      const { error } = await ctx.supabase.from("shipping_zones").update(row).eq("store_id", ctx.store.id).eq("id", id);
       if (error) throw error;
       const { geometry, ...afterRest } = row;
       await logAudit(ctx, {
@@ -75,7 +86,7 @@ export async function saveShippingZone(id: string | null, input: unknown): Promi
           },
         ),
       });
-      revalidate();
+      revalidate(ctx);
       return ok({ id });
     }
 
@@ -83,12 +94,13 @@ export async function saveShippingZone(id: string | null, input: unknown): Promi
     const { data: last } = await ctx.supabase
       .from("shipping_zones")
       .select("position")
+      .eq("store_id", ctx.store.id)
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
     const { data, error } = await ctx.supabase
       .from("shipping_zones")
-      .insert({ ...row, position: (last?.position ?? -1) + 1 })
+      .insert({ ...row, store_id: ctx.store.id, position: (last?.position ?? -1) + 1 })
       .select("id")
       .single();
     if (error) throw error;
@@ -98,7 +110,7 @@ export async function saveShippingZone(id: string | null, input: unknown): Promi
       entityId: data.id,
       summary: `Creó la zona de envío "${z.name}"`,
     });
-    revalidate();
+    revalidate(ctx);
     return ok({ id: data.id });
   });
 }
@@ -110,6 +122,7 @@ export async function setShippingZoneActive(id: string, active: boolean): Promis
     const { data, error } = await ctx.supabase
       .from("shipping_zones")
       .update({ is_active: Boolean(active) })
+      .eq("store_id", ctx.store.id)
       .eq("id", id)
       .select("name")
       .maybeSingle();
@@ -122,7 +135,7 @@ export async function setShippingZoneActive(id: string, active: boolean): Promis
       summary: `${active ? "Activó" : "Desactivó"} la zona de envío "${data.name}"`,
       diff: { is_active: [!active, Boolean(active)] },
     });
-    revalidate();
+    revalidate(ctx);
     return ok();
   });
 }
@@ -131,11 +144,18 @@ export async function duplicateShippingZone(id: string): Promise<ActionResult<{ 
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!uuid(id)) return fail("Zona inválida.");
-    const { data: src } = await ctx.supabase.from("shipping_zones").select("*").eq("id", id).maybeSingle();
+    const { data: src } = await ctx.supabase
+      .from("shipping_zones")
+      .select("*")
+      .eq("store_id", ctx.store.id)
+      .eq("id", id)
+      .maybeSingle();
     if (!src) return fail("La zona ya no existe.");
+    assertZoneType(ctx, src.type);
     const { data: last } = await ctx.supabase
       .from("shipping_zones")
       .select("position")
+      .eq("store_id", ctx.store.id)
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -143,6 +163,7 @@ export async function duplicateShippingZone(id: string): Promise<ActionResult<{ 
     const { data, error } = await ctx.supabase
       .from("shipping_zones")
       .insert({
+        store_id: ctx.store.id,
         name,
         type: src.type,
         geometry: src.geometry,
@@ -165,7 +186,7 @@ export async function duplicateShippingZone(id: string): Promise<ActionResult<{ 
       entityId: data.id,
       summary: `Duplicó la zona de envío "${src.name}"`,
     });
-    revalidate();
+    revalidate(ctx);
     return ok({ id: data.id });
   });
 }
@@ -174,7 +195,13 @@ export async function deleteShippingZone(id: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!uuid(id)) return fail("Zona inválida.");
-    const { data, error } = await ctx.supabase.from("shipping_zones").delete().eq("id", id).select("name").maybeSingle();
+    const { data, error } = await ctx.supabase
+      .from("shipping_zones")
+      .delete()
+      .eq("store_id", ctx.store.id)
+      .eq("id", id)
+      .select("name")
+      .maybeSingle();
     if (error) throw error;
     if (!data) return fail("La zona ya no existe.");
     await logAudit(ctx, {
@@ -183,7 +210,7 @@ export async function deleteShippingZone(id: string): Promise<ActionResult> {
       entityId: id,
       summary: `Borró la zona de envío "${data.name}"`,
     });
-    revalidate();
+    revalidate(ctx);
     return ok();
   });
 }
@@ -195,7 +222,10 @@ export async function reorderShippingZones(ids: unknown): Promise<ActionResult> 
     const parsed = reorderSchema.safeParse(ids);
     if (!parsed.success) return fail("Orden inválido.");
     const order = parsed.data;
-    const { data: current, error: readError } = await ctx.supabase.from("shipping_zones").select("id, name, position");
+    const { data: current, error: readError } = await ctx.supabase
+      .from("shipping_zones")
+      .select("id, name, position")
+      .eq("store_id", ctx.store.id);
     if (readError) throw readError;
     const known = new Set((current ?? []).map((z) => z.id));
     if (order.length !== known.size || order.some((id) => !known.has(id))) {
@@ -204,7 +234,9 @@ export async function reorderShippingZones(ids: unknown): Promise<ActionResult> 
     const byId = new Map((current ?? []).map((z) => [z.id, z]));
     const changed = order.filter((id, i) => byId.get(id)?.position !== i);
     const results = await Promise.all(
-      changed.map((id) => ctx.supabase.from("shipping_zones").update({ position: order.indexOf(id) }).eq("id", id)),
+      changed.map((id) =>
+        ctx.supabase.from("shipping_zones").update({ position: order.indexOf(id) }).eq("store_id", ctx.store.id).eq("id", id),
+      ),
     );
     const failed = results.find((r) => r.error);
     if (failed?.error) throw failed.error;
@@ -214,7 +246,7 @@ export async function reorderShippingZones(ids: unknown): Promise<ActionResult> 
         entity: "shipping_zone",
         summary: `Reordenó las zonas de envío: ${order.map((id) => byId.get(id)?.name ?? id).join(" › ")}`,
       });
-      revalidate();
+      revalidate(ctx);
     }
     return ok();
   });
@@ -237,7 +269,7 @@ export async function savePickupLocation(
     let geocoded = false;
 
     const before = id
-      ? (await ctx.supabase.from("pickup_locations").select("*").eq("id", id).maybeSingle()).data
+      ? (await ctx.supabase.from("pickup_locations").select("*").eq("store_id", ctx.store.id).eq("id", id).maybeSingle()).data
       : null;
     if (id && (!uuid(id) || !before)) return fail("El punto de retiro ya no existe.");
 
@@ -264,7 +296,13 @@ export async function savePickupLocation(
     };
 
     if (id && before) {
-      const { data, error } = await ctx.supabase.from("pickup_locations").update(row).eq("id", id).select("*").single();
+      const { data, error } = await ctx.supabase
+        .from("pickup_locations")
+        .update(row)
+        .eq("store_id", ctx.store.id)
+        .eq("id", id)
+        .select("*")
+        .single();
       if (error) throw error;
       await logAudit(ctx, {
         action: "pickup_location.update",
@@ -284,19 +322,20 @@ export async function savePickupLocation(
           row,
         ),
       });
-      revalidate();
+      revalidate(ctx);
       return ok({ pickup: mapPickupRow(data), geocoded });
     }
 
     const { data: last } = await ctx.supabase
       .from("pickup_locations")
       .select("position")
+      .eq("store_id", ctx.store.id)
       .order("position", { ascending: false })
       .limit(1)
       .maybeSingle();
     const { data, error } = await ctx.supabase
       .from("pickup_locations")
-      .insert({ ...row, position: (last?.position ?? -1) + 1 })
+      .insert({ ...row, store_id: ctx.store.id, position: (last?.position ?? -1) + 1 })
       .select("*")
       .single();
     if (error) throw error;
@@ -306,7 +345,7 @@ export async function savePickupLocation(
       entityId: data.id,
       summary: `Creó el punto de retiro "${p.name}"`,
     });
-    revalidate();
+    revalidate(ctx);
     return ok({ pickup: mapPickupRow(data), geocoded });
   });
 }
@@ -318,6 +357,7 @@ export async function setPickupLocationActive(id: string, active: boolean): Prom
     const { data, error } = await ctx.supabase
       .from("pickup_locations")
       .update({ is_active: Boolean(active) })
+      .eq("store_id", ctx.store.id)
       .eq("id", id)
       .select("name")
       .maybeSingle();
@@ -330,7 +370,7 @@ export async function setPickupLocationActive(id: string, active: boolean): Prom
       summary: `${active ? "Activó" : "Desactivó"} el punto de retiro "${data.name}"`,
       diff: { is_active: [!active, Boolean(active)] },
     });
-    revalidate();
+    revalidate(ctx);
     return ok();
   });
 }
@@ -339,7 +379,13 @@ export async function deletePickupLocation(id: string): Promise<ActionResult> {
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!uuid(id)) return fail("Punto de retiro inválido.");
-    const { data, error } = await ctx.supabase.from("pickup_locations").delete().eq("id", id).select("name").maybeSingle();
+    const { data, error } = await ctx.supabase
+      .from("pickup_locations")
+      .delete()
+      .eq("store_id", ctx.store.id)
+      .eq("id", id)
+      .select("name")
+      .maybeSingle();
     if (error) throw error;
     if (!data) return fail("El punto de retiro ya no existe.");
     await logAudit(ctx, {
@@ -348,7 +394,7 @@ export async function deletePickupLocation(id: string): Promise<ActionResult> {
       entityId: id,
       summary: `Borró el punto de retiro "${data.name}"`,
     });
-    revalidate();
+    revalidate(ctx);
     return ok();
   });
 }
@@ -362,17 +408,19 @@ export async function loadShippingExample(): Promise<ActionResult<{ zones: Admin
   return runAction(async () => {
     const ctx = await requireAdmin();
     const [{ count: zoneCount }, { count: pickupCount }] = await Promise.all([
-      ctx.supabase.from("shipping_zones").select("id", { count: "exact", head: true }),
-      ctx.supabase.from("pickup_locations").select("id", { count: "exact", head: true }),
+      ctx.supabase.from("shipping_zones").select("id", { count: "exact", head: true }).eq("store_id", ctx.store.id),
+      ctx.supabase.from("pickup_locations").select("id", { count: "exact", head: true }).eq("store_id", ctx.store.id),
     ]);
     if ((zoneCount ?? 0) > 0) return fail("Ya tenés zonas cargadas: el ejemplo sólo se carga con la lista vacía.");
 
     const zoneRows: TablesInsert<"shipping_zones">[] = EXAMPLE_ZONES.map((z, i) => ({
       ...z,
+      store_id: ctx.store.id,
       geometry: z.geometry as Json | null,
       is_active: true,
       position: i,
     }));
+    for (const z of zoneRows) assertZoneType(ctx, z.type);
     const { data: zones, error } = await ctx.supabase.from("shipping_zones").insert(zoneRows).select("*");
     if (error) throw error;
 
@@ -380,7 +428,7 @@ export async function loadShippingExample(): Promise<ActionResult<{ zones: Admin
     if ((pickupCount ?? 0) === 0) {
       const { data, error: pErr } = await ctx.supabase
         .from("pickup_locations")
-        .insert({ ...EXAMPLE_PICKUP, is_active: true, position: 0 })
+        .insert({ ...EXAMPLE_PICKUP, store_id: ctx.store.id, is_active: true, position: 0 })
         .select("*");
       if (pErr) throw pErr;
       pickups = (data ?? []).map(mapPickupRow);
@@ -391,7 +439,7 @@ export async function loadShippingExample(): Promise<ActionResult<{ zones: Admin
       entity: "shipping_zone",
       summary: `Cargó el ejemplo de envíos (${zoneRows.length} zonas${pickups.length ? " y 1 punto de retiro" : ""})`,
     });
-    revalidate();
+    revalidate(ctx);
     return ok({ zones: (zones ?? []).map(mapZoneRow).sort((a, b) => a.position - b.position), pickups });
   });
 }

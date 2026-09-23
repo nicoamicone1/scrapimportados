@@ -8,12 +8,15 @@ import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
 import { TabsNav } from "@/components/ui/Tabs";
 import { getAppearanceData } from "@/lib/admin/appearance";
+import { requireAdmin } from "@/lib/auth";
+import { storeHref } from "@/lib/tenant/urls";
 
 export const metadata: Metadata = { title: "Apariencia" };
 
 export default async function AppearancePage({ searchParams }: PageProps<"/admin/apariencia">) {
   const { tab } = await searchParams;
   const brandTab = tab === "marca";
+  const ctx = await requireAdmin();
   const data = await getAppearanceData();
 
   return (
@@ -22,7 +25,7 @@ export default async function AppearancePage({ searchParams }: PageProps<"/admin
         title="Apariencia"
         description={brandTab ? "Logo, nombre y barra de anuncio." : "Colores, tipografías, botones y tarjetas. Los cambios se ven en la vista previa y se publican al guardar."}
         actions={
-          <ButtonLink href="/" external icon={<ExternalLink />}>
+          <ButtonLink href={storeHref(ctx.store)} external icon={<ExternalLink />}>
             Ver la tienda
           </ButtonLink>
         }
@@ -43,7 +46,7 @@ export default async function AppearancePage({ searchParams }: PageProps<"/admin
       {brandTab ? (
         <BrandEditor data={data} />
       ) : (
-        <ThemeEditor initialTheme={data.theme} initialNode={<ThemePreview theme={data.theme} device="desktop" />} />
+        <ThemeEditor initialTheme={data.theme} initialNode={<ThemePreview storeId={ctx.store.id} theme={data.theme} device="desktop" />} />
       )}
     </>
   );

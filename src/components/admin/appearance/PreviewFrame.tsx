@@ -1,7 +1,7 @@
 "use client";
 
 import "@/components/blocks/blocks.css";
-import "@/app/(store)/store.css";
+import "@/app/s/[store]/store.css";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 

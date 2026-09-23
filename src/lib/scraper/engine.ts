@@ -11,6 +11,9 @@ import { revalidateTag } from "next/cache";
 
 import { logAudit } from "@/lib/audit";
 import type { AdminContext } from "@/lib/auth";
+import { tagFor } from "@/lib/cache-tags";
+import { assertFeature, limitOf, PlanError } from "@/lib/plans";
+import { countUsage } from "@/lib/plans/server";
 import { readImportOptions } from "@/lib/schemas/import";
 import type { Json, Tables } from "@/lib/supabase/database.types";
 
@@ -19,6 +22,7 @@ import { applyCsvUpdate, applyProduct, type ApplyContext, type ApplyResult } fro
 import { ScrapeError } from "./http";
 import { importProductImages } from "./images";
 import {
+  importFeatureFor,
   readCursor,
   readLog,
   readPayload,
@@ -71,8 +75,9 @@ function nextAfterApply(job: Tables<"import_jobs">, cursor: JobCursor, importIma
 export async function runJobStep(ctx: AdminContext, jobId: string): Promise<StepResult> {
   const deadline = Date.now() + STEP_BUDGET_MS;
   const db = ctx.supabase;
+  const storeId = ctx.store.id;
 
-  const jobRes = await db.from("import_jobs").select("*").eq("id", jobId).maybeSingle();
+  const jobRes = await db.from("import_jobs").select("*").eq("store_id", storeId).eq("id", jobId).maybeSingle();
   if (!jobRes.data) throw new JobNotFoundError("not_found");
   const job = jobRes.data;
   const cursor = readCursor(job.cursor);
@@ -93,6 +98,8 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
   if (status === "done" || status === "failed" || status === "cancelled") return result();
   if (cursor.phase === "review") return result({ waiting: true });
   if (cursor.lockUntil && cursor.lockUntil > Date.now()) return result({ busy: true });
+  // Si el plan bajó (ej. terminó la prueba), el job no sigue corriendo.
+  assertFeature(ctx, importFeatureFor(job.adapter));
 
   // Lock optimista: sólo gana quien ve el mismo updated_at.
   const now = new Date().toISOString();
@@ -103,6 +110,7 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
       started_at: job.started_at ?? now,
       cursor: toJson({ ...cursor, lockUntil: Date.now() + LOCK_MS }),
     })
+    .eq("store_id", storeId)
     .eq("id", jobId)
     .eq("updated_at", job.updated_at)
     .select("id")
@@ -118,6 +126,10 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
   const sourceHost = hostOf(job.source_url);
   const applyCtx: ApplyContext = {
     db,
+    storeId,
+    plan: ctx.plan,
+    // Se cuenta al entrar a "apply" (sólo si el plan limita los productos).
+    productsUsed: 0,
     userId: ctx.user.id,
     jobId,
     adapter: job.adapter,
@@ -141,19 +153,28 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
         ? { status: final.status, error: final.error ?? null, finished_at: new Date().toISOString() }
         : {}),
     };
-    const r = await db.from("import_jobs").update(patch).eq("id", jobId).eq("status", "running").select("id").maybeSingle();
+    const r = await db
+      .from("import_jobs")
+      .update(patch)
+      .eq("store_id", storeId)
+      .eq("id", jobId)
+      .eq("status", "running")
+      .select("id")
+      .maybeSingle();
     if (r.error) throw new Error(`guardar job: ${r.error.message}`);
     return Boolean(r.data);
   };
 
   const revalidate = () => {
     if (applyCtx.touchedSlugs.size) {
-      revalidateTag("products", "max");
-      for (const slug of applyCtx.touchedSlugs) revalidateTag(`product:${slug}`, "max");
+      revalidateTag(tagFor("products", storeId), "max");
+      for (const slug of applyCtx.touchedSlugs) {
+        if (slug !== "__images__") revalidateTag(tagFor("product", storeId, slug), "max");
+      }
       applyCtx.touchedSlugs.clear();
     }
     if (applyCtx.categoriesCreated) {
-      revalidateTag("categories", "max");
+      revalidateTag(tagFor("categories", storeId), "max");
       applyCtx.categoriesCreated = 0;
     }
   };
@@ -165,6 +186,7 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
     else stats.errors += 1;
   };
 
+  let productsCounted = false;
   try {
     let stop = false;
     while (!stop && Date.now() < deadline) {
@@ -204,6 +226,7 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
           const products = page.products.slice(0, Math.max(0, opts.limit - fetched));
           if (products.length) {
             const rows = products.map((p) => ({
+              store_id: storeId,
               job_id: jobId,
               external_id: p.externalId.slice(0, 500),
               name: p.name.slice(0, 300),
@@ -228,9 +251,14 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
         }
 
         case "apply": {
+          if (!productsCounted) {
+            productsCounted = true;
+            if (limitOf(ctx.plan, "products") !== null) applyCtx.productsUsed = await countUsage(ctx, "products");
+          }
           const items = await db
             .from("import_items")
             .select("id, name, payload")
+            .eq("store_id", storeId)
             .eq("job_id", jobId)
             .eq("status", "pending")
             .order("created_at")
@@ -257,6 +285,7 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
             const up = await db
               .from("import_items")
               .update({ status: res.status, product_id: res.productId, error: res.message })
+              .eq("store_id", storeId)
               .eq("id", item.id);
             if (up.error) throw new Error(`actualizar ítem: ${up.error.message}`);
             if (res.status === "error") addLog("error", `${item.name ?? "Ítem"}: ${res.message ?? "error"}`);
@@ -268,6 +297,7 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
           let q = db
             .from("import_items")
             .select("id, name, payload, product_id")
+            .eq("store_id", storeId)
             .eq("job_id", jobId)
             // Con update_existing, los existentes "sin cambios" también suman imágenes nuevas.
             .in("status", opts.update_existing ? ["imported", "updated", "skipped"] : ["imported", "updated"])
@@ -287,7 +317,13 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
             const payload = readPayload(item.payload);
             if (payload?.kind === "product" && item.product_id) {
               try {
-                const r = await importProductImages(db, item.product_id, payload.product as NormalizedProduct);
+                const r = await importProductImages(
+                  db,
+                  storeId,
+                  item.product_id,
+                  payload.product as NormalizedProduct,
+                  limitOf(ctx.plan, "images_per_product"),
+                );
                 stats.images += r.uploaded;
                 if (r.failed) addLog("warn", `${item.name ?? "Producto"}: ${r.failed} imágenes no se pudieron bajar (${r.errors[0] ?? ""})`);
                 if (r.uploaded) applyCtx.touchedSlugs.add("__images__");
@@ -315,8 +351,8 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
             summary: `Importación ${job.adapter} de ${sourceHost || job.source_url}: ${stats.created} creados, ${stats.updated} actualizados, ${stats.errors} con error`,
             diff: toJson({ stats, options: opts }) as Json,
           });
-          revalidateTag("products", "max");
-          revalidateTag("categories", "max");
+          revalidateTag(tagFor("products", storeId), "max");
+          revalidateTag(tagFor("categories", storeId), "max");
           revalidate();
           return result({ done: true });
         }
@@ -328,7 +364,7 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
 
       if (applyCtx.touchedSlugs.has("__images__")) {
         applyCtx.touchedSlugs.delete("__images__");
-        revalidateTag("products", "max");
+        revalidateTag(tagFor("products", storeId), "max");
       }
       if (!(await save())) {
         status = "cancelled";
@@ -341,10 +377,15 @@ export async function runJobStep(ctx: AdminContext, jobId: string): Promise<Step
     revalidate();
     return result({ waiting: cursor.phase === "review", done: status === "cancelled" });
   } catch (err) {
-    const message =
-      err instanceof ScrapeError ? err.message : "Algo salió mal durante la importación. Podés reanudarla.";
-    if (!(err instanceof ScrapeError)) console.error("[import]", err);
-    addLog("error", err instanceof ScrapeError ? message : `${message} (${err instanceof Error ? err.message : String(err)})`);
+    // PlanError: se llegó al límite de productos del plan → el job se corta con ese mensaje.
+    const known = err instanceof ScrapeError || err instanceof PlanError;
+    const message = known
+      ? err instanceof PlanError
+        ? `${err.message} La importación se detuvo: los productos que faltan quedaron pendientes.`
+        : err.message
+      : "Algo salió mal durante la importación. Podés reanudarla.";
+    if (!known) console.error("[import]", err);
+    addLog("error", known ? message : `${message} (${err instanceof Error ? err.message : String(err)})`);
     status = "failed";
     job.error = message;
     await save({ status: "failed", error: message }).catch(() => false);

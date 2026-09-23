@@ -4,10 +4,13 @@ import Link from "next/link";
 import { JobRowActions } from "@/components/admin/import/JobRowActions";
 import { JobStatusBadge } from "@/components/admin/import/JobStatusBadge";
 import { NewImportPanel } from "@/components/admin/import/NewImportPanel";
+import { LimitBanner } from "@/components/admin/LimitBanner";
 import { PageHeader, Pagination, Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { formatDateTime, formatRelative } from "@/lib/dates";
 import { formatNumber } from "@/lib/money";
+import { limitOf } from "@/lib/plans";
+import { countUsage } from "@/lib/plans/server";
 import { jobTitle } from "@/lib/scraper/job";
 import { listJobs } from "@/lib/scraper/queries";
 import { ADAPTER_LABELS, type AdapterId } from "@/lib/scraper/types";
@@ -29,9 +32,10 @@ export default async function ImportarPage({ searchParams }: PageProps<"/admin/i
   const sp = await searchParams;
   const page = Math.max(1, Number(Array.isArray(sp.page) ? sp.page[0] : sp.page) || 1);
 
-  const [jobs, cats] = await Promise.all([
-    listJobs(ctx.supabase, page, PER_PAGE),
-    ctx.supabase.from("categories").select("id, name").order("name"),
+  const [jobs, cats, jobsThisMonth] = await Promise.all([
+    listJobs(ctx, page, PER_PAGE),
+    ctx.supabase.from("categories").select("id, name").eq("store_id", ctx.store.id).order("name"),
+    countUsage(ctx, "import_jobs_month"),
   ]);
   const categories = (cats.data ?? []).map((c) => ({ id: c.id, name: c.name }));
 
@@ -47,6 +51,10 @@ export default async function ImportarPage({ searchParams }: PageProps<"/admin/i
         imágenes de terceros pueden tener derechos de autor.
       </p>
 
+      {/* Con límite 0 (Free) ya bloquea el PlanGate de cada modo: el aviso sobra. */}
+      {limitOf(ctx.plan, "import_jobs_month") ? (
+        <LimitBanner limit="import_jobs_month" used={jobsThisMonth} className="mb-3" />
+      ) : null}
       <NewImportPanel categories={categories} />
 
       <section className="mt-8" aria-labelledby="historial">

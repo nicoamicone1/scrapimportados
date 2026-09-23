@@ -5,6 +5,8 @@ import "server-only";
  * el job en fase "review" (la vista previa es obligatoria antes de aplicar).
  */
 import type { AdminContext } from "@/lib/auth";
+import { assertFeature } from "@/lib/plans";
+import { assertUsage } from "@/lib/plans/server";
 import { CSV_MAX_ROWS, type CsvMode, type ImportOptions } from "@/lib/schemas/import";
 import type { TablesInsert } from "@/lib/supabase/database.types";
 
@@ -42,6 +44,7 @@ async function loadVariantsBySku(ctx: AdminContext, skus: string[]): Promise<Map
     const r = await ctx.supabase
       .from("product_variants")
       .select("id, product_id, title, sku, price, compare_at_price, cost, stock, track_inventory, products(name, status)")
+      .eq("store_id", ctx.store.id)
       .in("sku", part);
     if (r.error) throw new Error(r.error.message);
     for (const v of r.data) {
@@ -73,6 +76,19 @@ export async function createCsvJob(
   ctx: AdminContext,
   input: { fileName: string; text: string; mode: CsvMode; options: ImportOptions },
 ): Promise<{ jobId: string }> {
+  // Gates del plan (PlanError → withAdmin responde con el mensaje y code "plan").
+  assertFeature(ctx, "catalog.import_csv");
+  await assertUsage(ctx, "import_jobs_month");
+  if (input.options.default_category_id) {
+    const cat = await ctx.supabase
+      .from("categories")
+      .select("id")
+      .eq("store_id", ctx.store.id)
+      .eq("id", input.options.default_category_id)
+      .maybeSingle();
+    if (!cat.data) throw new CsvJobError("La categoría elegida ya no existe.");
+  }
+
   const parsed = parseCsvText(input.text);
   if (!parsed.headers.length || !parsed.records.length) throw new CsvJobError("El archivo está vacío o no tiene filas.");
   const missing = missingColumns(parsed.headers, input.mode);
@@ -83,7 +99,7 @@ export async function createCsvJob(
   }
   if (parsed.records.length > CSV_MAX_ROWS) throw new CsvJobError(`El archivo tiene más de ${CSV_MAX_ROWS} filas. Dividilo en partes.`);
 
-  const items: Omit<TablesInsert<"import_items">, "job_id">[] = [];
+  const items: Omit<TablesInsert<"import_items">, "job_id" | "store_id">[] = [];
   const stats = { ...EMPTY_STATS, found: parsed.records.length };
 
   if (input.mode === "update") {
@@ -106,7 +122,7 @@ export async function createCsvJob(
     const { groups, errors } = parseCreateRows(parsed.records);
     const existing = new Map<string, string>();
     for (const part of chunk(groups.map((g) => g.handle), 150)) {
-      const r = await ctx.supabase.from("products").select("id, slug").in("slug", part);
+      const r = await ctx.supabase.from("products").select("id, slug").eq("store_id", ctx.store.id).in("slug", part);
       for (const p of r.data ?? []) existing.set(p.slug, p.id);
     }
     for (const g of groups) {
@@ -149,6 +165,7 @@ export async function createCsvJob(
   const job = await ctx.supabase
     .from("import_jobs")
     .insert({
+      store_id: ctx.store.id,
       source_url: `csv:${input.fileName}`.slice(0, 300),
       adapter: "csv",
       status: "running",
@@ -164,9 +181,11 @@ export async function createCsvJob(
   if (job.error) throw new Error(job.error.message);
 
   for (const part of chunk(items, 500)) {
-    const r = await ctx.supabase.from("import_items").insert(part.map((i) => ({ ...i, job_id: job.data.id })));
+    const r = await ctx.supabase
+      .from("import_items")
+      .insert(part.map((i) => ({ ...i, store_id: ctx.store.id, job_id: job.data.id })));
     if (r.error) {
-      await ctx.supabase.from("import_jobs").delete().eq("id", job.data.id);
+      await ctx.supabase.from("import_jobs").delete().eq("store_id", ctx.store.id).eq("id", job.data.id);
       throw new Error(r.error.message);
     }
   }

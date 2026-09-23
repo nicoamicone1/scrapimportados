@@ -1,8 +1,6 @@
 import "server-only";
 
-import { headers } from "next/headers";
-
-import type { AdminContext } from "@/lib/auth";
+import { requireAdmin, type AdminContext } from "@/lib/auth";
 import { ymdToZonedStart, addZonedDays } from "@/lib/admin/dashboard-utils";
 import {
   isOrderStatus,
@@ -15,18 +13,29 @@ import {
 } from "@/lib/admin/order-utils";
 import { parseCheckout } from "@/lib/store/settings";
 import type { Tables } from "@/lib/supabase/database.types";
+import { storeUrl, type StoreUrlTarget } from "@/lib/tenant/urls";
 
-/** Lecturas del admin para pedidos (sin caché; siempre bajo RLS de admin). */
+/**
+ * Lecturas del admin para pedidos (sin caché; siempre bajo RLS de admin).
+ * Toda consulta filtra por la tienda activa (`storeId`).
+ */
 
 type Supa = AdminContext["supabase"];
 
 export const ORDERS_PER_PAGE = 50;
+
+/** Tienda activa si el caller no la pasa (firmas que usa el dashboard). */
+async function activeStoreId(storeId?: string): Promise<string> {
+  return storeId ?? (await requireAdmin()).store.id;
+}
 
 // ---------------------------------------------------------------------
 // Tienda
 // ---------------------------------------------------------------------
 
 export interface StoreInfo {
+  /** Tienda a la que pertenecen estos datos. */
+  storeId: string;
   name: string;
   logoUrl: string | null;
   address: string | null;
@@ -42,12 +51,15 @@ export interface StoreInfo {
   transfer: { alias: string; cbu: string; bankName: string; holder: string };
 }
 
-export async function getStoreInfo(supabase: Supa): Promise<StoreInfo> {
-  const { data } = await supabase.from("store_settings").select("*").eq("id", 1).maybeSingle();
+/** Datos de la tienda para pedidos. Sin `storeId` usa la tienda activa del panel. */
+export async function getStoreInfo(supabase: Supa, storeId?: string): Promise<StoreInfo> {
+  const sid = await activeStoreId(storeId);
+  const { data } = await supabase.from("store_settings").select("*").eq("store_id", sid).maybeSingle();
   const checkout = parseCheckout(data?.checkout ?? {});
   const raw = data?.checkout && typeof data.checkout === "object" && !Array.isArray(data.checkout) ? data.checkout : {};
   const hours = Number((raw as Record<string, unknown>).reservation_hours ?? 48);
   return {
+    storeId: sid,
     name: data?.name ?? "Tienda",
     logoUrl: data?.logo_url || null,
     address: data?.address || null,
@@ -69,24 +81,13 @@ export async function getStoreInfo(supabase: Supa): Promise<StoreInfo> {
   };
 }
 
-/** URL base del sitio (para links públicos y QR): host del request o env. */
-export async function getSiteUrl(): Promise<string> {
-  const env = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  try {
-    const h = await headers();
-    const host = h.get("x-forwarded-host") ?? h.get("host");
-    if (host) {
-      const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
-      return `${proto}://${host}`;
-    }
-  } catch {
-    // fuera de un request
-  }
-  return env || "http://localhost:3000";
-}
-
 export function orderPublicPath(token: string): string {
   return `/pedido/${token}`;
+}
+
+/** URL pública ABSOLUTA del pedido en la tienda (WhatsApp, remitos, QR, "Ver como cliente"). */
+export function orderPublicUrl(store: StoreUrlTarget, token: string): string {
+  return storeUrl(store, orderPublicPath(token));
 }
 
 // ---------------------------------------------------------------------
@@ -100,10 +101,11 @@ export interface PaymentMethodOption {
   isActive: boolean;
 }
 
-export async function listPaymentMethods(supabase: Supa): Promise<PaymentMethodOption[]> {
+export async function listPaymentMethods(supabase: Supa, storeId: string): Promise<PaymentMethodOption[]> {
   const { data } = await supabase
     .from("payment_methods")
     .select("code, name, discount_percent, is_active, position")
+    .eq("store_id", storeId)
     .order("position");
   return (data ?? []).map((m) => ({
     code: m.code,
@@ -251,18 +253,24 @@ export function toListItem(r: ListRow): OrderListItem {
 }
 
 /** Pedidos cuyo SKU de ítem coincide (para la búsqueda). */
-async function orderIdsBySku(supabase: Supa, q: string): Promise<string[]> {
+async function orderIdsBySku(supabase: Supa, storeId: string, q: string): Promise<string[]> {
   if (q.length < 2) return [];
-  const { data } = await supabase.from("order_items").select("order_id").ilike("sku", `%${q}%`).limit(300);
+  const { data } = await supabase
+    .from("order_items")
+    .select("order_id")
+    .eq("store_id", storeId)
+    .ilike("sku", `%${q}%`)
+    .limit(300);
   return Array.from(new Set((data ?? []).map((r) => r.order_id)));
 }
 
 export async function listOrders(
   supabase: Supa,
+  storeId: string,
   f: OrderFilters,
   timezone: string,
 ): Promise<{ rows: OrderListItem[]; total: number }> {
-  let query = supabase.from("orders").select(LIST_COLUMNS, { count: "exact" });
+  let query = supabase.from("orders").select(LIST_COLUMNS, { count: "exact" }).eq("store_id", storeId);
 
   const tabStatuses = TAB_STATUSES[f.tab];
   if (tabStatuses) query = query.in("status", tabStatuses);
@@ -278,7 +286,7 @@ export async function listOrders(
 
   const q = sanitizeSearch(f.q);
   if (q) {
-    const skuIds = await orderIdsBySku(supabase, q);
+    const skuIds = await orderIdsBySku(supabase, storeId, q);
     const ors: string[] = [];
     const n = parseOrderNumber(q);
     if (n !== null) ors.push(`number.eq.${n}`);
@@ -301,10 +309,10 @@ export async function listOrders(
 }
 
 /** Conteos de las pestañas rápidas (globales, sin los demás filtros). */
-export async function getOrderTabCounts(supabase: Supa): Promise<Record<OrderTab, number>> {
+export async function getOrderTabCounts(supabase: Supa, storeId: string): Promise<Record<OrderTab, number>> {
   const entries = await Promise.all(
     ORDER_TABS.map(async (tab) => {
-      let q = supabase.from("orders").select("id", { count: "exact", head: true });
+      let q = supabase.from("orders").select("id", { count: "exact", head: true }).eq("store_id", storeId);
       const statuses = TAB_STATUSES[tab];
       if (statuses) q = q.in("status", statuses);
       const { count } = await q;
@@ -314,9 +322,12 @@ export async function getOrderTabCounts(supabase: Supa): Promise<Record<OrderTab
   return Object.fromEntries(entries) as Record<OrderTab, number>;
 }
 
-/** Barrido perezoso de reservas vencidas. Devuelve cuántos pedidos canceló. */
-export async function sweepExpiredOrders(supabase: Supa): Promise<number> {
-  const { data, error } = await supabase.rpc("expire_unpaid_orders");
+/**
+ * Barrido perezoso de reservas vencidas de la tienda. Devuelve cuántos
+ * pedidos canceló. Sin `storeId` usa la tienda activa del panel.
+ */
+export async function sweepExpiredOrders(supabase: Supa, storeId?: string): Promise<number> {
+  const { data, error } = await supabase.rpc("expire_unpaid_orders", { p_store_id: await activeStoreId(storeId) });
   if (error) {
     console.error("[orders.expire]", error.message);
     return 0;
@@ -355,28 +366,40 @@ async function profileNames(supabase: Supa, ids: (string | null)[]): Promise<Map
   return new Map((data ?? []).map((p) => [p.id, p.name || p.email || "Equipo"]));
 }
 
-export async function getOrderDetail(supabase: Supa, id: string): Promise<OrderDetail | null> {
-  const { data: order } = await supabase.from("orders").select("*").eq("id", id).maybeSingle();
+export async function getOrderDetail(supabase: Supa, storeId: string, id: string): Promise<OrderDetail | null> {
+  const { data: order } = await supabase.from("orders").select("*").eq("id", id).eq("store_id", storeId).maybeSingle();
   if (!order) return null;
 
   const [items, events, payments, pickup, customerRecord, sales] = await Promise.all([
-    supabase.from("order_items").select("*").eq("order_id", id).order("created_at").order("id"),
-    supabase.from("order_events").select("*").eq("order_id", id).order("created_at", { ascending: false }),
-    supabase.from("order_payments").select("*").eq("order_id", id).order("paid_at"),
+    supabase.from("order_items").select("*").eq("order_id", id).eq("store_id", storeId).order("created_at").order("id"),
+    supabase
+      .from("order_events")
+      .select("*")
+      .eq("order_id", id)
+      .eq("store_id", storeId)
+      .order("created_at", { ascending: false }),
+    supabase.from("order_payments").select("*").eq("order_id", id).eq("store_id", storeId).order("paid_at"),
     order.pickup_location_id
-      ? supabase.from("pickup_locations").select("id, name, address, hours_text").eq("id", order.pickup_location_id).maybeSingle()
+      ? supabase
+          .from("pickup_locations")
+          .select("id, name, address, hours_text")
+          .eq("id", order.pickup_location_id)
+          .eq("store_id", storeId)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     order.customer_id
       ? supabase
           .from("customers")
           .select("id, name, email, phone, orders_count, total_spent")
           .eq("id", order.customer_id)
+          .eq("store_id", storeId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
     supabase
       .from("inventory_movements")
       .select("id", { count: "exact", head: true })
       .eq("order_id", id)
+      .eq("store_id", storeId)
       .eq("reason", "sale"),
   ]);
 
@@ -398,9 +421,17 @@ export async function getOrderDetail(supabase: Supa, id: string): Promise<OrderD
 }
 
 /** Marca el pedido como visto por el admin (badge de nuevos). */
-export async function markOrderSeen(supabase: Supa, order: Pick<OrderRow, "id" | "seen_at">): Promise<boolean> {
+export async function markOrderSeen(
+  supabase: Supa,
+  storeId: string,
+  order: Pick<OrderRow, "id" | "seen_at">,
+): Promise<boolean> {
   if (order.seen_at) return false;
-  const { error } = await supabase.from("orders").update({ seen_at: new Date().toISOString() }).eq("id", order.id);
+  const { error } = await supabase
+    .from("orders")
+    .update({ seen_at: new Date().toISOString() })
+    .eq("id", order.id)
+    .eq("store_id", storeId);
   if (error) console.error("[orders.seen]", error.message);
   return !error;
 }
@@ -417,18 +448,28 @@ export interface PrintableOrder {
   paid: number;
 }
 
-export async function getOrdersForPrint(supabase: Supa, ids: string[]): Promise<PrintableOrder[]> {
+export async function getOrdersForPrint(supabase: Supa, storeId: string, ids: string[]): Promise<PrintableOrder[]> {
   if (!ids.length) return [];
   const [{ data: orders }, { data: items }, { data: payments }] = await Promise.all([
-    supabase.from("orders").select("*").in("id", ids),
-    supabase.from("order_items").select("*").in("order_id", ids).order("created_at").order("id"),
-    supabase.from("order_payments").select("order_id, amount").in("order_id", ids),
+    supabase.from("orders").select("*").eq("store_id", storeId).in("id", ids),
+    supabase
+      .from("order_items")
+      .select("*")
+      .eq("store_id", storeId)
+      .in("order_id", ids)
+      .order("created_at")
+      .order("id"),
+    supabase.from("order_payments").select("order_id, amount").eq("store_id", storeId).in("order_id", ids),
   ]);
   const pickupIds = Array.from(
     new Set((orders ?? []).map((o) => o.pickup_location_id).filter((v): v is string => Boolean(v))),
   );
   const { data: pickups } = pickupIds.length
-    ? await supabase.from("pickup_locations").select("id, name, address, hours_text").in("id", pickupIds)
+    ? await supabase
+        .from("pickup_locations")
+        .select("id, name, address, hours_text")
+        .eq("store_id", storeId)
+        .in("id", pickupIds)
     : { data: [] as Pick<Tables<"pickup_locations">, "id" | "name" | "address" | "hours_text">[] };
 
   const byId = new Map((orders ?? []).map((o) => [o.id, o]));
@@ -464,11 +505,13 @@ export interface WithdrawalView extends Tables<"withdrawal_requests"> {
 
 export async function listWithdrawals(
   supabase: Supa,
+  storeId: string,
   status: WithdrawalStatus | null,
 ): Promise<WithdrawalView[]> {
   let q = supabase
     .from("withdrawal_requests")
     .select("*, orders(id, number, status, payment_status, total, created_at, fulfillment)")
+    .eq("store_id", storeId)
     .order("created_at", { ascending: false })
     .limit(200);
   if (status) q = q.eq("status", status);
@@ -485,10 +528,11 @@ export async function listWithdrawals(
   }));
 }
 
-export async function countNewWithdrawals(supabase: Supa): Promise<number> {
+export async function countNewWithdrawals(supabase: Supa, storeId: string): Promise<number> {
   const { count } = await supabase
     .from("withdrawal_requests")
     .select("id", { count: "exact", head: true })
+    .eq("store_id", storeId)
     .eq("status", "new");
   return count ?? 0;
 }

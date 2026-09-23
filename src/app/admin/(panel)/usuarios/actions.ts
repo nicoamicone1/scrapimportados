@@ -7,13 +7,16 @@ import { requirePermission } from "@/lib/admin/require";
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin, ROLE_LABELS } from "@/lib/auth";
+import { assertFeature } from "@/lib/plans";
+import { assertUsage } from "@/lib/plans/server";
 import { createPublicClient } from "@/lib/supabase/server";
 
 /*
- * Usuarios y "Mi cuenta" (agente H). Gestionar el equipo es sólo del owner
- * (permiso `users.manage`; además la RLS de profiles sólo deja escribir al
- * owner y el trigger `profiles_guard_owner` impide dejar la tienda sin
- * dueño o cambiarse el propio rol).
+ * Equipo de la tienda activa (store_members) y "Mi cuenta". Gestionar el
+ * equipo es sólo del dueño (permiso `users.manage`; además la RLS de
+ * store_members sólo deja escribir al dueño y el trigger
+ * `store_members_guard_owner` impide dejar la tienda sin dueño o cambiarse
+ * el propio rol). Sumar gente depende del plan (`team.members` + límite `staff`).
  */
 
 const idSchema = z.string().uuid("Usuario inválido.");
@@ -22,35 +25,27 @@ const assignableRole = z.enum(["owner", "admin", "staff"], { errorMap: () => ({ 
 function dbError(message: string): string | null {
   if (/al menos un dueño/i.test(message)) return "La tienda tiene que tener al menos un dueño activo.";
   if (/propio rol|desactivar tu cuenta/i.test(message)) return "No podés cambiar tu propio rol ni desactivar tu cuenta.";
+  if (/ya es parte del equipo/i.test(message)) return "Esa persona ya es parte del equipo.";
+  if (/email válido/i.test(message)) return "Ingresá un email válido.";
   return null;
 }
 
 async function loadTarget(id: string) {
   const ctx = await requirePermission("users.manage");
-  const { data, error } = await ctx.supabase.from("profiles").select("id, email, name, role, is_active").eq("id", id).maybeSingle();
+  const { data, error } = await ctx.supabase
+    .from("store_members")
+    .select("user_id, role, is_active")
+    .eq("store_id", ctx.store.id)
+    .eq("user_id", id)
+    .maybeSingle();
   if (error) throw new Error(error.message);
-  return { ctx, target: data };
-}
-
-export async function approveUser(input: { id: string; role: string }): Promise<ActionResult> {
-  return runAction(async () => {
-    const parsed = z.object({ id: idSchema, role: assignableRole }).safeParse(input);
-    if (!parsed.success) return zodFail(parsed.error);
-    const { ctx, target } = await loadTarget(parsed.data.id);
-    if (!target) return fail("El usuario ya no existe.");
-    if (target.role !== "pending") return fail("Ese usuario ya fue aprobado.");
-
-    const { error } = await ctx.supabase.from("profiles").update({ role: parsed.data.role, is_active: true }).eq("id", target.id);
-    if (error) return fail(dbError(error.message) ?? error.message);
-    await logAudit(ctx, {
-      action: "user.approve",
-      entity: "profile",
-      entityId: target.id,
-      summary: `Aprobó a ${target.email} como ${ROLE_LABELS[parsed.data.role]}`,
-      diff: { role: [target.role, parsed.data.role], is_active: [target.is_active, true] },
-    });
-    return ok();
-  });
+  if (!data) return { ctx, target: null };
+  // store_members.user_id apunta a auth.users (no hay relación directa con profiles).
+  const { data: profile } = await ctx.supabase.from("profiles").select("email, name").eq("id", id).maybeSingle();
+  return {
+    ctx,
+    target: { id: data.user_id, role: data.role, is_active: data.is_active, email: profile?.email ?? "", name: profile?.name ?? null },
+  };
 }
 
 export async function changeUserRole(input: { id: string; role: string }): Promise<ActionResult> {
@@ -58,15 +53,19 @@ export async function changeUserRole(input: { id: string; role: string }): Promi
     const parsed = z.object({ id: idSchema, role: assignableRole }).safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const { ctx, target } = await loadTarget(parsed.data.id);
-    if (!target) return fail("El usuario ya no existe.");
+    if (!target) return fail("Esa persona ya no es parte del equipo.");
     if (target.id === ctx.user.id) return fail("No podés cambiar tu propio rol.");
     if (target.role === parsed.data.role) return ok();
 
-    const { error } = await ctx.supabase.from("profiles").update({ role: parsed.data.role }).eq("id", target.id);
+    const { error } = await ctx.supabase
+      .from("store_members")
+      .update({ role: parsed.data.role })
+      .eq("store_id", ctx.store.id)
+      .eq("user_id", target.id);
     if (error) return fail(dbError(error.message) ?? error.message);
     await logAudit(ctx, {
       action: "user.role",
-      entity: "profile",
+      entity: "store_member",
       entityId: target.id,
       summary: `Cambió el rol de ${target.email} a ${ROLE_LABELS[parsed.data.role]}`,
       diff: { role: [target.role, parsed.data.role] },
@@ -80,15 +79,19 @@ export async function setUserActive(input: { id: string; active: boolean }): Pro
     const parsed = z.object({ id: idSchema, active: z.boolean() }).safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const { ctx, target } = await loadTarget(parsed.data.id);
-    if (!target) return fail("El usuario ya no existe.");
+    if (!target) return fail("Esa persona ya no es parte del equipo.");
     if (target.id === ctx.user.id) return fail("No podés desactivar tu propia cuenta.");
-    if (target.role === "pending") return fail("Primero aprobalo y elegí su rol.");
+    if (parsed.data.active && !target.is_active) await assertUsage(ctx, "staff");
 
-    const { error } = await ctx.supabase.from("profiles").update({ is_active: parsed.data.active }).eq("id", target.id);
+    const { error } = await ctx.supabase
+      .from("store_members")
+      .update({ is_active: parsed.data.active })
+      .eq("store_id", ctx.store.id)
+      .eq("user_id", target.id);
     if (error) return fail(dbError(error.message) ?? error.message);
     await logAudit(ctx, {
       action: parsed.data.active ? "user.activate" : "user.deactivate",
-      entity: "profile",
+      entity: "store_member",
       entityId: target.id,
       summary: `${parsed.data.active ? "Reactivó" : "Desactivó"} a ${target.email}`,
       diff: { is_active: [target.is_active, parsed.data.active] },
@@ -97,28 +100,86 @@ export async function setUserActive(input: { id: string; active: boolean }): Pro
   });
 }
 
-const nameSchema = z.string().trim().min(1, "Ingresá un nombre.").max(80, "Hasta 80 caracteres.");
-
-export async function renameUser(input: { id: string; name: string }): Promise<ActionResult> {
+/** Quita a alguien del equipo de esta tienda (su cuenta de Ecommy sigue existiendo). */
+export async function removeMember(input: { id: string }): Promise<ActionResult> {
   return runAction(async () => {
-    const parsed = z.object({ id: idSchema, name: nameSchema }).safeParse(input);
+    const parsed = z.object({ id: idSchema }).safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const { ctx, target } = await loadTarget(parsed.data.id);
-    if (!target) return fail("El usuario ya no existe.");
-    if (target.name === parsed.data.name) return ok();
+    if (!target) return ok();
+    if (target.id === ctx.user.id) return fail("No podés quitarte a vos del equipo.");
 
-    const { error } = await ctx.supabase.from("profiles").update({ name: parsed.data.name }).eq("id", target.id);
-    if (error) throw new Error(error.message);
+    const { error } = await ctx.supabase.from("store_members").delete().eq("store_id", ctx.store.id).eq("user_id", target.id);
+    if (error) return fail(dbError(error.message) ?? error.message);
     await logAudit(ctx, {
-      action: "user.rename",
-      entity: "profile",
+      action: "user.remove",
+      entity: "store_member",
       entityId: target.id,
-      summary: `Cambió el nombre de ${target.email}`,
-      diff: { name: [target.name, parsed.data.name] },
+      summary: `Quitó a ${target.email} del equipo`,
     });
     return ok();
   });
 }
+
+const inviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Ingresá un email válido."),
+  role: z.enum(["admin", "staff"], { errorMap: () => ({ message: "Elegí un rol." }) }),
+});
+
+export type InviteResult = { status: "added"; email: string } | { status: "invited"; email: string; token: string };
+
+/**
+ * Invita por email. Si la persona ya tiene cuenta en Ecommy, la suma al
+ * equipo directo; si no, crea una invitación con token y devuelve el link
+ * `/invitacion/<token>` para compartir a mano (todavía no mandamos emails).
+ */
+export async function inviteMember(input: { email: string; role: string }): Promise<ActionResult<InviteResult>> {
+  return runAction(async () => {
+    const ctx = await requirePermission("users.manage");
+    const parsed = inviteSchema.safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    assertFeature(ctx, "team.members");
+    await assertUsage(ctx, "staff");
+
+    const { data, error } = await ctx.supabase.rpc("invite_store_member", {
+      p_store_id: ctx.store.id,
+      p_email: parsed.data.email,
+      p_role: parsed.data.role,
+    });
+    if (error) return fail(dbError(error.message) ?? error.message);
+    const res = (data ?? {}) as { status?: string; token?: string };
+    await logAudit(ctx, {
+      action: res.status === "added" ? "user.add" : "user.invite",
+      entity: "store_member",
+      entityId: parsed.data.email,
+      summary: `${res.status === "added" ? "Sumó" : "Invitó"} a ${parsed.data.email} como ${ROLE_LABELS[parsed.data.role]}`,
+    });
+    if (res.status === "invited" && res.token) return ok<InviteResult>({ status: "invited", email: parsed.data.email, token: res.token });
+    return ok<InviteResult>({ status: "added", email: parsed.data.email });
+  });
+}
+
+export async function revokeInvite(input: { id: string }): Promise<ActionResult> {
+  return runAction(async () => {
+    const ctx = await requirePermission("users.manage");
+    const parsed = z.object({ id: z.string().uuid() }).safeParse(input);
+    if (!parsed.success) return fail("Invitación inválida.");
+    const { data, error } = await ctx.supabase
+      .from("store_invites")
+      .delete()
+      .eq("store_id", ctx.store.id)
+      .eq("id", parsed.data.id)
+      .select("email")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) {
+      await logAudit(ctx, { action: "user.invite_revoke", entity: "store_invite", entityId: parsed.data.id, summary: `Anuló la invitación de ${data.email}` });
+    }
+    return ok();
+  });
+}
+
+const nameSchema = z.string().trim().min(1, "Ingresá un nombre.").max(80, "Hasta 80 caracteres.");
 
 // ---------------------------------------------------------------------
 // Mi cuenta (cualquier usuario activo del panel)
@@ -190,6 +251,6 @@ export async function signOutEverywhere(): Promise<ActionResult> {
     if (error) throw new Error(error.message);
     return ok();
   });
-  if (result.ok) redirect("/admin/login");
+  if (result.ok) redirect("/login");
   return result;
 }

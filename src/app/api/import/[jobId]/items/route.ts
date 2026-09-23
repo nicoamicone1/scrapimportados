@@ -25,9 +25,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ jobI
     per: sp.get("per") ?? undefined,
   });
   return withAdmin(async (ctx) => {
-    const job = await getJob(ctx.supabase, jobId);
+    const job = await getJob(ctx, jobId);
     if (!job) return jsonError("Importación inexistente.", 404);
-    const data = await listItems(ctx.supabase, jobId, {
+    const data = await listItems(ctx, jobId, {
       status: f.estado,
       q: f.q,
       page: f.page,

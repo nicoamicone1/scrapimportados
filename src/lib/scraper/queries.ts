@@ -1,6 +1,7 @@
 import "server-only";
 
-/** Lecturas del admin para el importador (sin cache, bajo RLS). */
+/** Lecturas del admin para el importador (sin cache, bajo RLS), siempre de la tienda activa. */
+import type { AdminContext } from "@/lib/auth";
 import { readImportOptions, type ImportOptions } from "@/lib/schemas/import";
 import type { Json } from "@/lib/supabase/database.types";
 import type { ServerSupabase } from "@/lib/supabase/server";
@@ -19,6 +20,8 @@ import {
   type LogLine,
 } from "./job";
 import { applyMarkup } from "./text";
+
+type StoreDb = Pick<AdminContext, "supabase" | "store">;
 
 export interface JobSummary {
   id: string;
@@ -93,11 +96,13 @@ async function emailsFor(db: ServerSupabase, ids: (string | null)[]): Promise<Ma
 const JOB_COLUMNS =
   "id, source_url, adapter, status, options, stats, cursor, error, started_at, finished_at, created_at, updated_at, created_by";
 
-export async function listJobs(db: ServerSupabase, page: number, perPage: number): Promise<{ rows: JobSummary[]; total: number }> {
+export async function listJobs(ctx: StoreDb, page: number, perPage: number): Promise<{ rows: JobSummary[]; total: number }> {
+  const db = ctx.supabase;
   const from = (page - 1) * perPage;
   const r = await db
     .from("import_jobs")
     .select(JOB_COLUMNS, { count: "exact" })
+    .eq("store_id", ctx.store.id)
     .order("created_at", { ascending: false })
     .range(from, from + perPage - 1);
   if (r.error) throw new Error(r.error.message);
@@ -105,24 +110,32 @@ export async function listJobs(db: ServerSupabase, page: number, perPage: number
   return { rows: r.data.map((j) => toSummary(j, emails)), total: r.count ?? r.data.length };
 }
 
-export async function getJob(db: ServerSupabase, id: string): Promise<JobDetail | null> {
-  const r = await db.from("import_jobs").select(`${JOB_COLUMNS}, log`).eq("id", id).maybeSingle();
+export async function getJob(ctx: StoreDb, id: string): Promise<JobDetail | null> {
+  const r = await ctx.supabase
+    .from("import_jobs")
+    .select(`${JOB_COLUMNS}, log`)
+    .eq("store_id", ctx.store.id)
+    .eq("id", id)
+    .maybeSingle();
   if (r.error || !r.data) return null;
-  const emails = await emailsFor(db, [r.data.created_by]);
+  const emails = await emailsFor(ctx.supabase, [r.data.created_by]);
   return { ...toSummary(r.data, emails), log: readLog(r.data.log) };
 }
 
 export const ITEM_STATUSES: ItemStatus[] = ["pending", "imported", "updated", "skipped", "error"];
 
 export async function listItems(
-  db: ServerSupabase,
+  ctx: StoreDb,
   jobId: string,
   filters: { status?: ItemStatus | "all"; q?: string; page: number; perPage: number; options: ImportOptions },
 ): Promise<{ rows: ItemRow[]; total: number; counts: Record<ItemStatus | "all", number> }> {
+  const db = ctx.supabase;
+  const storeId = ctx.store.id;
   const from = (filters.page - 1) * filters.perPage;
   let q = db
     .from("import_items")
     .select("id, external_id, name, status, error, product_id, payload, products(slug)", { count: "exact" })
+    .eq("store_id", storeId)
     .eq("job_id", jobId)
     .order("created_at")
     .order("external_id")
@@ -134,7 +147,14 @@ export async function listItems(
   if (r.error) throw new Error(r.error.message);
 
   const countRes = await Promise.all(
-    ITEM_STATUSES.map((s) => db.from("import_items").select("id", { count: "exact", head: true }).eq("job_id", jobId).eq("status", s)),
+    ITEM_STATUSES.map((s) =>
+      db
+        .from("import_items")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", storeId)
+        .eq("job_id", jobId)
+        .eq("status", s),
+    ),
   );
   const counts = { all: 0 } as Record<ItemStatus | "all", number>;
   ITEM_STATUSES.forEach((s, i) => {

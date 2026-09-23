@@ -1,10 +1,11 @@
 "use client";
 
-import { Search, X } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { Loader2, Search, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
+
+import { useUrlTransition } from "./useUrlTransition";
 
 export interface SearchInputProps {
   placeholder?: string;
@@ -30,10 +31,7 @@ export function SearchInput({
   autoFocus,
   ...aria
 }: SearchInputProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const { pending, setParams, searchParams } = useUrlTransition();
   const urlValue = searchParams.get(param) ?? "";
   const [text, setText] = useState(value ?? urlValue);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,14 +41,7 @@ export function SearchInput({
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  const pushUrl = (next: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (next.trim()) params.set(param, next.trim());
-    else params.delete(param);
-    params.delete("page");
-    const qs = params.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
-  };
+  const pushUrl = (next: string) => setParams({ [param]: next.trim() || null });
 
   const update = (next: string) => {
     setText(next);
@@ -66,13 +57,14 @@ export function SearchInput({
 
   return (
     <div className={cn("relative w-full sm:w-72", className)}>
-      <Search
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-adm-fg-muted",
-          pending && "animate-pulse",
-        )}
-      />
+      {pending && !controlled ? (
+        <Loader2
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 animate-spin text-adm-accent-2-ink"
+        />
+      ) : (
+        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-adm-fg-muted" />
+      )}
       <input
         type="search"
         value={shown}
@@ -85,6 +77,7 @@ export function SearchInput({
         }}
         placeholder={placeholder}
         aria-label={aria["aria-label"] ?? placeholder}
+        aria-busy={(pending && !controlled) || undefined}
         autoFocus={autoFocus}
         className="h-8 w-full rounded-adm border border-adm-input-border bg-adm-surface pr-8 pl-8 text-sm text-adm-fg placeholder:text-adm-fg-muted/70 [&::-webkit-search-cancel-button]:hidden"
       />

@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -272,6 +273,7 @@ function CategoryRow({
   onDelete: () => void;
 }) {
   const c = flat.item;
+  const { store } = useAdminStore();
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: flat.id });
   return (
     <li
@@ -325,7 +327,7 @@ function CategoryRow({
         <DropdownItem icon={<FolderPlus />} onSelect={onAddChild} disabled={depth >= MAX_CATEGORY_DEPTH - 1}>
           Agregar subcategoría
         </DropdownItem>
-        <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(`/categoria/${c.slug}`, "_blank", "noopener")}>
+        <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(`${store.href}/categoria/${c.slug}`, "_blank", "noopener")}>
           Ver en la tienda
         </DropdownItem>
         <DropdownSeparator />

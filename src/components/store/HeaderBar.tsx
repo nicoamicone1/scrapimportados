@@ -2,13 +2,15 @@
 
 import { ChevronDown, Menu, Search, ShoppingBag } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useStoreBase } from "@/components/store/StoreBase";
+import { StoreLink } from "@/components/store/StoreLink";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/cn";
 import type { MenuItem } from "@/lib/store/menus";
+import { stripStoreBase } from "@/lib/tenant/urls";
 
 import { Drawer } from "./Drawer";
 import { SearchBox } from "./SearchBox";
@@ -34,13 +36,13 @@ function isCurrent(pathname: string, href: string): boolean {
 
 function Logo({ name, logoUrl, center }: { name: string; logoUrl: string | null; center?: boolean }) {
   return (
-    <Link href="/" className={cn("flex shrink-0 items-center", center && "justify-center")} aria-label={`${name}, inicio`}>
+    <StoreLink href="/" className={cn("flex shrink-0 items-center", center && "justify-center")} aria-label={`${name}, inicio`}>
       {logoUrl ? (
         <Image src={logoUrl} alt={name} width={160} height={40} className="h-7 w-auto max-w-[160px] object-contain lg:h-9" priority />
       ) : (
         <span className="heading truncate text-xl leading-none lg:text-2xl">{name}</span>
       )}
-    </Link>
+    </StoreLink>
   );
 }
 
@@ -108,21 +110,21 @@ function DesktopNav({ menu, pathname, className }: { menu: MenuItem[]; pathname:
                   >
                     {item.href && item.href !== "#" ? (
                       <li className={cn(item.children.length > 6 && "col-span-3")}>
-                        <Link href={item.href} className="block rounded-sm px-3 py-2 text-sm font-medium hover:bg-surface" onClick={() => setOpenIdx(null)}>
+                        <StoreLink href={item.href} className="block rounded-sm px-3 py-2 text-sm font-medium hover:bg-surface" onClick={() => setOpenIdx(null)}>
                           Ver todo {item.label.toLowerCase()}
-                        </Link>
+                        </StoreLink>
                       </li>
                     ) : null}
                     {item.children.map((child, j) => (
                       <li key={`${child.label}-${j}`}>
-                        <Link
+                        <StoreLink
                           href={child.href}
                           className="block rounded-sm px-3 py-2 text-sm hover:bg-surface"
                           aria-current={isCurrent(pathname, child.href) ? "page" : undefined}
                           onClick={() => setOpenIdx(null)}
                         >
                           {child.label}
-                        </Link>
+                        </StoreLink>
                       </li>
                     ))}
                   </ul>
@@ -131,13 +133,13 @@ function DesktopNav({ menu, pathname, className }: { menu: MenuItem[]; pathname:
             </li>
           ) : (
             <li key={`${item.label}-${i}`}>
-              <Link
+              <StoreLink
                 href={item.href}
                 className="nav-link nav-upper inline-flex min-h-11 items-center"
                 aria-current={isCurrent(pathname, item.href) ? "page" : undefined}
               >
                 {item.label}
-              </Link>
+              </StoreLink>
             </li>
           ),
         )}
@@ -170,25 +172,25 @@ function MobileNav({ menu, onNavigate, big }: { menu: MenuItem[]; onNavigate: ()
                 <ul id={`mnav-${i}`} className="pb-3 pl-3">
                   {item.href && item.href !== "#" ? (
                     <li>
-                      <Link href={item.href} className="block py-2 text-sm font-medium" onClick={onNavigate}>
+                      <StoreLink href={item.href} className="block py-2 text-sm font-medium" onClick={onNavigate}>
                         Ver todo
-                      </Link>
+                      </StoreLink>
                     </li>
                   ) : null}
                   {item.children.map((child, j) => (
                     <li key={`${child.label}-${j}`}>
-                      <Link href={child.href} className="block py-2 text-sm text-fg-muted hover:text-fg" onClick={onNavigate}>
+                      <StoreLink href={child.href} className="block py-2 text-sm text-fg-muted hover:text-fg" onClick={onNavigate}>
                         {child.label}
-                      </Link>
+                      </StoreLink>
                     </li>
                   ))}
                 </ul>
               ) : null}
             </>
           ) : (
-            <Link href={item.href} className={linkCls} onClick={onNavigate}>
+            <StoreLink href={item.href} className={linkCls} onClick={onNavigate}>
               {item.label}
-            </Link>
+            </StoreLink>
           )}
         </li>
       ))}
@@ -198,7 +200,9 @@ function MobileNav({ menu, onNavigate, big }: { menu: MenuItem[]; onNavigate: ()
 
 export function HeaderBar(props: HeaderBarProps) {
   const { layout, sticky, showSearch, dividers, shadowOnScroll, name, logoUrl, menu } = props;
-  const pathname = usePathname();
+  const { basePath } = useStoreBase();
+  // Path "de la tienda" (sin `/s/<slug>`), para comparar con los hrefs del menú.
+  const pathname = stripStoreBase(usePathname(), basePath);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);

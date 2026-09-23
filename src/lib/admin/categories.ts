@@ -30,10 +30,11 @@ function parseSeo(value: Json): { title: string; description: string } {
 
 /** Todas las categorías (con cantidad de productos), sin orden de árbol. */
 export async function listAdminCategories(): Promise<AdminCategory[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug, description, image_url, parent_id, position, is_visible, seo, product_categories(count)")
+    .eq("store_id", store.id)
     .order("position")
     .order("name");
   if (error) throw new Error(error.message);
@@ -63,8 +64,13 @@ export interface CategoryOption {
 }
 
 export async function listCategoryOptions(): Promise<CategoryOption[]> {
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("categories").select("id, name, parent_id, position").order("position").order("name");
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name, parent_id, position")
+    .eq("store_id", store.id)
+    .order("position")
+    .order("name");
   if (error) throw new Error(error.message);
   return data ?? [];
 }

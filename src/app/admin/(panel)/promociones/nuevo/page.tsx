@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PlanGate } from "@/components/admin/PlanGate";
 import { PromotionForm } from "@/components/admin/promotions/PromotionForm";
 import { PageHeader } from "@/components/ui/display";
 import { getCategoryOptions, getStoreTimezone } from "@/lib/admin/pricing";
@@ -15,7 +16,12 @@ export default async function NuevaPromocionPage() {
         title="Nueva promoción"
         breadcrumb={[{ label: "Promociones", href: "/admin/promociones" }, { label: "Nueva" }]}
       />
-      <PromotionForm id={null} initial={EMPTY_PROMOTION} initialProducts={[]} categories={categories} timezone={timezone} />
+      <PlanGate
+        feature="marketing.promotions"
+        description="Descuentos programados por porcentaje o monto para toda la tienda, categorías o productos."
+      >
+        <PromotionForm id={null} initial={EMPTY_PROMOTION} initialProducts={[]} categories={categories} timezone={timezone} />
+      </PlanGate>
     </>
   );
 }

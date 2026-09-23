@@ -1,29 +1,32 @@
 import type { MetadataRoute } from "next";
 
-import { absoluteUrl } from "@/lib/store/seo";
-import { getSettings } from "@/lib/store/settings";
+import { platformOrigin } from "@/lib/tenant/urls";
 
-export const dynamic = "force-dynamic";
-
-/** /robots.txt (P0-01): bloquea admin, API, carrito, checkout, pedidos y búsqueda; todo si hay mantenimiento. */
-export default async function robots(): Promise<MetadataRoute.Robots> {
-  let maintenance = false;
-  try {
-    maintenance = (await getSettings()).maintenance.enabled;
-  } catch {
-    // Sin DB: robots permisivo con los bloqueos de siempre.
-  }
-  if (maintenance) {
-    return { rules: [{ userAgent: "*", disallow: "/" }] };
-  }
+/**
+ * robots.txt de la PLATAFORMA (ROOT_DOMAIN / modo fallback). Cada tienda en
+ * subdominio o dominio propio tiene el suyo (`s/[store]/robots.txt`, vía el
+ * rewrite del proxy). En modo fallback las tiendas cuelgan de `/s/<slug>`,
+ * así que acá también se bloquean sus paths privados.
+ */
+export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/admin", "/api", "/carrito", "/checkout", "/pedido/", "/buscar"],
+        allow: ["/", "/planes", "/s/"],
+        disallow: [
+          "/admin",
+          "/app",
+          "/platform",
+          "/auth",
+          "/api",
+          "/s/*/carrito",
+          "/s/*/checkout",
+          "/s/*/pedido/",
+          "/s/*/buscar",
+        ],
       },
     ],
-    sitemap: absoluteUrl("/sitemap.xml"),
+    sitemap: `${platformOrigin()}/sitemap.xml`,
   };
 }

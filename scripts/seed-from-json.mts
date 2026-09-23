@@ -2,19 +2,24 @@
  * Importa el catálogo DAZ (`data/products.json`) a Supabase.
  *
  *   SEED_EMAIL=admin@ecommy.local SEED_PASSWORD='…' npm run seed
+ *   SEED_STORE=mi-tienda npm run seed  # tienda destino por slug (default: demo)
  *   npm run seed -- --skip-images     # usa las URLs remotas (imagesRemote) sin subir nada
  *   npm run seed -- --force-images    # reemplaza las imágenes de productos que ya tenían
  *
- * Corre como un admin logueado (RLS), sin service-role key. Es idempotente:
- * categorías por `external_id`, productos por (`source`, `external_id`),
- * variantes por (`product_id`, `option_values`). En productos existentes NO
- * pisa el stock (sólo precio, costo y SKU) ni las imágenes (salvo --force-images).
+ * Corre como un admin logueado (RLS), sin service-role key, sobre UNA tienda
+ * (`SEED_STORE`): el usuario tiene que ser dueño o admin de esa tienda. Es
+ * idempotente dentro de la tienda: categorías por (`store_id`, `external_id`),
+ * productos por (`store_id`, `source`, `external_id`), variantes por
+ * (`product_id`, `option_values`). En productos existentes NO pisa el stock
+ * (sólo precio, costo y SKU) ni las imágenes (salvo --force-images). Las
+ * imágenes se suben a `media/<store_id>/products/<productId>/…`.
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { createClient } from "@supabase/supabase-js";
 
+import { MEDIA_BUCKET, mediaPath } from "../src/lib/media";
 import type { Database } from "../src/lib/supabase/database.types";
 
 try {
@@ -74,6 +79,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const email = process.env.SEED_EMAIL;
 const password = process.env.SEED_PASSWORD;
+const storeSlug = (process.env.SEED_STORE || "demo").trim().toLowerCase();
 
 if (!url || !anonKey) throw new Error("Faltan NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY");
 if (!email || !password) throw new Error("Definí SEED_EMAIL y SEED_PASSWORD (un admin activo)");
@@ -122,9 +128,15 @@ async function pool<T>(items: T[], size: number, fn: (item: T, index: number) =>
 async function main() {
   const auth = await supabase.auth.signInWithPassword({ email: email!, password: password! });
   if (auth.error) throw new Error(`Login falló: ${auth.error.message}`);
-  const isAdmin = await supabase.rpc("is_admin");
-  if (!isAdmin.data) throw new Error("El usuario no es admin activo");
   log(`Logueado como ${email}`);
+
+  const store = await supabase.from("stores").select("id, name, status").eq("slug", storeSlug).maybeSingle();
+  if (store.error) throw new Error(`Leer tienda: ${store.error.message}`);
+  if (!store.data) throw new Error(`No existe la tienda «${storeSlug}» (o no sos miembro). Definí SEED_STORE con el slug.`);
+  const storeId = store.data.id;
+  const isAdmin = await supabase.rpc("is_store_admin", { p_store_id: storeId });
+  if (!isAdmin.data) throw new Error(`${email} no es dueño ni admin activo de «${storeSlug}»`);
+  log(`Tienda destino: ${store.data.name} (${storeSlug} · ${storeId})`);
 
   const raw = await readFile(path.join(process.cwd(), "data", "products.json"), "utf8");
   const source = JSON.parse(raw) as SourceFile;
@@ -137,19 +149,20 @@ async function main() {
       .from("categories")
       .upsert(
         usable.map((c, i) => ({
+          store_id: storeId,
           external_id: String(c.id),
           name: c.name.trim(),
           slug: c.slug,
           position: i,
           is_visible: true,
         })),
-        { onConflict: "external_id" },
+        { onConflict: "store_id,external_id" },
       )
       .select("id"),
     "upsert categorías",
   );
   const catRows = must(
-    await supabase.from("categories").select("id, external_id").not("external_id", "is", null),
+    await supabase.from("categories").select("id, external_id").eq("store_id", storeId).not("external_id", "is", null),
     "leer categorías",
   );
   const catByExt = new Map(catRows.map((c) => [c.external_id as string, c.id]));
@@ -158,7 +171,7 @@ async function main() {
     const parentId = c.parent ? catByExt.get(String(c.parent)) ?? null : null;
     const id = catByExt.get(String(c.id));
     if (!id) continue;
-    const r = await supabase.from("categories").update({ parent_id: parentId }).eq("id", id);
+    const r = await supabase.from("categories").update({ parent_id: parentId }).eq("store_id", storeId).eq("id", id);
     if (r.error) throw new Error(`jerarquía ${c.name}: ${r.error.message}`);
   }
   log(`Categorías: ${usable.length} (con jerarquía)`);
@@ -172,6 +185,7 @@ async function main() {
         .from("products")
         .upsert(
           batch.map((p) => ({
+            store_id: storeId,
             name: p.name.trim(),
             slug: p.slug,
             short_description: p.shortDescription?.trim() || null,
@@ -183,7 +197,7 @@ async function main() {
             published_at: now,
             metadata: { importedFrom: source.source, scrapedAt: source.scrapedAt, prices: p.prices },
           })),
-          { onConflict: "source,external_id" },
+          { onConflict: "store_id,source,external_id" },
         )
         .select("id, external_id"),
       "upsert productos",
@@ -197,7 +211,7 @@ async function main() {
   const existingVariants = new Map<string, string>();
   for (const ids of chunk(productIds, 200)) {
     const rows = must(
-      await supabase.from("product_variants").select("id, product_id").in("product_id", ids),
+      await supabase.from("product_variants").select("id, product_id").eq("store_id", storeId).in("product_id", ids),
       "leer variantes",
     );
     for (const r of rows) existingVariants.set(r.product_id, r.id);
@@ -215,12 +229,13 @@ async function main() {
     };
     const variantId = existingVariants.get(productId);
     if (variantId) {
-      const r = await supabase.from("product_variants").update(common).eq("id", variantId);
+      const r = await supabase.from("product_variants").update(common).eq("store_id", storeId).eq("id", variantId);
       if (r.error) throw new Error(`variante ${p.name}: ${r.error.message}`);
       updated++;
     } else {
       toInsert.push({
         ...common,
+        store_id: storeId,
         product_id: productId,
         title: "Default",
         option_values: {},
@@ -241,7 +256,14 @@ async function main() {
     // Movimiento de inventario inicial (trazabilidad del stock importado).
     const movements = rows
       .filter((v) => v.stock !== 0)
-      .map((v) => ({ variant_id: v.id, delta: v.stock, stock_after: v.stock, reason: "import", note: "Importación inicial" }));
+      .map((v) => ({
+        store_id: storeId,
+        variant_id: v.id,
+        delta: v.stock,
+        stock_after: v.stock,
+        reason: "import",
+        note: "Importación inicial",
+      }));
     if (movements.length) {
       const r = await supabase.from("inventory_movements").insert(movements);
       if (r.error) throw new Error(`movimientos: ${r.error.message}`);
@@ -254,8 +276,8 @@ async function main() {
     const productId = productIdByExt.get(String(p.id));
     if (!productId) return [];
     return p.categories
-      .map((c, i) => ({ product_id: productId, category_id: catByExt.get(String(c.id)), position: i }))
-      .filter((l): l is { product_id: string; category_id: string; position: number } => !!l.category_id);
+      .map((c, i) => ({ store_id: storeId, product_id: productId, category_id: catByExt.get(String(c.id)), position: i }))
+      .filter((l): l is { store_id: string; product_id: string; category_id: string; position: number } => !!l.category_id);
   });
   for (const batch of chunk(links, 500)) {
     const r = await supabase
@@ -269,7 +291,7 @@ async function main() {
   const withImages = new Set<string>();
   for (const ids of chunk(productIds, 200)) {
     const rows = must(
-      await supabase.from("product_images").select("product_id").in("product_id", ids),
+      await supabase.from("product_images").select("product_id").eq("store_id", storeId).in("product_id", ids),
       "leer imágenes",
     );
     for (const r of rows) withImages.add(r.product_id);
@@ -294,14 +316,14 @@ async function main() {
         const file = path.basename(local);
         try {
           const bytes = await readFile(path.join(process.cwd(), "public", "img", file));
-          const storagePath = `products/${productId}/${file}`;
-          const up = await supabase.storage.from("media").upload(storagePath, bytes, {
+          const storagePath = mediaPath(storeId, "products", productId, file);
+          const up = await supabase.storage.from(MEDIA_BUCKET).upload(storagePath, bytes, {
             contentType: file.endsWith(".webp") ? "image/webp" : file.endsWith(".png") ? "image/png" : "image/jpeg",
             upsert: true,
             cacheControl: "31536000",
           });
           if (up.error) throw new Error(up.error.message);
-          urls.push(supabase.storage.from("media").getPublicUrl(storagePath).data.publicUrl);
+          urls.push(supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath).data.publicUrl);
           uploaded++;
         } catch (err) {
           failed++;
@@ -311,21 +333,21 @@ async function main() {
     }
 
     if (FORCE_IMAGES) {
-      const del = await supabase.from("product_images").delete().eq("product_id", productId);
+      const del = await supabase.from("product_images").delete().eq("store_id", storeId).eq("product_id", productId);
       if (del.error) throw new Error(`borrar imágenes: ${del.error.message}`);
     }
     if (urls.length) {
       const ins = await supabase
         .from("product_images")
-        .insert(urls.map((u, i) => ({ product_id: productId, url: u, alt: p.name, position: i })));
+        .insert(urls.map((u, i) => ({ store_id: storeId, product_id: productId, url: u, alt: p.name, position: i })));
       if (ins.error) throw new Error(`insertar imágenes: ${ins.error.message}`);
     }
     if ((index + 1) % 50 === 0) log(`  imágenes ${index + 1}/${pending.length}`);
   });
   log(`Imágenes: ${uploaded} subidas, ${failed} con error`);
 
-  const count = await supabase.from("products").select("id", { count: "exact", head: true });
-  log(`Listo. Productos en la base: ${count.count ?? "?"}`);
+  const count = await supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", storeId);
+  log(`Listo. Productos en «${storeSlug}»: ${count.count ?? "?"}`);
   await supabase.auth.signOut();
 }
 

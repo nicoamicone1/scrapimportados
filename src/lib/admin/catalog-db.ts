@@ -1,15 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database, Json } from "@/lib/supabase/database.types";
+import type { Database } from "@/lib/supabase/database.types";
 
 /*
- * Tipos de las vistas y funciones de `0003_catalog.sql` (agente A).
- * `database.types.ts` se regenera fuera de este agente; hasta entonces el
- * catálogo usa este tipo extendido. Cuando se regeneren, `CatalogDatabase`
- * sigue siendo compatible (sólo agrega lo que falte).
+ * Tipos de las vistas del catálogo (`admin_products`, `admin_inventory`).
+ * `database.types.ts` las genera con todas las columnas nullable (así tipa
+ * PostgREST las vistas); acá se reemplazan por filas no nulas, que es lo que
+ * garantizan las vistas. Las funciones (`inventory_summary(p_store_id)`,
+ * `reorder_categories(p_store_id, items)`) vienen tal cual de los tipos
+ * generados. Ambas vistas tienen `store_id`: filtrá siempre por la tienda.
  */
 
 export type AdminProductRow = {
+  store_id: string;
   id: string;
   name: string;
   slug: string;
@@ -35,6 +38,7 @@ export type AdminProductRow = {
 };
 
 export type AdminInventoryRow = {
+  store_id: string;
   variant_id: string;
   product_id: string;
   product_name: string;
@@ -60,14 +64,10 @@ type View<Row> = { Row: Row; Relationships: [] };
 type PublicSchema = Database["public"];
 
 export type CatalogDatabase = Omit<Database, "public"> & {
-  public: Omit<PublicSchema, "Views" | "Functions"> & {
-    Views: PublicSchema["Views"] & {
+  public: Omit<PublicSchema, "Views"> & {
+    Views: Omit<PublicSchema["Views"], "admin_products" | "admin_inventory"> & {
       admin_products: View<AdminProductRow>;
       admin_inventory: View<AdminInventoryRow>;
-    };
-    Functions: PublicSchema["Functions"] & {
-      inventory_summary: { Args: never; Returns: Json };
-      reorder_categories: { Args: { items: Json }; Returns: number };
     };
   };
 };

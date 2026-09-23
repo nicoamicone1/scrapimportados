@@ -1,11 +1,10 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
-
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { useUrlTransition } from "@/components/ui/useUrlTransition";
+import { cn } from "@/lib/cn";
 
 const ACTION_LABELS: Record<string, string> = {
   product: "Productos",
@@ -32,25 +31,15 @@ const ACTION_LABELS: Record<string, string> = {
 
 /** Filtros de la auditoría sincronizados con la URL (?usuario=&accion=&entidad=&desde=&hasta=&q=). */
 export function AuditFilters({ facets }: { facets: { actors: { id: string; label: string }[]; actions: string[]; entities: string[] } }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const { searchParams, setParams, replace, pending, pathname } = useUrlTransition();
 
-  const setParam = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
-    params.delete("page");
-    const qs = params.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
-  };
+  const setParam = (key: string, value: string) => setParams({ [key]: value || null });
 
   const get = (k: string) => searchParams.get(k) ?? "";
   const any = ["usuario", "accion", "entidad", "desde", "hasta", "q"].some((k) => searchParams.get(k));
 
   return (
-    <div className="mb-3 flex flex-wrap items-end gap-2" aria-busy={pending || undefined}>
+    <div className={cn("mb-3 flex flex-wrap items-end gap-2 transition-opacity", pending && "opacity-70")} aria-busy={pending || undefined}>
       <SearchInput placeholder="Buscar en el resumen, ID o email" aria-label="Buscar en la auditoría" />
       <Select
         size="sm"
@@ -88,7 +77,7 @@ export function AuditFilters({ facets }: { facets: { actors: { id: string; label
         <Input type="date" size="sm" value={get("hasta")} min={get("desde") || undefined} onChange={(e) => setParam("hasta", e.target.value)} className="w-36" />
       </label>
       {any ? (
-        <Button size="sm" variant="ghost" onClick={() => startTransition(() => router.replace(pathname, { scroll: false }))}>
+        <Button size="sm" variant="ghost" onClick={() => replace(pathname)}>
           Limpiar filtros
         </Button>
       ) : null}

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CouponActions } from "@/components/admin/coupons/CouponActions";
+import { LimitBanner } from "@/components/admin/LimitBanner";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { CouponStatusBadge, discountLabel, scopeSummary, windowSummary } from "@/components/admin/pricing/shared";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, PageHeader } from "@/components/ui/display";
@@ -50,9 +52,11 @@ export default async function CuponesPage({ searchParams }: { searchParams: Prom
   };
 
   const newButton = (
-    <ButtonLink href="/admin/cupones/nuevo" variant="primary" icon={<Plus aria-hidden />}>
-      Nuevo cupón
-    </ButtonLink>
+    <PlanGate feature="marketing.coupons" mode="inline" label="Nuevo cupón">
+      <ButtonLink href="/admin/cupones/nuevo" variant="primary" icon={<Plus aria-hidden />}>
+        Nuevo cupón
+      </ButtonLink>
+    </PlanGate>
   );
 
   if (counts.all === 0) {
@@ -87,6 +91,7 @@ export default async function CuponesPage({ searchParams }: { searchParams: Prom
         />
       </PageHeader>
 
+      <LimitBanner limit="coupons" used={counts.all} className="mb-3" />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <SearchInput placeholder="Buscar código…" />
         {q || status ? (

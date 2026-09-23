@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 
+import { PlanGate } from "@/components/admin/PlanGate";
 import { PrintToolbar } from "@/components/admin/orders/PrintToolbar";
-import { getProfile, getSession, isAdminRole } from "@/lib/auth";
+import { getAdminState } from "@/lib/auth";
 import { addressLines, amountPaid, balanceDue, otherDiscount, parseAddress, PAYMENT_STATUS_LABELS, isPaymentStatus } from "@/lib/admin/order-utils";
 import {
   getOrdersForPrint,
-  getSiteUrl,
   getStoreInfo,
   listPaymentMethods,
-  orderPublicPath,
+  orderPublicUrl,
   paymentMethodName,
   type PrintableOrder,
   type StoreInfo,
@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { hasFeature } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Remitos" };
 export const dynamic = "force-dynamic";
@@ -27,8 +28,9 @@ const MAX = 100;
 
 /**
  * Remitos imprimibles (P0-05): una hoja por pedido, A4 o ticket de 80 mm
- * (`?format=80mm`), con QR a `/pedido/[token]`. `?auto=0` no abre el
- * diálogo de impresión solo.
+ * (`?format=80mm`), con QR a `/pedido/[token]` en la URL pública de la
+ * tienda activa. `?auto=0` no abre el diálogo de impresión solo. Requiere
+ * la feature de plan `orders.print`.
  */
 export default async function PrintOrdersPage({ searchParams }: PageProps<"/admin/pedidos/imprimir">) {
   const sp = await searchParams;
@@ -37,21 +39,31 @@ export default async function PrintOrdersPage({ searchParams }: PageProps<"/admi
   const format = sp.format === "80mm" ? "80mm" : "a4";
   const autoPrint = sp.auto !== "0";
 
-  const { supabase, user } = await getSession();
-  if (!user) redirect(`/admin/login?next=${encodeURIComponent(`/admin/pedidos/imprimir?ids=${ids.join(",")}`)}`);
-  const profile = await getProfile();
-  if (!profile?.is_active || !isAdminRole(profile.role)) redirect("/admin");
+  const state = await getAdminState();
+  if (state.kind === "anonymous") redirect(`/login?next=${encodeURIComponent(`/admin/pedidos/imprimir?ids=${ids.join(",")}`)}`);
+  if (state.kind === "no-stores") redirect("/app/nueva");
+  if (state.kind === "inactive") redirect("/admin");
+  const { supabase, store: active, plan } = state.ctx;
 
-  const [orders, store, methods, siteUrl] = await Promise.all([
-    getOrdersForPrint(supabase, ids),
-    getStoreInfo(supabase),
-    listPaymentMethods(supabase),
-    getSiteUrl(),
+  if (!hasFeature(plan, "orders.print")) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-10">
+        <PlanGate feature="orders.print" plan={plan} description="Imprimí remitos A4 o tickets de 80 mm con el QR del pedido.">
+          {null}
+        </PlanGate>
+      </main>
+    );
+  }
+
+  const [orders, store, methods] = await Promise.all([
+    getOrdersForPrint(supabase, active.id, ids),
+    getStoreInfo(supabase, active.id),
+    listPaymentMethods(supabase, active.id),
   ]);
 
   const sheets = await Promise.all(
     orders.map(async (p) => {
-      const url = `${siteUrl}${orderPublicPath(p.order.public_token)}`;
+      const url = orderPublicUrl(active, p.order.public_token);
       const qr = await QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
       return { p, url, qr };
     }),

@@ -1,11 +1,14 @@
 /**
- * Permisos del admin por rol (v0). Pura: sirve en server y client.
+ * Permisos del admin por rol EN LA TIENDA ACTIVA (`store_members.role`,
+ * `ctx.membership`). Pura: sirve en server y client. Los permisos por rol
+ * son ortogonales a los del plan (`src/lib/plans`): una acción puede exigir
+ * ambos.
  *
  * | Permiso         | owner | admin | staff |
  * | --------------- | ----- | ----- | ----- |
  * | settings.write  |  sí   |  sí   |  no   |  Configuración (entrar y guardar)
  * | users.read      |  sí   |  sí   |  no   |  Ver la lista de usuarios
- * | users.manage    |  sí   |  no   |  no   |  Aprobar, cambiar roles, desactivar
+ * | users.manage    |  sí   |  no   |  no   |  Invitar, cambiar roles, desactivar
  * | prices.bulk     |  sí   |  sí   |  no   |  Cambios masivos de precios (C)
  * | audit.read      |  sí   |  sí   |  no   |  Registro de auditoría
  * | export          |  sí   |  sí   |  no   |  Exportar CSV

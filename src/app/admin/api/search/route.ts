@@ -12,12 +12,16 @@ export interface PaletteSearchResult {
 
 /**
  * GET /admin/api/search?q= — búsqueda en vivo del command palette:
- * productos por nombre o SKU y pedidos por número (#1043) o email/nombre.
+ * productos por nombre o SKU y pedidos por número (#1043) o email/nombre,
+ * siempre de la tienda activa del panel.
  */
 export async function GET(request: NextRequest) {
   let supabase;
+  let storeId: string;
   try {
-    ({ supabase } = await requireAdmin());
+    const ctx = await requireAdmin();
+    supabase = ctx.supabase;
+    storeId = ctx.store.id;
   } catch {
     return Response.json({ error: "No autorizado" }, { status: 401 });
   }
@@ -32,12 +36,16 @@ export async function GET(request: NextRequest) {
   const productsQuery = supabase
     .from("admin_products")
     .select("id, name, skus, image_url, status")
+    .eq("store_id", storeId)
     .or(`name.ilike.%${term}%,skus.ilike.%${term}%`)
     .neq("status", "archived")
     .order("updated_at", { ascending: false })
     .limit(6);
 
-  const ordersBase = supabase.from("orders").select("id, number, customer, total, status, payment_status");
+  const ordersBase = supabase
+    .from("orders")
+    .select("id, number, customer, total, status, payment_status")
+    .eq("store_id", storeId);
   const ordersQuery = numberMatch
     ? ordersBase.eq("number", Number(numberMatch[1])).limit(1)
     : raw.length >= 3

@@ -27,7 +27,7 @@ const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
 /** Bandeja de solicitudes de arrepentimiento (Res. SCI 424/2020). */
 export function WithdrawalsTable({ rows, timeZone, empty }: { rows: WithdrawalView[]; timeZone: string; empty: ReactNode }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [refreshing, startTransition] = useTransition();
   const [target, setTarget] = useState<{ row: WithdrawalView; action: "process" | "reject" } | null>(null);
   const [cancelOrder, setCancelOrder] = useState(true);
   const [notes, setNotes] = useState("");
@@ -69,7 +69,7 @@ export function WithdrawalsTable({ rows, timeZone, empty }: { rows: WithdrawalVi
 
   return (
     <>
-      <Table>
+      <Table pending={refreshing || undefined}>
         <THead>
           <tr>
             <TH>Código</TH>

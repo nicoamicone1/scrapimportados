@@ -1,4 +1,5 @@
 import { escapeHtml, isSafeUrl, sanitizeHtml } from "@/lib/html";
+import { storePath } from "@/lib/tenant/urls";
 
 /**
  * Markdown MÍNIMO y seguro → HTML (políticas de la tienda, instrucciones de
@@ -6,16 +7,20 @@ import { escapeHtml, isSafeUrl, sanitizeHtml } from "@/lib/html";
  * `*itálica*`/`_itálica_`, `[link](url)`, listas `-`/`*`/`1.`, `> cita`,
  * `---`. Todo el texto se escapa ANTES de aplicar el formato y el resultado
  * pasa además por `sanitizeHtml` (defensa en profundidad).
+ *
+ * `basePath`: prefijo de la tienda (`/s/<slug>` en modo fallback) que se
+ * antepone a los links internos (`[envíos](/politicas/envios)`).
  */
 
-function inline(text: string): string {
+function inline(text: string, basePath = ""): string {
   let out = escapeHtml(text);
   // Links: [texto](url) — sólo URLs seguras; si no, queda el texto.
   out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, label: string, url: string) => {
     const decoded = url.replace(/&amp;/g, "&");
     if (!isSafeUrl(decoded)) return label;
     const external = /^https?:\/\//i.test(decoded);
-    return `<a href="${escapeHtml(decoded)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ""}>${label}</a>`;
+    const href = decoded.startsWith("/") && !decoded.startsWith("//") ? storePath(decoded, basePath) : decoded;
+    return `<a href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ""}>${label}</a>`;
   });
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/__([^_]+)__/g, "<strong>$1</strong>");
@@ -31,7 +36,7 @@ type Block =
   | { kind: "h"; level: 2 | 3 | 4; text: string }
   | { kind: "hr" };
 
-export function markdownToHtml(markdown: string | null | undefined): string {
+export function markdownToHtml(markdown: string | null | undefined, basePath = ""): string {
   if (!markdown?.trim()) return "";
   const blocks: Block[] = [];
   let current: Block | null = null;
@@ -97,16 +102,16 @@ export function markdownToHtml(markdown: string | null | undefined): string {
     .map((b) => {
       switch (b.kind) {
         case "h":
-          return `<h${b.level}>${inline(b.text)}</h${b.level}>`;
+          return `<h${b.level}>${inline(b.text, basePath)}</h${b.level}>`;
         case "hr":
           return "<hr>";
         case "p":
-          return `<p>${b.lines.map(inline).join("<br>")}</p>`;
+          return `<p>${b.lines.map((l) => inline(l, basePath)).join("<br>")}</p>`;
         case "quote":
-          return `<blockquote><p>${b.lines.map(inline).join("<br>")}</p></blockquote>`;
+          return `<blockquote><p>${b.lines.map((l) => inline(l, basePath)).join("<br>")}</p></blockquote>`;
         case "ul":
         case "ol":
-          return `<${b.kind}>${b.items.map((i) => `<li>${inline(i)}</li>`).join("")}</${b.kind}>`;
+          return `<${b.kind}>${b.items.map((i) => `<li>${inline(i, basePath)}</li>`).join("")}</${b.kind}>`;
       }
     })
     .join("\n");

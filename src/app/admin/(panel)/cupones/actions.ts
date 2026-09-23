@@ -6,6 +6,8 @@ import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { getStoreTimezone } from "@/lib/admin/pricing";
 import { logAudit, shallowDiff } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
+import { assertFeature } from "@/lib/plans";
+import { assertUsage } from "@/lib/plans/server";
 import { zonedLocalToIso } from "@/lib/pricing";
 import { couponSchema, testCouponSchema, type CouponValues } from "@/lib/schemas/coupon";
 import type { Json } from "@/lib/supabase/database.types";
@@ -14,6 +16,8 @@ import type { Json } from "@/lib/supabase/database.types";
  * Cupones (agente C). Los cupones NO son de lectura pública (se validan con
  * la RPC `validate_coupon`), así que no hay tag de caché que revalidar: el
  * storefront siempre pregunta en vivo.
+ * Plan: `marketing.coupons` para crear/editar/duplicar/activar y el límite
+ * `coupons` al crear o duplicar. El código es único POR TIENDA.
  */
 
 const uuid = z.string().uuid();
@@ -41,12 +45,18 @@ const DUPLICATE_CODE = "Ya existe un cupón con ese código.";
 export async function saveCoupon(id: unknown, input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    assertFeature(ctx, "marketing.coupons");
     const parsed = couponSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const row = toRow(parsed.data, await getStoreTimezone());
 
     if (id === null || id === undefined) {
-      const { data, error } = await ctx.supabase.from("coupons").insert(row).select("id").single();
+      await assertUsage(ctx, "coupons");
+      const { data, error } = await ctx.supabase
+        .from("coupons")
+        .insert({ ...row, store_id: ctx.store.id })
+        .select("id")
+        .single();
       if (error?.code === "23505") return fail(DUPLICATE_CODE, { code: [DUPLICATE_CODE] });
       if (error || !data) {
         console.error("[cupones] insert", error?.message);
@@ -64,9 +74,14 @@ export async function saveCoupon(id: unknown, input: unknown): Promise<ActionRes
 
     const cid = uuid.safeParse(id);
     if (!cid.success) return fail("Cupón inválido.");
-    const { data: before } = await ctx.supabase.from("coupons").select("*").eq("id", cid.data).maybeSingle();
+    const { data: before } = await ctx.supabase
+      .from("coupons")
+      .select("*")
+      .eq("store_id", ctx.store.id)
+      .eq("id", cid.data)
+      .maybeSingle();
     if (!before) return fail("El cupón ya no existe.");
-    const { error } = await ctx.supabase.from("coupons").update(row).eq("id", cid.data);
+    const { error } = await ctx.supabase.from("coupons").update(row).eq("store_id", ctx.store.id).eq("id", cid.data);
     if (error?.code === "23505") return fail(DUPLICATE_CODE, { code: [DUPLICATE_CODE] });
     if (error) {
       console.error("[cupones] update", error.message);
@@ -87,7 +102,7 @@ export async function saveCoupon(id: unknown, input: unknown): Promise<ActionRes
 async function loadCoupon(ctx: AdminContext, id: unknown) {
   const cid = uuid.safeParse(id);
   if (!cid.success) return null;
-  const { data } = await ctx.supabase.from("coupons").select("*").eq("id", cid.data).maybeSingle();
+  const { data } = await ctx.supabase.from("coupons").select("*").eq("store_id", ctx.store.id).eq("id", cid.data).maybeSingle();
   return data;
 }
 
@@ -97,7 +112,12 @@ export async function setCouponActive(id: unknown, isActive: unknown): Promise<A
     const coupon = await loadCoupon(ctx, id);
     if (!coupon) return fail("El cupón ya no existe.");
     const next = isActive === true;
-    const { error } = await ctx.supabase.from("coupons").update({ is_active: next }).eq("id", coupon.id);
+    if (next) assertFeature(ctx, "marketing.coupons");
+    const { error } = await ctx.supabase
+      .from("coupons")
+      .update({ is_active: next })
+      .eq("store_id", ctx.store.id)
+      .eq("id", coupon.id);
     if (error) return fail("No se pudo actualizar. Probá de nuevo.");
     await logAudit(ctx, {
       action: next ? "coupon.activate" : "coupon.pause",
@@ -112,17 +132,24 @@ export async function setCouponActive(id: unknown, isActive: unknown): Promise<A
 export async function duplicateCoupon(id: unknown): Promise<ActionResult<{ id: string; code: string }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    assertFeature(ctx, "marketing.coupons");
     const coupon = await loadCoupon(ctx, id);
     if (!coupon) return fail("El cupón ya no existe.");
+    await assertUsage(ctx, "coupons");
 
     // Código libre: CODIGO-COPIA, CODIGO-COPIA2, …
     const base = `${coupon.code.slice(0, 33)}-COPIA`;
-    const { data: taken } = await ctx.supabase.from("coupons").select("code").like("code", `${base}%`);
+    const { data: taken } = await ctx.supabase
+      .from("coupons")
+      .select("code")
+      .eq("store_id", ctx.store.id)
+      .like("code", `${base}%`);
     const used = new Set((taken ?? []).map((c) => c.code));
     let code = base;
     for (let n = 2; used.has(code); n++) code = `${base}${n}`;
 
     const copy = {
+      store_id: ctx.store.id,
       code,
       type: coupon.type,
       value: coupon.value,
@@ -157,11 +184,12 @@ export async function deleteCoupon(id: unknown): Promise<ActionResult> {
     const { count } = await ctx.supabase
       .from("coupon_redemptions")
       .select("id", { count: "exact", head: true })
+      .eq("store_id", ctx.store.id)
       .eq("coupon_id", coupon.id);
     if (coupon.uses_count > 0 || (count ?? 0) > 0) {
       return fail("Este cupón ya se usó: desactivalo en lugar de borrarlo (así se conserva el historial).");
     }
-    const { error } = await ctx.supabase.from("coupons").delete().eq("id", coupon.id);
+    const { error } = await ctx.supabase.from("coupons").delete().eq("store_id", ctx.store.id).eq("id", coupon.id);
     if (error) return fail("No se pudo borrar. Probá de nuevo.");
     await logAudit(ctx, {
       action: "coupon.delete",
@@ -197,6 +225,7 @@ export async function testCoupon(input: unknown): Promise<ActionResult<CouponTes
     const { data: coupon } = await ctx.supabase
       .from("coupons")
       .select("scope, category_ids, product_ids")
+      .eq("store_id", ctx.store.id)
       .eq("code", code)
       .maybeSingle();
     let items: { product_id: string; qty: number; unit_price: number }[] = [];
@@ -204,12 +233,18 @@ export async function testCoupon(input: unknown): Promise<ActionResult<CouponTes
     if (coupon && coupon.scope !== "all") {
       let product: { id: string; name: string } | null = null;
       if (coupon.scope === "products" && coupon.product_ids.length) {
-        const { data } = await ctx.supabase.from("products").select("id, name").in("id", coupon.product_ids.slice(0, 50)).limit(1);
+        const { data } = await ctx.supabase
+          .from("products")
+          .select("id, name")
+          .eq("store_id", ctx.store.id)
+          .in("id", coupon.product_ids.slice(0, 50))
+          .limit(1);
         product = data?.[0] ?? null;
       } else if (coupon.scope === "categories" && coupon.category_ids.length) {
         const { data } = await ctx.supabase
           .from("products")
           .select("id, name, product_categories!inner(category_id)")
+          .eq("store_id", ctx.store.id)
           .in("product_categories.category_id", coupon.category_ids)
           .limit(1);
         product = data?.[0] ? { id: data[0].id, name: data[0].name } : null;
@@ -221,6 +256,7 @@ export async function testCoupon(input: unknown): Promise<ActionResult<CouponTes
     }
 
     const { data, error } = await ctx.supabase.rpc("validate_coupon", {
+      p_store_id: ctx.store.id,
       p_code: code,
       p_subtotal: subtotal,
       p_items: items as unknown as Json,

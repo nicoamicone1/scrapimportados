@@ -2,29 +2,39 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
+import { PendingOverlay } from "./PendingOverlay";
+
 /**
- * Tabla densa del admin (DESIGN.md §7.5): header sticky 36px, filas 40px,
- * 13px, números a la derecha con `numeric`.
+ * Tabla densa del admin (DESIGN.md §7.5): header sticky 36px con fondo
+ * `--adm-table-head`, filas 40px con hover `--adm-row-hover`, 13px,
+ * `tabular-nums`, números a la derecha con `numeric`.
+ *
+ * `pending`: velo translúcido + spinner mientras cambia un filtro. Si no se
+ * pasa, la tabla sigue el `pending` del `<UrlPendingScope>` de la página
+ * (lo disparan los filtros que usan `useUrlTransition`). `pending={false}`
+ * lo apaga.
  */
 export function Table({
   className,
   containerClassName,
+  pending,
   ...props
-}: ComponentPropsWithoutRef<"table"> & { containerClassName?: string }) {
+}: ComponentPropsWithoutRef<"table"> & { containerClassName?: string; pending?: boolean }) {
   return (
     <div
       className={cn(
-        "adm-scroll relative w-full overflow-auto rounded-adm border border-adm-border bg-adm-surface",
+        "adm-scroll relative w-full overflow-auto rounded-adm border border-adm-border bg-adm-surface shadow-adm-card",
         containerClassName,
       )}
     >
-      <table className={cn("w-full border-collapse text-[13px]", className)} {...props} />
+      <table className={cn("tnum w-full border-collapse text-[13px]", className)} {...props} />
+      <PendingOverlay pending={pending} />
     </div>
   );
 }
 
 export function THead({ className, ...props }: ComponentPropsWithoutRef<"thead">) {
-  return <thead className={cn("sticky top-0 z-[1] bg-adm-surface-2", className)} {...props} />;
+  return <thead className={cn("sticky top-0 z-[1] bg-adm-table-head", className)} {...props} />;
 }
 
 export function TBody({ className, ...props }: ComponentPropsWithoutRef<"tbody">) {
@@ -42,8 +52,8 @@ export function TR({
       aria-selected={selected || undefined}
       className={cn(
         "group/row",
-        interactive && "hover:bg-adm-hover",
-        selected && "bg-adm-surface-2 hover:bg-adm-surface-2",
+        interactive && "hover:bg-adm-row-hover",
+        selected && "bg-adm-accent-2-soft/60 hover:bg-adm-accent-2-soft/60",
         className,
       )}
       {...props}

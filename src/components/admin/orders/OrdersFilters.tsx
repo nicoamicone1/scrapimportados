@@ -1,11 +1,11 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { useUrlTransition } from "@/components/ui/useUrlTransition";
 import { ORDER_STATUS_LABELS, ORDER_STATUSES, PAYMENT_STATUS_LABELS } from "@/lib/admin/order-utils";
 import { cn } from "@/lib/cn";
 
@@ -20,36 +20,22 @@ const FILTER_KEYS = ["q", "estado", "pago", "metodo", "entrega", "desde", "hasta
 
 /** Barra de filtros del listado de pedidos (todo en la URL, resuelto en el server). */
 export function OrdersFilters({ methods }: { methods: { code: string; name: string }[] }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const [pending, startTransition] = useTransition();
+  const { searchParams: params, setParams, pending } = useUrlTransition();
   // Remonta el buscador al limpiar (su texto es estado interno).
   const [resetKey, setResetKey] = useState(0);
 
-  const set = (key: string, value: string) => {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    next.delete("page");
-    const qs = next.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
-  };
+  const set = (key: string, value: string) => setParams({ [key]: value || null });
 
   const clear = () => {
-    const next = new URLSearchParams(params.toString());
-    for (const k of FILTER_KEYS) next.delete(k);
-    next.delete("page");
-    const qs = next.toString();
     setResetKey((k) => k + 1);
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
+    setParams(Object.fromEntries(FILTER_KEYS.map((k) => [k, null])));
   };
 
   const active = FILTER_KEYS.some((k) => k !== "orden" && params.get(k));
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", pending && "opacity-70")} aria-busy={pending || undefined}>
-      <SearchInput key={resetKey} placeholder="Número, cliente, email, teléfono o SKU" aria-label="Buscar pedidos" />
+    <div className={cn("flex flex-wrap items-center gap-2 transition-opacity", pending && "opacity-70")} aria-busy={pending || undefined}>
+      <SearchInput key={resetKey} placeholder="Número, cliente, email, teléfono o SKU" aria-label="Buscar pedidos" className="sm:w-[340px]" />
       <Select
         size="sm"
         aria-label="Estado"
@@ -90,7 +76,7 @@ export function OrdersFilters({ methods }: { methods: { code: string; name: stri
           { value: "retiro", label: "Retiro" },
         ]}
       />
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <label htmlFor="f-desde" className="text-[13px] text-adm-fg-muted">
           Desde
         </label>

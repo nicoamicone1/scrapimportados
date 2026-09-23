@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import { useCart } from "@/lib/cart";
 import { formatMoney } from "@/lib/money";
 import { computeCart, type Promotion } from "@/lib/pricing";
@@ -81,14 +81,14 @@ export function CartDrawer({ promotions, freeShippingThreshold, freeShippingPart
                 Iniciar compra
               </span>
             ) : (
-              <Link href="/checkout" className="btn btn-solid btn-block" onClick={close}>
+              <StoreLink href="/checkout" className="btn btn-solid btn-block" onClick={close}>
                 Iniciar compra
-              </Link>
+              </StoreLink>
             )}
             <div className="flex items-center justify-between text-sm">
-              <Link href="/carrito" className="link" onClick={close}>
+              <StoreLink href="/carrito" className="link" onClick={close}>
                 Ver carrito
-              </Link>
+              </StoreLink>
               <button type="button" className="link" onClick={close}>
                 Seguir comprando
               </button>
@@ -105,9 +105,9 @@ export function CartDrawer({ promotions, freeShippingThreshold, freeShippingPart
         <div className="px-4 py-8 sm:px-5">
           <p className="text-base">Tu carrito está vacío.</p>
           <p className="mt-1 text-sm text-fg-muted">Agregá productos y los vas a ver acá.</p>
-          <Link href="/productos" className="btn btn-primary mt-6" onClick={close}>
+          <StoreLink href="/productos" className="btn btn-primary mt-6" onClick={close}>
             Ver todos los productos
-          </Link>
+          </StoreLink>
         </div>
       )}
     </Drawer>

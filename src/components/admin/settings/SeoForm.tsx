@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { saveSeoSettings } from "@/app/admin/(panel)/configuracion/actions";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { IMAGE_ACCEPT, uploadImage } from "@/components/admin/products/image-upload";
 import { SeoFields } from "@/components/admin/SeoFields";
 import { Button } from "@/components/ui/Button";
@@ -119,22 +120,30 @@ export function SeoForm({ initial, storeName, tagline }: { initial: SeoSettingsI
             title="Medición y publicidad"
             description="Pegá sólo los IDs: la tienda carga los códigos y envía los eventos de vista de producto, carrito, inicio de compra y compra."
           >
+            <PlanGate
+              feature="analytics.integrations"
+              mode="preview"
+              description="Conectá Google Analytics, Tag Manager y el Pixel de Meta para medir visitas y ventas."
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Google Analytics 4" hint="ID de medición: G-XXXXXXXXXX." error={error("integrations.ga4_id")}>
+                  <Input value={v.integrations.ga4_id} onChange={(e) => set("integrations.ga4_id", e.target.value)} placeholder="G-XXXXXXXXXX" className="font-mono" spellCheck={false} />
+                </Field>
+                <Field label="Google Tag Manager" hint="ID del contenedor: GTM-XXXXXXX." error={error("integrations.gtm_id")}>
+                  <Input value={v.integrations.gtm_id} onChange={(e) => set("integrations.gtm_id", e.target.value)} placeholder="GTM-XXXXXXX" className="font-mono" spellCheck={false} />
+                </Field>
+                <Field label="Meta Pixel" hint="Sólo números (Administrador de eventos de Meta)." error={error("integrations.meta_pixel_id")}>
+                  <Input
+                    value={v.integrations.meta_pixel_id}
+                    onChange={(e) => set("integrations.meta_pixel_id", e.target.value)}
+                    inputMode="numeric"
+                    placeholder="123456789012345"
+                    className="font-mono"
+                  />
+                </Field>
+              </div>
+            </PlanGate>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Google Analytics 4" hint="ID de medición: G-XXXXXXXXXX." error={error("integrations.ga4_id")}>
-                <Input value={v.integrations.ga4_id} onChange={(e) => set("integrations.ga4_id", e.target.value)} placeholder="G-XXXXXXXXXX" className="font-mono" spellCheck={false} />
-              </Field>
-              <Field label="Google Tag Manager" hint="ID del contenedor: GTM-XXXXXXX." error={error("integrations.gtm_id")}>
-                <Input value={v.integrations.gtm_id} onChange={(e) => set("integrations.gtm_id", e.target.value)} placeholder="GTM-XXXXXXX" className="font-mono" spellCheck={false} />
-              </Field>
-              <Field label="Meta Pixel" hint="Sólo números (Administrador de eventos de Meta)." error={error("integrations.meta_pixel_id")}>
-                <Input
-                  value={v.integrations.meta_pixel_id}
-                  onChange={(e) => set("integrations.meta_pixel_id", e.target.value)}
-                  inputMode="numeric"
-                  placeholder="123456789012345"
-                  className="font-mono"
-                />
-              </Field>
               <Field label="Verificación de Google Search Console" hint="El código o la etiqueta meta completa: nos quedamos con el código." error={error("integrations.google_site_verification")}>
                 <Input
                   value={v.integrations.google_site_verification}

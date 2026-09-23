@@ -20,8 +20,12 @@ import type { PreviewDevice } from "../appearance/preview-css";
  * (`BlockRenderer`, `ProductCard`…), sin iframe.
  */
 
-export async function previewContext(device: PreviewDevice, themeOverride?: Theme): Promise<BlockContext & { storeName: string }> {
-  const display = await getStoreDisplay();
+export async function previewContext(
+  storeId: string,
+  device: PreviewDevice,
+  themeOverride?: Theme,
+): Promise<BlockContext & { storeName: string }> {
+  const display = await getStoreDisplay(storeId);
   const theme = themeOverride ?? display.settings.theme;
   const best = bestPaymentDiscount(display.paymentMethods);
   const transferPercent = best && theme.cards.showTransferPrice ? best.discountPercent : 0;
@@ -52,11 +56,11 @@ export interface BlockPreviewNode {
 }
 
 /** Cada bloque renderizado por separado (el cliente los envuelve para seleccionarlos). */
-export async function renderBlockPreviews(blocks: Block[], device: PreviewDevice): Promise<BlockPreviewNode[]> {
-  const ctx = await previewContext(device);
+export async function renderBlockPreviews(storeId: string, blocks: Block[], device: PreviewDevice): Promise<BlockPreviewNode[]> {
+  const ctx = await previewContext(storeId, device);
   // En el preview se muestran también los ocultos (el cliente los atenúa).
   const shown = blocks.map((b) => ({ ...b, style: { ...b.style, hidden: false } }) as Block);
-  ctx.data = await resolveBlockData(shown, ctx.promotions, { includeHidden: true });
+  ctx.data = await resolveBlockData(storeId, shown, ctx.promotions, { includeHidden: true });
   return shown.map((block, i) => {
     const content = renderBlock(block, ctx, i);
     if (content === null) return { id: block.id, node: null };

@@ -63,10 +63,11 @@ export function mapPickupRow(p: Tables<"pickup_locations">): AdminPickupLocation
 
 /** Todas las zonas (activas e inactivas) en orden de evaluación. */
 export async function listShippingZones(): Promise<AdminShippingZone[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("shipping_zones")
     .select("*")
+    .eq("store_id", store.id)
     .order("position")
     .order("created_at");
   if (error) throw new Error(`No se pudieron leer las zonas: ${error.message}`);
@@ -75,17 +76,18 @@ export async function listShippingZones(): Promise<AdminShippingZone[]> {
 
 export async function getShippingZone(id: string): Promise<AdminShippingZone | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { supabase } = await requireAdmin();
-  const { data, error } = await supabase.from("shipping_zones").select("*").eq("id", id).maybeSingle();
+  const { supabase, store } = await requireAdmin();
+  const { data, error } = await supabase.from("shipping_zones").select("*").eq("store_id", store.id).eq("id", id).maybeSingle();
   if (error) throw new Error(`No se pudo leer la zona: ${error.message}`);
   return data ? mapZoneRow(data) : null;
 }
 
 export async function listPickupLocations(): Promise<AdminPickupLocation[]> {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data, error } = await supabase
     .from("pickup_locations")
     .select("*")
+    .eq("store_id", store.id)
     .order("position")
     .order("created_at");
   if (error) throw new Error(`No se pudieron leer los puntos de retiro: ${error.message}`);
@@ -98,8 +100,8 @@ export async function listPickupLocations(): Promise<AdminPickupLocation[]> {
  */
 export async function getMapCenter(): Promise<{ lat: number; lng: number; zoom: number }> {
   const fallback = { lat: -34.6037, lng: -58.3816, zoom: 11 };
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase.from("store_settings").select("address").eq("id", 1).maybeSingle();
+  const { supabase, store } = await requireAdmin();
+  const { data } = await supabase.from("store_settings").select("address").eq("store_id", store.id).maybeSingle();
   const address = data?.address?.trim();
   if (!address) return fallback;
   const [place] = await searchPlaces(address, 1);

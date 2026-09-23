@@ -4,6 +4,7 @@ import { ExternalLink, FileText } from "lucide-react";
 import { useState } from "react";
 
 import { saveLegalSettings } from "@/app/admin/(panel)/configuracion/actions";
+import { useOptionalAdminStore } from "@/components/admin/AdminStoreContext";
 import { Button } from "@/components/ui/Button";
 import { Card, FormSection } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -44,6 +45,8 @@ export function LegalForm({ initial, store }: { initial: LegalSettingsInput; sto
   const { values: v, set, error } = form;
   const [policy, setPolicy] = useState<PolicyKey>("shipping_md");
   const [confirmTemplate, setConfirmTemplate] = useState(false);
+  // Link a la política en la tienda activa (`/s/<slug>/…` en modo fallback).
+  const storeBase = (useOptionalAdminStore()?.store.href ?? "").replace(/\/+$/, "");
 
   const vat = Number(String(v.tax.default_vat_percent).replace(",", "."));
   const sample = 12100;
@@ -233,7 +236,7 @@ export function LegalForm({ initial, store }: { initial: LegalSettingsInput; sto
               <p className="text-[13px] text-adm-fg-muted">
                 Se ve en{" "}
                 <a
-                  href={`/politicas/${LEGAL_TEMPLATES[policy].slug}`}
+                  href={`${storeBase}/politicas/${LEGAL_TEMPLATES[policy].slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 font-mono text-xs text-adm-accent hover:underline"

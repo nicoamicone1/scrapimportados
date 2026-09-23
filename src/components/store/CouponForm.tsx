@@ -2,7 +2,7 @@
 
 import { useId, useState, useTransition } from "react";
 
-import { applyCoupon } from "@/app/(store)/actions";
+import { applyCoupon } from "@/app/s/[store]/actions";
 import { useCart } from "@/lib/cart";
 
 /** Input de cupón → `validate_coupon` en el server. El cupón queda guardado en el carrito. */

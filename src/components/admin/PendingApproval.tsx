@@ -1,12 +1,13 @@
 import { signOut } from "@/app/admin/actions";
-import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 /** Pantalla para cuentas `pending` (o desactivadas): sin acceso al panel. */
 export function PendingApproval({ email, inactive }: { email: string; inactive?: boolean }) {
   return (
-    <div className="flex min-h-dvh items-start px-6 py-16 sm:px-12 sm:py-24">
-      <div className="w-full max-w-[440px]">
-        <p className="text-xs font-medium tracking-[0.06em] text-adm-fg-muted uppercase">
+    <div className="flex min-h-dvh items-start px-4 py-16 sm:px-12 sm:py-24">
+      <div className="w-full max-w-[460px] rounded-adm border border-adm-border bg-adm-surface p-6 shadow-adm-card sm:p-8">
+        <p className="flex items-center gap-2 text-[11px] font-medium tracking-[0.07em] text-adm-fg-muted uppercase">
+          <span aria-hidden className={inactive ? "size-1.5 rounded-full bg-adm-danger" : "size-1.5 rounded-full bg-adm-accent-2"} />
           {inactive ? "Cuenta desactivada" : "Cuenta pendiente"}
         </p>
         <h1 className="mt-2 text-xl font-semibold">
@@ -22,7 +23,9 @@ export function PendingApproval({ email, inactive }: { email: string; inactive?:
           <dd className="mt-0.5 font-medium">{email}</dd>
         </dl>
         <form action={signOut} className="mt-6">
-          <Button type="submit">Cerrar sesión</Button>
+          <SubmitButton variant="secondary" pendingText="Cerrando sesión…">
+            Cerrar sesión
+          </SubmitButton>
         </form>
       </div>
     </div>

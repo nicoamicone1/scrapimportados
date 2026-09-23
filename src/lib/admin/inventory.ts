@@ -40,11 +40,11 @@ export function parseInventoryFilters(params: Params): InventoryFilters {
 }
 
 export async function listInventory(filters: InventoryFilters) {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const db = catalogDb(supabase);
   const from = (filters.page - 1) * INVENTORY_PER_PAGE;
 
-  let query = db.from("admin_inventory").select("*", { count: "exact" });
+  let query = db.from("admin_inventory").select("*", { count: "exact" }).eq("store_id", store.id);
   // Mismo criterio que la vista `low_stock_variants`: sólo variantes activas
   // de productos no archivados, con seguimiento y stock ≤ umbral.
   if (filters.state === "bajo") {
@@ -91,15 +91,14 @@ export interface InventorySummary {
 }
 
 export async function getInventorySummary(): Promise<InventorySummary> {
-  const { supabase } = await requireAdmin();
-  const db = catalogDb(supabase);
+  const { supabase, store } = await requireAdmin();
   const head = { count: "exact" as const, head: true };
   // Stock bajo y agotadas salen de la vista `low_stock_variants` (0002).
   const [low, out, untracked, summary] = await Promise.all([
-    supabase.from("low_stock_variants").select("variant_id", head).gt("stock", 0),
-    supabase.from("low_stock_variants").select("variant_id", head).lte("stock", 0),
-    supabase.from("product_variants").select("id", head).eq("track_inventory", false),
-    db.rpc("inventory_summary"),
+    supabase.from("low_stock_variants").select("variant_id", head).eq("store_id", store.id).gt("stock", 0),
+    supabase.from("low_stock_variants").select("variant_id", head).eq("store_id", store.id).lte("stock", 0),
+    supabase.from("product_variants").select("id", head).eq("store_id", store.id).eq("track_inventory", false),
+    supabase.rpc("inventory_summary", { p_store_id: store.id }),
   ]);
   const s = (summary.data && typeof summary.data === "object" && !Array.isArray(summary.data) ? summary.data : {}) as Record<
     string,
@@ -164,14 +163,15 @@ function dayBoundary(date: string, end: boolean): string {
 }
 
 export async function listMovements(filters: MovementFilters) {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const from = (filters.page - 1) * MOVEMENTS_PER_PAGE;
   let query = supabase
     .from("inventory_movements")
     .select(
       "id, created_at, delta, stock_after, reason, note, created_by, order_id, orders(id, number), product_variants(id, title, sku, product_id, products(id, name))",
       { count: "exact" },
-    );
+    )
+    .eq("store_id", store.id);
   if (filters.variantId) query = query.eq("variant_id", filters.variantId);
   if (filters.reason) query = query.eq("reason", filters.reason);
   if (filters.from) query = query.gte("created_at", dayBoundary(filters.from, false));
@@ -208,10 +208,11 @@ export async function listMovements(filters: MovementFilters) {
 
 /** Datos de una variante para el filtro "Movimientos de …". */
 export async function getVariantLabel(variantId: string) {
-  const { supabase } = await requireAdmin();
+  const { supabase, store } = await requireAdmin();
   const { data } = await supabase
     .from("product_variants")
     .select("id, title, sku, product_id, products(name)")
+    .eq("store_id", store.id)
     .eq("id", variantId)
     .maybeSingle();
   if (!data) return null;

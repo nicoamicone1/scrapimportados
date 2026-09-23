@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
+import { tagFor } from "@/lib/cache-tags";
 import { createPublicClient } from "@/lib/supabase/server";
 
 import { asObject, asString, CACHE_REVALIDATE } from "./utils";
@@ -18,35 +19,38 @@ export interface StoreCategory {
   updatedAt: string;
 }
 
-/** Categorías visibles, ordenadas. Tag: `categories`. */
-export const listCategories = unstable_cache(
-  async (): Promise<StoreCategory[]> => {
-    const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id, name, slug, description, image_url, parent_id, position, seo, updated_at")
-      .eq("is_visible", true)
-      .order("position")
-      .order("name");
-    if (error) throw new Error(`No se pudieron leer las categorías: ${error.message}`);
-    return (data ?? []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-      description: c.description,
-      imageUrl: c.image_url,
-      parentId: c.parent_id,
-      position: c.position,
-      seo: { title: asString(asObject(c.seo).title), description: asString(asObject(c.seo).description) },
-      updatedAt: c.updated_at,
-    }));
-  },
-  ["store-categories-v2"],
-  { tags: ["categories"], revalidate: CACHE_REVALIDATE },
-);
+/** Categorías visibles, ordenadas. Tag: `categories:<storeId>`. */
+export function listCategories(storeId: string): Promise<StoreCategory[]> {
+  return unstable_cache(
+    async (): Promise<StoreCategory[]> => {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, slug, description, image_url, parent_id, position, seo, updated_at")
+        .eq("store_id", storeId)
+        .eq("is_visible", true)
+        .order("position")
+        .order("name");
+      if (error) throw new Error(`No se pudieron leer las categorías: ${error.message}`);
+      return (data ?? []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description,
+        imageUrl: c.image_url,
+        parentId: c.parent_id,
+        position: c.position,
+        seo: { title: asString(asObject(c.seo).title), description: asString(asObject(c.seo).description) },
+        updatedAt: c.updated_at,
+      }));
+    },
+    ["store-categories-v2", storeId],
+    { tags: [tagFor("categories", storeId)], revalidate: CACHE_REVALIDATE },
+  )();
+}
 
-export async function getCategoryBySlug(slug: string): Promise<StoreCategory | null> {
-  return (await listCategories()).find((c) => c.slug === slug) ?? null;
+export async function getCategoryBySlug(storeId: string, slug: string): Promise<StoreCategory | null> {
+  return (await listCategories(storeId)).find((c) => c.slug === slug) ?? null;
 }
 
 /** Ids de la categoría y todas sus descendientes. */

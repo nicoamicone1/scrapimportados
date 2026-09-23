@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 
 import { deleteShippingZone, saveShippingZone } from "@/app/admin/(panel)/envios/actions";
-import { Button, ButtonLink, Card, CardBody, CardHeader, ConfirmDialog, Field, Input, PageHeader, Switch, Textarea, toast } from "@/components/ui";
+import { Button, Card, CardBody, CardHeader, ConfirmDialog, Field, Input, PageHeader, SaveBar, Switch, Textarea, toast } from "@/components/ui";
 import type { AdminShippingZone } from "@/lib/admin/shipping";
 import { cn } from "@/lib/cn";
 import { shippingZoneSchema, type ShippingZoneInput } from "@/lib/schemas/shipping";
@@ -293,23 +293,17 @@ export function ZoneForm({
         </Card>
       </div>
 
-      <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t border-adm-border bg-adm-surface px-4 py-3 md:-mx-6 md:px-6">
-        <div className="flex max-w-5xl items-center justify-end gap-2">
-          <span className="mr-auto text-[13px] text-adm-fg-muted" aria-live="polite">
-            {zone ? (dirty ? "Cambios sin guardar" : "Sin cambios") : "Zona nueva"}
-          </span>
-          {zone ? (
-            <Button onClick={() => setState(initial)} disabled={!dirty || pending}>
-              Descartar
-            </Button>
-          ) : (
-            <ButtonLink href="/admin/envios">Cancelar</ButtonLink>
-          )}
-          <Button type="submit" variant="primary" loading={pending} disabled={zone ? !dirty : false}>
-            {zone ? "Guardar" : "Crear zona"}
-          </Button>
-        </div>
-      </div>
+      <SaveBar
+        message={zone ? (dirty ? "Cambios sin guardar" : "Sin cambios") : "Zona nueva"}
+        onDiscard={zone ? () => setState(initial) : undefined}
+        discardDisabled={!dirty}
+        discardHref={zone ? undefined : "/admin/envios"}
+        discardLabel={zone ? "Descartar" : "Cancelar"}
+        saving={pending}
+        saveLabel={zone ? "Guardar" : "Crear zona"}
+        savingLabel={zone ? "Guardando…" : "Creando…"}
+        saveDisabled={zone ? !dirty : false}
+      />
 
       <ConfirmDialog
         open={confirmDelete}

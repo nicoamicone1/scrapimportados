@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { themeSchema } from "@/lib/theme/schema";
+import { flatDiff } from "@/lib/admin/diff";
+import { FREE_THEME_PRESETS, hasFeature, upgradeMessage, type FeatureKey, type PlanInfo } from "@/lib/plans";
+import type { Json } from "@/lib/supabase/database.types";
+import { PRESETS } from "@/lib/theme/presets";
+import { themeSchema, type PresetId, type Theme } from "@/lib/theme/schema";
 
 /**
  * Apariencia: tema, marca y barra de anuncio (`store_settings`). Agente E.
@@ -8,6 +12,55 @@ import { themeSchema } from "@/lib/theme/schema";
  */
 
 export const CUSTOM_CSS_MAX_BYTES = 20 * 1024;
+
+// ---------------------------------------------------------------------------
+// Plan: presets y CSS personalizado (spec §14.1)
+// ---------------------------------------------------------------------------
+
+type PresetKey = Exclude<PresetId, "custom">;
+
+/**
+ * Preset del que "sale" un tema: el suyo, o para `custom` el preset con menos
+ * campos distintos (un tema personalizado nace de elegir un preset y editarlo).
+ */
+export function basePresetOf(theme: Theme): PresetKey {
+  if (theme.preset !== "custom") return theme.preset;
+  // Se comparan sólo los valores del tema (sin `preset` ni `custom_css`).
+  const comparable = (t: Theme) => ({ ...t, preset: "custom", custom_css: "" }) as unknown as Json;
+  const target = comparable(theme);
+  let best: PresetKey = "nordico";
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (const [id, preset] of Object.entries(PRESETS) as [PresetKey, Theme][]) {
+    const score = Object.keys(flatDiff(comparable(preset), target)).length;
+    if (score < bestScore) {
+      best = id;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+/** ¿El plan permite GUARDAR este preset? (`theme.all_presets` o uno de los de Free). */
+export function isPresetAllowed(plan: Pick<PlanInfo, "features"> | null | undefined, preset: PresetKey): boolean {
+  return hasFeature(plan, "theme.all_presets") || FREE_THEME_PRESETS.includes(preset);
+}
+
+/**
+ * Qué feature del plan le falta a un tema para poder guardarse (`null` = OK):
+ * CSS personalizado no vacío → `theme.custom_css`; preset (o el preset base de
+ * un `custom`) fuera de los de Free → `theme.all_presets`.
+ */
+export function themePlanViolation(plan: Pick<PlanInfo, "features"> | null | undefined, theme: Theme): FeatureKey | null {
+  if (theme.custom_css?.trim() && !hasFeature(plan, "theme.custom_css")) return "theme.custom_css";
+  if (!isPresetAllowed(plan, basePresetOf(theme))) return "theme.all_presets";
+  return null;
+}
+
+export function themePlanMessage(feature: FeatureKey): string {
+  return feature === "theme.custom_css"
+    ? `El CSS personalizado no está incluido en tu plan. ${upgradeMessage(feature)}`
+    : `Ese estilo de tienda no está incluido en tu plan (en Free: Nórdico y Mercado). ${upgradeMessage(feature)}`;
+}
 
 export interface CssIssue {
   message: string;

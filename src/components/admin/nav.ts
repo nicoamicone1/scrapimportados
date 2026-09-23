@@ -1,6 +1,7 @@
 import {
   BadgePercent,
   Boxes,
+  CreditCard,
   FileClock,
   FileText,
   FolderTree,
@@ -41,14 +42,20 @@ export interface NavItem {
   exact?: boolean;
 }
 
+/** Sección visual (tinta de la cabecera). U: restyling §14.6. */
+export type AdminSection = "orders" | "catalog" | "marketing" | "store" | "system";
+
 export interface NavGroup {
   label: string;
+  /** Tinta de la sección (icono de PageHeader + franja del topbar). */
+  section: AdminSection;
   items: NavItem[];
 }
 
 export const NAV: NavGroup[] = [
   {
     label: "Principal",
+    section: "orders",
     items: [
       // B: dashboard
       { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true, keywords: ["inicio", "resumen", "ventas"] },
@@ -60,6 +67,7 @@ export const NAV: NavGroup[] = [
   },
   {
     label: "Catálogo",
+    section: "catalog",
     items: [
       // A: productos y variantes
       { label: "Productos", href: "/admin/productos", icon: Package, keywords: ["artículos", "variantes", "sku", "duplicar"] },
@@ -71,6 +79,7 @@ export const NAV: NavGroup[] = [
   },
   {
     label: "Marketing",
+    section: "marketing",
     items: [
       // C: promociones
       { label: "Promociones", href: "/admin/promociones", icon: BadgePercent, keywords: ["ofertas", "descuentos"] },
@@ -82,6 +91,7 @@ export const NAV: NavGroup[] = [
   },
   {
     label: "Tienda",
+    section: "store",
     items: [
       // E: tema / apariencia
       { label: "Apariencia", href: "/admin/apariencia", icon: Palette, keywords: ["tema", "colores", "fuentes"] },
@@ -95,9 +105,12 @@ export const NAV: NavGroup[] = [
   },
   {
     label: "Sistema",
+    section: "system",
     items: [
       // G: importador / scraping
       { label: "Importar", href: "/admin/importar", icon: Import, keywords: ["scraping", "catálogo", "woocommerce", "shopify"] },
+      // M: plan de la tienda (uso, límites, cambio de plan)
+      { label: "Plan", href: "/admin/plan", icon: CreditCard, keywords: ["suscripción", "suscripcion", "precio", "límites", "limites", "upgrade", "facturación"] },
       // H: configuración (tienda, pagos, checkout, SEO, políticas)
       { label: "Configuración", href: "/admin/configuracion", icon: Settings, keywords: ["ajustes", "pagos", "checkout", "seo"] },
       // H: usuarios y roles
@@ -127,6 +140,11 @@ export function navItemFor(pathname: string): { group: NavGroup; item: NavItem }
   }
   const dashboard = NAV[0].items[0];
   return pathname === dashboard.href ? { group: NAV[0], item: dashboard } : null;
+}
+
+/** Sección (tinta) de una ruta del admin; null fuera de las rutas del menú. */
+export function sectionFor(pathname: string): AdminSection | null {
+  return navItemFor(pathname)?.group.section ?? null;
 }
 
 /** Cookie con el estado del sidebar ("collapsed" | "open"). */

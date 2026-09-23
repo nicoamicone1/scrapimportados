@@ -14,11 +14,12 @@ import type { Json, Tables, TablesUpdate } from "@/lib/supabase/database.types";
 
 /**
  * Operaciones de escritura sobre pedidos compartidas por las actions
- * (individuales y masivas). Todo corre como el admin logueado (RLS).
+ * (individuales y masivas). Todo corre como el admin logueado (RLS) y
+ * filtra por la tienda activa (`ctx.store.id`).
  * Los errores de negocio se devuelven como `{ ok: false, error }`.
  */
 
-type Ctx = Pick<AdminContext, "supabase" | "user">;
+type Ctx = Pick<AdminContext, "supabase" | "user" | "store">;
 type OrderRow = Tables<"orders">;
 
 export type OpResult<T = null> = { ok: true; data: T } | { ok: false; error: string };
@@ -28,6 +29,7 @@ export async function insertOrderEvent(
   e: { orderId: string; type: string; message: string; visible?: boolean; data?: Json },
 ): Promise<void> {
   const { error } = await ctx.supabase.from("order_events").insert({
+    store_id: ctx.store.id,
     order_id: e.orderId,
     type: e.type,
     message: e.message,
@@ -42,7 +44,8 @@ async function orderMovements(ctx: Ctx, orderId: string) {
   const { data, error } = await ctx.supabase
     .from("inventory_movements")
     .select("variant_id, delta, reason")
-    .eq("order_id", orderId);
+    .eq("order_id", orderId)
+    .eq("store_id", ctx.store.id);
   if (error) throw new Error(error.message);
   return data ?? [];
 }
@@ -77,7 +80,11 @@ export async function deductOrderStock(
 ): Promise<number> {
   const ids = Array.from(new Set(lines.map((l) => l.variantId)));
   if (!ids.length) return 0;
-  const { data: variants } = await ctx.supabase.from("product_variants").select("id, track_inventory").in("id", ids);
+  const { data: variants } = await ctx.supabase
+    .from("product_variants")
+    .select("id, track_inventory")
+    .eq("store_id", ctx.store.id)
+    .in("id", ids);
   const tracked = new Set((variants ?? []).filter((v) => v.track_inventory).map((v) => v.id));
   let units = 0;
   for (const l of lines) {
@@ -101,6 +108,7 @@ export async function hasSaleMovements(ctx: Ctx, orderId: string): Promise<boole
     .from("inventory_movements")
     .select("id", { count: "exact", head: true })
     .eq("order_id", orderId)
+    .eq("store_id", ctx.store.id)
     .eq("reason", "sale");
   return (count ?? 0) > 0;
 }
@@ -166,7 +174,7 @@ export async function applyStatusChange(
   let rededuct = new Map<string, number>();
   if (from === "cancelled") {
     const [{ data: items }, moves] = await Promise.all([
-      ctx.supabase.from("order_items").select("variant_id, qty, name").eq("order_id", order.id),
+      ctx.supabase.from("order_items").select("variant_id, qty, name").eq("order_id", order.id).eq("store_id", ctx.store.id),
       orderMovements(ctx, order.id),
     ]);
     rededuct = stockToRededuct(items ?? [], moves);
@@ -174,6 +182,7 @@ export async function applyStatusChange(
       const { data: variants } = await ctx.supabase
         .from("product_variants")
         .select("id, stock, track_inventory, allow_backorder, products(name)")
+        .eq("store_id", ctx.store.id)
         .in("id", [...rededuct.keys()]);
       for (const v of variants ?? []) {
         const need = rededuct.get(v.id) ?? 0;
@@ -187,7 +196,12 @@ export async function applyStatusChange(
     }
   }
 
-  const { error } = await ctx.supabase.from("orders").update(patch).eq("id", order.id).eq("status", from);
+  const { error } = await ctx.supabase
+    .from("orders")
+    .update(patch)
+    .eq("id", order.id)
+    .eq("store_id", ctx.store.id)
+    .eq("status", from);
   if (error) return { ok: false, error: "No se pudo actualizar el pedido." };
 
   const tracking = {
@@ -263,6 +277,7 @@ export async function recordOrderPayment(
   opts: { inventoryPolicy: "on_order" | "on_paid"; amountLabel: string },
 ): Promise<OpResult<{ paymentStatus: string; stockDelta: number }>> {
   const { error } = await ctx.supabase.from("order_payments").insert({
+    store_id: ctx.store.id,
     order_id: order.id,
     amount: p.amount,
     method_code: p.methodCode,
@@ -278,11 +293,14 @@ export async function recordOrderPayment(
     .from("orders")
     .select("payment_status, expires_at")
     .eq("id", order.id)
+    .eq("store_id", ctx.store.id)
     .single();
   const paymentStatus = fresh?.payment_status ?? "pending";
 
   // Con un pago registrado la reserva deja de vencer.
-  if (fresh?.expires_at) await ctx.supabase.from("orders").update({ expires_at: null }).eq("id", order.id);
+  if (fresh?.expires_at) {
+    await ctx.supabase.from("orders").update({ expires_at: null }).eq("id", order.id).eq("store_id", ctx.store.id);
+  }
 
   await insertOrderEvent(ctx, {
     orderId: order.id,
@@ -298,7 +316,11 @@ export async function recordOrderPayment(
   let stockDelta = 0;
   if (opts.inventoryPolicy === "on_paid" && paymentStatus === "paid" && order.status !== "cancelled") {
     if (!(await hasSaleMovements(ctx, order.id))) {
-      const { data: items } = await ctx.supabase.from("order_items").select("variant_id, qty").eq("order_id", order.id);
+      const { data: items } = await ctx.supabase
+        .from("order_items")
+        .select("variant_id, qty")
+        .eq("order_id", order.id)
+        .eq("store_id", ctx.store.id);
       stockDelta = -(await deductOrderStock(
         ctx,
         order,

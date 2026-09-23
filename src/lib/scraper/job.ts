@@ -145,6 +145,11 @@ export interface ItemRow {
   changes: { field: string; from: number | string | null; to: number | string | null }[];
 }
 
+/** Feature del plan que habilita correr un job con este adaptador. */
+export function importFeatureFor(adapter: string): "catalog.import_csv" | "catalog.import_web" {
+  return adapter === "csv" ? "catalog.import_csv" : "catalog.import_web";
+}
+
 /** Título corto de un job: host de la fuente o nombre del archivo CSV. */
 export function jobTitle(job: { adapter: string; source_url: string; csv?: JobCursor["csv"] }): string {
   if (job.adapter === "csv") return job.csv?.fileName ?? job.source_url.replace(/^csv:/, "");

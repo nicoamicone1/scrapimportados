@@ -1,16 +1,20 @@
 "use client";
 
-import { ChevronDown, Loader2, Monitor, RotateCcw, Smartphone } from "lucide-react";
+import { ChevronDown, Loader2, Lock, Monitor, RotateCcw, Smartphone } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { previewTheme, saveTheme } from "@/app/admin/(panel)/apariencia/actions";
+import { useOptionalAdminStore } from "@/components/admin/AdminStoreContext";
 import { ColorField, Segmented, SelectField, ToggleField } from "@/components/admin/builder/fields";
+import { PLAN_PAGE, PlanGate } from "@/components/admin/PlanGate";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Textarea } from "@/components/ui/Input";
 import { toast } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { CUSTOM_CSS_MAX_BYTES, validateCustomCss } from "@/lib/schemas/appearance";
+import { featureMinPlan, PLAN_NAMES } from "@/lib/plans";
+import { CUSTOM_CSS_MAX_BYTES, isPresetAllowed, validateCustomCss } from "@/lib/schemas/appearance";
 import {
   closestWeight,
   contrastRatio,
@@ -107,7 +111,22 @@ function Accordion({
   );
 }
 
-function PresetCard({ id, name, description, active, onApply }: { id: Exclude<PresetId, "custom">; name: string; description: string; active: boolean; onApply: () => void }) {
+function PresetCard({
+  id,
+  name,
+  description,
+  active,
+  locked = false,
+  onApply,
+}: {
+  id: Exclude<PresetId, "custom">;
+  name: string;
+  description: string;
+  active: boolean;
+  /** No incluido en el plan: se puede probar en la vista previa, no guardar. */
+  locked?: boolean;
+  onApply: () => void;
+}) {
   const t = PRESETS[id];
   const c = t.colors;
   const radius = { none: 0, sm: 4, md: 8, lg: 12, full: 16 }[t.radius];
@@ -168,9 +187,15 @@ function PresetCard({ id, name, description, active, onApply }: { id: Exclude<Pr
         </div>
       </div>
       <div className="border-t border-adm-border bg-adm-surface px-3 py-2">
-        <p className="text-[13px] font-medium text-adm-fg">
+        <p className="flex items-center text-[13px] font-medium text-adm-fg">
           {name}
           {active ? <span className="ml-1.5 text-xs font-normal text-adm-accent">· En uso</span> : null}
+          {locked ? (
+            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-normal text-adm-fg-muted">
+              <Lock className="size-3" strokeWidth={1.75} aria-hidden />
+              {PLAN_NAMES[featureMinPlan("theme.all_presets")]}
+            </span>
+          ) : null}
         </p>
         <p className="line-clamp-2 text-xs text-adm-fg-muted">{description}</p>
       </div>
@@ -205,6 +230,7 @@ function ContrastList({ colors }: { colors: ThemeColors }) {
 }
 
 export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme; initialNode: ReactNode }) {
+  const plan = useOptionalAdminStore()?.plan ?? null;
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [savedJson, setSavedJson] = useState(() => JSON.stringify(initialTheme));
   const [basePreset, setBasePreset] = useState<PresetId | null>(initialTheme.preset === "custom" ? null : initialTheme.preset);
@@ -303,6 +329,16 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
       <div className="w-full shrink-0 overflow-hidden rounded-adm border border-adm-border bg-adm-surface xl:sticky xl:top-4 xl:max-h-[calc(100dvh-96px)] xl:w-[400px] xl:overflow-y-auto adm-scroll">
         <Accordion id="preset" title="Preset" summary={presetName} open={open === "preset"} onToggle={toggle}>
           <p className="text-xs text-adm-fg-muted">Un punto de partida completo. Aplicarlo reemplaza todo el tema (menos el CSS personalizado).</p>
+          {plan && PRESET_LIST.some((p) => !isPresetAllowed(plan, p.id)) ? (
+            <p className="text-xs text-adm-fg-muted">
+              <Lock className="mr-1 inline size-3 align-[-1px]" strokeWidth={1.75} aria-hidden />
+              Los estilos con candado se pueden probar en la vista previa; para guardarlos necesitás el plan{" "}
+              {PLAN_NAMES[featureMinPlan("theme.all_presets")]}.{" "}
+              <Link href={PLAN_PAGE} className="font-medium text-adm-accent underline-offset-2 hover:underline">
+                Ver planes
+              </Link>
+            </p>
+          ) : null}
           <div className="grid gap-3">
             {PRESET_LIST.map((p) => (
               <PresetCard
@@ -311,6 +347,7 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
                 name={p.name}
                 description={p.description}
                 active={theme.preset === p.id}
+                locked={Boolean(plan) && !isPresetAllowed(plan, p.id)}
                 onApply={() => (dirty || theme.preset === "custom" ? setConfirmPreset(p.id) : applyPreset(p.id))}
               />
             ))}
@@ -570,28 +607,38 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
         </Accordion>
 
         <Accordion id="css" title="CSS personalizado" summary={theme.custom_css?.trim() ? `${(new TextEncoder().encode(theme.custom_css).length / 1024).toFixed(1)} KB` : "Sin CSS"} open={open === "css"} onToggle={toggle}>
-          <p className="text-xs text-adm-fg-muted">
-            Para ajustes finos. Se aplica después del tema. Sin <code>@import</code>, <code>url(javascript:…)</code> ni <code>expression()</code>; máximo {CUSTOM_CSS_MAX_BYTES / 1024} KB.
-          </p>
-          <Textarea
-            rows={10}
-            value={theme.custom_css ?? ""}
-            onChange={(e) => edit((t) => ({ ...t, custom_css: e.target.value || undefined }))}
-            spellCheck={false}
-            aria-label="CSS personalizado"
-            aria-invalid={cssIssues.length > 0 || undefined}
-            className="font-mono text-xs"
-            placeholder={".store-root h1 {\n  letter-spacing: -0.03em;\n}"}
-          />
-          {cssIssues.length ? (
-            <ul className="space-y-1 text-xs text-adm-danger">
-              {cssIssues.map((i) => (
-                <li key={i.message}>
-                  {i.line ? `Línea ${i.line}: ` : ""}
-                  {i.message}
-                </li>
-              ))}
-            </ul>
+          <PlanGate
+            feature="theme.custom_css"
+            description="Reglas CSS propias sobre el tema, para ajustes finos."
+          >
+            <p className="text-xs text-adm-fg-muted">
+              Para ajustes finos. Se aplica después del tema. Sin <code>@import</code>, <code>url(javascript:…)</code> ni <code>expression()</code>; máximo {CUSTOM_CSS_MAX_BYTES / 1024} KB.
+            </p>
+            <Textarea
+              rows={10}
+              value={theme.custom_css ?? ""}
+              onChange={(e) => edit((t) => ({ ...t, custom_css: e.target.value || undefined }))}
+              spellCheck={false}
+              aria-label="CSS personalizado"
+              aria-invalid={cssIssues.length > 0 || undefined}
+              className="font-mono text-xs"
+              placeholder={".store-root h1 {\n  letter-spacing: -0.03em;\n}"}
+            />
+            {cssIssues.length ? (
+              <ul className="space-y-1 text-xs text-adm-danger">
+                {cssIssues.map((i) => (
+                  <li key={i.message}>
+                    {i.line ? `Línea ${i.line}: ` : ""}
+                    {i.message}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </PlanGate>
+          {theme.custom_css?.trim() && plan && !plan.features["theme.custom_css"] ? (
+            <Button size="sm" onClick={() => edit((t) => ({ ...t, custom_css: undefined }))}>
+              Quitar el CSS personalizado
+            </Button>
           ) : null}
         </Accordion>
       </div>

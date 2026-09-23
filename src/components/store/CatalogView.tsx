@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber } from "@/lib/money";
 import {
@@ -23,6 +23,8 @@ import {
   type FacetValue,
   type ProductCardData,
 } from "@/lib/store/products";
+import type { PublicStore } from "@/lib/tenant/resolve";
+import { storePath } from "@/lib/tenant/urls";
 
 import { Breadcrumbs } from "./Breadcrumbs";
 import { FilterDrawer } from "./FilterDrawer";
@@ -30,7 +32,11 @@ import { ProductCard, ProductGrid, type ProductCardProps } from "./ProductCard";
 import { SortSelect } from "./SortSelect";
 
 interface CatalogViewProps {
+  /** Path del listado dentro de la tienda, SIN prefijo (`/productos`, `/categoria/x`). */
   basePath: string;
+  /** Tienda del request (`tenant.store`) y prefijo de sus links (`tenant.basePath`). */
+  store: PublicStore;
+  linkBase: string;
   searchParams: SearchParamsRecord;
   display: StoreDisplay;
   /** Página de categoría. */
@@ -57,7 +63,7 @@ function FacetGroup({ title, children, defaultOpen = true }: { title: string; ch
 
 function FacetLink({ href, value, count, selected, label }: FacetValue & { href: string; label?: string }) {
   return (
-    <Link
+    <StoreLink
       href={href}
       scroll={false}
       rel="nofollow"
@@ -75,7 +81,7 @@ function FacetLink({ href, value, count, selected, label }: FacetValue & { href:
       </span>
       <span className="min-w-0 flex-1 truncate">{label ?? value}</span>
       <span className="tnum text-xs text-fg-muted">{count}</span>
-    </Link>
+    </StoreLink>
   );
 }
 
@@ -111,14 +117,14 @@ function FiltersPanel({
           <ul className="space-y-0.5">
             {categoryLinks.map((c) => (
               <li key={c.href}>
-                <Link
+                <StoreLink
                   href={c.href}
                   className={cn("flex min-h-9 items-center justify-between gap-3", c.current ? "font-semibold text-fg" : "text-fg hover:underline")}
                   aria-current={c.current ? "page" : undefined}
                 >
                   <span className="truncate">{c.name}</span>
                   <span className="tnum text-xs font-normal text-fg-muted">{c.count}</span>
-                </Link>
+                </StoreLink>
               </li>
             ))}
           </ul>
@@ -238,26 +244,26 @@ function ActiveFilters({ state, href, clearHref, categoryName }: { state: Catalo
   return (
     <div className="flex flex-wrap items-center gap-2">
       {chips.map((c) => (
-        <Link key={c.label} href={c.href} scroll={false} className="chip min-h-8 gap-1.5 text-xs" aria-label={`Quitar filtro ${c.label}`}>
+        <StoreLink key={c.label} href={c.href} scroll={false} className="chip min-h-8 gap-1.5 text-xs" aria-label={`Quitar filtro ${c.label}`}>
           {c.label}
           <X className="size-3.5" aria-hidden />
-        </Link>
+        </StoreLink>
       ))}
-      <Link href={clearHref} className="link text-xs">
+      <StoreLink href={clearHref} className="link text-xs">
         Limpiar filtros
-      </Link>
+      </StoreLink>
     </div>
   );
 }
 
 /** Listado de productos con filtros facetados, orden y paginación (en query params). */
-export async function CatalogView({ basePath, searchParams, display, category, title }: CatalogViewProps) {
-  const [optionParams, categories] = await Promise.all([getOptionParamMap(), listCategories()]);
+export async function CatalogView({ basePath, store, linkBase, searchParams, display, category, title }: CatalogViewProps) {
+  const [optionParams, categories] = await Promise.all([getOptionParamMap(store.id), listCategories(store.id)]);
   const state = parseCatalogParams(searchParams, optionParams);
   const { settings } = display;
   const catFilter = category ? null : state.cat ? (categories.find((c) => c.slug === state.cat) ?? null) : null;
 
-  const { list, facets } = await searchCatalog({
+  const { list, facets } = await searchCatalog(store.id, {
     q: state.q,
     categoryId: category?.id ?? catFilter?.id,
     category: !category && state.cat && !catFilter ? state.cat : undefined,
@@ -328,7 +334,14 @@ export async function CatalogView({ basePath, searchParams, display, category, t
   }));
 
   const panel = (idPrefix: string) => (
-    <FiltersPanel idPrefix={idPrefix} state={state} facets={facets} href={href} basePath={basePath} categoryLinks={categoryLinks} />
+    <FiltersPanel
+      idPrefix={idPrefix}
+      state={state}
+      facets={facets}
+      href={href}
+      basePath={storePath(basePath, linkBase)}
+      categoryLinks={categoryLinks}
+    />
   );
   const cardProps = {
     promotions: display.card.promotions,
@@ -337,13 +350,14 @@ export async function CatalogView({ basePath, searchParams, display, category, t
     transferLabel: display.card.transferLabel,
     net: display.card.net,
     whatsappPhone: display.card.whatsappPhone,
+    store,
   };
 
   // --- Estado vacío con contenido útil (DESIGN.md §2.9)
   let empty: ReactNode = null;
   if (!list.items.length) {
-    const suggestions = (await listProducts({ featured: true, perPage: 8, outOfStock: "hide" })).items;
-    const fallback = suggestions.length ? suggestions : (await listProducts({ sort: "nuevos", perPage: 8, outOfStock: "hide" })).items;
+    const suggestions = (await listProducts(store.id, { featured: true, perPage: 8, outOfStock: "hide" })).items;
+    const fallback = suggestions.length ? suggestions : (await listProducts(store.id, { sort: "nuevos", perPage: 8, outOfStock: "hide" })).items;
     const topCats = tree.slice(0, 6);
     empty = (
       <div className="py-6">
@@ -359,17 +373,17 @@ export async function CatalogView({ basePath, searchParams, display, category, t
                   : "Todavía no hay productos publicados."}
         </p>
         {hasActiveFilters(state) ? (
-          <Link href={clearHref} className="btn btn-secondary mt-4">
+          <StoreLink href={clearHref} className="btn btn-secondary mt-4">
             Limpiar filtros
-          </Link>
+          </StoreLink>
         ) : null}
         {state.q && topCats.length ? (
           <ul className="mt-4 flex flex-wrap gap-2">
             {topCats.map((c) => (
               <li key={c.id}>
-                <Link href={`/categoria/${c.slug}`} className="chip">
+                <StoreLink href={`/categoria/${c.slug}`} className="chip">
                   {c.name}
-                </Link>
+                </StoreLink>
               </li>
             ))}
           </ul>
@@ -414,9 +428,9 @@ export async function CatalogView({ basePath, searchParams, display, category, t
           <ul className="flex gap-2">
             {subcategories.map((c) => (
               <li key={c.id} className="shrink-0">
-                <Link href={`/categoria/${c.slug}`} className="chip">
+                <StoreLink href={`/categoria/${c.slug}`} className="chip">
                   {c.name}
-                </Link>
+                </StoreLink>
               </li>
             ))}
           </ul>
@@ -462,25 +476,25 @@ export async function CatalogView({ basePath, searchParams, display, category, t
               </span>
               <span className="flex items-center gap-1">
                 {list.page > 1 ? (
-                  <Link href={href({ page: list.page - 1 })} className="btn btn-secondary min-h-10" rel="prev">
+                  <StoreLink href={href({ page: list.page - 1 })} className="btn btn-secondary min-h-10" rel="prev">
                     Anterior
-                  </Link>
+                  </StoreLink>
                 ) : null}
                 <span className="px-3 text-fg-muted">
                   Página {list.page} de {list.pageCount}
                 </span>
                 {list.page < list.pageCount ? (
-                  <Link href={href({ page: list.page + 1 })} className="btn btn-secondary min-h-10" rel="next">
+                  <StoreLink href={href({ page: list.page + 1 })} className="btn btn-secondary min-h-10" rel="next">
                     Siguiente
-                  </Link>
+                  </StoreLink>
                 ) : null}
               </span>
               <span className="flex items-center gap-2 text-fg-muted">
                 Ver
                 {[24, 48].map((n) => (
-                  <Link key={n} href={href({ perPage: n, page: 1 })} aria-current={state.perPage === n ? "true" : undefined} className={cn(state.perPage === n ? "font-semibold text-fg" : "hover:text-fg")}>
+                  <StoreLink key={n} href={href({ perPage: n, page: 1 })} aria-current={state.perPage === n ? "true" : undefined} className={cn(state.perPage === n ? "font-semibold text-fg" : "hover:text-fg")}>
                     {n}
-                  </Link>
+                  </StoreLink>
                 ))}
               </span>
             </nav>

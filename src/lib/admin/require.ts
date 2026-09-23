@@ -10,6 +10,6 @@ import { can, PERMISSION_DENIED, type Permission } from "./permissions";
  */
 export async function requirePermission(permission: Permission): Promise<AdminContext> {
   const ctx = await requireAdmin();
-  if (!can(ctx.profile, permission)) throw new AdminError("forbidden", PERMISSION_DENIED);
+  if (!can(ctx.membership, permission)) throw new AdminError("forbidden", PERMISSION_DENIED);
   return ctx;
 }

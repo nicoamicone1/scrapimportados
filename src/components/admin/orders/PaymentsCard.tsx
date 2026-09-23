@@ -6,6 +6,7 @@ import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { deletePayment, markOrdersPaid, recordPayment } from "@/app/admin/(panel)/pedidos/actions";
+import { getClientStoreId } from "@/components/admin/AdminStoreContext";
 import { PaymentStatusBadge } from "@/components/admin/orders/OrderBadges";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -14,6 +15,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Field } from "@/components/ui/Field";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { formatDateTime, toDateTimeLocalValue } from "@/lib/dates";
+import { mediaPath } from "@/lib/media";
 import { formatMoney, parseMoney } from "@/lib/money";
 import { createClient } from "@/lib/supabase/client";
 
@@ -206,7 +208,7 @@ function PaymentDialog({
     try {
       const supabase = createClient();
       const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `receipts/${orderId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const path = mediaPath(getClientStoreId(), "receipts", orderId, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`);
       const { error } = await supabase.storage.from("media").upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
       setReceiptUrl(supabase.storage.from("media").getPublicUrl(path).data.publicUrl);

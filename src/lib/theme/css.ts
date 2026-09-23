@@ -1,5 +1,5 @@
 import { closestWeight, fontStack, googleHref } from "./fonts";
-import { DEFAULT_THEME } from "./presets";
+import { DEFAULT_THEME, PRESETS } from "./presets";
 import { themeSchema, type Theme } from "./schema";
 
 /**
@@ -89,10 +89,13 @@ export function parseTheme(value: unknown): Theme {
   const direct = themeSchema.safeParse(value);
   if (direct.success) return direct.data;
   if (value && typeof value === "object") {
-    // Merge por sección con el default: tolera temas guardados parcialmente.
+    // Merge por sección con el preset guardado (o el default): tolera temas
+    // parciales, ej. `{ preset: "mercado" }` que deja `create_store()`.
     const v = value as Record<string, unknown>;
-    const merged: Record<string, unknown> = { ...DEFAULT_THEME };
-    for (const [key, def] of Object.entries(DEFAULT_THEME)) {
+    const presetId = typeof v.preset === "string" ? v.preset : "";
+    const base: Theme = Object.hasOwn(PRESETS, presetId) ? PRESETS[presetId as keyof typeof PRESETS] : DEFAULT_THEME;
+    const merged: Record<string, unknown> = { ...base };
+    for (const [key, def] of Object.entries(base)) {
       const incoming = v[key];
       if (incoming === undefined) continue;
       merged[key] =

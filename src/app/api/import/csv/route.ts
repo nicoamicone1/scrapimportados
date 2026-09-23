@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { assertFeature } from "@/lib/plans";
 import { jsonError, withAdmin } from "@/lib/scraper/api";
 import { createCsvJob, CsvJobError, decodeCsv } from "@/lib/scraper/csv-job";
 import { CSV_MAX_BYTES, csvModeSchema, importOptionsSchema } from "@/lib/schemas/import";
@@ -13,6 +14,8 @@ export const maxDuration = 60;
  */
 export async function POST(request: Request) {
   return withAdmin(async (ctx) => {
+    // Antes de leer el archivo (createCsvJob vuelve a chequear feature + cupo mensual).
+    assertFeature(ctx, "catalog.import_csv");
     const len = Number(request.headers.get("content-length"));
     if (Number.isFinite(len) && len > CSV_MAX_BYTES + 64 * 1024) return jsonError("El archivo supera los 8 MB.", 413);
 

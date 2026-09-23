@@ -3,6 +3,9 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { useStoreBase } from "@/components/store/StoreBase";
+import { stripStoreBase } from "@/lib/tenant/urls";
+
 /** Rutas que siguen visibles en mantenimiento: el cliente tiene que poder ver su pedido y los legales. */
 const ALLOWED = [/^\/pedido\//, /^\/arrepentimiento/, /^\/politicas\//];
 
@@ -11,7 +14,8 @@ const ALLOWED = [/^\/pedido\//, /^\/arrepentimiento/, /^\/politicas\//];
  * del contenido, salvo en pedido/legales. El layout no lo monta para admins.
  */
 export function MaintenanceGate({ storeName, message, children }: { storeName: string; message: string; children: ReactNode }) {
-  const pathname = usePathname();
+  const { basePath } = useStoreBase();
+  const pathname = stripStoreBase(usePathname(), basePath);
   if (ALLOWED.some((re) => re.test(pathname))) return <>{children}</>;
   return (
     <div className="store-container flex min-h-[60vh] flex-col justify-center py-[var(--space-section-lg)]">

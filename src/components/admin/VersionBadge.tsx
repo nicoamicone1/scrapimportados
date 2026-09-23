@@ -45,7 +45,7 @@ export function VersionBadge({ onNavigate, className }: { onNavigate?: () => voi
       {APP_NAME} {APP_VERSION}
       {unseen ? (
         <>
-          <span aria-hidden className="size-1.5 rounded-full bg-adm-accent" />
+          <span aria-hidden className="size-1.5 rounded-full bg-adm-accent-2" />
           <span className="sr-only">(hay novedades)</span>
         </>
       ) : null}

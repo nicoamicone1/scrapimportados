@@ -1,12 +1,13 @@
 import Image from "next/image";
-import Link from "next/link";
 
+import { StoreLink } from "@/components/store/StoreLink";
 import { cn } from "@/lib/cn";
 import type { Promotion } from "@/lib/pricing";
 import { resolveVatPercent } from "@/lib/pricing";
 import { displayPrice, type ProductCardData } from "@/lib/store/products";
 import { absoluteUrl } from "@/lib/store/seo";
 import { buildProductMessage, waLink } from "@/lib/store/whatsapp";
+import type { StoreUrlTarget } from "@/lib/tenant/urls";
 import type { Theme } from "@/lib/theme";
 
 import { PriceTag } from "./PriceTag";
@@ -23,6 +24,8 @@ export interface ProductCardProps {
   net?: { defaultVat: number; label: string } | null;
   /** Teléfono para "Consultar por WhatsApp" en agotados. */
   whatsappPhone?: string | null;
+  /** Tienda, para la URL absoluta del producto en el mensaje de WhatsApp (sin ella va el path). */
+  store?: StoreUrlTarget | null;
   /** Para la primera fila visible (LCP). */
   priority?: boolean;
   sizes?: string;
@@ -43,6 +46,7 @@ export function ProductCard({
   transferLabel,
   net,
   whatsappPhone,
+  store,
   priority,
   sizes,
   className,
@@ -112,7 +116,7 @@ export function ProductCard({
           hasOptions={product.hasOptions}
           available={product.available}
           whatsappHref={
-            whatsappPhone ? waLink(whatsappPhone, buildProductMessage(null, { name: product.name, url: absoluteUrl(href) })) : null
+            whatsappPhone ? waLink(whatsappPhone, buildProductMessage(null, { name: product.name, url: store ? absoluteUrl(store, href) : href })) : null
           }
         />
       </div>
@@ -122,9 +126,9 @@ export function ProductCard({
         ) : null}
         {cards.showSku && product.sku ? <p className="font-mono text-xs text-fg-muted">{product.sku}</p> : null}
         <h3 className="line-clamp-2 min-h-[2.6em] font-body text-sm leading-[1.3] font-medium tracking-normal normal-case">
-          <Link href={href} className="after:absolute after:inset-0 after:content-[''] group-hover:underline group-hover:underline-offset-2">
+          <StoreLink href={href} className="after:absolute after:inset-0 after:content-[''] group-hover:underline group-hover:underline-offset-2">
             {product.name}
-          </Link>
+          </StoreLink>
         </h3>
         <PriceTag
           price={price.price}

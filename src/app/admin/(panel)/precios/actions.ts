@@ -13,9 +13,12 @@ import {
   type PriceChangeDetail,
   type ScopeVariant,
 } from "@/lib/admin/pricing";
+import { requirePermission } from "@/lib/admin/require";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
+import { tagFor } from "@/lib/cache-tags";
 import { formatMoney, formatNumber } from "@/lib/money";
+import { assertFeature } from "@/lib/plans";
 import { describeBulkRule, previewBulkUpdate, summarizeCategorySelection } from "@/lib/pricing";
 import {
   APPLY_CHUNK_SIZE,
@@ -31,6 +34,7 @@ import type { Json } from "@/lib/supabase/database.types";
  * historial con deshacer. La vista previa se calcula en el cliente con
  * `previewBulkUpdate`; al aplicar, el server vuelve a leer las variantes y
  * recalcula con la MISMA función (no confía en los precios del cliente).
+ * Plan: `pricing.bulk` (vista previa, aplicar y deshacer). Rol: `prices.bulk`.
  */
 
 const uuid = z.string().uuid("Id inválido.");
@@ -40,7 +44,8 @@ export async function loadScopeVariants(
   input: unknown,
 ): Promise<ActionResult<{ variants: ScopeVariant[]; tooMany: boolean }>> {
   return runAction<{ variants: ScopeVariant[]; tooMany: boolean }>(async () => {
-    await requireAdmin();
+    const ctx = await requirePermission("prices.bulk");
+    assertFeature(ctx, "pricing.bulk");
     const parsed = priceScopeSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error, "Completá el alcance.");
     const variants = await getScopeVariants(parsed.data);
@@ -104,7 +109,8 @@ interface ApplyResult {
 /** Aplica el cambio masivo en lotes de 200 y lo registra para poder deshacerlo. */
 export async function applyPriceUpdate(input: unknown): Promise<ActionResult<ApplyResult>> {
   return runAction(async () => {
-    const ctx = await requireAdmin();
+    const ctx = await requirePermission("prices.bulk");
+    assertFeature(ctx, "pricing.bulk");
     const parsed = applyPriceUpdateSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const { scope, rule, excludedIds, expectedCount } = parsed.data;
@@ -136,6 +142,7 @@ export async function applyPriceUpdate(input: unknown): Promise<ActionResult<App
 
     const { error: batchError } = await ctx.supabase.from("price_batches").insert({
       id: batchId,
+      store_id: ctx.store.id,
       source: "bulk",
       rule: rule as unknown as Json,
       rule_summary: ruleSummary,
@@ -156,6 +163,7 @@ export async function applyPriceUpdate(input: unknown): Promise<ActionResult<App
     for (let i = 0; i < changes.length; i += APPLY_CHUNK_SIZE) {
       const chunk = changes.slice(i, i + APPLY_CHUNK_SIZE);
       const { data, error } = await ctx.supabase.rpc("apply_price_changes", {
+        p_store_id: ctx.store.id,
         p_batch_id: batchId,
         p_changes: chunk as unknown as Json,
       });
@@ -171,13 +179,13 @@ export async function applyPriceUpdate(input: unknown): Promise<ActionResult<App
     if (partial) skipped = changes.length - applied;
 
     if (applied === 0) {
-      await ctx.supabase.from("price_batches").delete().eq("id", batchId);
+      await ctx.supabase.from("price_batches").delete().eq("store_id", ctx.store.id).eq("id", batchId);
       return partial
         ? fail("No se pudo aplicar el cambio. Probá de nuevo.")
         : fail("Ninguna variante se actualizó: sus precios cambiaron mientras tanto. Recalculá la vista previa.");
     }
     if (applied !== changes.length) {
-      await ctx.supabase.from("price_batches").update({ variant_count: applied }).eq("id", batchId);
+      await ctx.supabase.from("price_batches").update({ variant_count: applied }).eq("store_id", ctx.store.id).eq("id", batchId);
     }
 
     await logAudit(ctx, {
@@ -187,7 +195,7 @@ export async function applyPriceUpdate(input: unknown): Promise<ActionResult<App
       summary: `Cambio masivo de precios: ${ruleSummary} en ${formatNumber(applied)} variantes (${scopeSummary})`,
       diff: { rule: rule as unknown as Json, scope: scope as unknown as Json, applied, skipped, partial },
     });
-    revalidateTag("products", "max");
+    revalidateTag(tagFor("products", ctx.store.id), "max");
 
     return ok({ batchId, applied, skipped, partial });
   });
@@ -198,11 +206,12 @@ export async function undoPriceBatch(
   batchId: unknown,
 ): Promise<ActionResult<{ total: number; restored: number; skipped: number }>> {
   return runAction(async () => {
-    const ctx = await requireAdmin();
+    const ctx = await requirePermission("prices.bulk");
+    assertFeature(ctx, "pricing.bulk");
     const id = uuid.safeParse(batchId);
     if (!id.success) return fail("Cambio inválido.");
 
-    const { data, error } = await ctx.supabase.rpc("undo_price_batch", { p_batch_id: id.data });
+    const { data, error } = await ctx.supabase.rpc("undo_price_batch", { p_store_id: ctx.store.id, p_batch_id: id.data });
     if (error) {
       console.error("[precios] undo", error.message);
       return fail("No se pudo deshacer. Probá de nuevo.");
@@ -222,7 +231,7 @@ export async function undoPriceBatch(
       summary: `Deshizo un cambio masivo de precios: ${formatNumber(restored)} de ${formatNumber(total)} variantes restauradas`,
       diff: { total, restored, skipped },
     });
-    revalidateTag("products", "max");
+    revalidateTag(tagFor("products", ctx.store.id), "max");
     return ok({ total, restored, skipped });
   });
 }

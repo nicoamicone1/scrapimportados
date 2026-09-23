@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/display";
 import { getAdminMenus } from "@/lib/admin/menus";
 import { listCategoryOptions, listPageOptions } from "@/lib/admin/pages";
 import { requireAdmin } from "@/lib/auth";
+import { storeHref } from "@/lib/tenant/urls";
 
 export const metadata: Metadata = { title: "Menús" };
 
@@ -20,7 +21,7 @@ export default async function MenusPage() {
         title="Menús"
         description="Links del encabezado y del pie de la tienda. Arrastrá para ordenar; usá la sangría para armar subítems."
         actions={
-          <ButtonLink href="/" external icon={<ExternalLink />}>
+          <ButtonLink href={storeHref(ctx.store)} external icon={<ExternalLink />}>
             Ver la tienda
           </ButtonLink>
         }

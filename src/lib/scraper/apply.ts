@@ -15,9 +15,13 @@ import "server-only";
  * - Stock SIEMPRE por `rpc('adjust_stock', reason 'import')` con delta.
  * - Cambios de precio logueados en `price_changes` con `batch_id = jobId`
  *   (el "Deshacer" de Precios también cubre importaciones).
+ * - Todo filtra / inserta con `store_id` de la tienda activa. Crear productos
+ *   cuenta contra el límite `products` del plan: si se pasa, lanza
+ *   `PlanError` y el motor corta el job con ese mensaje.
  */
-import type { ImportOptions } from "@/lib/schemas/import";
 import { sanitizeHtml } from "@/lib/html";
+import { assertLimit, type PlanInfo } from "@/lib/plans";
+import type { ImportOptions } from "@/lib/schemas/import";
 import { uniqueSlug, slugify } from "@/lib/slug";
 import type { Json, TablesInsert } from "@/lib/supabase/database.types";
 import type { ServerSupabase } from "@/lib/supabase/server";
@@ -31,6 +35,14 @@ const MAX_VARIANTS = 250;
 
 export interface ApplyContext {
   db: ServerSupabase;
+  /** Tienda activa: toda consulta filtra por ella. */
+  storeId: string;
+  /** Plan de la tienda (límite de productos). */
+  plan: Pick<PlanInfo, "limits" | "name">;
+  /** Productos que ya cuentan contra el límite (se incrementa al crear). */
+  productsUsed: number;
+  /** `price_batches` del job ya registrado. */
+  priceBatchReady?: boolean;
   userId: string;
   jobId: string;
   adapter: string;
@@ -129,7 +141,23 @@ async function logPriceChange(
   before: { price: number; compare_at_price: number | null },
   after: { price: number; compare_at_price: number | null },
 ) {
+  if (!ctx.priceBatchReady) {
+    // Cabecera del lote (id = job): el historial de Precios lo muestra como importación.
+    const b = await ctx.db.from("price_batches").upsert(
+      {
+        id: ctx.jobId,
+        store_id: ctx.storeId,
+        source: "import",
+        rule_summary: `Importación ${ctx.adapter === "csv" ? (ctx.csvFileName ?? "CSV") : ctx.sourceHost}`.slice(0, 200),
+        created_by: ctx.userId,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+    if (b.error) throw new ApplyError(`historial de precios: ${b.error.message}`);
+    ctx.priceBatchReady = true;
+  }
   const r = await ctx.db.from("price_changes").insert({
+    store_id: ctx.storeId,
     batch_id: ctx.jobId,
     variant_id: variantId,
     old_price: before.price,
@@ -161,33 +189,52 @@ async function resolveCategory(ctx: ApplyContext, cat: NormalizedCategory, depth
   const slug = slugify(cat.slug || cat.name) || slugify(cat.name) || "categoria";
 
   let id: string | null = null;
-  const byNs = await ctx.db.from("categories").select("id").eq("external_id", namespaced).maybeSingle();
+  const byNs = await ctx.db
+    .from("categories")
+    .select("id")
+    .eq("store_id", ctx.storeId)
+    .eq("external_id", namespaced)
+    .maybeSingle();
   id = byNs.data?.id ?? null;
 
   if (!id && ctx.adapter !== "csv") {
-    const byPlain = await ctx.db.from("categories").select("id").eq("external_id", cat.externalId).eq("slug", slug).maybeSingle();
+    const byPlain = await ctx.db
+      .from("categories")
+      .select("id")
+      .eq("store_id", ctx.storeId)
+      .eq("external_id", cat.externalId)
+      .eq("slug", slug)
+      .maybeSingle();
     id = byPlain.data?.id ?? null;
   }
   if (!id) {
-    let q = ctx.db.from("categories").select("id, external_id").eq("slug", slug);
+    let q = ctx.db.from("categories").select("id, external_id").eq("store_id", ctx.storeId).eq("slug", slug);
     q = parentId ? q.eq("parent_id", parentId) : q.is("parent_id", null);
     const bySlug = await q.maybeSingle();
     if (bySlug.data) {
       id = bySlug.data.id;
       if (!bySlug.data.external_id) {
-        await ctx.db.from("categories").update({ external_id: namespaced }).eq("id", id);
+        await ctx.db.from("categories").update({ external_id: namespaced }).eq("store_id", ctx.storeId).eq("id", id);
       }
     }
   }
   if (!id) {
     const free = await uniqueSlug(slug, async (s) => {
-      const r = await ctx.db.from("categories").select("id").eq("slug", s).maybeSingle();
+      const r = await ctx.db.from("categories").select("id").eq("store_id", ctx.storeId).eq("slug", s).maybeSingle();
       return Boolean(r.data);
     });
     const ins = must(
       await ctx.db
         .from("categories")
-        .insert({ name: cat.name.slice(0, 120), slug: free, parent_id: parentId, external_id: namespaced, is_visible: true, position: 0 })
+        .insert({
+          store_id: ctx.storeId,
+          name: cat.name.slice(0, 120),
+          slug: free,
+          parent_id: parentId,
+          external_id: namespaced,
+          is_visible: true,
+          position: 0,
+        })
         .select("id")
         .single(),
       `crear categoría ${cat.name}`,
@@ -217,7 +264,7 @@ async function linkCategories(ctx: ApplyContext, productId: string, product: Nor
   const r = await ctx.db
     .from("product_categories")
     .upsert(
-      ids.map((category_id, position) => ({ product_id: productId, category_id, position })),
+      ids.map((category_id, position) => ({ store_id: ctx.storeId, product_id: productId, category_id, position })),
       { onConflict: "product_id,category_id", ignoreDuplicates: true },
     );
   if (r.error) throw new ApplyError(`categorías: ${r.error.message}`);
@@ -237,12 +284,18 @@ interface ExistingProduct {
 async function findExisting(ctx: ApplyContext, product: NormalizedProduct): Promise<ExistingProduct | null> {
   if (ctx.adapter === "csv") {
     if (!product.slug) return null;
-    const r = await ctx.db.from("products").select("id, slug, options, metadata").eq("slug", product.slug).maybeSingle();
+    const r = await ctx.db
+      .from("products")
+      .select("id, slug, options, metadata")
+      .eq("store_id", ctx.storeId)
+      .eq("slug", product.slug)
+      .maybeSingle();
     return r.data ?? null;
   }
   const r = await ctx.db
     .from("products")
     .select("id, slug, options, metadata, source_url")
+    .eq("store_id", ctx.storeId)
     .eq("external_id", product.externalId)
     .in("source", ["import", "scrape"]);
   const rows = r.data ?? [];
@@ -251,12 +304,14 @@ async function findExisting(ctx: ApplyContext, product: NormalizedProduct): Prom
 }
 
 function variantInsert(
+  storeId: string,
   productId: string,
   v: NormalizedVariant,
   prices: PriceSet,
   position: number,
 ): TablesInsert<"product_variants"> {
   return {
+    store_id: storeId,
     product_id: productId,
     title: (v.title || "Default").slice(0, 200),
     option_values: v.option_values,
@@ -278,7 +333,7 @@ async function insertVariants(ctx: ApplyContext, productId: string, variants: No
   const rows: { v: NormalizedVariant; insert: TablesInsert<"product_variants"> }[] = [];
   variants.forEach((v, i) => {
     const prices = priceFor(v, ctx.options, isCsv);
-    if (prices) rows.push({ v, insert: variantInsert(productId, v, prices, startPosition + i) });
+    if (prices) rows.push({ v, insert: variantInsert(ctx.storeId, productId, v, prices, startPosition + i) });
   });
   if (!rows.length) return 0;
   const inserted = must(
@@ -313,16 +368,19 @@ async function createProduct(ctx: ApplyContext, product: NormalizedProduct): Pro
   if (!priced.length) return { status: "error", productId: null, message: "Sin precio en la fuente.", priceChanges: 0 };
 
   const baseSlug = slugify(product.slug || product.name) || "producto";
-  const slug = await uniqueSlug(baseSlug, async (s) => {
-    const r = await ctx.db.from("products").select("id").eq("slug", s).maybeSingle();
-    return Boolean(r.data);
-  });
   const isCsv = ctx.adapter === "csv";
   const status = product.status ?? ctx.options.default_status;
+  // Límite del plan (los archivados no cuentan): corta el job con PlanError.
+  if (status !== "archived") assertLimit(ctx, "products", ctx.productsUsed, 1);
+  const slug = await uniqueSlug(baseSlug, async (s) => {
+    const r = await ctx.db.from("products").select("id").eq("store_id", ctx.storeId).eq("slug", s).maybeSingle();
+    return Boolean(r.data);
+  });
   const now = new Date().toISOString();
   const desc = sanitizeHtml(product.description_html ?? "");
 
   const insert: TablesInsert<"products"> = {
+    store_id: ctx.storeId,
     name: product.name.slice(0, 250),
     slug,
     description_html: desc || null,
@@ -348,9 +406,10 @@ async function createProduct(ctx: ApplyContext, product: NormalizedProduct): Pro
     await linkCategories(ctx, created.id, product);
   } catch (err) {
     // Sin variantes el producto queda roto: se borra y se informa el error.
-    await ctx.db.from("products").delete().eq("id", created.id);
+    await ctx.db.from("products").delete().eq("store_id", ctx.storeId).eq("id", created.id);
     throw err;
   }
+  if (status !== "archived") ctx.productsUsed += 1;
   ctx.touchedSlugs.add(created.slug);
   const skippedVariants = product.variants.length - Math.min(priced.length, MAX_VARIANTS);
   return {
@@ -368,6 +427,7 @@ async function updateProduct(ctx: ApplyContext, existing: ExistingProduct, produ
     await ctx.db
       .from("product_variants")
       .select("id, option_values, sku, price, compare_at_price, cost, stock, position")
+      .eq("store_id", ctx.storeId)
       .eq("product_id", existing.id)
       .order("position"),
     "leer variantes",
@@ -404,6 +464,7 @@ async function updateProduct(ctx: ApplyContext, existing: ExistingProduct, produ
               compare_at_price: next.compare_at_price,
               ...(next.cost !== null ? { cost: next.cost } : {}),
             })
+            .eq("store_id", ctx.storeId)
             .eq("id", match.id);
           if (r.error) throw new ApplyError(`actualizar precio: ${r.error.message}`);
           if (priceMoved) {
@@ -434,7 +495,7 @@ async function updateProduct(ctx: ApplyContext, existing: ExistingProduct, produ
     metadata: toJson({ ...meta, lastImport: { jobId: ctx.jobId, at: new Date().toISOString() } }),
   };
   if (toCreate.length) patch.options = toJson(mergeOptions(existing.options, product.options));
-  const up = await ctx.db.from("products").update(patch).eq("id", existing.id);
+  const up = await ctx.db.from("products").update(patch).eq("store_id", ctx.storeId).eq("id", existing.id);
   if (up.error) throw new ApplyError(`actualizar producto: ${up.error.message}`);
 
   await linkCategories(ctx, existing.id, product);
@@ -480,6 +541,7 @@ export async function applyCsvUpdate(ctx: ApplyContext, diff: CsvUpdateDiff): Pr
       await ctx.db
         .from("product_variants")
         .select("id, product_id, price, compare_at_price, cost, stock, products(slug, status, published_at)")
+        .eq("store_id", ctx.storeId)
         .eq("id", variantId)
         .maybeSingle(),
       "leer variante",
@@ -502,6 +564,7 @@ export async function applyCsvUpdate(ctx: ApplyContext, diff: CsvUpdateDiff): Pr
           compare_at_price: nextCompare,
           ...(target.cost !== undefined ? { cost: target.cost } : {}),
         })
+        .eq("store_id", ctx.storeId)
         .eq("id", cur.id);
       if (r.error) throw new ApplyError(`actualizar precio: ${r.error.message}`);
       if (priceMoved) {
@@ -517,14 +580,20 @@ export async function applyCsvUpdate(ctx: ApplyContext, diff: CsvUpdateDiff): Pr
     }
 
     if (target.status && product && target.status !== product.status) {
+      // Sacar un producto del archivo vuelve a contarlo contra el límite del plan.
+      const unarchiving = product.status === "archived" && target.status !== "archived";
+      if (unarchiving) assertLimit(ctx, "products", ctx.productsUsed, 1);
       const r = await ctx.db
         .from("products")
         .update({
           status: target.status,
           ...(target.status === "active" && !product.published_at ? { published_at: new Date().toISOString() } : {}),
         })
+        .eq("store_id", ctx.storeId)
         .eq("id", cur.product_id);
       if (r.error) throw new ApplyError(`estado: ${r.error.message}`);
+      if (unarchiving) ctx.productsUsed += 1;
+      else if (target.status === "archived") ctx.productsUsed = Math.max(0, ctx.productsUsed - 1);
       changed += 1;
     }
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
+import { tagFor } from "@/lib/cache-tags";
 import { configureMoney } from "@/lib/money";
 import { createPublicClient } from "@/lib/supabase/server";
 import type { Json, Tables } from "@/lib/supabase/database.types";
@@ -235,22 +236,23 @@ export function parseSettings(row: Tables<"store_settings">): StoreSettings {
 }
 
 /** Lectura SIN cache (checkout: tiene que ser la configuración actual). */
-export async function fetchSettingsFresh(): Promise<StoreSettings> {
+export async function fetchSettingsFresh(storeId: string): Promise<StoreSettings> {
   const supabase = createPublicClient();
-  const { data, error } = await supabase.from("store_settings").select("*").eq("id", 1).single();
+  const { data, error } = await supabase.from("store_settings").select("*").eq("store_id", storeId).single();
   if (error || !data) throw new Error(`No se pudo leer store_settings: ${error?.message ?? "sin fila"}`);
   return parseSettings(data);
 }
 
-const getSettingsCached = unstable_cache(
-  () => fetchSettingsFresh(),
-  ["store-settings"],
-  { tags: ["settings"], revalidate: CACHE_REVALIDATE },
-);
+function getSettingsCached(storeId: string): Promise<StoreSettings> {
+  return unstable_cache(() => fetchSettingsFresh(storeId), ["store-settings", storeId], {
+    tags: [tagFor("settings", storeId)],
+    revalidate: CACHE_REVALIDATE,
+  })();
+}
 
-/** Settings de la tienda (cacheados por tag `settings`). Configura la moneda activa para `roundPrice()`. */
-export async function getSettings(): Promise<StoreSettings> {
-  const settings = await getSettingsCached();
+/** Settings de la tienda (tag `settings:<storeId>`). Configura la moneda activa para `roundPrice()`. */
+export async function getSettings(storeId: string): Promise<StoreSettings> {
+  const settings = await getSettingsCached(storeId);
   configureMoney(settings.currency);
   return settings;
 }

@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { discountLabel, PromoStatusBadge, scopeSummary, windowSummary } from "@/components/admin/pricing/shared";
 import { PromotionActions } from "@/components/admin/promotions/PromotionActions";
+import { LimitBanner } from "@/components/admin/LimitBanner";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, PageHeader } from "@/components/ui/display";
@@ -44,9 +46,11 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
   };
 
   const newButton = (
-    <ButtonLink href="/admin/promociones/nuevo" variant="primary" icon={<Plus aria-hidden />}>
-      Nueva promoción
-    </ButtonLink>
+    <PlanGate feature="marketing.promotions" mode="inline" label="Nueva promoción">
+      <ButtonLink href="/admin/promociones/nuevo" variant="primary" icon={<Plus aria-hidden />}>
+        Nueva promoción
+      </ButtonLink>
+    </PlanGate>
   );
 
   if (counts.all === 0) {
@@ -80,6 +84,7 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
         />
       </PageHeader>
 
+      <LimitBanner limit="promotions" used={counts.all} className="mb-3" />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <SearchInput placeholder="Buscar por nombre o etiqueta…" />
         {q || status ? (

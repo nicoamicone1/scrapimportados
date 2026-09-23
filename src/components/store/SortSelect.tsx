@@ -1,11 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useId } from "react";
+
+import { useStorePath } from "@/components/store/StoreBase";
+import { useUrlTransition } from "@/components/ui/useUrlTransition";
+import { cn } from "@/lib/cn";
 
 /** Select de orden: navega al cambiar (cada opción ya trae su URL armada en el server). */
 export function SortSelect({ options, value }: { options: { value: string; label: string; href: string }[]; value: string }) {
-  const router = useRouter();
+  const { push, pending } = useUrlTransition();
+  const toPath = useStorePath();
   const id = useId();
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -14,11 +18,12 @@ export function SortSelect({ options, value }: { options: { value: string; label
       </label>
       <select
         id={id}
-        className="input min-h-10 w-auto max-w-[11rem] py-0 sm:max-w-none"
+        className={cn("input min-h-10 w-auto max-w-[11rem] py-0 transition-opacity sm:max-w-none", pending && "opacity-60")}
+        aria-busy={pending || undefined}
         value={value}
         onChange={(e) => {
           const opt = options.find((o) => o.value === e.target.value);
-          if (opt) router.push(opt.href, { scroll: false });
+          if (opt) push(toPath(opt.href));
         }}
       >
         {options.map((o) => (

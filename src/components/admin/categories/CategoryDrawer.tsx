@@ -4,6 +4,7 @@ import { ImagePlus, Loader2, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useAdminStore } from "@/components/admin/AdminStoreContext";
 import { SeoFields } from "@/components/admin/SeoFields";
 import { IMAGE_ACCEPT, removeUploaded, uploadImage } from "@/components/admin/products/image-upload";
 import { Button } from "@/components/ui/Button";
@@ -63,6 +64,7 @@ export function CategoryDrawer({
   onOpenChange: (open: boolean) => void;
   onDelete: (category: AdminCategory) => void;
 }) {
+  const { store } = useAdminStore();
   const [values, setValues] = useState<FormValues>(() => valuesFor(target));
   const [lastTarget, setLastTarget] = useState(target);
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
@@ -249,6 +251,7 @@ export function CategoryDrawer({
             fallbackTitle={values.name}
             fallbackDescription={values.description}
             pathPrefix="/categoria/"
+            siteUrl={store.url}
             errors={{ title: errors["seo.title"], description: errors["seo.description"], slug: errors.slug }}
             slugHint={editing ? "Si la cambiás, la URL vieja redirige sola a la nueva." : "Si la dejás vacía se arma con el nombre."}
           />

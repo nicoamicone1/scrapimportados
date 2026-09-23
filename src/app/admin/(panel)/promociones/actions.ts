@@ -8,6 +8,9 @@ import { getStoreTimezone } from "@/lib/admin/pricing";
 import { listAllPromotions } from "@/lib/admin/promotions";
 import { logAudit, shallowDiff } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
+import { tagFor } from "@/lib/cache-tags";
+import { assertFeature } from "@/lib/plans";
+import { assertUsage } from "@/lib/plans/server";
 import { applyPromotions, zonedLocalToIso, type AppliedPromotion, type Promotion } from "@/lib/pricing";
 import { promotionSchema, type PromotionValues } from "@/lib/schemas/promotion";
 import type { Json } from "@/lib/supabase/database.types";
@@ -16,13 +19,15 @@ import type { Json } from "@/lib/supabase/database.types";
  * Promociones (agente C). Se aplican AL LEER con el motor
  * (`applyPromotions`); acá sólo se guardan. Toda mutación revalida
  * `promotions` y `products` (cards y fichas muestran el precio con promo).
+ * Plan: `marketing.promotions` para crear/editar/duplicar/activar (pausar y
+ * borrar siempre se puede) y el límite `promotions` al crear o duplicar.
  */
 
 const uuid = z.string().uuid();
 
-function revalidate() {
-  revalidateTag("promotions", "max");
-  revalidateTag("products", "max");
+function revalidate(storeId: string) {
+  revalidateTag(tagFor("promotions", storeId), "max");
+  revalidateTag(tagFor("products", storeId), "max");
 }
 
 function toRow(values: PromotionValues, timeZone: string) {
@@ -45,12 +50,18 @@ function toRow(values: PromotionValues, timeZone: string) {
 export async function savePromotion(id: unknown, input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    assertFeature(ctx, "marketing.promotions");
     const parsed = promotionSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
     const row = toRow(parsed.data, await getStoreTimezone());
 
     if (id === null || id === undefined) {
-      const { data, error } = await ctx.supabase.from("promotions").insert(row).select("id").single();
+      await assertUsage(ctx, "promotions");
+      const { data, error } = await ctx.supabase
+        .from("promotions")
+        .insert({ ...row, store_id: ctx.store.id })
+        .select("id")
+        .single();
       if (error || !data) {
         console.error("[promociones] insert", error?.message);
         return fail("No se pudo crear la promoción. Probá de nuevo.");
@@ -62,15 +73,20 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
         summary: `Creó la promoción "${row.name}"`,
         diff: row as unknown as Json,
       });
-      revalidate();
+      revalidate(ctx.store.id);
       return ok({ id: data.id });
     }
 
     const pid = uuid.safeParse(id);
     if (!pid.success) return fail("Promoción inválida.");
-    const { data: before } = await ctx.supabase.from("promotions").select("*").eq("id", pid.data).maybeSingle();
+    const { data: before } = await ctx.supabase
+      .from("promotions")
+      .select("*")
+      .eq("store_id", ctx.store.id)
+      .eq("id", pid.data)
+      .maybeSingle();
     if (!before) return fail("La promoción ya no existe.");
-    const { error } = await ctx.supabase.from("promotions").update(row).eq("id", pid.data);
+    const { error } = await ctx.supabase.from("promotions").update(row).eq("store_id", ctx.store.id).eq("id", pid.data);
     if (error) {
       console.error("[promociones] update", error.message);
       return fail("No se pudo guardar la promoción. Probá de nuevo.");
@@ -83,7 +99,7 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
       summary: `Editó la promoción "${row.name}"`,
       diff: shallowDiff(beforeSubset, row as unknown as Record<string, Json>),
     });
-    revalidate();
+    revalidate(ctx.store.id);
     return ok({ id: pid.data });
   });
 }
@@ -91,7 +107,7 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
 async function loadOr404(ctx: AdminContext, id: unknown) {
   const pid = uuid.safeParse(id);
   if (!pid.success) return null;
-  const { data } = await ctx.supabase.from("promotions").select("*").eq("id", pid.data).maybeSingle();
+  const { data } = await ctx.supabase.from("promotions").select("*").eq("store_id", ctx.store.id).eq("id", pid.data).maybeSingle();
   return data;
 }
 
@@ -101,7 +117,12 @@ export async function setPromotionActive(id: unknown, isActive: unknown): Promis
     const promo = await loadOr404(ctx, id);
     if (!promo) return fail("La promoción ya no existe.");
     const next = isActive === true;
-    const { error } = await ctx.supabase.from("promotions").update({ is_active: next }).eq("id", promo.id);
+    if (next) assertFeature(ctx, "marketing.promotions");
+    const { error } = await ctx.supabase
+      .from("promotions")
+      .update({ is_active: next })
+      .eq("store_id", ctx.store.id)
+      .eq("id", promo.id);
     if (error) return fail("No se pudo actualizar. Probá de nuevo.");
     await logAudit(ctx, {
       action: next ? "promotion.activate" : "promotion.pause",
@@ -109,7 +130,7 @@ export async function setPromotionActive(id: unknown, isActive: unknown): Promis
       entityId: promo.id,
       summary: `${next ? "Activó" : "Pausó"} la promoción "${promo.name}"`,
     });
-    revalidate();
+    revalidate(ctx.store.id);
     return ok();
   });
 }
@@ -117,9 +138,12 @@ export async function setPromotionActive(id: unknown, isActive: unknown): Promis
 export async function duplicatePromotion(id: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    assertFeature(ctx, "marketing.promotions");
     const promo = await loadOr404(ctx, id);
     if (!promo) return fail("La promoción ya no existe.");
+    await assertUsage(ctx, "promotions");
     const copy = {
+      store_id: ctx.store.id,
       name: `${promo.name} (copia)`.slice(0, 80),
       type: promo.type,
       value: promo.value,
@@ -142,7 +166,7 @@ export async function duplicatePromotion(id: unknown): Promise<ActionResult<{ id
       entityId: data.id,
       summary: `Duplicó la promoción "${promo.name}"`,
     });
-    revalidate();
+    revalidate(ctx.store.id);
     return ok({ id: data.id });
   });
 }
@@ -152,7 +176,7 @@ export async function deletePromotion(id: unknown): Promise<ActionResult> {
     const ctx = await requireAdmin();
     const promo = await loadOr404(ctx, id);
     if (!promo) return fail("La promoción ya no existe.");
-    const { error } = await ctx.supabase.from("promotions").delete().eq("id", promo.id);
+    const { error } = await ctx.supabase.from("promotions").delete().eq("store_id", ctx.store.id).eq("id", promo.id);
     if (error) return fail("No se pudo borrar. Probá de nuevo.");
     await logAudit(ctx, {
       action: "promotion.delete",
@@ -161,7 +185,7 @@ export async function deletePromotion(id: unknown): Promise<ActionResult> {
       summary: `Borró la promoción "${promo.name}"`,
       diff: promo as unknown as Json,
     });
-    revalidate();
+    revalidate(ctx.store.id);
     return ok();
   });
 }
@@ -223,9 +247,10 @@ export async function previewPromotion(input: unknown, currentId: unknown): Prom
       query = ctx.supabase
         .from("products")
         .select(`${baseSelect}, pc_filter:product_categories!inner(category_id)`, { count: "exact" })
+        .eq("store_id", ctx.store.id)
         .in("pc_filter.category_id", values.categoryIds);
     } else {
-      query = ctx.supabase.from("products").select(baseSelect, { count: "exact" });
+      query = ctx.supabase.from("products").select(baseSelect, { count: "exact" }).eq("store_id", ctx.store.id);
       if (values.scope === "products") query = query.in("id", values.productIds.slice(0, 300));
     }
     const { data, count, error } = await query.eq("status", "active").order("name").limit(5);

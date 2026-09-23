@@ -69,7 +69,7 @@ export interface PublicOrder {
   pickupLocation: { name: string; address: string; hoursText: string; instructionsMd: string } | null;
   transfer: { enabled: boolean; bankName: string; holder: string; cbu: string; alias: string; cuit: string; instructionsMd: string };
   whatsappTemplate: string;
-  store: { name: string; whatsappPhone: string; contactEmail: string; currency: string; locale: string; timezone: string };
+  store: { id: string; slug: string; name: string; whatsappPhone: string; contactEmail: string; currency: string; locale: string; timezone: string };
 }
 
 function nullable(v: Json | undefined): string | null {
@@ -188,6 +188,8 @@ export function parsePublicOrder(raw: Json, token: string): PublicOrder | null {
     },
     whatsappTemplate: asString(asObject(checkout.whatsapp).message_template),
     store: {
+      id: asString(store.id),
+      slug: asString(store.slug),
       name: asString(store.name),
       whatsappPhone: asString(store.whatsapp_phone),
       contactEmail: asString(store.contact_email),
@@ -198,7 +200,12 @@ export function parsePublicOrder(raw: Json, token: string): PublicOrder | null {
   };
 }
 
-export async function getOrderByToken(token: string): Promise<PublicOrder | null> {
+/**
+ * Pedido por token, SÓLO si es de `storeId` (el token es global: sin este
+ * chequeo, `/s/otra-tienda/pedido/<token>` mostraría el pedido con la marca
+ * de otra tienda).
+ */
+export async function getOrderByToken(storeId: string, token: string): Promise<PublicOrder | null> {
   if (!/^[0-9a-f]{32}$/.test(token)) return null;
   const supabase = createPublicClient();
   const { data, error } = await supabase.rpc("get_order_by_token", { p_token: token });
@@ -206,7 +213,8 @@ export async function getOrderByToken(token: string): Promise<PublicOrder | null
     console.error(`[pedido] ${error.message}`);
     return null;
   }
-  return data ? parsePublicOrder(data, token) : null;
+  const order = data ? parsePublicOrder(data, token) : null;
+  return order && order.store.id === storeId ? order : null;
 }
 
 /** "Envío a Av. Santa Fe 3253 2B, Palermo, CABA" / "Retiro en Local Palermo". */
