@@ -52,7 +52,15 @@ export default async function ContactoPage() {
               eso vamos directo, sin ida y vuelta.
             </p>
 
-            <dl className="mt-8 max-w-[560px] border-b border-adm-border">
+            <p className="mt-6 max-w-[560px] border-l-[3px] border-adm-accent-2 pl-3 text-[14px] leading-relaxed">
+              Antes de escribir, mirá el{" "}
+              <Link href="/ayuda" className="font-medium text-adm-accent underline underline-offset-2">
+                centro de ayuda
+              </Link>
+              : ahí está, paso a paso, cómo cargar productos, cobrar, armar las zonas de envío y cumplir con los legales.
+            </p>
+
+            <dl className="mt-6 max-w-[560px] border-b border-adm-border">
               <div className="grid gap-x-6 gap-y-1 border-t border-adm-border py-5 sm:grid-cols-[8rem_minmax(0,1fr)]">
                 <dt className="flex items-center gap-2 text-[13px] text-adm-fg-muted">
                   <Mail className="size-[18px]" strokeWidth={1.5} aria-hidden />

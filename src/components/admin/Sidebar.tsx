@@ -88,6 +88,8 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
                       <Link
                         href={item.href}
                         onClick={onNavigate}
+                        target={item.external ? "_blank" : undefined}
+                        rel={item.external ? "noopener" : undefined}
                         aria-current={active ? "page" : undefined}
                         title={collapsed ? item.label : undefined}
                         className={cn(
@@ -106,6 +108,7 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
                           className={cn("size-4 shrink-0", active ? "text-adm-accent-2" : "text-adm-sidebar-muted")}
                         />
                         {collapsed ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
+                        {item.external ? <span className="sr-only"> (se abre en otra pestaña)</span> : null}
                         {Badge ? <Badge collapsed={collapsed} /> : null}
                       </Link>
                     </li>

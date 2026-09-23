@@ -24,6 +24,8 @@ export function BrandMark({ className }: { className?: string }) {
 const NAV = [
   { href: "/#como-funciona", label: "Cómo funciona" },
   { href: "/planes", label: "Planes" },
+  { href: "/ayuda", label: "Ayuda" },
+  { href: "/guias", label: "Guías" },
 ] as const;
 
 /** Header de las páginas públicas de la plataforma (landing, planes, legales, contacto). */
@@ -117,6 +119,8 @@ export function PlatformFooter({ signedIn = false }: { signedIn?: boolean }) {
         <FooterLinks
           title="Ayuda y legales"
           links={[
+            { href: "/ayuda", label: "Centro de ayuda" },
+            { href: "/guias", label: "Guías" },
             { href: "/contacto", label: "Contacto" },
             { href: "/terminos", label: "Términos del servicio" },
             { href: "/privacidad", label: "Política de privacidad" },

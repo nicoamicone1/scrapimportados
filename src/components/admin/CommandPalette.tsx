@@ -173,7 +173,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
-                <Command.Item key={item.href} value={`nav-${item.href}`} onSelect={() => go(item.href)} className={`group/item ${itemClass}`}>
+                <Command.Item key={item.href} value={`nav-${item.href}`} onSelect={() => go(item.href, item.external)} className={`group/item ${itemClass}`}>
                   <Icon className="size-4 shrink-0 text-adm-fg-muted" aria-hidden />
                   <span className="flex-1">{item.label}</span>
                   <span className="text-xs text-adm-fg-muted">{item.group}</span>

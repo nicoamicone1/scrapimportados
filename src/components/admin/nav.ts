@@ -7,6 +7,7 @@ import {
   FolderTree,
   Import,
   LayoutDashboard,
+  LifeBuoy,
   Menu,
   Package,
   Palette,
@@ -41,6 +42,8 @@ export interface NavItem {
   ownerOnly?: boolean;
   /** Coincidencia exacta (para el dashboard `/admin`). */
   exact?: boolean;
+  /** Fuera del panel: se abre en otra pestaña y nunca queda activo. */
+  external?: boolean;
 }
 
 /** Sección visual (tinta de la cabecera). U: restyling §14.6. */
@@ -122,6 +125,8 @@ export const NAV: NavGroup[] = [
       { label: "Auditoría", href: "/admin/auditoria", icon: ShieldCheck, keywords: ["registro", "log", "historial"] },
       // H: changelog
       { label: "Changelog", href: "/admin/changelog", icon: FileClock, keywords: ["versiones", "novedades"] },
+      // Ayuda: centro de ayuda público (/ayuda, mismo host que el panel), en otra pestaña
+      { label: "Ayuda", href: "/ayuda", icon: LifeBuoy, external: true, keywords: ["soporte", "cómo", "como", "tutorial", "preguntas"] },
     ],
   },
 ];
@@ -130,6 +135,7 @@ export const NAV: NavGroup[] = [
 export const NAV_ITEMS: NavItem[] = NAV.flatMap((g) => g.items);
 
 export function isNavActive(item: NavItem, pathname: string): boolean {
+  if (item.external) return false;
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
