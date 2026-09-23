@@ -22,10 +22,12 @@ function nextQty(rows: FormTier[]): string {
 }
 
 /**
- * "Precio por cantidad" del form de producto: hasta 4 tramos "Desde N
- * unidades → $ precio c/u" con el ahorro frente al precio base. Las filas
- * vacías no se guardan. Plan: `pricing.tiers` (si la tienda bajó de plan y
- * ya tenía tramos, se pueden ver y quitar, no cambiar: lo controla la action).
+ * "Precio por cantidad" del form de producto: tramos "Desde N unidades →
+ * $ precio c/u" con el ahorro frente al precio base. Las filas vacías no se
+ * guardan. Se agregan hasta `MAX_PRICE_TIERS` (4); un producto que ya tenga
+ * más (la base acepta 10) se muestra y se guarda igual.
+ * Plan: `pricing.tiers`. Si la tienda bajó de plan y ya tenía tramos, se ven
+ * en sólo lectura y se pueden quitar (la action acepta quitar, no cambiar).
  */
 export function PriceTiersEditor({
   value,
@@ -61,7 +63,10 @@ export function PriceTiersEditor({
   const filled = value.map((row) => Boolean(row.min_qty.trim() || row.price.trim()));
   const indexed = value.map((row, i) => ({ row, idx: filled[i] ? filled.slice(0, i).filter(Boolean).length : null }));
 
-  const update = (key: string, patch: Partial<FormTier>) => onChange(value.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  const update = (key: string, patch: Partial<FormTier>) => {
+    if (!allowed) return;
+    onChange(value.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  };
 
   // Vista previa de la tabla que ve el comprador (sólo con filas válidas y ordenadas).
   const parsed = value
@@ -102,6 +107,7 @@ export function PriceTiersEditor({
                     aria-label={`Tramo ${i + 1}: desde cuántas unidades`}
                     inputMode="numeric"
                     trailing="u."
+                    readOnly={!allowed}
                     value={row.min_qty}
                     invalid={Boolean(qtyError)}
                     placeholder="6"
@@ -111,6 +117,7 @@ export function PriceTiersEditor({
                     aria-label={`Tramo ${i + 1}: precio por unidad`}
                     inputMode="decimal"
                     leading="$"
+                    readOnly={!allowed}
                     value={row.price}
                     invalid={Boolean(priceError)}
                     placeholder="0"

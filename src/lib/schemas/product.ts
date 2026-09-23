@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import { MAX_SPECS } from "@/lib/admin/specs";
 import { MAX_OPTIONS, MAX_VARIANTS, optionKey } from "@/lib/admin/variant-matrix";
-import { formatMoney } from "@/lib/money";
-import { MAX_PRICE_TIERS, MAX_TIER_QTY } from "@/lib/pricing/tiers";
+import { formatMoney, roundMoney } from "@/lib/money";
+import { MAX_PRICE_TIERS_DB, MAX_TIER_QTY } from "@/lib/pricing/tiers";
 
 /*
  * Schemas de productos (compartidos entre el form del admin y las actions).
@@ -109,7 +109,11 @@ export const priceTierSchema = z.object({
     .number({ invalid_type_error: "Ingresá un número.", required_error: "Ingresá el precio." })
     .finite("Ingresá un número.")
     .gt(0, "Tiene que ser mayor a 0.")
-    .max(9_999_999_999, "Es demasiado grande."),
+    .max(9_999_999_999, "Es demasiado grande.")
+    // A centavos ANTES de las reglas del producto: se valida lo que se guarda
+    // (900,004 contra un tramo anterior de 900 es 900: "tiene que ser menor").
+    .transform(roundMoney)
+    .refine((v) => v > 0, "Tiene que ser mayor a 0."),
 });
 
 /**
@@ -154,8 +158,12 @@ export const productSchema = z
     category_ids: z.array(z.string().uuid()).max(50).default([]),
     specs: z.array(specSchema).max(MAX_SPECS, `Hasta ${MAX_SPECS} filas.`).default([]),
     related_ids: z.array(z.string().uuid()).max(MAX_RELATED, `Hasta ${MAX_RELATED} productos.`).default([]),
-    /** Precios por cantidad (mayorista). Ordenados por cantidad; se guardan sólo con la migración 0021. */
-    price_tiers: z.array(priceTierSchema).max(MAX_PRICE_TIERS, `Hasta ${MAX_PRICE_TIERS} tramos.`).default([]),
+    /**
+     * Precios por cantidad (mayorista). Ordenados por cantidad; se guardan sólo con la migración 0021.
+     * Acepta el tope de la base (10) para no trabar un producto que ya los tenga; el editor
+     * del panel ofrece agregar hasta `MAX_PRICE_TIERS` (4).
+     */
+    price_tiers: z.array(priceTierSchema).max(MAX_PRICE_TIERS_DB, `Hasta ${MAX_PRICE_TIERS_DB} tramos.`).default([]),
     seo: seoSchema.default({ title: "", description: "" }),
     /** Nota para los movimientos de stock que genere este guardado. */
     stock_note: optionalText(200),

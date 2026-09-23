@@ -71,8 +71,12 @@ function toJson<T>(value: T): Json {
 const PRICE_TIERS_MIGRATION_MESSAGE =
   "Para guardar precios por cantidad falta la actualización 0021 de la base de datos. Pedile a quien administra Ecommy que la aplique, o sacá los tramos para guardar el resto.";
 
-const sameTiers = (a: { min_qty: number; price: number }[], b: { min_qty: number; price: number }[]) =>
-  a.length === b.length && a.every((t, i) => t.min_qty === b[i].min_qty && t.price === b[i].price);
+/**
+ * ¿`tiers` sale de `stored` sólo quitando tramos? (cada uno está tal cual en
+ * `stored`). Con el plan bajado se pueden conservar o quitar, no cambiar.
+ */
+const isTierSubset = (tiers: { min_qty: number; price: number }[], stored: { min_qty: number; price: number }[]) =>
+  tiers.every((t) => stored.some((s) => s.min_qty === t.min_qty && s.price === t.price));
 
 // ---------------------------------------------------------------------------
 // Guardar (crear / editar)
@@ -95,14 +99,14 @@ export async function saveProduct(input: unknown): Promise<ActionResult<{ produc
     if (tiers.length && !tiersSupported) {
       return fail(PRICE_TIERS_MIGRATION_MESSAGE, { price_tiers: [`Falta la actualización 0021 (versión ${PRICE_TIERS_SCHEMA_VERSION} de la base).`] });
     }
-    // Plan: agregar o cambiar tramos necesita `pricing.tiers`; conservar los que ya tenía o quitarlos, no.
+    // Plan: agregar o cambiar tramos necesita `pricing.tiers`; conservar los que ya tenía o quitar algunos, no.
     if (tiers.length && !hasFeature(ctx.plan, "pricing.tiers")) {
       let stored: { min_qty: number; price: number }[] = [];
       if (data.id) {
         const { data: cur } = await supabase.from("products").select("price_tiers").eq("store_id", storeId).eq("id", data.id).maybeSingle();
         stored = normalizePriceTiers(cur?.price_tiers ?? []).map((t) => ({ min_qty: t.minQty, price: t.price }));
       }
-      if (!sameTiers(stored, tiers)) {
+      if (!isTierSubset(tiers, stored)) {
         return fail(upgradeMessage("pricing.tiers"), { price_tiers: [upgradeMessage("pricing.tiers")] });
       }
     }
@@ -523,8 +527,11 @@ export async function duplicateProduct(id: string, options: { images: boolean } 
         specs: src.specs,
         related_ids: src.related_ids,
         vat_percent: src.vat_percent,
-        // Precios por cantidad (sólo si la columna existe: migración 0021).
-        ...(Array.isArray(src.price_tiers) && src.price_tiers.length ? { price_tiers: src.price_tiers } : {}),
+        // Precios por cantidad: sólo si la columna existe (migración 0021) y el
+        // plan los incluye (con el plan bajado, el original los conserva; la copia, no).
+        ...(Array.isArray(src.price_tiers) && src.price_tiers.length && hasFeature(ctx.plan, "pricing.tiers")
+          ? { price_tiers: src.price_tiers }
+          : {}),
         metadata: { duplicated_from: src.id },
       })
       .select("id")

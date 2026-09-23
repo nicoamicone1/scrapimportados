@@ -158,6 +158,54 @@ describe("tramos: carrito", () => {
     expect(t.total).toBe(3600);
   });
 
+  it("2.ª unidad al 50 % se calcula sobre el precio del tramo", () => {
+    const nth = promo({ id: "q2da", name: "2.ª al 50", type: "nth_unit_percent", value: 50, nth: 2 });
+    const t = computeCart({ items: [item({ qty: 6 })], promotions: [nth], now: NOW });
+    const [line] = t.lines;
+    expect(line.unitPrice).toBe(900);
+    expect(line.tierApplied).toEqual({ minQty: 6, price: 900 });
+    // 3 grupos de 2: una unidad por grupo a mitad del precio del tramo ($ 450).
+    expect(t.bundleDiscount).toBe(3 * 450);
+    expect(t.tierDiscount).toBe(600);
+    expect(t.promoTotal).toBe(600 + 1350);
+    expect(t.total).toBe(5400 - 1350);
+  });
+
+  it("promo por unidad acumulable + 3x2 acumulable: las dos sobre el precio del tramo", () => {
+    const t = computeCart({
+      items: [item({ qty: 6 })],
+      promotions: [promo({ value: 10, stackable: true }), bxgy({ stackable: true })],
+      now: NOW,
+    });
+    const [line] = t.lines;
+    // Tramo $ 900 − 10 % = $ 810; el 3x2 bonifica 2 unidades a $ 810.
+    expect(line.unitPrice).toBe(810);
+    expect(line.promotion?.amount).toBe(90);
+    expect(line.tierApplied).toEqual({ minQty: 6, price: 900 });
+    expect(t.bundleDiscount).toBe(2 * 810);
+    expect(t.tierDiscount).toBe(600);
+    expect(t.promoTotal).toBe(6000 - (6 * 810 - 1620));
+    expect(t.total).toBe(6 * 810 - 1620);
+  });
+
+  it("dos productos con tramos: sólo baja el que alcanza su cantidad", () => {
+    const t = computeCart({
+      items: [
+        item({ qty: 6 }),
+        item({ variantId: "var-b", productId: "prod-b", qty: 3, listPrice: 500, priceTiers: [{ minQty: 5, price: 450 }] }),
+      ],
+      now: NOW,
+    });
+    const [a, b] = t.lines;
+    expect(a.unitPrice).toBe(900);
+    expect(a.tierApplied).toEqual({ minQty: 6, price: 900 });
+    expect(b.unitPrice).toBe(500);
+    expect(b.tierApplied).toBeNull();
+    expect(t.tierDiscount).toBe(600);
+    expect(t.subtotal).toBe(6000 + 1500);
+    expect(t.total).toBe(5400 + 1500);
+  });
+
   it("compare_at no participa del tramo", () => {
     const t = computeCart({ items: [item({ qty: 6, compareAtPrice: 1500 })], now: NOW });
     expect(t.lines[0].unitPrice).toBe(900);

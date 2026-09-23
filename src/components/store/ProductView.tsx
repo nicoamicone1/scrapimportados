@@ -321,9 +321,8 @@ export function ProductView({
 function TierTable({ rows, qty, sharedAcrossVariants }: { rows: TierRow[]; qty: number; sharedAcrossVariants: boolean }) {
   return (
     <div className="mt-4">
-      <p className="text-sm font-medium">Precio por cantidad</p>
-      <table className="tnum mt-1.5 w-full max-w-72 text-sm">
-        <caption className="sr-only">Precio por unidad según cuántas unidades llevás</caption>
+      <table className="tnum w-full max-w-72 text-sm">
+        <caption className="mb-1.5 text-left font-medium">Precio por cantidad</caption>
         <thead className="sr-only">
           <tr>
             <th scope="col">Unidades</th>

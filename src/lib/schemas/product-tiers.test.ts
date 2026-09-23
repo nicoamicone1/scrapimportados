@@ -66,9 +66,27 @@ describe("productSchema · precios por cantidad", () => {
     expect(tierBasePrice([{ price: Number.NaN }])).toBeNull();
   });
 
-  it("hasta 4 tramos", () => {
-    const five = [2, 3, 4, 5, 6].map((q, i) => ({ min_qty: q, price: 900 - i * 10 }));
-    expect(errorsOf(input(five))["price_tiers"]).toBe("Hasta 4 tramos.");
+  it("acepta hasta 10 tramos (el tope de la base; el editor agrega hasta 4)", () => {
+    const tiers = (n: number) => Array.from({ length: n }, (_, i) => ({ min_qty: i + 2, price: 900 - i * 10 }));
+    expect(productSchema.safeParse(input(tiers(10))).success).toBe(true);
+    expect(errorsOf(input(tiers(11)))["price_tiers"]).toBe("Hasta 10 tramos.");
+  });
+
+  it("redondea a centavos antes de validar: se valida lo que se guarda", () => {
+    const r = productSchema.safeParse(input([{ min_qty: 6, price: 899.996 }]));
+    expect(r.success && r.data.price_tiers[0].price).toBe(900);
+    // 900,004 se guarda como 900: no baja del tramo anterior.
+    expect(
+      errorsOf(
+        input([
+          { min_qty: 6, price: 900 },
+          { min_qty: 12, price: 900.004 },
+        ]),
+      )["price_tiers.1.price"],
+    ).toMatch(/menor al del tramo anterior/);
+    // 999,996 se guarda como 1.000: no es menor al precio base.
+    expect(errorsOf(input([{ min_qty: 6, price: 999.996 }]))["price_tiers.0.price"]).toMatch(/menor al precio base/);
+    expect(errorsOf(input([{ min_qty: 6, price: 0.004 }]))["price_tiers.0.price"]).toBe("Tiene que ser mayor a 0.");
   });
 });
 

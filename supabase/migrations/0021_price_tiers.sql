@@ -13,6 +13,9 @@
 --    private.valid_price_tiers(jsonb). Que el precio sea menor al de las
 --    variantes lo valida el panel; si no lo es, el tramo no se aplica a esa
 --    variante (nunca sube un precio).
+--    Trigger products_price_tiers_plan: tramos nuevos o cambiados sólo con
+--    `pricing.tiers` en el plan (si existe private.store_plan_code, 0020);
+--    quitar tramos siempre se puede.
 -- 2. private.tier_price(product_id, qty, base): precio unitario base para
 --    `qty` unidades del producto = el del tramo de mayor min_qty <= qty, sin
 --    pasar nunca de `base` (el precio de la variante). Espejo de
@@ -107,6 +110,62 @@ alter table public.products add constraint products_price_tiers_check
 
 comment on column public.products.price_tiers is
   'Precios por cantidad (mayorista): [{min_qty, price}] ordenados por min_qty. Cuenta las unidades de todas las variantes del producto.';
+
+-- Plan: guardar tramos nuevos o cambiados necesita `pricing.tiers` (Starter
+-- en adelante). Refuerza en la base lo que ya controla el panel
+-- (saveProduct / duplicateProduct):
+--   · vaciar, conservar o quitar algunos de los que ya tenía (plan bajado:
+--     `old.price_tiers @> new.price_tiers`) siempre se puede;
+--   · sólo mira escrituras de un usuario (auth.uid()): service_role, las
+--     migraciones y el SQL editor pasan;
+--   · el plan efectivo sale de private.store_plan_code() (0020). Sin 0020 no
+--     hay cómo calcularlo en SQL y se permite (queda el control de la app);
+--   · `plans.features -> 'pricing.tiers'`; si la clave no está (plan que
+--     nadie editó desde /platform), default de src/lib/plans/features.ts:
+--     todos menos Free.
+create or replace function private.products_price_tiers_plan_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_code text;
+  v_flag jsonb;
+begin
+  if new.price_tiers is null or jsonb_typeof(new.price_tiers) <> 'array' or jsonb_array_length(new.price_tiers) = 0 then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.price_tiers @> new.price_tiers then
+    return new;
+  end if;
+  if auth.uid() is null then
+    return new;
+  end if;
+  if to_regprocedure('private.store_plan_code(uuid)') is null then
+    return new;
+  end if;
+  -- Dinámico: la función puede no existir cuando se crea esta.
+  execute 'select private.store_plan_code($1)' into v_code using new.store_id;
+  select p.features -> 'pricing.tiers' into v_flag from public.plans p where p.code = v_code;
+  if v_flag is not null and jsonb_typeof(v_flag) = 'boolean' then
+    if v_flag = 'true'::jsonb then
+      return new;
+    end if;
+  elsif v_code is distinct from 'free' then
+    return new;
+  end if;
+  raise exception 'Tu plan no incluye precios por cantidad (mayorista).'
+    using errcode = 'P0001', hint = 'pricing.tiers';
+end;
+$$;
+
+revoke execute on function private.products_price_tiers_plan_guard() from public, anon, authenticated;
+
+drop trigger if exists products_price_tiers_plan on public.products;
+create trigger products_price_tiers_plan
+  before insert or update of price_tiers on public.products
+  for each row execute function private.products_price_tiers_plan_guard();
 
 -- ---------------------------------------------------------------------
 -- 2. Precio del tramo (espejo de tierPriceFor)

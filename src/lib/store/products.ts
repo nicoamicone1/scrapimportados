@@ -276,30 +276,28 @@ const detailSelect = (tiers: boolean) => `${cardSelect(tiers)}, status, updated_
 /**
  * ¿Existe `products.price_tiers`? Las queries públicas listan columnas (no
  * `*`), así que pedir una que no existe rompe la lectura: se prueba con la
- * columna y, si la base contesta "no existe", se repite sin ella (el
- * producto queda sin tramos: el motor cobra el precio de siempre). Un "sí"
- * queda en memoria (la columna no se borra); un "no" se vuelve a probar al
- * minuto.
+ * columna y, si la base contesta "no existe" (42703 de Postgres, también en
+ * un embebido como `products_1.price_tiers`, o PGRST204/PGRST200 de
+ * PostgREST), se repite sin ella (el producto queda sin tramos: el motor
+ * cobra el precio de siempre).
+ *
+ * El "no" NO se guarda en memoria: con 0021 recién aplicada, la próxima
+ * lectura ya trae los tramos (si se memorizara, la ficha mostraría el precio
+ * sin tramo mientras el checkout ya cobra con tramo). Mientras falte la
+ * migración, cada lectura sin caché cuesta una consulta extra (las cards y
+ * la ficha van por `unstable_cache`; la vista previa y `getFreshVariants`,
+ * no).
  */
-let tiersColumn: { ok: boolean; at: number } | null = null;
-
-function isMissingTiersColumn(error: { code?: string; message?: string } | null): boolean {
+export function isMissingTiersColumn(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
   return (error.code === "42703" || error.code === "PGRST204" || error.code === "PGRST200") && /price_tiers/.test(error.message ?? "");
 }
 
-async function withTiersColumn<T extends { error: { code?: string; message?: string } | null }>(
+export async function withTiersColumn<T extends { error: { code?: string; message?: string } | null }>(
   run: (tiers: boolean) => PromiseLike<T>,
 ): Promise<T> {
-  const tryTiers = !tiersColumn || tiersColumn.ok || Date.now() - tiersColumn.at > 60_000;
-  if (!tryTiers) return run(false);
   const res = await run(true);
-  if (isMissingTiersColumn(res.error)) {
-    tiersColumn = { ok: false, at: Date.now() };
-    return run(false);
-  }
-  if (!res.error) tiersColumn = { ok: true, at: Date.now() };
-  return res;
+  return isMissingTiersColumn(res.error) ? run(false) : res;
 }
 
 // ---------------------------------------------------------------------------
