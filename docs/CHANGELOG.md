@@ -2,6 +2,25 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.3.0 — 2026-09-23 · Centro de ayuda, avisos de activación y seguridad
+
+### Agregado
+
+- Centro de ayuda en /ayuda con 14 artículos cortos y buscador: cargar e importar productos, cobrar, zonas de envío, personalizar la tienda, compartirla, medir, cumplir con los legales y manejar el plan y el equipo, con los nombres de cada pantalla tal como aparecen en el panel. «Ayuda» en el menú del panel y en el sitio.
+- Guías en /guias para quien todavía no tiene tienda: vender por WhatsApp sin perder pedidos, botón de arrepentimiento, precio sin impuestos nacionales y cómo migrar la tienda sin perder Google.
+- Avisos por mail a los dos días de crear la tienda si todavía no tiene productos, y a la semana si tiene productos pero no se compartió el link ni hubo pedidos (cuando la plataforma tiene configurado el envío).
+
+### Cambiado
+
+- El mail «Recibimos tu pedido» ya no repite la nota del comprador y sólo saluda por el nombre cuando es un nombre de verdad; en los avisos al vendedor, la nota y el motivo del comprador aparecen rotulados y recortados (el pedido completo sigue en el panel).
+- Sólo el dueño o un administrador pueden pedir un cambio de plan, y el pedido llega una vez por día por plan.
+- Mejoras de seguridad en el envío de emails (cupo de avisos por comprador y por tienda para que el checkout no sirva para mandar spam) y en las cabeceras del sitio. Requiere aplicar la migración 0014.
+
+### Corregido
+
+- El aviso «tu prueba terminó» siempre llega, aunque el mantenimiento diario haya corrido antes.
+- Las páginas de la tienda no pueden llamarse icon, apple-icon ni opengraph-image (chocaban con el ícono del sitio).
+
 ## v0.2.0 — 2026-09-23 · Listos para el primer MVP público
 
 ### Agregado

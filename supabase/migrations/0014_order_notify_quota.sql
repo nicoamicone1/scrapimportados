@@ -480,3 +480,7 @@ as $$
 $$;
 
 revoke execute on function public.expire_trials() from public, anon, authenticated;
+
+-- Versión del esquema que espera el código (src/lib/version.ts → SCHEMA_VERSION).
+insert into public.app_meta (key, value) values ('schema_version', '5'::jsonb)
+  on conflict (key) do update set value = excluded.value, updated_at = now();

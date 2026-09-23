@@ -6,7 +6,7 @@ personalizable, panel de administración (`/admin`) y checkout sin pasarela
 (transferencia con descuento o coordinación por WhatsApp; el pedido siempre queda
 registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y límites.
 
-Versión actual: **0.2.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
+Versión actual: **0.3.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
 cobro de planes (próxima versión): [`docs/BILLING.md`](docs/BILLING.md) ·
@@ -67,6 +67,9 @@ multi-tienda (`stores`, `store_members`, `store_invites`, `plans`, `subscription
 `store_id` en todas las tablas, RLS por tienda, `create_store()`, planes, etc.) y migra
 todo lo existente a la tienda `demo`. Después de aplicarla sobre una base con imágenes
 viejas, mové los objetos del bucket con `npx tsx scripts/move-media-to-store.mts demo`.
+`0014_order_notify_quota.sql` (esquema 5) agrega el cupo de avisos por mail del checkout
+y del arrepentimiento y deja de borrar `trial_ends_at` al vencer la prueba; hasta
+aplicarla, Configuración muestra "base de datos desactualizada" y los mails salen sin cupo.
 
 Aplicarlas con la CLI de Supabase (`supabase db push`) o, desde un agente, con la
 herramienta MCP `apply_migration`. Después regenerá los tipos en
@@ -119,14 +122,16 @@ src/
                             refresco de sesión y redirect optimista a /login
   app/
     layout.tsx              html/body mínimo
-    (platform)/             landing, /planes, /contacto, /terminos, /privacidad, /login,
-                            /registro, /auth/*, /app (mis tiendas, alta), /invitacion/<token>,
-                            /platform (superadmin); opengraph-image de la plataforma
+    (platform)/             landing, /planes, /contacto, /terminos, /privacidad, /ayuda,
+                            /guias, /login, /registro, /auth/*, /app (mis tiendas, alta),
+                            /invitacion/<token>, /platform (superadmin); opengraph-image
     icon.tsx, apple-icon.tsx ícono raíz (src/app/_brand/glyph.tsx)
     s/[store]/              storefront de una tienda (tema, header, footer, carrito)
     admin/(panel)/          panel de la tienda activa (sidebar + topbar + ⌘K); /admin/compartir
                             (link, QR y mensajes listos)
     api/cron/daily          barrido diario (trials, reservas impagas) + avisos de fin de prueba
+                            y de activación (día 2 y día 7)
+  content/                  artículos de /ayuda y /guias (JSX tipado, tests de contenido)
   components/
     ui/ admin/ store/ blocks/ platform/
   lib/
