@@ -54,7 +54,13 @@ function setUrlVariant(id: string | null) {
   window.history.replaceState(window.history.state, "", url.toString());
 }
 
-/** Galería 7/12 + buy box 5/12 sticky (DESIGN.md §6.3), con variantes por opción. */
+/**
+ * Galería 7/12 + buy box 5/12 (DESIGN.md §6.3), con variantes por opción. Las
+ * dos columnas son sticky: la galería ya entra en el viewport, así que la más
+ * corta acompaña mientras se lee la otra (fotos junto a la descripción larga,
+ * o buy box junto a muchas fotos). Sin tope de ancho en el buy box: 5/12 de
+ * `wide` da ~600px ≈ 68ch y el texto corrido ya tiene su medida (`.prose-store`).
+ */
 export function ProductView({
   product,
   promotions,
@@ -180,7 +186,9 @@ export function ProductView({
   return (
     <div className="grid gap-6 lg:grid-cols-12 lg:gap-12">
       <div className="lg:col-span-7">
-        <ProductGallery images={product.images} name={product.name} activeId={variant?.imageId ?? null} contain={contain} />
+        <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)]">
+          <ProductGallery images={product.images} name={product.name} activeId={variant?.imageId ?? null} contain={contain} />
+        </div>
       </div>
 
       <div className="lg:col-span-5">

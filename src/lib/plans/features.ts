@@ -138,7 +138,13 @@ export const PLAN_DEFAULTS: Record<PlanCode, { features: PlanFeatures; limits: P
   },
 };
 
-/** Presets de tema disponibles en Free (`theme.all_presets` habilita el resto). */
+/**
+ * Presets de tema disponibles en Free (`theme.all_presets` habilita el resto).
+ * Se quedan en dos a propósito (curado 2026-09-23): cubren los dos puntos de
+ * partida neutros (catálogo técnico frío y tienda cálida de producto propio).
+ * Los otros ocho son estilos de rubro (farmacia, mayorista, cava…) y son el
+ * valor visible del plan pago; el trial de 14 días ya los deja probar a todos.
+ */
 export const FREE_THEME_PRESETS: readonly string[] = ["nordico", "mercado"];
 
 /** Primer plan (en orden) que incluye la feature según los defaults. */

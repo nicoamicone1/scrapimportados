@@ -142,7 +142,8 @@ export function themeVars(theme: Theme): Record<string, string> {
     "--border": c.border,
     "--success": c.success,
     "--danger": c.danger,
-    "--border-strong": "color-mix(in oklab, var(--fg) 38%, var(--bg))",
+    // 50 %: al 38 % ningún preset llegaba a 3:1 (WCAG 1.4.11) sobre su fondo.
+    "--border-strong": "color-mix(in oklab, var(--fg) 50%, var(--bg))",
     "--primary-hover": "color-mix(in oklab, var(--primary) 86%, var(--fg))",
     "--primary-soft": "color-mix(in oklab, var(--primary) 12%, var(--bg))",
     "--is-dark": dark ? "1" : "0",

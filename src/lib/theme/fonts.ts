@@ -3,6 +3,8 @@
  *
  * - `id` es lo que se guarda en `store_settings.theme.fonts.*`.
  * - `weights`: pesos disponibles (en fuentes variables, los múltiplos de 100 del rango).
+ *   Verificados contra css2: un peso inexistente pedido solo hace que Google
+ *   responda 400 y la familia entera no cargue.
  * - `headingOnly`: sólo se ofrecen para títulos (display, mono y serifs de display).
  * - Se cargan con un `<link>` a css2 (no `next/font`: el tema es dinámico).
  *
@@ -31,7 +33,8 @@ export const FONTS = [
   { id: "cormorant-garamond", family: "Cormorant Garamond", category: "serif", weights: range(300, 700), headingOnly: true, hint: "Títulos grandes de moda y joyería" },
   { id: "instrument-serif", family: "Instrument Serif", category: "serif", weights: [400], headingOnly: true, hint: "Display editorial fino, sólo títulos" },
   { id: "fraunces", family: "Fraunces", category: "serif", weights: range(100, 900), hint: "Títulos cálidos: artesanal, gastronomía" },
-  { id: "libre-caslon-text", family: "Libre Caslon Text", category: "serif", weights: range(400, 700), hint: "Librerías, vinos, marcas clásicas" },
+  // Estática en Google Fonts: sólo 400 y 700 (500/600 dan 400 en css2).
+  { id: "libre-caslon-text", family: "Libre Caslon Text", category: "serif", weights: [400, 700], hint: "Librerías, vinos, marcas clásicas" },
   { id: "newsreader", family: "Newsreader", category: "serif", weights: range(200, 800), hint: "Textos largos de tono periodístico" },
   { id: "lora", family: "Lora", category: "serif", weights: range(400, 700), hint: "Cuerpo serif amable" },
   { id: "literata", family: "Literata", category: "serif", weights: range(200, 900), hint: "Cuerpo serif muy legible en pantalla" },
@@ -42,6 +45,8 @@ export const FONTS = [
   { id: "nunito-sans", family: "Nunito Sans", category: "sans", weights: range(200, 900), hint: "Humanista suave: artesanías, bienestar" },
   { id: "karla", family: "Karla", category: "sans", weights: range(200, 800), hint: "Grotesca con carácter: marcas indie" },
   { id: "work-sans", family: "Work Sans", category: "sans", weights: range(100, 900), hint: "Robusta: ferreterías, industria" },
+  { id: "atkinson-hyperlegible-next", family: "Atkinson Hyperlegible Next", category: "sans", weights: range(200, 800), hint: "Máxima legibilidad: farmacia, salud, público mayor" },
+  { id: "archivo", family: "Archivo", category: "sans", weights: range(100, 900), hint: "Grotesca de Omnibus-Type (Buenos Aires): técnica, audio" },
   { id: "plus-jakarta-sans", family: "Plus Jakarta Sans", category: "sans", weights: range(200, 800), hint: "Cosmética, estética, servicios" },
   { id: "schibsted-grotesk", family: "Schibsted Grotesk", category: "sans", weights: range(400, 900), hint: "Cuerpo editorial" },
   { id: "ibm-plex-sans", family: "IBM Plex Sans", category: "sans", weights: range(100, 700), hint: "Catálogos técnicos, repuestos" },
@@ -53,6 +58,7 @@ export const FONTS = [
   { id: "syne", family: "Syne", category: "display", weights: range(400, 800), headingOnly: true, hint: "Arte, diseño, galerías; tamaños grandes" },
   { id: "unbounded", family: "Unbounded", category: "display", weights: range(200, 900), headingOnly: true, hint: "Anchos y técnicos: gaming, música" },
   { id: "jetbrains-mono", family: "JetBrains Mono", category: "mono", weights: range(100, 800), headingOnly: true, hint: "Títulos técnicos, specs" },
+  { id: "chivo-mono", family: "Chivo Mono", category: "mono", weights: range(100, 900), headingOnly: true, hint: "Mono gráfica: fichas técnicas, hardware, audio" },
   { id: "ibm-plex-mono", family: "IBM Plex Mono", category: "mono", weights: range(100, 700), headingOnly: true, hint: "Marcas de laboratorio" },
 ] as const satisfies readonly FontDef[];
 

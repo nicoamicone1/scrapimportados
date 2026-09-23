@@ -90,7 +90,7 @@ export default async function LandingPage() {
               </div>
               <div className="border-l border-adm-border pl-4">
                 <dt className="text-adm-fg-muted">Estilos de tienda</dt>
-                <dd className="mt-0.5 font-semibold">5 presets</dd>
+                <dd className="mt-0.5 font-semibold">10 presets</dd>
               </div>
             </dl>
           </div>

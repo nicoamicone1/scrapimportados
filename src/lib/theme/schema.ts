@@ -10,7 +10,20 @@ import { FONT_IDS, getFont } from "./fonts";
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Usá un color hex (#RRGGBB)");
 
-export const PRESET_IDS = ["atelier", "mercado", "nordico", "editorial", "neon", "custom"] as const;
+/** Los 5 originales, los 5 de 2026-09 (mismo orden que el selector) y "custom" al final. */
+export const PRESET_IDS = [
+  "atelier",
+  "mercado",
+  "nordico",
+  "editorial",
+  "neon",
+  "botica",
+  "recreo",
+  "lapacho",
+  "galpon",
+  "bodega",
+  "custom",
+] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 
 export const themeColorsSchema = z.object({

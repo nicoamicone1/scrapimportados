@@ -3,7 +3,7 @@ import { z } from "zod";
 import { flatDiff } from "@/lib/admin/diff";
 import { FREE_THEME_PRESETS, hasFeature, upgradeMessage, type FeatureKey, type PlanInfo } from "@/lib/plans";
 import type { Json } from "@/lib/supabase/database.types";
-import { PRESETS } from "@/lib/theme/presets";
+import { PRESET_LIST, PRESETS } from "@/lib/theme/presets";
 import { themeSchema, type PresetId, type Theme } from "@/lib/theme/schema";
 
 /**
@@ -56,10 +56,16 @@ export function themePlanViolation(plan: Pick<PlanInfo, "features"> | null | und
   return null;
 }
 
+/** "Nórdico y Mercado": nombres de los presets de Free, derivados de FREE_THEME_PRESETS. */
+function freePresetNames(): string {
+  const names = PRESET_LIST.filter((p) => FREE_THEME_PRESETS.includes(p.id)).map((p) => p.name);
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}` : (names[0] ?? "");
+}
+
 export function themePlanMessage(feature: FeatureKey): string {
   return feature === "theme.custom_css"
     ? `El CSS personalizado no está incluido en tu plan. ${upgradeMessage(feature)}`
-    : `Ese estilo de tienda no está incluido en tu plan (en Free: Nórdico y Mercado). ${upgradeMessage(feature)}`;
+    : `Ese estilo de tienda no está incluido en tu plan (en Free: ${freePresetNames()}). ${upgradeMessage(feature)}`;
 }
 
 export interface CssIssue {

@@ -36,8 +36,8 @@ describe("theme", () => {
   });
   it("cssVars genera variables y sanea custom_css", () => {
     const css = cssVars({ ...PRESETS.neon, custom_css: "@import url(x.css); a{color:red}</style><script>" });
-    expect(css).toContain("--primary:#C6FF3D");
-    expect(css).toContain("--btn-radius:8px");
+    expect(css).toContain(`--primary:${PRESETS.neon.colors.primary}`);
+    expect(css).toContain("--btn-radius:4px"); // radius "sm" + shape "radius" → --radius-md de sm
     expect(css).toContain("--is-dark:1");
     expect(css).toContain("@media (min-width:1024px)");
     expect(css).not.toContain("@import");

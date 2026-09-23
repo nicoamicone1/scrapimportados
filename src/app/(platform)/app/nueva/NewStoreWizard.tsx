@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { createStore } from "@/app/(platform)/app/actions";
+import { PresetThumb, presetFontsHref } from "@/components/admin/appearance/PresetThumb";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Checkbox, Input, Select } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 import { PROVINCE_OPTIONS } from "@/lib/shipping/provinces";
 import { checkStoreSlug, type SlugCheck } from "@/lib/tenant/actions";
-import { STORE_KINDS, type StoreKind } from "@/lib/tenant/kinds";
+import { presetForKind, STORE_KINDS, type StoreKind } from "@/lib/tenant/kinds";
 import { toStoreSlug } from "@/lib/tenant/slug";
 import { storeDisplayHost } from "@/lib/tenant/urls";
-import { PRESETS } from "@/lib/theme/presets";
+import { PRESET_LIST, PRESETS } from "@/lib/theme/presets";
 
 const STORAGE_KEY = "ecommy:nueva-tienda";
 
@@ -70,23 +71,21 @@ function loadDraft(): Draft {
 
 const STEPS = ["Tu tienda", "Contacto", "Cobros"] as const;
 
-/** Mini muestra del preset del rubro (colores reales del preset). */
-function PresetSwatch({ kind }: { kind: StoreKind }) {
-  const preset = PRESETS[STORE_KINDS.find((k) => k.id === kind)?.preset ?? "nordico"];
-  const c = preset.colors;
-  const radius = preset.radius === "none" ? 0 : preset.radius === "sm" ? 3 : preset.radius === "md" ? 6 : 10;
+/** Fuentes de los presets de los rubros (sólo esos, no todo el catálogo). */
+const KIND_FONTS_HREF = presetFontsHref([...new Set(STORE_KINDS.map((k) => k.preset))].map((id) => PRESETS[id]));
+
+/** Mini muestra del preset del rubro: la misma miniatura fiel del selector de Apariencia, con el nombre de la tienda. */
+function PresetSwatch({ kind, brand }: { kind: StoreKind; brand: string }) {
+  const id = presetForKind(kind);
+  const meta = PRESET_LIST.find((p) => p.id === id);
   return (
-    <div aria-hidden className="h-16 overflow-hidden rounded-[4px] border border-adm-border" style={{ background: c.background }}>
-      <div className="flex h-4 items-center justify-between px-2" style={{ background: c.surface, borderBottom: `1px solid ${c.border}` }}>
-        <span className="h-1 w-6 rounded-full" style={{ background: c.text }} />
-        <span className="h-1 w-3 rounded-full" style={{ background: c.textMuted }} />
-      </div>
-      <div className="flex gap-1.5 p-2">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="h-7 flex-1" style={{ background: i === 0 ? c.primary : c.secondary, borderRadius: radius }} />
-        ))}
-      </div>
-    </div>
+    <PresetThumb
+      theme={PRESETS[id]}
+      brand={brand}
+      headline={meta?.mood ?? brand}
+      labels={meta?.industries}
+      className="rounded-[4px] border border-adm-border"
+    />
   );
 }
 
@@ -266,6 +265,7 @@ export function NewStoreWizard() {
                 onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""), slugEdited: true }))}
               />
             </Field>
+            {KIND_FONTS_HREF ? <link rel="stylesheet" href={KIND_FONTS_HREF} /> : null}
             <fieldset>
               <legend className="mb-2 text-[13px] font-medium">Rubro</legend>
               <p className="-mt-1 mb-2 text-xs text-adm-fg-muted">Elegimos un estilo de tienda que le queda bien. Después lo cambiás cuando quieras.</p>
@@ -279,7 +279,7 @@ export function NewStoreWizard() {
                     )}
                   >
                     <input type="radio" name="kind" value={k.id} className="sr-only" checked={draft.kind === k.id} onChange={() => set("kind", k.id)} />
-                    <PresetSwatch kind={k.id} />
+                    <PresetSwatch kind={k.id} brand={draft.name.trim() || "Tu tienda"} />
                     <span className="mt-1.5 block text-[13px] font-medium">{k.label}</span>
                     <span className="block text-[11px] text-adm-fg-muted">{k.hint}</span>
                   </label>

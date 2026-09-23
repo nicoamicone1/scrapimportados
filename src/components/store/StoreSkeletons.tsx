@@ -89,13 +89,17 @@ export function ProductSkeleton() {
     <Region className="store-container py-[var(--space-section-sm)]" label="Cargando producto…">
       <Breadcrumb />
       <div className="mt-4 grid gap-6 lg:grid-cols-12 lg:gap-12">
-        <div className="lg:col-span-7">
-          <Sk className="pcard-media w-full rounded-lg" />
-          <div className="mt-3 flex gap-2">
+        {/* Mismo límite de alto que ProductGallery (DESIGN.md §6.3) para que no salte al cargar. */}
+        <div
+          className="lg:col-span-7 lg:flex lg:justify-center lg:gap-4"
+          style={{ "--pdp-media-h": "clamp(400px, calc(100svh - var(--header-h, 68px) - 96px), 720px)" } as CSSProperties}
+        >
+          <div className="hidden w-20 shrink-0 flex-col gap-2 lg:flex">
             {Array.from({ length: 4 }, (_, i) => (
-              <Sk key={i} className="size-16 rounded-md" />
+              <Sk key={i} className="aspect-square w-full" />
             ))}
           </div>
+          <Sk className="pcard-media w-full rounded-lg lg:max-w-[calc(var(--pdp-media-h)*var(--card-ratio,1/1))] lg:min-w-0 lg:flex-1" />
         </div>
         <div className="lg:col-span-5">
           <Sk className="h-3 w-24" />

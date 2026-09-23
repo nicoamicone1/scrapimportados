@@ -160,7 +160,7 @@ Todos hex `#RRGGBB`. El editor de apariencia calcula contraste y muestra adverte
 Derivados (calculados, no editables):
 
 ```css
---border-strong: color-mix(in oklab, var(--fg) 38%, var(--bg));   /* bordes de inputs, ≥ 3:1 (WCAG 1.4.11) */
+--border-strong: color-mix(in oklab, var(--fg) 50%, var(--bg));   /* bordes de inputs, ≥ 3:1 (WCAG 1.4.11); al 38 % daba 2.5–2.9:1 */
 --primary-hover: color-mix(in oklab, var(--primary) 86%, var(--fg));
 --primary-soft:  color-mix(in oklab, var(--primary) 12%, var(--bg)); /* fondo de botón soft */
 --is-dark: 0 | 1;  /* 1 si la luminancia relativa de --bg < 0.2: cambia sombras por bordes/glow (§3.8) */
@@ -273,11 +273,27 @@ Reglas fijas:
 
 ## 4. Presets
 
-Cada preset define **todos** los campos. Elegirlo en el admin copia el objeto completo; cualquier edición posterior pasa `preset` a `"custom"`. Contrastes verificados (WCAG 2.1): `text`, `textMuted`, `accent`, `success` y `danger` ≥ 4.5:1 sobre `background`; `primaryText` ≥ 7:1 sobre `primary`. Default de una tienda nueva: `nordico` (el más neutro y el que mejor tolera catálogos importados con fotos heterogéneas).
+Cada preset define **todos** los campos. Elegirlo en el admin copia el objeto completo; cualquier edición posterior pasa `preset` a `"custom"`. Contrastes verificados (WCAG 2.1) y protegidos por `src/lib/theme/presets.test.ts`: `text`, `textMuted`, `accent`, `success` y `danger` ≥ 4.5:1 sobre `background` **y** sobre `surface`; `text` ≥ 7:1 sobre `background`; `primaryText` ≥ 4.5:1 sobre `primary` (7:1 cuando el primario lo permite; un mandarina o un rojo con texto blanco no llega); `primary` ≥ 3:1 sobre `background`; `accent` y `danger` son el mismo color o están a ΔE_OKLab ≥ 0.08. Default de una tienda nueva: `nordico` (el más neutro y el que mejor tolera catálogos importados con fotos heterogéneas).
+
+`create_store()` guarda sólo `{ "preset": "…" }` y `parseTheme` completa con el preset: **cambiar un preset cambia todas las tiendas que nunca guardaron su apariencia**. Por eso se cura con razones concretas, no por gusto.
+
+### Curado 2026-09-23
+
+Auditoría de los 5 presets originales contra §1 y alta de 5 nuevos (§4.6–§4.10). Qué cambió y por qué:
+
+| Preset | Cambio | Razón |
+| --- | --- | --- |
+| `atelier` | `dividers: true → false` | Las reglas entre celdas son el look de catálogo técnico y contradicen §2.3 ("en atelier el aire separa, no las cajas"). Colores y tipografía se quedan: Cormorant + Jost es el par Garamond/Futura de la moda clásica, no un default de generador (ese es Cormorant + Montserrat). |
+| `mercado` | `radius lg → md`, botón `soft → solid` (sigue pill), `shadows soft → none`, `danger #A8321F → #8F2445` | Radio grande + sombra suave + pill tintado era exactamente el combo "todo parece Notion" de §1.1, y el CTA soft (verde al 12 % sobre crema) perdía contra la foto. Queda un solo gesto redondo: el botón pill sólido, como un sello. Sin sombras, el hover `lift` usa borde `--border-strong`. El `danger` estaba a ΔE 0.03 del terracota de promo: en el drawer, "−$ 4.500" y "Sin stock" se veían del mismo color. |
+| `nordico` | `success #1F7A4D → #1A6E45`, `danger #9F1D1D → #B42318` (= `accent`) | `success` era el contraste más justo del set (4.87:1). Promo y error eran dos rojos a ΔE 0.05: parecían un error de copia. Un solo rojo, como en la vidriera de cualquier cadena de electro. |
+| `editorial` | `accent` y `danger` `#D90B0B`/`#C20000` → `#CF0A0A` | Mismo problema de dos rojos casi iguales; en un sistema de tres tintas hay un solo rojo señal. De paso, el acento sobre `surface` sube de 4.68 a 5.06:1. Industrias: sale "Vinos" (ahora es `bodega`), entra "Skate". |
+| `neon` | Rediseño: grafito neutro `#0D0D0C`, ámbar de fósforo `#FFB21E` (CTA + promo), Chivo Mono + Archivo, `radius md → sm`, `success`/`danger` propios | Era el preset más "hecho con IA": lima `#C6FF3D` sobre negro azulado (dashboard SaaS / gamer 2022), negros teñidos de violeta a lo Linear, Unbounded + Space Grotesk (el par cripto/web3), `#4ADE80` (literalmente emerald-400) y `#FF6B6B` (el coral de las librerías de UI). Se conserva la idea buena, un solo color vivo, con un ámbar de vúmetro y monitor CRT que ninguna tienda gamer local usa (casi todas van en rojo o RGB). Títulos mono en mayúsculas como ficha técnica. |
+
+Resuelto en la misma pasada, fuera de §4: `libre-caslon-text` sólo existe en 400 y 700 en Google Fonts (500/600 hacen que css2 responda 400 y la familia no cargue; corregido en `fonts.ts` y en la tabla de §5); `fonts.ts` y §5 suman `atkinson-hyperlegible-next`, `archivo` y `chivo-mono`; y el derivado `--border-strong` pasó de `color-mix` al 38 % (2.45–2.92:1 en los diez presets) al 50 %, para cumplir el 3:1 que promete §3.1.
 
 ### 4.1 `atelier` — moda, joyería, marroquinería
 
-Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lencería. Cormorant Garamond en títulos grandes sobre blanco roto, Jost (geométrica tipo Futura) para el resto, cero sombras, cero radios, botones rectos en mayúsculas espaciadas y fotos 4:5 grandes en 3 columnas. El tostado sólo aparece en promos. Se distingue por el silencio: mucho aire, poca UI.
+Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lencería. Cormorant Garamond en títulos grandes sobre blanco roto, Jost (geométrica tipo Futura) para el resto, cero sombras, cero radios, botones rectos en mayúsculas espaciadas y fotos 4:5 grandes en 3 columnas. El tostado sólo aparece en promos. Sin reglas entre celdas: el aire es el único separador. Se distingue por el silencio: mucho aire, poca UI.
 
 ```json
 {
@@ -306,17 +322,17 @@ Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lenc
   },
   "radius": "none",
   "buttons": { "style": "solid", "shape": "square", "uppercase": true },
-  "cards": { "style": "flat", "imageRatio": "4:5", "hover": "zoom", "showSku": false, "showBrand": false },
+  "cards": { "style": "flat", "imageRatio": "4:5", "hover": "zoom", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-center", "sticky": true, "transparentOnHome": true, "showSearch": true },
   "layout": { "density": "airy", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 3 } },
   "footer": { "style": "columns", "showSocial": true, "showPayments": false },
-  "effects": { "shadows": "none", "dividers": true, "imageFilter": "none" }
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
 
 ### 4.2 `mercado` — artesanías, deco, dietética, feria
 
-Para quien vende cerámica, mates, textiles, velas, productos naturales. Fondo crema, Fraunces (serif blanda y cálida) con Nunito Sans legible a 17px, verde bosque como CTA y terracota para promos. Cards con borde, radio generoso, botones pill tintados, hover que levanta apenas y grano sutil en las fotos de campaña. Se siente como un puesto cuidado, no como un marketplace.
+Para quien vende cerámica, mates, textiles, velas, productos naturales. Fondo crema, Fraunces (serif blanda y cálida) con Nunito Sans legible a 17px, verde bosque como CTA y terracota para promos; el error va en un carmín aparte para no confundirse con la promo. Cards con borde fino y radio medio, **un** gesto redondo (el botón pill sólido), hover que levanta apenas con borde, sin sombras, y grano sutil en las fotos de campaña. Se siente como un puesto cuidado, no como un marketplace.
 
 ```json
 {
@@ -332,7 +348,7 @@ Para quien vende cerámica, mates, textiles, velas, productos naturales. Fondo c
     "accent": "#A8431F",
     "border": "#DCCFB8",
     "success": "#3E6B2F",
-    "danger": "#A8321F"
+    "danger": "#8F2445"
   },
   "fonts": {
     "heading": "fraunces",
@@ -343,13 +359,13 @@ Para quien vende cerámica, mates, textiles, velas, productos naturales. Fondo c
     "headingTracking": "tight",
     "baseSize": 17
   },
-  "radius": "lg",
-  "buttons": { "style": "soft", "shape": "pill", "uppercase": false },
-  "cards": { "style": "bordered", "imageRatio": "1:1", "hover": "lift", "showSku": false, "showBrand": false },
+  "radius": "md",
+  "buttons": { "style": "solid", "shape": "pill", "uppercase": false },
+  "cards": { "style": "bordered", "imageRatio": "1:1", "hover": "lift", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
   "footer": { "style": "columns", "showSocial": true, "showPayments": true },
-  "effects": { "shadows": "soft", "dividers": false, "imageFilter": "grain" }
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "grain" }
 }
 ```
 
@@ -357,7 +373,7 @@ Nota: `1:1` va con `contain` (§2.5). Si el dueño sube fotos ambientadas (cerá
 
 ### 4.3 `nordico` — electro, hogar, ferretería, importadoras
 
-Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminación, repuestos. Gris muy claro, negro suave y azul profundo; Sora en títulos y Manrope (cifras tabulares nítidas) para todo lo demás. Densidad compacta, 5 columnas, SKU y marca visibles, reglas finas entre celdas. El "flat con borde fino" del brief se implementa como `bordered` + `shadows: 'none'`. Se distingue por la precisión: se escanea como una planilla bien diseñada.
+Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminación, repuestos. Gris muy claro, negro suave y azul profundo; Sora en títulos y Manrope (cifras tabulares nítidas) para todo lo demás. Densidad compacta, 5 columnas, SKU y marca visibles, reglas finas entre celdas. Un solo rojo para precio promo y errores. El "flat con borde fino" del brief se implementa como `bordered` + `shadows: 'none'`. Se distingue por la precisión: se escanea como una planilla bien diseñada.
 
 ```json
 {
@@ -372,8 +388,8 @@ Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminaci
     "secondary": "#E6E9ED",
     "accent": "#B42318",
     "border": "#DADDE2",
-    "success": "#1F7A4D",
-    "danger": "#9F1D1D"
+    "success": "#1A6E45",
+    "danger": "#B42318"
   },
   "fonts": {
     "heading": "sora",
@@ -386,7 +402,7 @@ Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminaci
   },
   "radius": "sm",
   "buttons": { "style": "solid", "shape": "radius", "uppercase": false },
-  "cards": { "style": "bordered", "imageRatio": "1:1", "hover": "zoom", "showSku": true, "showBrand": true },
+  "cards": { "style": "bordered", "imageRatio": "1:1", "hover": "zoom", "showSku": true, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "compact", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 5 } },
   "footer": { "style": "columns", "showSocial": true, "showPayments": true },
@@ -396,7 +412,7 @@ Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminaci
 
 ### 4.4 `editorial` — marcas con actitud
 
-Para marcas que comunican como una revista: streetwear local, bicicletas, vinería de autor, editoriales independientes. Blanco puro, negro, rojo para promos y amarillo como banda de anuncio. Barlow Condensed 800 en mayúsculas para titulares enormes, Schibsted Grotesk (diseñada para un grupo de diarios) para el cuerpo, reglas negras de 1px que arman la grilla. Radio cero, header mínimo con texto en lugar de íconos. Se distingue por la tipografía: los títulos son la imagen.
+Para marcas que comunican como una revista: streetwear local, editoriales independientes, bicicletas, skate. Blanco puro, negro, un único rojo señal (promo y error) y amarillo como banda de anuncio. Barlow Condensed 800 en mayúsculas para titulares enormes, Schibsted Grotesk (diseñada para un grupo de diarios) para el cuerpo, reglas negras de 1px que arman la grilla. Radio cero, header mínimo con texto en lugar de íconos. Se distingue por la tipografía: los títulos son la imagen.
 
 ```json
 {
@@ -409,10 +425,10 @@ Para marcas que comunican como una revista: streetwear local, bicicletas, viner�
     "primary": "#0A0A0A",
     "primaryText": "#FFFFFF",
     "secondary": "#FFE14D",
-    "accent": "#D90B0B",
+    "accent": "#CF0A0A",
     "border": "#0A0A0A",
     "success": "#0B7A3B",
-    "danger": "#C20000"
+    "danger": "#CF0A0A"
   },
   "fonts": {
     "heading": "barlow-condensed",
@@ -425,7 +441,7 @@ Para marcas que comunican como una revista: streetwear local, bicicletas, viner�
   },
   "radius": "none",
   "buttons": { "style": "solid", "shape": "square", "uppercase": true },
-  "cards": { "style": "flat", "imageRatio": "3:4", "hover": "none", "showSku": false, "showBrand": false },
+  "cards": { "style": "flat", "imageRatio": "3:4", "hover": "none", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "minimal", "sticky": true, "transparentOnHome": true, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 4 } },
   "footer": { "style": "simple", "showSocial": true, "showPayments": false },
@@ -433,30 +449,108 @@ Para marcas que comunican como una revista: streetwear local, bicicletas, viner�
 }
 ```
 
-### 4.5 `neon` — gaming, periféricos, streetwear nocturno
+### 4.5 `neon` — gaming, periféricos, audio, vinilos
 
-Para hardware gamer, periféricos, sneakers, cultura urbana, tiendas de vinilos. Fondo `#0B0B0F`, superficies `#15151C`, texto claro y un único acento lima saturado que es CTA y precio promo a la vez. Unbounded (ancha, técnica) en títulos y Space Grotesk en el cuerpo. Cards "elevated" que en oscuro se resuelven con borde; el glow existe sólo en el botón primario. Se distingue por la disciplina: un solo color vivo, nada más brilla.
+Para hardware gamer, periféricos, audio, sintetizadores y disquerías. Grafito neutro `#0D0D0C` (sin el tinte violeta de los dashboards), superficies `#171716` y un único ámbar de fósforo, el de los vúmetros y los monitores CRT, que es CTA y precio promo a la vez. Chivo Mono (Omnibus-Type, Buenos Aires) en mayúsculas para los títulos, como la ficha técnica de un equipo, y Archivo, de la misma fundidora, en el cuerpo. Radios chicos de panel de hardware; cards "elevated" que en oscuro se resuelven con borde; el glow existe sólo en el botón primario. Se distingue por la disciplina: un solo color vivo, nada más brilla.
 
 ```json
 {
   "preset": "neon",
   "colors": {
-    "background": "#0B0B0F",
-    "surface": "#15151C",
-    "text": "#EDEDF2",
-    "textMuted": "#9D9DAB",
-    "primary": "#C6FF3D",
-    "primaryText": "#0B0B0F",
-    "secondary": "#22222C",
-    "accent": "#C6FF3D",
-    "border": "#2A2A35",
-    "success": "#4ADE80",
-    "danger": "#FF6B6B"
+    "background": "#0D0D0C",
+    "surface": "#171716",
+    "text": "#ECEAE4",
+    "textMuted": "#A19D94",
+    "primary": "#FFB21E",
+    "primaryText": "#14110A",
+    "secondary": "#24231F",
+    "accent": "#FFB21E",
+    "border": "#2E2D29",
+    "success": "#8FCB7E",
+    "danger": "#FF5147"
   },
   "fonts": {
-    "heading": "unbounded",
-    "body": "space-grotesk",
+    "heading": "chivo-mono",
+    "body": "archivo",
     "headingWeight": 600,
+    "bodyWeight": 400,
+    "headingTransform": "uppercase",
+    "headingTracking": "normal",
+    "baseSize": 16
+  },
+  "radius": "sm",
+  "buttons": { "style": "solid", "shape": "radius", "uppercase": false },
+  "cards": { "style": "elevated", "imageRatio": "1:1", "hover": "lift", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
+  "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
+  "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "effects": { "shadows": "soft", "dividers": false, "imageFilter": "none" }
+}
+```
+
+### 4.6 `botica` — farmacia, perfumería, dermocosmética
+
+Para farmacias de barrio, perfumerías, dermocosmética y herboristerías, rubros con clientela que incluye gente mayor y productos que se eligen por marca y por dosis. Cuerpo en Atkinson Hyperlegible Next a 17px (diseñada para baja visión: distingue 1/l/I y 0/O, que importan en "10 ml" o "FPS 50") y títulos en IBM Plex Mono, como la etiqueta de un frasco (tono The Ordinary / Aesop, no góndola de cadena). Blanco verdoso, verde botica en el CTA, frambuesa para promos. Cards planas con el packshot sobre una baldosa verde agua (`surface`) y la marca visible arriba del nombre. Se distingue por la legibilidad: se lee sin anteojos.
+
+```json
+{
+  "preset": "botica",
+  "colors": {
+    "background": "#F7F9F8",
+    "surface": "#EAF1EE",
+    "text": "#10201C",
+    "textMuted": "#4B5C57",
+    "primary": "#0D5C55",
+    "primaryText": "#FFFFFF",
+    "secondary": "#DCEBE5",
+    "accent": "#A3195B",
+    "border": "#D3DEDA",
+    "success": "#2F6B1A",
+    "danger": "#B02A1E"
+  },
+  "fonts": {
+    "heading": "ibm-plex-mono",
+    "body": "atkinson-hyperlegible-next",
+    "headingWeight": 500,
+    "bodyWeight": 400,
+    "headingTransform": "none",
+    "headingTracking": "normal",
+    "baseSize": 17
+  },
+  "radius": "md",
+  "buttons": { "style": "solid", "shape": "radius", "uppercase": false },
+  "cards": { "style": "flat", "imageRatio": "1:1", "hover": "zoom", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
+  "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
+  "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
+}
+```
+
+### 4.7 `recreo` — librería, papelería, juguetería, infantil
+
+Para librerías escolares, papelerías, jugueterías y ropa de chicos, que necesitan color sin caer en lo infantil (nada de fuentes redondeadas ni arcoíris). Página celeste guardapolvo, tarjetas blancas sin borde ni sombra (papel sobre la mesa), un único mandarina para CTA y promo y una banda durazno para anuncios ("Lista escolar 2027: armala y te la tenemos lista"). Bricolage Grotesque 700 da carácter a los títulos; Figtree, clara y amistosa, el resto. Marca visible (Faber-Castell, Rivadavia, Lego). Tono de referencia: Monoblock, no juguetería de shopping. Se distingue por el color ordenado: vivo pero serio.
+
+```json
+{
+  "preset": "recreo",
+  "colors": {
+    "background": "#F1F6FB",
+    "surface": "#FFFFFF",
+    "text": "#14202E",
+    "textMuted": "#4F5D6C",
+    "primary": "#B03C0B",
+    "primaryText": "#FFFFFF",
+    "secondary": "#FFE3B8",
+    "accent": "#B03C0B",
+    "border": "#D3DEEA",
+    "success": "#1D6B45",
+    "danger": "#A61C44"
+  },
+  "fonts": {
+    "heading": "bricolage-grotesque",
+    "body": "figtree",
+    "headingWeight": 700,
     "bodyWeight": 400,
     "headingTransform": "none",
     "headingTracking": "tight",
@@ -464,13 +558,134 @@ Para hardware gamer, periféricos, sneakers, cultura urbana, tiendas de vinilos.
   },
   "radius": "md",
   "buttons": { "style": "solid", "shape": "radius", "uppercase": false },
-  "cards": { "style": "elevated", "imageRatio": "1:1", "hover": "lift", "showSku": false, "showBrand": true },
+  "cards": { "style": "elevated", "imageRatio": "1:1", "hover": "zoom", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
   "footer": { "style": "columns", "showSocial": true, "showPayments": true },
-  "effects": { "shadows": "soft", "dividers": false, "imageFilter": "none" }
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
+
+### 4.8 `lapacho` — mueblería, iluminación, objetos de diseño
+
+Para mueblerías de diseño, carpinterías a medida, iluminación y objetos. Es el único preset apaisado: fotos 16:9 (mesas, sillones y aparadores son horizontales) en `contain` sobre blanco, una por fila en el celular y tres en desktop, con densidad amplia de showroom. Newsreader 400 en títulos (tono revista de interiores, tipo Kinfolk) y Karla en el cuerpo; fondo piedra cálida, marrón madera de lapacho en foco y links, botón outline, y el rosa de la flor del lapacho sólo para promos. Footer mínimo. Se distingue por el formato: el producto se ve entero y a escala.
+
+```json
+{
+  "preset": "lapacho",
+  "colors": {
+    "background": "#F2EFEA",
+    "surface": "#FFFFFF",
+    "text": "#1F1A17",
+    "textMuted": "#625A53",
+    "primary": "#4E3426",
+    "primaryText": "#F7F3EE",
+    "secondary": "#E6E0D7",
+    "accent": "#B0306A",
+    "border": "#DAD3C9",
+    "success": "#3C6B3F",
+    "danger": "#A8281E"
+  },
+  "fonts": {
+    "heading": "newsreader",
+    "body": "karla",
+    "headingWeight": 400,
+    "bodyWeight": 400,
+    "headingTransform": "none",
+    "headingTracking": "tight",
+    "baseSize": 16
+  },
+  "radius": "sm",
+  "buttons": { "style": "outline", "shape": "radius", "uppercase": false },
+  "cards": { "style": "flat", "imageRatio": "16:9", "hover": "zoom", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
+  "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": true, "showSearch": true },
+  "layout": { "density": "airy", "containerWidth": "wide", "gridColumns": { "mobile": 1, "desktop": 3 } },
+  "footer": { "style": "minimal", "showSocial": true, "showPayments": true },
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
+}
+```
+
+Nota: para lámparas de pie o sillas (verticales), `4:5` con `cover` funciona mejor; es el primer ajuste que conviene sugerirle al dueño.
+
+### 4.9 `galpon` — mayoristas, distribuidoras, corralones
+
+Para mayoristas de Once y Flores, distribuidoras de limpieza o bebidas, corralones y casas de repuestos: catálogos de miles de SKU que se compran por bulto. La referencia es la nota de pedido: birome azul para el CTA, birome roja para precio promo y errores, resaltador amarillo para las bandas ("Pedido mínimo $ 150.000 · Envíos a todo el país"). IBM Plex Sans a 15px con cifras tabulares, Archivo Narrow en mayúsculas para que entren rubros largos ("ARTÍCULOS DE LIMPIEZA INSTITUCIONAL"). Compacto, 5 columnas, SKU y marca, celdas planas separadas por reglas, cero radios, sin hover decorativo. Frente a `nordico` (vidriera de retail tech) es una lista de precios: más plana, más blanca, sin cards. Se distingue por la densidad sin adornos.
+
+```json
+{
+  "preset": "galpon",
+  "colors": {
+    "background": "#FFFFFF",
+    "surface": "#F3F3F0",
+    "text": "#161616",
+    "textMuted": "#565656",
+    "primary": "#1F3FB0",
+    "primaryText": "#FFFFFF",
+    "secondary": "#FFF1A8",
+    "accent": "#C0161C",
+    "border": "#D9D9D4",
+    "success": "#1E6B35",
+    "danger": "#C0161C"
+  },
+  "fonts": {
+    "heading": "archivo-narrow",
+    "body": "ibm-plex-sans",
+    "headingWeight": 600,
+    "bodyWeight": 400,
+    "headingTransform": "uppercase",
+    "headingTracking": "normal",
+    "baseSize": 15
+  },
+  "radius": "none",
+  "buttons": { "style": "solid", "shape": "square", "uppercase": false },
+  "cards": { "style": "flat", "imageRatio": "1:1", "hover": "none", "showSku": true, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
+  "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
+  "layout": { "density": "compact", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 5 } },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "effects": { "shadows": "none", "dividers": true, "imageFilter": "none" }
+}
+```
+
+### 4.10 `bodega` — vinoteca, almacén gourmet, café de especialidad
+
+Para vinotecas, almacenes gourmet, tostadores de café y destilados: productos que se venden con una historia larga (notas de cata, origen, maridaje). El oscuro de la cava, un vino casi negro con texto crema, distinto de `neon` en todo: cálido, serif y lento. Es el único preset con **serif en el cuerpo**: Literata a 17px, diseñada para leer en pantalla, con Libre Caslon (la de las etiquetas clásicas) en títulos. CTA color papel de etiqueta con texto oscuro, rosado para promos, fotos de botella 3:4 y la bodega o marca visible arriba del nombre. Header transparente sobre la foto de la cava. Se distingue por el ritmo: invita a leer antes de comprar.
+
+```json
+{
+  "preset": "bodega",
+  "colors": {
+    "background": "#1A1214",
+    "surface": "#241A1C",
+    "text": "#EFE6DA",
+    "textMuted": "#B3A597",
+    "primary": "#E9DCC3",
+    "primaryText": "#1A1214",
+    "secondary": "#2E2224",
+    "accent": "#F0A58F",
+    "border": "#3A2C2E",
+    "success": "#A9C98F",
+    "danger": "#FF6B81"
+  },
+  "fonts": {
+    "heading": "libre-caslon-text",
+    "body": "literata",
+    "headingWeight": 400,
+    "bodyWeight": 400,
+    "headingTransform": "none",
+    "headingTracking": "normal",
+    "baseSize": 17
+  },
+  "radius": "sm",
+  "buttons": { "style": "solid", "shape": "radius", "uppercase": false },
+  "cards": { "style": "flat", "imageRatio": "3:4", "hover": "zoom", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
+  "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": true, "showSearch": true },
+  "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
+}
+```
+
+Nota: las fotos de botella sobre fondo blanco quedan como recortes claros sobre el oscuro; conviene fotografiar sobre fondo oscuro o usar fotos ambientadas.
 
 ---
 
@@ -483,7 +698,7 @@ Todas de Google Fonts. `id` kebab = valor en el tema; `family` = nombre exacto p
 | `cormorant-garamond` | Cormorant Garamond | serif | 300–700 (+ itálicas) | títulos grandes de moda y joyería; nunca debajo de 20px |
 | `instrument-serif` | Instrument Serif | serif | 400 (+ itálica) | display editorial fino y condensado; sólo títulos |
 | `fraunces` | Fraunces | serif | 100–900 (ejes opsz, SOFT) | títulos cálidos: artesanal, gastronomía, dietética |
-| `libre-caslon-text` | Libre Caslon Text | serif | 400–700 (+ itálica) | librerías, vinos, marcas clásicas; aguanta cuerpo |
+| `libre-caslon-text` | Libre Caslon Text | serif | 400, 700 (estática, + itálica) | librerías, vinos, marcas clásicas; aguanta cuerpo |
 | `newsreader` | Newsreader | serif | 200–800 (opsz) | textos largos y títulos de tono periodístico |
 | `lora` | Lora | serif | 400–700 (+ itálicas) | cuerpo serif amable: regalería, papelería |
 | `literata` | Literata | serif | 200–900 (opsz) | cuerpo serif muy legible en pantalla; fichas con mucha descripción |
@@ -494,6 +709,8 @@ Todas de Google Fonts. `id` kebab = valor en el tema; `family` = nombre exacto p
 | `nunito-sans` | Nunito Sans | sans | 200–1000 (opsz) | cuerpo humanista suave: artesanías, bienestar |
 | `karla` | Karla | sans | 200–800 (+ itálicas) | grotesca con carácter: marcas indie, cafeterías |
 | `work-sans` | Work Sans | sans | 100–900 | cuerpo robusto: ferreterías, corralones, industria |
+| `atkinson-hyperlegible-next` | Atkinson Hyperlegible Next | sans | 200–800 | máxima legibilidad (1/l, 0/O): farmacia, salud, público mayor |
+| `archivo` | Archivo | sans | 100–900 (wdth) | grotesca de Omnibus-Type (Buenos Aires): técnica, audio, gaming |
 | `plus-jakarta-sans` | Plus Jakarta Sans | sans | 200–800 | cosmética, estética, servicios; moderna sin ser fría |
 | `schibsted-grotesk` | Schibsted Grotesk | sans | 400–900 | cuerpo editorial; marcas con opinión |
 | `ibm-plex-sans` | IBM Plex Sans | sans | 100–700 | catálogos técnicos, repuestos, instrumental |
@@ -505,6 +722,7 @@ Todas de Google Fonts. `id` kebab = valor en el tema; `family` = nombre exacto p
 | `syne` | Syne | display | 400–800 | títulos de arte, diseño, galerías; sólo tamaños grandes |
 | `unbounded` | Unbounded | display | 200–900 | títulos anchos y técnicos: gaming, música, eventos |
 | `jetbrains-mono` | JetBrains Mono | mono | 100–800 (+ itálicas) | títulos técnicos, specs; nunca cuerpo largo |
+| `chivo-mono` | Chivo Mono | mono | 100–900 (+ itálicas) | mono gráfica: fichas técnicas, hardware, audio |
 | `ibm-plex-mono` | IBM Plex Mono | mono | 100–700 (+ itálicas) | marcas "de laboratorio": café de especialidad, cosmética técnica |
 
 Reglas del selector:
@@ -542,7 +760,7 @@ Un solo componente para card, ficha, carrito y checkout. Props: `price`, `compar
 
 ### 6.3 Ficha de producto
 
-Desktop: galería 7/12 (miniaturas verticales a la izquierda, principal con `imageRatio` del tema) + buy box 5/12 sticky (`top: calc(var(--header-h) + 24px)`). Mobile: galería con scroll-snap horizontal y contador "2/5" en `--text-xs`, sin dots.
+Desktop: galería 7/12 (miniaturas verticales a la izquierda, principal con `imageRatio` del tema) + buy box 5/12, las dos columnas sticky (`top: calc(var(--header-h) + 24px)`): la más corta acompaña a la otra. La principal **entra completa en el viewport**: alto máximo `clamp(400px, 100svh − --header-h − 96px, 720px)` (96px = padding de sección + breadcrumb de la primera pantalla + aire inferior; cubre también el `top` del sticky); el ancho sale de ese alto × ratio y el conjunto miniaturas + principal se centra en su columna (4:5 → 576px de ancho, 3:4 → 540px; 1:1 y 16:9 suelen quedar limitadas por la columna). Las miniaturas miden lo mismo que la principal, con scroll interno. El zoom trabaja sobre la caja de la imagen; `sizes` refleja el tope (≤ 720px, nunca `vw` de la columna en pantallas anchas). El buy box no lleva tope propio: 5/12 de `wide` ≈ 68ch y el texto corrido ya tiene su medida. Mobile: galería con scroll-snap horizontal y contador "2/5" en `--text-xs`, sin dots.
 
 Buy box: marca/SKU → h1 (heading) → PriceTag `lg` → variantes (botones rectangulares `--radius-sm`; agotados tachados y `disabled`; colores como texto + muestra de 16px) → cantidad + "Agregar al carrito" → entrega ("Te lo llevamos · desde $ 4.500" / "Retirás en el local · gratis") → descripción (RichText).
 
@@ -737,6 +955,8 @@ Alto 20px, radio 4px, 12px/500, punto de 6px del color del texto + etiqueta: el 
 ### 7.9 Empty states
 
 Dentro del panel de la tabla, alineado a la izquierda, padding 32px: título 16px ("Todavía no hay pedidos"), una línea útil ("Cuando alguien compre en tu tienda lo vas a ver acá. También podés cargar uno a mano.") y acción primaria ("Crear pedido manual") + secundaria ("Ver la tienda"). Con filtros sin resultados: "No hay pedidos con estos filtros." + "Limpiar filtros".
+
+**Selector de presets (Apariencia).** El acordeón "Preset" sólo muestra el tema actual (miniatura + estado) y "Ver y comparar los N presets"; ese botón cambia el formulario de 400px por una grilla de 540px (`PresetGallery`) con la vista previa real al lado. Cada tarjeta es una miniatura fiel (`PresetThumb`: `themeVars()` en el contenedor y unidades de container query, así que header, portada, columnas, `cards.style`/`imageRatio`, botón y acento son los del tema) + nombre, descripción y rubros. Tocar una tarjeta la **prueba** en la vista previa sin tocar el tema (`aria-pressed`); aplicar es un paso aparte ("Aplicar Atelier" en la toolbar, con la confirmación de siempre si hay cambios sin guardar o un tema personalizado); Esc vuelve. Estados: "En uso" (badge `accent`), "Base de tu tema" (badge neutral, `basePresetOf`) y candado lineal "Plan Pro": se puede probar, y la acción pasa a "Ver planes". Filtros: búsqueda por rubro o tono (con alias: "ropa" → moda), fondo claro/oscuro y "Sólo los de mi plan". Todo sale de `PRESET_LIST`: nada de ids ni cantidades fijas. El alta de tienda usa la misma miniatura con el nombre que va escribiendo el dueño.
 
 ### 7.10 Command palette
 
