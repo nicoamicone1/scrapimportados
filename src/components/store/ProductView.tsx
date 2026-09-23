@@ -13,6 +13,7 @@ import type { ProductOption, StoreVariant } from "@/lib/store/products";
 import { PriceTag } from "./PriceTag";
 import { ProductGallery, type GalleryImage } from "./ProductGallery";
 import { QtyStepper } from "./QtyStepper";
+import { StockAlertForm } from "./StockAlertForm";
 
 export interface ProductViewProps {
   product: {
@@ -279,6 +280,11 @@ export function ProductView({
                 {soldOut ? "Sin stock" : missing ? choosePrompt(missing.name) : !canBuy ? "Sin stock" : added ? "Agregado" : "Agregar al carrito"}
               </button>
             </div>
+            {variant && !variant.available ? (
+              <StockAlertForm key={variant.id} productId={product.id} variantId={variant.id} />
+            ) : soldOut ? (
+              <StockAlertForm key="product" productId={product.id} variantId={null} />
+            ) : null}
             {(soldOut || (variant && !variant.available)) && whatsappHref ? (
               <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-block">
                 Consultar por WhatsApp

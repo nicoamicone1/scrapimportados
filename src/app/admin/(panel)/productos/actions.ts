@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { catalogDb } from "@/lib/admin/catalog-db";
+import { afterStockIncrease } from "@/lib/admin/inventory-alerts";
 import { MEDIA_BUCKET, removeMediaIfUnused, revalidateProducts, storagePathFromUrl, upsertRedirect } from "@/lib/admin/catalog-server";
 import { getAdminProduct, searchTerm, type AdminImage, type AdminProductDetail, type ProductSummary } from "@/lib/admin/products";
 import { cleanSpecs, type SpecRow } from "@/lib/admin/specs";
@@ -301,6 +302,8 @@ export async function saveProduct(input: unknown): Promise<ActionResult<{ produc
     });
 
     revalidateProducts(storeId, [slug, before?.slug], true);
+    // Avisos de stock: stock subido, seguimiento apagado o venta sin stock activada.
+    afterStockIncrease(ctx, [...keepIds]);
     const product = await getAdminProduct(productId);
     if (!product) return fail("No se pudo leer el producto guardado.");
     return ok({ product });
@@ -367,6 +370,7 @@ export async function inlineUpdateVariant(
       ),
     });
     revalidateProducts(ctx.store.id, [v.products?.slug]);
+    if (stock > v.stock) afterStockIncrease(ctx, [v.id]);
     return ok({ price: nextPrice, compareAtPrice: nextCompare === null || nextCompare === undefined ? null : Number(nextCompare), stock });
   });
 }

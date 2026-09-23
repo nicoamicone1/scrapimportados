@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { revalidateProducts } from "@/lib/admin/catalog-server";
+import { afterStockIncrease } from "@/lib/admin/inventory-alerts";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
 import { adjustStockSchema, bulkAdjustStockSchema, MOVEMENT_REASON_LABELS } from "@/lib/schemas/inventory";
@@ -46,6 +47,7 @@ export async function adjustStock(input: unknown): Promise<ActionResult<{ stock:
       diff: { stock: [v.stock, after] },
     });
     revalidateProducts(ctx.store.id, [v.products?.slug]);
+    if (delta > 0) afterStockIncrease(ctx, [v.id]);
     refresh();
     return ok({ stock: after });
   });
@@ -65,6 +67,7 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
     if (!variants?.length) return fail("Las variantes ya no existen.");
 
     let count = 0;
+    const increased: string[] = [];
     for (let i = 0; i < variants.length; i += 10) {
       const chunk = variants.slice(i, i + 10);
       const results = await Promise.all(
@@ -72,6 +75,7 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
           const delta = d.mode === "set" ? d.value - v.stock : d.value;
           if (!delta) return Promise.resolve({ error: null });
           count++;
+          if (delta > 0) increased.push(v.id);
           return ctx.supabase.rpc("adjust_stock", {
             p_variant_id: v.id,
             p_delta: delta,
@@ -94,6 +98,7 @@ export async function bulkAdjustStock(input: unknown): Promise<ActionResult<{ co
       ctx.store.id,
       variants.map((v) => v.products?.slug),
     );
+    afterStockIncrease(ctx, increased);
     refresh();
     return ok({ count });
   });

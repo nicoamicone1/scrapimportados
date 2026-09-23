@@ -1,5 +1,6 @@
 import {
   BadgePercent,
+  BellRing,
   Boxes,
   CreditCard,
   FileClock,
@@ -79,6 +80,8 @@ export const NAV: NavGroup[] = [
       { label: "Categorías", href: "/admin/categorias", icon: FolderTree, keywords: ["rubros"] },
       // A: inventario y movimientos
       { label: "Inventario", href: "/admin/inventario", icon: Boxes, keywords: ["stock", "existencias", "movimientos", "stock bajo", "agotados"] },
+      // Avisos de stock ("Avisame cuando haya stock", 0016)
+      { label: "Avisos de stock", href: "/admin/inventario/avisos", icon: BellRing, keywords: ["avisame", "avísame", "sin stock", "agotados", "esperando", "notificar"] },
     ],
   },
   {

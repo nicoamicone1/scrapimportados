@@ -79,6 +79,53 @@ export type Database = {
           },
         ]
       }
+      billing_events: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          resource_id: string | null
+          result: Json | null
+          store_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          resource_id?: string | null
+          result?: Json | null
+          store_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          resource_id?: string | null
+          result?: Json | null
+          store_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -1132,6 +1179,7 @@ export type Database = {
           features: Json
           is_public: boolean
           limits: Json
+          mp_plan_id: string | null
           name: string
           position: number
           price_monthly: number | null
@@ -1145,6 +1193,7 @@ export type Database = {
           features?: Json
           is_public?: boolean
           limits?: Json
+          mp_plan_id?: string | null
           name: string
           position?: number
           price_monthly?: number | null
@@ -1158,6 +1207,7 @@ export type Database = {
           features?: Json
           is_public?: boolean
           limits?: Json
+          mp_plan_id?: string | null
           name?: string
           position?: number
           price_monthly?: number | null
@@ -1618,6 +1668,7 @@ export type Database = {
         Row: {
           badge_label: string | null
           category_ids: string[]
+          config: Json
           created_at: string
           ends_at: string | null
           id: string
@@ -1636,6 +1687,7 @@ export type Database = {
         Insert: {
           badge_label?: string | null
           category_ids?: string[]
+          config?: Json
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -1654,6 +1706,7 @@ export type Database = {
         Update: {
           badge_label?: string | null
           category_ids?: string[]
+          config?: Json
           created_at?: string
           ends_at?: string | null
           id?: string
@@ -1855,6 +1908,58 @@ export type Database = {
           },
         ]
       }
+      stock_alerts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified_at: string | null
+          product_id: string
+          store_id: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified_at?: string | null
+          product_id: string
+          store_id: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified_at?: string | null
+          product_id?: string
+          store_id?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alerts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alerts_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           address: string | null
@@ -2011,12 +2116,16 @@ export type Database = {
         Row: {
           created_at: string
           current_period_end: string | null
+          cancel_at_period_end: boolean
           current_period_start: string | null
           id: string
+          last_payment_at: string | null
           notes: string | null
           plan_code: string
           provider: string | null
+          provider_plan_code: string | null
           provider_ref: string | null
+          provider_status: string | null
           status: string
           store_id: string
           trial_ends_at: string | null
@@ -2025,12 +2134,16 @@ export type Database = {
         Insert: {
           created_at?: string
           current_period_end?: string | null
+          cancel_at_period_end?: boolean
           current_period_start?: string | null
           id?: string
+          last_payment_at?: string | null
           notes?: string | null
           plan_code: string
           provider?: string | null
+          provider_plan_code?: string | null
           provider_ref?: string | null
+          provider_status?: string | null
           status?: string
           store_id: string
           trial_ends_at?: string | null
@@ -2039,12 +2152,16 @@ export type Database = {
         Update: {
           created_at?: string
           current_period_end?: string | null
+          cancel_at_period_end?: boolean
           current_period_start?: string | null
           id?: string
+          last_payment_at?: string | null
           notes?: string | null
           plan_code?: string
           provider?: string | null
+          provider_plan_code?: string | null
           provider_ref?: string | null
+          provider_status?: string | null
           status?: string
           store_id?: string
           trial_ends_at?: string | null
@@ -2338,6 +2455,25 @@ export type Database = {
         Args: { p_batch_id: string; p_changes: Json; p_store_id: string }
         Returns: Json
       }
+      billing_apply_subscription: {
+        Args: {
+          p_cancel_at_period_end?: boolean
+          p_last_payment_at?: string | null
+          p_period_end: string | null
+          p_period_start: string | null
+          p_plan_code: string
+          p_provider_ref: string
+          p_provider_status: string | null
+          p_status: string | null
+          p_store_id: string
+        }
+        Returns: Json
+      }
+      billing_expire_subscriptions: { Args: never; Returns: number }
+      billing_start_checkout: {
+        Args: { p_plan_code: string; p_provider_ref: string; p_store_id: string }
+        Returns: undefined
+      }
       can_manage_media: { Args: { p_name: string }; Returns: boolean }
       check_store_slug: { Args: { p_slug: string }; Returns: boolean }
       create_order: { Args: { payload: Json }; Returns: Json }
@@ -2350,6 +2486,15 @@ export type Database = {
           p_whatsapp?: string
         }
         Returns: string
+      }
+      create_stock_alert: {
+        Args: {
+          p_email: string
+          p_product_id?: string
+          p_store_id: string
+          p_variant_id: string | null
+        }
+        Returns: Json
       }
       create_withdrawal_request: { Args: { payload: Json }; Returns: Json }
       current_plan: { Args: { p_store_id: string }; Returns: Json }

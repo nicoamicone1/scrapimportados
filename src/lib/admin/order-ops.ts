@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AdminContext } from "@/lib/auth";
+import { afterStockIncrease } from "@/lib/admin/inventory-alerts";
 import {
   canTransition,
   customerStatusMessage,
@@ -55,6 +56,7 @@ export async function restoreOrderStock(ctx: Ctx, order: Pick<OrderRow, "id" | "
   const moves = await orderMovements(ctx, order.id);
   const toRestore = stockToRestore(moves);
   let units = 0;
+  const restored: string[] = [];
   for (const [variantId, qty] of toRestore) {
     const { error } = await ctx.supabase.rpc("adjust_stock", {
       p_variant_id: variantId,
@@ -65,7 +67,10 @@ export async function restoreOrderStock(ctx: Ctx, order: Pick<OrderRow, "id" | "
     });
     if (error) throw new Error(error.message);
     units += qty;
+    if (qty > 0) restored.push(variantId);
   }
+  // "Avisame cuando haya stock": lo devuelto puede reponer una variante agotada.
+  afterStockIncrease(ctx, restored);
   return units;
 }
 

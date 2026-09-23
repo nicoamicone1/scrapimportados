@@ -127,6 +127,9 @@ header `next-action` en `/s/*` y en los hosts de tienda (~10 por minuto por IP; 
       y "Nuevo pedido" al email de contacto de la tienda.
 - [ ] Migración `0014_order_notify_quota.sql` aplicada (cupos de mails del checkout y del
       arrepentimiento; `expire_trials()` ya no borra `trial_ends_at`).
+- [ ] Migración `0016_stock_alerts.sql` aplicada ("Avisame cuando haya stock": tabla `stock_alerts`,
+      RPC `create_stock_alert` con cupo 5/h por email y 200/día por tienda; sin ella el formulario
+      de la ficha responde "No pudimos anotarte" y `/admin/inventario/avisos` lo avisa).
 - [ ] Vercel → Firewall → Custom Rule "Rate limit server actions de tienda": si `Method`
       es `POST`, existe el header `next-action` y (el path empieza con `/s/` o el host es
       `*.ecommy.app` distinto de `www`, o un dominio propio) → Rate Limit fixed window,
