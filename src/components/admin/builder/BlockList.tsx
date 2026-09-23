@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useId } from "react";
+import { memo, useId } from "react";
 import { Copy, Eye, EyeOff, GripVertical, MonitorOff, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -55,7 +55,8 @@ export function blockSummary(block: Block): string {
   }
 }
 
-function Row({
+/** Memo: editar un bloque sólo vuelve a renderizar su fila (callbacks estables, reciben el id). */
+const Row = memo(function Row({
   block,
   selected,
   onSelect,
@@ -65,10 +66,10 @@ function Row({
 }: {
   block: Block;
   selected: boolean;
-  onSelect: () => void;
-  onToggleHidden: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
+  onSelect: (id: string) => void;
+  onToggleHidden: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, setActivatorNodeRef } = useSortable({ id: block.id });
   const Icon = BLOCK_ICONS[block.type];
@@ -93,7 +94,7 @@ function Row({
       >
         <GripVertical className="size-4" aria-hidden />
       </button>
-      <button type="button" onClick={onSelect} aria-current={selected || undefined} className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left">
+      <button type="button" onClick={() => onSelect(block.id)} aria-current={selected || undefined} className="flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left">
         <Icon className={cn("size-4 shrink-0", selected ? "text-adm-accent" : "text-adm-fg-muted")} aria-hidden />
         <span className={cn("min-w-0", hidden && "opacity-50")}>
           <span className="block truncate font-medium text-adm-fg">{BLOCK_META[block.type].label}</span>
@@ -102,19 +103,19 @@ function Row({
         {block.style.hideOnMobile ? <MonitorOff className="size-3.5 shrink-0 text-adm-fg-muted" aria-label="Oculto en celulares" /> : null}
       </button>
       <div className={cn("flex shrink-0 items-center opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100", (selected || hidden) && "opacity-100")}>
-        <Button size="icon-sm" variant="ghost" aria-label={hidden ? "Mostrar bloque" : "Ocultar bloque"} title={hidden ? "Mostrar" : "Ocultar"} onClick={onToggleHidden}>
+        <Button size="icon-sm" variant="ghost" aria-label={hidden ? "Mostrar bloque" : "Ocultar bloque"} title={hidden ? "Mostrar" : "Ocultar"} onClick={() => onToggleHidden(block.id)}>
           {hidden ? <EyeOff /> : <Eye />}
         </Button>
-        <Button size="icon-sm" variant="ghost" aria-label="Duplicar bloque" title="Duplicar (Ctrl+D)" onClick={onDuplicate}>
+        <Button size="icon-sm" variant="ghost" aria-label="Duplicar bloque" title="Duplicar (Ctrl+D)" onClick={() => onDuplicate(block.id)}>
           <Copy />
         </Button>
-        <Button size="icon-sm" variant="ghost" aria-label="Borrar bloque" title="Borrar (Supr)" onClick={onDelete}>
+        <Button size="icon-sm" variant="ghost" aria-label="Borrar bloque" title="Borrar (Supr)" onClick={() => onDelete(block.id)}>
           <Trash2 />
         </Button>
       </div>
     </li>
   );
-}
+});
 
 export function BlockList({
   blocks,
@@ -165,10 +166,10 @@ export function BlockList({
               key={block.id}
               block={block}
               selected={block.id === selectedId}
-              onSelect={() => onSelect(block.id)}
-              onToggleHidden={() => onToggleHidden(block.id)}
-              onDuplicate={() => onDuplicate(block.id)}
-              onDelete={() => onDelete(block.id)}
+              onSelect={onSelect}
+              onToggleHidden={onToggleHidden}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
             />
           ))}
         </ol>

@@ -2,6 +2,17 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.1.1 — 2026-09-23 · Editor de páginas más fluido
+
+### Cambiado
+
+- La vista previa del editor de páginas sólo actualiza los bloques que cambiaste; volver a un valor anterior o alternar entre computadora y celular es instantáneo.
+
+### Corregido
+
+- Editar un bloque ya no hace parpadear todo el editor de páginas con la pantalla de carga ni lleva la vista previa arriba de todo.
+- El checkout de las tiendas volvió a funcionar para los visitantes.
+
 ## v0.1.0 — 2026-09-22 · Plataforma multi-tienda
 
 ### Agregado

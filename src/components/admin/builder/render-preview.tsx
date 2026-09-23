@@ -55,13 +55,24 @@ export interface BlockPreviewNode {
   node: ReactNode | null;
 }
 
-/** Cada bloque renderizado por separado (el cliente los envuelve para seleccionarlos). */
-export async function renderBlockPreviews(storeId: string, blocks: Block[], device: PreviewDevice): Promise<BlockPreviewNode[]> {
+/**
+ * Cada bloque renderizado por separado (el cliente los envuelve para seleccionarlos).
+ * `only`: renderizar (y resolver datos) sólo esos ids; el resto de la lista se
+ * usa de contexto (bloque anterior → regla divisoria, título pegado; posición).
+ */
+export async function renderBlockPreviews(
+  storeId: string,
+  blocks: Block[],
+  device: PreviewDevice,
+  only?: ReadonlySet<string>,
+): Promise<BlockPreviewNode[]> {
   const ctx = await previewContext(storeId, device);
   // En el preview se muestran también los ocultos (el cliente los atenúa).
   const shown = blocks.map((b) => ({ ...b, style: { ...b.style, hidden: false } }) as Block);
-  ctx.data = await resolveBlockData(storeId, shown, ctx.promotions, { includeHidden: true });
-  return shown.map((block, i) => {
+  const targets = only ? shown.filter((b) => only.has(b.id)) : shown;
+  ctx.data = await resolveBlockData(storeId, targets, ctx.promotions, { includeHidden: true });
+  return shown.flatMap((block, i) => {
+    if (only && !only.has(block.id)) return [];
     const content = renderBlock(block, ctx, i);
     if (content === null) return { id: block.id, node: null };
     const divider = ctx.theme.effects.dividers && needsDivider(shown[i - 1], block);
