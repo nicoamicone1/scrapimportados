@@ -86,9 +86,10 @@ export function ProductCard({
           ) : null}
           {alt ? <Image src={alt.url} alt="" fill sizes={imageSizes} className={cn(fit, "pcard-alt")} aria-hidden /> : null}
         </div>
-        {price.promotion?.badgeLabel ? (
+        {/* Un solo badge (DESIGN.md §6.1): la promo por cantidad ("3x2") manda sobre la etiqueta por unidad. */}
+        {price.offer?.badge || price.promotion?.badgeLabel ? (
           <span className="store-badge absolute top-2 left-2 z-[1] rounded-sm bg-bg px-1.5 py-0.5 text-xs font-semibold text-accent">
-            {price.promotion.badgeLabel}
+            {price.offer?.badge || price.promotion?.badgeLabel}
           </span>
         ) : null}
         <QuickAdd

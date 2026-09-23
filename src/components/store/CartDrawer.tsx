@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { computeCart, type Promotion } from "@/lib/pricing";
 import { netMerchandiseTotal, toPricingItems } from "@/lib/store/cart-pricing";
 
-import { CartLines } from "./CartLines";
+import { CartLines, PromoSummaryRows } from "./CartLines";
 import { Drawer } from "./Drawer";
 import { FreeShippingBar } from "./FreeShippingBar";
 
@@ -48,12 +48,7 @@ export function CartDrawer({ promotions, freeShippingThreshold, freeShippingPart
                 <dt className="text-fg-muted">Subtotal</dt>
                 <dd>{formatMoney(totals.subtotal)}</dd>
               </div>
-              {totals.promoTotal > 0 ? (
-                <div className="flex justify-between">
-                  <dt className="text-fg-muted">Promociones</dt>
-                  <dd className="text-accent">−{formatMoney(totals.promoTotal)}</dd>
-                </div>
-              ) : null}
+              <PromoSummaryRows totals={totals} />
               {totals.couponDiscount > 0 && totals.coupon?.applied ? (
                 <div className="flex justify-between">
                   <dt className="text-fg-muted">Cupón {totals.coupon.code}</dt>

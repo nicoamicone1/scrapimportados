@@ -18,7 +18,8 @@ export async function fetchActivePromotionsFresh(storeId: string): Promise<Promo
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("promotions")
-    .select("id, name, type, value, scope, category_ids, product_ids, starts_at, ends_at, is_active, priority, badge_label, stackable")
+    // `*`: incluye `config` (promos por cantidad, migración 0017) sin romper si todavía no está.
+    .select("*")
     .eq("store_id", storeId)
     .eq("is_active", true)
     .order("priority", { ascending: false });

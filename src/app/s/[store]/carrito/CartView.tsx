@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { CartLines } from "@/components/store/CartLines";
+import { CartLines, PromoSummaryRows } from "@/components/store/CartLines";
 import { CouponForm } from "@/components/store/CouponForm";
 import { FreeShippingBar } from "@/components/store/FreeShippingBar";
 import { StoreLink } from "@/components/store/StoreLink";
@@ -76,12 +76,7 @@ export function CartView({
             <dt className="text-fg-muted">Subtotal</dt>
             <dd>{formatMoney(totals.subtotal)}</dd>
           </div>
-          {totals.promoTotal > 0 ? (
-            <div className="flex justify-between">
-              <dt className="text-fg-muted">Promociones</dt>
-              <dd className="text-accent">−{formatMoney(totals.promoTotal)}</dd>
-            </div>
-          ) : null}
+          <PromoSummaryRows totals={totals} />
           {totals.coupon?.applied ? (
             <div className="flex justify-between">
               <dt className="text-fg-muted">Cupón {totals.coupon.code}</dt>

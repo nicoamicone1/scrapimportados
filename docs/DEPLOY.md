@@ -157,6 +157,8 @@ curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
       y "Nuevo pedido" al email de contacto de la tienda.
 - [ ] Migración `0014_order_notify_quota.sql` aplicada (cupos de mails del checkout y del
       arrepentimiento; `expire_trials()` ya no borra `trial_ends_at`).
+- [ ] Migración `0017_promotions_bxgy.sql` aplicada (promos "Llevá X, pagá Y" y "N.ª unidad al Z %";
+      sin ella el panel no deja guardarlas y el resto de las promos sigue igual).
 - [ ] Migración `0016_stock_alerts.sql` aplicada ("Avisame cuando haya stock": tabla `stock_alerts`,
       RPC `create_stock_alert` con cupo 5/h por email y 200/día por tienda; sin ella el formulario
       de la ficha responde "No pudimos anotarte" y `/admin/inventario/avisos` lo avisa).

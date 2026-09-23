@@ -11,7 +11,7 @@ import { requireAdmin, type AdminContext } from "@/lib/auth";
 import { tagFor } from "@/lib/cache-tags";
 import { assertFeature } from "@/lib/plans";
 import { assertUsage } from "@/lib/plans/server";
-import { applyPromotions, zonedLocalToIso, type AppliedPromotion, type Promotion } from "@/lib/pricing";
+import { applyPromotions, computeCart, zonedLocalToIso, type AppliedPromotion, type Promotion } from "@/lib/pricing";
 import { promotionSchema, type PromotionValues } from "@/lib/schemas/promotion";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -25,16 +25,40 @@ import type { Json } from "@/lib/supabase/database.types";
 
 const uuid = z.string().uuid();
 
+const MISSING_MIGRATION =
+  "Este tipo de promoción todavía no está habilitado en la base de datos de la tienda (falta la actualización 0017). Mientras tanto podés usar porcentaje o monto fijo.";
+
+/**
+ * ¿El error es porque falta la migración 0017? (columna `config` inexistente
+ * → PGRST204 / 42703, o el `check` viejo de `type` → 23514).
+ */
+function isMissingQuantityMigration(values: PromotionValues, error: { code?: string; message?: string } | null): boolean {
+  if (!error || (values.type !== "bxgy" && values.type !== "nth_unit_percent")) return false;
+  return error.code === "PGRST204" || error.code === "42703" || error.code === "23514" || /config|type_check/i.test(error.message ?? "");
+}
+
 function revalidate(storeId: string) {
   revalidateTag(tagFor("promotions", storeId), "max");
   revalidateTag(tagFor("products", storeId), "max");
 }
 
+/** Parámetros de las promos por cantidad (columna `config`, migración 0017). */
+function configFor(values: PromotionValues): { buy: number; pay: number } | { nth: number } | null {
+  if (values.type === "bxgy") return { buy: values.buy ?? 0, pay: values.pay ?? 0 };
+  if (values.type === "nth_unit_percent") return { nth: values.nth ?? 2 };
+  return null;
+}
+
 function toRow(values: PromotionValues, timeZone: string) {
+  const config = configFor(values);
   return {
     name: values.name,
     type: values.type,
-    value: values.value,
+    // "Llevá X, pagá Y" no usa `value`; la N.ª unidad guarda ahí el %.
+    value: values.type === "bxgy" ? 0 : values.value,
+    // Sólo las promos por cantidad mandan `config`: así las de % y monto se
+    // siguen guardando aunque la migración 0017 no esté aplicada.
+    ...(config ? { config } : {}),
     scope: values.scope,
     category_ids: values.scope === "categories" ? values.categoryIds : [],
     product_ids: values.scope === "products" ? values.productIds : [],
@@ -64,6 +88,7 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
         .single();
       if (error || !data) {
         console.error("[promociones] insert", error?.message);
+        if (isMissingQuantityMigration(parsed.data, error)) return fail(MISSING_MIGRATION);
         return fail("No se pudo crear la promoción. Probá de nuevo.");
       }
       await logAudit(ctx, {
@@ -89,9 +114,10 @@ export async function savePromotion(id: unknown, input: unknown): Promise<Action
     const { error } = await ctx.supabase.from("promotions").update(row).eq("store_id", ctx.store.id).eq("id", pid.data);
     if (error) {
       console.error("[promociones] update", error.message);
+      if (isMissingQuantityMigration(parsed.data, error)) return fail(MISSING_MIGRATION);
       return fail("No se pudo guardar la promoción. Probá de nuevo.");
     }
-    const beforeSubset = Object.fromEntries(Object.keys(row).map((k) => [k, before[k as keyof typeof before] as Json]));
+    const beforeSubset = Object.fromEntries(Object.keys(row).map((k) => [k, (before[k as keyof typeof before] ?? null) as Json]));
     await logAudit(ctx, {
       action: "promotion.update",
       entity: "promotion",
@@ -155,6 +181,8 @@ export async function duplicatePromotion(id: unknown): Promise<ActionResult<{ id
       priority: promo.priority,
       stackable: promo.stackable,
       badge_label: promo.badge_label,
+      // Parámetros de 3x2 / N.ª unidad (sólo existe con la migración 0017).
+      ...(promo.config != null ? { config: promo.config } : {}),
       // La copia nace pausada para no pisar precios sin querer.
       is_active: false,
     };
@@ -205,6 +233,19 @@ export interface PromotionPreviewRow {
   finalPrice: number;
   /** Promos aplicadas (la primera es la ganadora). */
   applied: (AppliedPromotion & { isThis: boolean })[];
+  /**
+   * Promos por cantidad: ejemplo con X unidades de este producto solo (3x2 →
+   * 3; 2.ª al 50 % → 2), con todas las promos vigentes.
+   */
+  example: {
+    qty: number;
+    before: number;
+    after: number;
+    /** Esta promo bonificó unidades en el ejemplo. */
+    applies: boolean;
+    /** Promo que le gana (otra por cantidad o una por unidad no acumulable). */
+    blockedBy: string | null;
+  } | null;
 }
 
 export interface PromotionPreview {
@@ -275,8 +316,12 @@ export async function previewPromotion(input: unknown, currentId: unknown): Prom
       priority: values.priority,
       badgeLabel: values.badgeLabel || null,
       stackable: values.stackable,
+      buy: values.buy,
+      pay: values.pay,
+      nth: values.nth,
     };
     const promotions = [...others, draft];
+    const exampleQty = values.type === "bxgy" ? (values.buy ?? 0) : values.type === "nth_unit_percent" ? (values.nth ?? 0) : 0;
 
     const rows: PromotionPreviewRow[] = ((data ?? []) as unknown as PreviewProductRow[]).map((p) => {
       const variant = [...(p.product_variants ?? [])].filter((v) => v.is_active).sort((a, b) => a.position - b.position)[0] ??
@@ -284,12 +329,24 @@ export async function previewPromotion(input: unknown, currentId: unknown): Prom
       const image = [...(p.product_images ?? [])].sort((a, b) => a.position - b.position)[0];
       const price = variant ? Number(variant.price) : 0;
       const compareAt = variant?.compare_at_price == null ? null : Number(variant.compare_at_price);
-      const result = applyPromotions(
-        { id: p.id, price, compareAtPrice: compareAt },
-        { id: p.id, categoryIds: (p.product_categories ?? []).map((c) => c.category_id) },
-        promotions,
-        at,
-      );
+      const categoryIds = (p.product_categories ?? []).map((c) => c.category_id);
+      const result = applyPromotions({ id: p.id, price, compareAtPrice: compareAt }, { id: p.id, categoryIds }, promotions, at);
+      let example: PromotionPreviewRow["example"] = null;
+      if (exampleQty > 0) {
+        const line = computeCart({
+          items: [{ variantId: p.id, productId: p.id, categoryIds, qty: exampleQty, listPrice: price, compareAtPrice: compareAt }],
+          promotions,
+          now: at,
+        }).lines[0];
+        const applies = line?.offer?.id === DRAFT_ID && line.offer.units > 0;
+        example = {
+          qty: exampleQty,
+          before: line?.lineList ?? price * exampleQty,
+          after: line?.lineTotal ?? price * exampleQty,
+          applies,
+          blockedBy: applies ? null : line?.offer && line.offer.id !== DRAFT_ID ? line.offer.name : (line?.promotion?.name ?? null),
+        };
+      }
       return {
         productId: p.id,
         name: p.name,
@@ -298,6 +355,7 @@ export async function previewPromotion(input: unknown, currentId: unknown): Prom
         compareAtPrice: compareAt,
         finalPrice: result.price,
         applied: result.promotions.map((a) => ({ ...a, isThis: a.id === DRAFT_ID })),
+        example,
       };
     });
 

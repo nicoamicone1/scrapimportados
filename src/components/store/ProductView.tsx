@@ -212,6 +212,7 @@ export function ProductView({
             transferLabel={transferLabel}
             net={net && !soldOut ? net : null}
             muted={soldOut}
+            offer={shown.offer}
             extra={
               paymentMethods.length > 1 ? (
                 <button type="button" className="link text-fg-muted" aria-expanded={showMethods} onClick={() => setShowMethods((s) => !s)}>

@@ -1,5 +1,15 @@
 export * from "./types";
 export { applyPromotions, computeCart, isCouponActive, isPromotionEligible } from "./engine";
+export {
+  isQuantityType,
+  ordinalUnit,
+  PROMOTION_TYPE_LABELS,
+  promotionValueLabel,
+  quantityBadge,
+  quantityDescription,
+  quantityHeadline,
+  quantityLineNote,
+} from "./labels";
 // Agente C: helpers de display (P0-15/P0-20), precios masivos y vigencias.
 export { bestPaymentDiscount, netPrice, priceWithDiscount, resolveVatPercent } from "./payment";
 export type { BestPaymentDiscount, PaymentMethodDiscountInput } from "./payment";

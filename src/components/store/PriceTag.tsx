@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
-import { netPrice, priceWithDiscount } from "@/lib/pricing";
+import { netPrice, priceWithDiscount, type QuantityOffer } from "@/lib/pricing";
 
 export interface PriceTagProps {
   price: number;
@@ -20,6 +20,8 @@ export interface PriceTagProps {
   locale?: string;
   /** Precio en gris (agotado). */
   muted?: boolean;
+  /** Promo por cantidad ("3x2 · Llevá 3 y pagá 2"): línea bajo el precio (ficha). */
+  offer?: Pick<QuantityOffer, "badge" | "headline" | "combinesWithPrice"> | null;
   /** Slot al lado de la línea de transferencia (ej. "Ver medios de pago"). */
   extra?: ReactNode;
   className?: string;
@@ -42,6 +44,7 @@ export function PriceTag({
   currency,
   locale,
   muted,
+  offer,
   extra,
   className,
 }: PriceTagProps) {
@@ -73,6 +76,15 @@ export function PriceTag({
           </s>
         ) : null}
       </div>
+      {offer && !muted ? (
+        <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-1", size === "lg" ? "mt-2 text-sm" : "mt-1 text-xs")}>
+          {offer.badge !== offer.headline ? (
+            <span className="store-badge rounded-sm border border-border px-1.5 py-0.5 text-xs font-semibold text-accent">{offer.badge}</span>
+          ) : null}
+          <span className="font-medium text-fg">{offer.headline}</span>
+          {offer.combinesWithPrice ? null : <span className="text-fg-muted">No se suma al descuento del precio</span>}
+        </p>
+      ) : null}
       {transferPrice != null ? (
         <p className={cn("text-fg-muted", size === "lg" ? "mt-1.5 text-sm" : "mt-0.5 text-xs")}>
           {size === "lg" ? (

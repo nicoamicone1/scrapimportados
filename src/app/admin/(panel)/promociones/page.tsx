@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { discountLabel, PromoStatusBadge, scopeSummary, windowSummary } from "@/components/admin/pricing/shared";
+import { PromoStatusBadge, scopeSummary, windowSummary } from "@/components/admin/pricing/shared";
 import { PromotionActions } from "@/components/admin/promotions/PromotionActions";
 import { LimitBanner } from "@/components/admin/LimitBanner";
 import { PlanGate } from "@/components/admin/PlanGate";
@@ -16,7 +16,7 @@ import { TabsNav } from "@/components/ui/Tabs";
 import { getCategoryOptions, getStoreTimezone } from "@/lib/admin/pricing";
 import { listPromotions, PROMO_STATUS_PARAM, PROMOTIONS_PER_PAGE } from "@/lib/admin/promotions";
 import { formatNumber } from "@/lib/money";
-import type { ScheduleStatus } from "@/lib/pricing";
+import { PROMOTION_TYPE_LABELS, promotionValueLabel, type ScheduleStatus } from "@/lib/pricing";
 
 export const metadata: Metadata = { title: "Promociones" };
 
@@ -59,7 +59,7 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
         <PageHeader title="Promociones" actions={newButton} />
         <EmptyState
           title="Todavía no hay promociones"
-          description="Armá descuentos por porcentaje o monto para toda la tienda, categorías o productos, con fecha de inicio y fin. Se aplican solos en las cards, la ficha y el carrito."
+          description="Armá descuentos por porcentaje o monto, 3x2 o 2.ª unidad al 50 % para toda la tienda, categorías o productos, con fecha de inicio y fin. Se aplican solos en las cards, la ficha y el carrito."
           actions={newButton}
         />
       </>
@@ -98,6 +98,7 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
         <THead>
           <tr>
             <TH>Nombre</TH>
+            <TH>Tipo</TH>
             <TH numeric>Descuento</TH>
             <TH>Alcance</TH>
             <TH>Vigencia</TH>
@@ -112,7 +113,7 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
         <TBody>
           {rows.length === 0 ? (
             <TableEmpty
-              colSpan={8}
+              colSpan={9}
               title="No hay promociones con estos filtros."
               action={
                 <ButtonLink href="/admin/promociones" size="sm">
@@ -133,7 +134,8 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
                     ) : null}
                   </Link>
                 </TD>
-                <TD numeric>{discountLabel(p.type, p.value)}</TD>
+                <TD className="whitespace-nowrap text-adm-fg-muted">{PROMOTION_TYPE_LABELS[p.type]}</TD>
+                <TD numeric className="whitespace-nowrap">{promotionValueLabel(p)}</TD>
                 <TD className="max-w-[240px] truncate text-adm-fg-muted">{scopeSummary(p, categories)}</TD>
                 <TD className="whitespace-nowrap text-adm-fg-muted">{windowSummary(p.startsAt, p.endsAt, tz)}</TD>
                 <TD numeric>{p.priority}</TD>

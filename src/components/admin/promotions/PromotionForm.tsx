@@ -19,8 +19,16 @@ import type { PickerProduct } from "@/lib/admin/pricing";
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/dates";
 import { formatMoney, formatNumber } from "@/lib/money";
-import type { CategoryLite } from "@/lib/pricing";
-import { BADGE_MAX, PROMO_SCOPE_LABELS, PROMO_SCOPES, promotionSchema, type PromotionValues } from "@/lib/schemas/promotion";
+import { quantityBadge, quantityDescription, type CategoryLite } from "@/lib/pricing";
+import {
+  BADGE_MAX,
+  PROMO_SCOPE_LABELS,
+  PROMO_SCOPES,
+  PROMO_TYPE_OPTIONS,
+  PROMO_TYPES,
+  promotionSchema,
+  type PromotionValues,
+} from "@/lib/schemas/promotion";
 
 export interface PromotionFormProps {
   id: string | null;
@@ -34,6 +42,10 @@ interface Draft {
   name: string;
   type: PromotionValues["type"];
   value: string;
+  /** "Llevá X, pagá Y" y "N.ª unidad": se guardan como texto mientras se escribe. */
+  buy: string;
+  pay: string;
+  nth: string;
   scope: PromotionValues["scope"];
   categoryIds: string[];
   products: PickerProduct[];
@@ -49,7 +61,10 @@ function toDraft(v: PromotionValues, products: PickerProduct[]): Draft {
   return {
     name: v.name,
     type: v.type,
-    value: String(v.value),
+    value: v.type === "bxgy" ? "10" : String(v.value),
+    buy: String(v.buy ?? 3),
+    pay: String(v.pay ?? 2),
+    nth: String(v.nth ?? 2),
     scope: v.scope,
     categoryIds: v.categoryIds,
     products,
@@ -66,7 +81,11 @@ function toInput(d: Draft) {
   return {
     name: d.name,
     type: d.type,
-    value: parseNumberInput(d.value),
+    // "Llevá X, pagá Y" no usa valor; los campos de cantidad sólo viajan con su tipo.
+    value: d.type === "bxgy" ? 0 : parseNumberInput(d.value),
+    buy: d.type === "bxgy" ? parseNumberInput(d.buy) : null,
+    pay: d.type === "bxgy" ? parseNumberInput(d.pay) : null,
+    nth: d.type === "nth_unit_percent" ? parseNumberInput(d.nth) : null,
     scope: d.scope,
     categoryIds: d.categoryIds,
     productIds: d.products.map((p) => p.id),
@@ -159,6 +178,36 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
   };
 
   const valueNumber = parseNumberInput(draft.value);
+  const isQuantity = draft.type === "bxgy" || draft.type === "nth_unit_percent";
+  const quantityParams = {
+    type: draft.type,
+    value: valueNumber ?? 0,
+    buy: input.buy,
+    pay: input.pay,
+    nth: input.nth,
+  };
+  // ¿Las cantidades alcanzan para describir la regla? (independiente del resto del form)
+  const quantityReady =
+    draft.type === "bxgy"
+      ? !clientErrors.buy && !clientErrors.pay
+      : draft.type === "nth_unit_percent"
+        ? !clientErrors.nth && !clientErrors.value
+        : false;
+  // Badge automático (sin etiqueta propia): "3x2", "2.ª al 50 %", "-20 %".
+  const autoBadge = isQuantity
+    ? quantityReady
+      ? quantityBadge(quantityParams)
+      : ""
+    : valueNumber != null
+      ? discountLabel(draft.type, valueNumber)
+      : "";
+
+  const changeType = (raw: string) => {
+    const type = PROMO_TYPES.find((t) => t === raw) ?? "percent";
+    // La 2.ª unidad arranca en 50 % (el 10 % de un porcentaje no tiene sentido ahí).
+    const value = type === "nth_unit_percent" && draft.type !== "nth_unit_percent" ? "50" : draft.value;
+    patch({ type, value });
+  };
 
   return (
     <div>
@@ -172,28 +221,87 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
               </Field>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Tipo">
-                  <Select
-                    value={draft.type}
-                    onChange={(e) => patch({ type: e.target.value === "fixed" ? "fixed" : "percent" })}
-                    options={[
-                      { value: "percent", label: "Porcentaje" },
-                      { value: "fixed", label: "Monto fijo por unidad" },
-                    ]}
-                  />
+                  <Select value={draft.type} onChange={(e) => changeType(e.target.value)} options={PROMO_TYPE_OPTIONS} />
                 </Field>
-                <Field label="Valor" required error={err("value")}>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step={draft.type === "percent" ? "1" : "100"}
-                    value={draft.value}
-                    onChange={(e) => patch({ value: e.target.value })}
-                    leading={draft.type === "fixed" ? "$" : undefined}
-                    trailing={draft.type === "percent" ? "%" : undefined}
-                  />
-                </Field>
+                {!isQuantity ? (
+                  <Field label="Valor" required error={err("value")}>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={draft.type === "percent" ? "1" : "100"}
+                      value={draft.value}
+                      onChange={(e) => patch({ value: e.target.value })}
+                      leading={draft.type === "fixed" ? "$" : undefined}
+                      trailing={draft.type === "percent" ? "%" : undefined}
+                    />
+                  </Field>
+                ) : null}
               </div>
+              {draft.type === "bxgy" ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Llevá" required error={err("buy")} hint="Unidades que lleva el cliente.">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={2}
+                      max={99}
+                      step="1"
+                      value={draft.buy}
+                      onChange={(e) => patch({ buy: e.target.value })}
+                      trailing="u."
+                    />
+                  </Field>
+                  <Field label="Pagá" required error={err("pay")} hint="Unidades que paga.">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={98}
+                      step="1"
+                      value={draft.pay}
+                      onChange={(e) => patch({ pay: e.target.value })}
+                      trailing="u."
+                    />
+                  </Field>
+                </div>
+              ) : draft.type === "nth_unit_percent" ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Unidad con descuento" required error={err("nth")} hint="2 = la 2.ª unidad, 3 = la 3.ª…">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={2}
+                      max={99}
+                      step="1"
+                      value={draft.nth}
+                      onChange={(e) => patch({ nth: e.target.value })}
+                      trailing=".ª"
+                    />
+                  </Field>
+                  <Field label="Descuento" required error={err("value")} hint="100 % = gratis.">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={1}
+                      max={100}
+                      step="1"
+                      value={draft.value}
+                      onChange={(e) => patch({ value: e.target.value })}
+                      trailing="%"
+                    />
+                  </Field>
+                </div>
+              ) : null}
+              {isQuantity ? (
+                <div className="rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-2.5 text-[13px]">
+                  <p className="font-medium">{quantityReady ? `${quantityDescription(quantityParams)}.` : "Completá las cantidades para ver la regla."}</p>
+                  <p className="mt-1 text-adm-fg-muted">
+                    Cuentan juntas todas las unidades del alcance, aunque sean productos distintos; se bonifican las más baratas. En el
+                    carrito se ve como una línea aparte y se aplica antes del cupón y del descuento por medio de pago.
+                  </p>
+                </div>
+              ) : null}
             </CardBody>
           </Card>
 
@@ -252,7 +360,7 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
               <Field
                 label="Prioridad"
                 error={err("priority")}
-                hint="Si un producto tiene varias promos, gana la de mayor prioridad. Si esa es acumulable, se le suman las otras acumulables (en cascada)."
+                hint="Si un producto tiene varias promos, gana la de mayor prioridad (a igual prioridad, la que más descuenta). Si las dos son acumulables, se suman: el 3x2 se calcula sobre el precio ya rebajado."
               >
                 <Input
                   type="number"
@@ -278,13 +386,17 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
                 label="Etiqueta"
                 error={err("badgeLabel")}
                 aside={`${draft.badgeLabel.length}/${BADGE_MAX}`}
-                hint={`Se muestra sobre la foto del producto, ej. "Ciber Lunes". Si la dejás vacía se muestra el % de descuento.`}
+                hint={
+                  isQuantity
+                    ? `Se muestra sobre la foto del producto. Si la dejás vacía se muestra "${autoBadge || "3x2"}".`
+                    : `Se muestra sobre la foto del producto, ej. "Ciber Lunes". Si la dejás vacía se muestra el % de descuento.`
+                }
               >
                 <Input
                   value={draft.badgeLabel}
                   onChange={(e) => patch({ badgeLabel: e.target.value })}
                   maxLength={BADGE_MAX}
-                  placeholder={valueNumber != null ? discountLabel(draft.type, valueNumber) : "Ciber Lunes"}
+                  placeholder={autoBadge || "Ciber Lunes"}
                   className="max-w-xs"
                 />
               </Field>
@@ -310,7 +422,11 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
             />
             <CardBody className="p-0">
               {!parsed.success ? (
-                <p className="px-4 py-4 text-[13px] text-adm-fg-muted">Completá el nombre, el valor y el alcance para ver cómo quedan los precios.</p>
+                <p className="px-4 py-4 text-[13px] text-adm-fg-muted">
+                  {isQuantity
+                    ? "Completá el nombre, las cantidades y el alcance para ver cómo quedan los precios."
+                    : "Completá el nombre, el valor y el alcance para ver cómo quedan los precios."}
+                </p>
               ) : !currentPreview ? (
                 <p className="inline-flex items-center gap-2 px-4 py-4 text-[13px] text-adm-fg-muted">
                   <Loader2 className="size-4 animate-spin" aria-hidden /> Calculando…
@@ -326,6 +442,30 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
                   ) : null}
                   <ul>
                     {currentPreview.data.rows.map((r) => {
+                      if (r.example) {
+                        const ex = r.example;
+                        return (
+                          <li key={r.productId} className="flex items-start gap-2.5 border-b border-adm-border px-4 py-2.5 last:border-b-0">
+                            <Thumb url={r.imageUrl} />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[13px] font-medium">{r.name}</p>
+                              <p className="mt-0.5 text-xs text-adm-fg-muted">
+                                {ex.applies
+                                  ? `Llevando ${ex.qty}`
+                                  : ex.blockedBy
+                                    ? `Gana otra promo: ${ex.blockedBy}`
+                                    : "Sin descuento con esta configuración"}
+                              </p>
+                            </div>
+                            <div className="tnum text-right text-[13px]">
+                              {ex.after < ex.before ? (
+                                <span className="block text-xs text-adm-fg-muted line-through">{formatMoney(ex.before)}</span>
+                              ) : null}
+                              <span className="block font-semibold">{formatMoney(ex.after)}</span>
+                            </div>
+                          </li>
+                        );
+                      }
                       const winner = r.applied[0];
                       const thisApplies = r.applied.some((a) => a.isThis);
                       const before = r.compareAtPrice && r.compareAtPrice > r.listPrice ? r.compareAtPrice : r.listPrice;
@@ -365,11 +505,11 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
               )}
             </CardBody>
           </Card>
-          {draft.badgeLabel || valueNumber ? (
+          {draft.badgeLabel || autoBadge ? (
             <p className="mt-3 flex items-center gap-2 text-xs text-adm-fg-muted">
               Etiqueta en la tienda:
               <Badge tone="accent" dot={false}>
-                {draft.badgeLabel || (valueNumber != null ? discountLabel(draft.type, valueNumber) : "")}
+                {draft.badgeLabel || autoBadge}
               </Badge>
             </p>
           ) : null}

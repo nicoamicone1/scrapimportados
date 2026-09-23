@@ -6,7 +6,7 @@ import { StoreLink } from "@/components/store/StoreLink";
 import type { CartItem } from "@/lib/cart";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
-import type { CartLine } from "@/lib/pricing";
+import type { CartLine, CartTotals } from "@/lib/pricing";
 
 import { QtyStepper } from "./QtyStepper";
 
@@ -32,8 +32,11 @@ export function CartLines({
     <ul className="divide-y divide-border">
       {items.map((item) => {
         const line = byVariant.get(item.variantId);
-        const unit = line?.unitPrice ?? item.unitPrice;
-        const onSale = line ? line.unitPrice < line.listPrice : false;
+        const offer = line?.offer ?? null;
+        // Con 3x2 / 2.ª al 50 % se muestra el precio por unidad ANTES de esa promo
+        // (el promedio de la línea no dice nada) y la nota de qué se bonificó.
+        const unit = offer ? offer.baseUnitPrice : (line?.unitPrice ?? item.unitPrice);
+        const onSale = line ? unit < line.listPrice : false;
         return (
           <li key={item.variantId} className="flex gap-3 py-4 sm:gap-4">
             <StoreLink
@@ -57,6 +60,11 @@ export function CartLines({
                     {onSale && line ? <s className="ml-1.5 text-fg-muted">{formatMoney(line.listPrice)}</s> : null}
                     <span className="text-fg-muted"> c/u</span>
                   </p>
+                  {offer ? (
+                    <p className={cn("mt-0.5 text-xs", offer.units > 0 ? "text-accent" : "text-fg-muted")}>
+                      {offer.units > 0 ? `${offer.label}: ${offer.note}` : offer.note}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="tnum shrink-0 text-sm font-semibold">{formatMoney(line?.lineTotal ?? unit * item.qty)}</p>
               </div>
@@ -76,5 +84,30 @@ export function CartLines({
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * Filas de descuento del resumen (drawer, carrito): "Promociones" (por unidad)
+ * y una por cada promo por cantidad ("Promo 3x2 −$ X").
+ */
+export function PromoSummaryRows({ totals }: { totals: Pick<CartTotals, "promoTotal" | "offers"> }) {
+  const offersTotal = totals.offers.reduce((acc, o) => acc + o.amount, 0);
+  const unitPromos = Math.max(Math.round((totals.promoTotal - offersTotal) * 100) / 100, 0);
+  return (
+    <>
+      {unitPromos > 0 ? (
+        <div className="flex justify-between">
+          <dt className="text-fg-muted">Promociones</dt>
+          <dd className="text-accent">−{formatMoney(unitPromos)}</dd>
+        </div>
+      ) : null}
+      {totals.offers.map((o) => (
+        <div key={o.id} className="flex justify-between gap-3">
+          <dt className="text-fg-muted">{o.label}</dt>
+          <dd className="text-accent">−{formatMoney(o.amount)}</dd>
+        </div>
+      ))}
+    </>
   );
 }

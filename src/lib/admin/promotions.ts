@@ -23,8 +23,8 @@ export interface AdminPromotion extends Promotion {
   updatedAt: string;
 }
 
-const SELECT =
-  "id, name, type, value, scope, category_ids, product_ids, starts_at, ends_at, is_active, priority, badge_label, stackable, created_at, updated_at";
+/** `*`: incluye `config` (promos por cantidad, migración 0017) sin romper si todavía no está aplicada. */
+const SELECT = "*";
 
 export async function listAllPromotions(): Promise<AdminPromotion[]> {
   const { supabase, store } = await requireAdmin();
