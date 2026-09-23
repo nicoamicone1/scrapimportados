@@ -17,6 +17,10 @@ export default async function PlatformPlansPage() {
     .select("code, name, description, price_monthly, currency, is_public, features, limits")
     .order("position");
   if (error) throw new Error(error.message);
+  // plans.mp_plan_id llega con la migración 0015: sin ella, no se muestra el campo.
+  const mp = await supabase.from("plans").select("code, mp_plan_id");
+  const mpIds = mp.error ? null : new Map((mp.data ?? []).map((p) => [p.code, p.mp_plan_id ?? ""]));
+  const mpConfigured = Boolean(process.env.MP_ACCESS_TOKEN?.trim());
 
   return (
     <div className="min-h-dvh">
@@ -33,6 +37,13 @@ export default async function PlatformPlansPage() {
           Lo que cambies acá rige al instante para todas las tiendas de ese plan (la web pública se actualiza en unos minutos). Los códigos de
           función y límite los usa el código: si agregás uno nuevo, sumalo también en <code className="font-mono text-xs">src/lib/plans/features.ts</code>.
         </p>
+        <p className="mt-2 max-w-2xl text-sm text-adm-fg-muted">
+          {mpIds === null
+            ? "Cobro con MercadoPago: falta aplicar la migración 0015."
+            : mpConfigured
+              ? "Cobro con MercadoPago activo: los planes con id de MercadoPago muestran «Pagar con MercadoPago» al dueño de cada tienda."
+              : "Cobro con MercadoPago apagado (falta MP_ACCESS_TOKEN): los dueños sólo ven el pedido por WhatsApp."}
+        </p>
         <div className="mt-6 space-y-4">
           {(data ?? []).map((p) => (
             <PlanEditor
@@ -43,6 +54,7 @@ export default async function PlatformPlansPage() {
                 description: p.description ?? "",
                 isPublic: p.is_public,
                 plan: parsePlan({ ...p, status: "active" }),
+                mpPlanId: mpIds ? (mpIds.get(p.code) ?? "") : null,
               }}
             />
           ))}

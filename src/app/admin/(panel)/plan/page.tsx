@@ -10,7 +10,10 @@ import { formatDate } from "@/lib/dates";
 import { LIMITS, trialDaysLeft, type LimitKey } from "@/lib/plans";
 import { listPublicPlans, planPriceLabel } from "@/lib/plans/catalog";
 import { countUsage } from "@/lib/plans/server";
+import { loadBillingView, type BillingView } from "@/lib/billing/view";
 
+import { CancelRenewalButton } from "./CancelRenewalButton";
+import { MercadoPagoButton } from "./MercadoPagoButton";
 import { UpgradeButton } from "./UpgradeButton";
 
 export const metadata: Metadata = { title: "Plan" };
@@ -43,17 +46,51 @@ function UsageBar({ label, used, max }: { label: string; used: number; max: numb
   );
 }
 
-/** Plan de la tienda (spec §14.3): plan actual, uso vs. límites, comparación y pedido de cambio. */
-export default async function PlanPage() {
+const GRACE_MS = 7 * 86_400_000;
+
+/** Aviso al volver del checkout de MercadoPago (`back_url` = /admin/plan?mp=ok). */
+function ReturnNotice({ mp, billing, planName }: { mp: string | undefined; billing: BillingView | null; planName: string }) {
+  if (mp !== "ok" && mp !== "error") return null;
+  if (mp === "error") {
+    return (
+      <p role="status" className="mb-4 rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">
+        El pago en MercadoPago no se completó y tu plan no cambió. Podés intentarlo de nuevo o pedir el plan por WhatsApp.
+      </p>
+    );
+  }
+  const text =
+    billing?.state === "active"
+      ? `Listo: MercadoPago confirmó el cobro y tu plan ${planName} está activo. Te mandamos el comprobante por mail.`
+      : "Volviste de MercadoPago. Cuando confirme el cobro (suele tardar unos minutos) activamos el plan y te avisamos por mail; no hace falta que pagues de nuevo.";
+  return (
+    <p role="status" className="mb-4 rounded-adm bg-adm-accent-soft px-3 py-2 text-[13px]">
+      {text}
+    </p>
+  );
+}
+
+/** Plan de la tienda (spec §14.3): plan actual, uso vs. límites, comparación y cambio (MercadoPago o WhatsApp). */
+export default async function PlanPage({ searchParams }: PageProps<"/admin/plan">) {
   const ctx = await requireAdmin();
-  const [plans, usage] = await Promise.all([
+  const [plans, usage, billing, query] = await Promise.all([
     listPublicPlans(),
     Promise.all(USAGE_KEYS.map(async (k) => [k, await countUsage(ctx, k)] as const)),
+    loadBillingView(ctx.supabase, ctx.store.id),
+    searchParams,
   ]);
   const { plan } = ctx;
   const days = trialDaysLeft(plan);
   const price = planPriceLabel(plan);
   const hasWhatsApp = Boolean(process.env.PLATFORM_WHATSAPP);
+  const isOwner = ctx.membership.role === "owner" && !ctx.membership.impersonating;
+  const mpState = billing?.state ?? "none";
+  // Con una suscripción de MP cobrando, para cambiar de plan primero se cancela la renovación.
+  const mpLocked = mpState === "active" || mpState === "past_due";
+  const canPayWithMp = (code: string) => Boolean(billing?.enabled && isOwner && !mpLocked && billing.payablePlans.includes(code));
+  const anyMp = plans.some((p) => canPayWithMp(p.code));
+  const periodEnd = billing?.currentPeriodEnd ?? plan.currentPeriodEnd;
+  const pendingPlan = billing?.providerPlanCode ? (plans.find((p) => p.code === billing.providerPlanCode)?.name ?? null) : null;
+  const mp = typeof query.mp === "string" ? query.mp : undefined;
 
   return (
     <>
@@ -63,6 +100,8 @@ export default async function PlanPage() {
         icon={<CreditCard />}
         description={`${ctx.store.name} · ${plan.name} · ${STATUS_TEXT[plan.status] ?? plan.status}`}
       />
+
+      <ReturnNotice mp={mp} billing={billing} planName={plan.name} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <Card>
@@ -78,10 +117,41 @@ export default async function PlanPage() {
                 tienda pasa a Free: no se borra nada, pero lo que excede Free queda bloqueado.
               </p>
             ) : null}
-            {plan.status === "past_due" ? (
+            {plan.status === "past_due" && mpState === "past_due" ? (
+              <p className="rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">
+                MercadoPago no pudo cobrar el plan. Revisá el medio de pago en la sección Suscripciones de tu cuenta de MercadoPago: reintenta el
+                cobro solo.
+                {periodEnd ? ` Si no entra, el ${formatDate(new Date(new Date(periodEnd).getTime() + GRACE_MS))} la tienda pasa a Free.` : ""}
+              </p>
+            ) : plan.status === "past_due" ? (
               <p className="rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">Tenemos un pago pendiente. Escribinos para regularizarlo.</p>
             ) : null}
-            {plan.currentPeriodEnd ? <p className="text-adm-fg-muted">Período actual hasta el {formatDate(plan.currentPeriodEnd)}.</p> : null}
+            {mpState === "active" ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-adm-fg-muted">
+                  Se cobra con MercadoPago{periodEnd ? `. Próximo cobro: ${formatDate(periodEnd)}` : ""}.
+                </p>
+                {isOwner ? <CancelRenewalButton planName={plan.name} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
+              </div>
+            ) : mpState === "cancelling" ? (
+              <p className="rounded-adm bg-adm-accent-2-soft px-3 py-2 text-[13px]">
+                Cancelaste la renovación: seguís con {plan.name}
+                {periodEnd ? ` hasta el ${formatDate(periodEnd)}` : " hasta el final del período pago"}. Después la tienda pasa a Free sin borrar
+                nada.
+              </p>
+            ) : mpState === "pending" ? (
+              <p className="rounded-adm bg-adm-surface-2 px-3 py-2 text-[13px]">
+                Empezaste el pago{pendingPlan ? ` de ${pendingPlan}` : ""} con MercadoPago. Si ya lo completaste, se activa apenas MercadoPago lo
+                confirme; si no, podés volver a intentarlo abajo.
+              </p>
+            ) : plan.currentPeriodEnd ? (
+              <p className="text-adm-fg-muted">Período actual hasta el {formatDate(plan.currentPeriodEnd)}.</p>
+            ) : null}
+            {mpState === "past_due" && isOwner ? (
+              <div className="flex justify-end">
+                <CancelRenewalButton planName={plan.name} until={null} pastDue />
+              </div>
+            ) : null}
           </CardBody>
         </Card>
 
@@ -97,21 +167,44 @@ export default async function PlanPage() {
 
       <h2 className="mt-8 mb-3 text-[15px] font-semibold">Cambiar de plan</h2>
       <p className="mb-4 max-w-2xl text-[13px] text-adm-fg-muted">
-        {hasWhatsApp
-          ? "Elegí el plan y te abrimos WhatsApp con el pedido armado: lo activamos en el día. El cobro automático con MercadoPago llega en la próxima versión."
-          : "Elegí el plan y registramos el pedido: te contactamos para activarlo."}
+        {anyMp
+          ? "Pagá con MercadoPago (tarjeta o dinero en cuenta, se renueva solo cada mes y lo cancelás cuando quieras) y el plan se activa apenas se confirma el cobro. Si preferís, pedilo por WhatsApp."
+          : mpLocked && billing?.enabled
+            ? "Tu plan se cobra con MercadoPago. Para pasar a otro, cancelá la renovación arriba y después pagá el nuevo, o pedilo por WhatsApp."
+            : hasWhatsApp
+              ? "Elegí el plan y te abrimos WhatsApp con el pedido armado: lo activamos en el día."
+              : "Elegí el plan y registramos el pedido: te contactamos para activarlo."}
       </p>
       <PlanCards
         plans={plans}
         current={plan.code}
         highlight={plan.code === "pro" ? undefined : "pro"}
-        renderCta={(p) =>
-          p.code === plan.code ? (
-            <p className="text-center text-[13px] text-adm-fg-muted">{plan.status === "trialing" ? "Estás probando este plan" : "Es tu plan actual"}</p>
-          ) : (
-            <UpgradeButton plan={p.code} label={p.code === "business" ? "Hablemos" : `Quiero ${p.name}`} primary={p.code === "pro"} />
-          )
-        }
+        renderCta={(p) => {
+          const mpHere = canPayWithMp(p.code);
+          if (p.code === plan.code && !(plan.status === "trialing" && mpHere)) {
+            return (
+              <p className="text-center text-[13px] text-adm-fg-muted">{plan.status === "trialing" ? "Estás probando este plan" : "Es tu plan actual"}</p>
+            );
+          }
+          if (p.code === plan.code) {
+            // En prueba: pagar el mismo plan para quedarse con él.
+            return (
+              <div className="space-y-2">
+                <MercadoPagoButton plan={p.code} primary />
+                <p className="text-center text-xs text-adm-fg-muted">Estás probando este plan</p>
+              </div>
+            );
+          }
+          if (!mpHere) {
+            return <UpgradeButton plan={p.code} label={p.code === "business" ? "Hablemos" : `Quiero ${p.name}`} primary={p.code === "pro"} />;
+          }
+          return (
+            <div className="space-y-2">
+              <MercadoPagoButton plan={p.code} primary={p.code === "pro"} />
+              <UpgradeButton plan={p.code} label="Pedir por WhatsApp" />
+            </div>
+          );
+        }}
       />
 
       <h2 className="mt-8 mb-3 text-[15px] font-semibold">Comparación completa</h2>

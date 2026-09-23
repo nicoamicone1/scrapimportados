@@ -9,7 +9,7 @@ registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y lí
 Versión actual: **0.3.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
-cobro de planes (próxima versión): [`docs/BILLING.md`](docs/BILLING.md) ·
+cobro de planes con MercadoPago: [`docs/BILLING.md`](docs/BILLING.md) ·
 lanzamiento: [`docs/MARKETING.md`](docs/MARKETING.md), [`docs/LAUNCH-PLAN.md`](docs/LAUNCH-PLAN.md),
 [`docs/LAUNCH-CHECKLIST.md`](docs/LAUNCH-CHECKLIST.md) (todo lo que requiere acción del dueño) y
 [`docs/SOCIAL-KIT.md`](docs/SOCIAL-KIT.md).
@@ -23,7 +23,10 @@ lanzamiento: [`docs/MARKETING.md`](docs/MARKETING.md), [`docs/LAUNCH-PLAN.md`](d
   (email + contraseña), Storage (bucket público `media`, un prefijo por tienda). Todo
   corre como el usuario logueado (o anon) bajo RLS. Única excepción, acotada: el cron
   diario usa `SUPABASE_SERVICE_ROLE_KEY` (si está) sólo para leer las pruebas por vencer
-  y mandar los avisos de fin de prueba (`src/lib/email/trial-notices.ts`).
+  y mandar los avisos de fin de prueba (`src/lib/email/trial-notices.ts`), y el cobro con
+  MercadoPago la usa para aplicar lo que dice MP (`src/lib/billing/service.ts`).
+- **Cobro de planes** con MercadoPago Suscripciones por REST (`src/lib/billing/`,
+  webhook en `/api/billing/mercadopago/webhook`), apagado sin `MP_ACCESS_TOKEN`.
 - **Emails transaccionales** por la API REST de Resend (`src/lib/email/`), apagados sin
   `RESEND_API_KEY`.
 - `zod`, `lucide-react`, `sonner`, `date-fns`, `vitest`.
@@ -56,7 +59,9 @@ Variables de entorno:
 | `PLATFORM_EMAIL` | opcional: casilla de la plataforma (avisos de pedido de plan y reply-to de los mails de cuenta) |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | opcional: GA4 del sitio de Ecommy (landing, planes, registro), `G-XXXX`. No afecta a las tiendas, que tienen su propio GA4 en Configuración › SEO |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | opcional: token de Google Search Console para `www.ecommy.app` |
-| `SUPABASE_SERVICE_ROLE_KEY` | opcional, sólo servidor: la usa ÚNICAMENTE el cron para los avisos de fin de prueba. Sin ella esos avisos no salen; el resto funciona igual |
+| `SUPABASE_SERVICE_ROLE_KEY` | opcional, sólo servidor: la usan el cron (avisos de fin de prueba y de activación) y el cobro con MercadoPago (webhook y sincronización). Sin ella esos avisos no salen y los pagos de MP no se aplican; el resto funciona igual |
+| `MP_ACCESS_TOKEN` | opcional, sólo servidor: access token de MercadoPago para cobrar los planes con Suscripciones. Sin él `/admin/plan` sólo ofrece el pedido por WhatsApp |
+| `MP_WEBHOOK_SECRET` | opcional, sólo servidor: clave secreta del webhook de MercadoPago (`/api/billing/mercadopago/webhook`); sin ella el webhook responde 503 |
 | `NEXT_DIST_DIR` | opcional, build dir alternativo (ej. `.next-m`) |
 
 ### Base de datos
@@ -70,6 +75,9 @@ viejas, mové los objetos del bucket con `npx tsx scripts/move-media-to-store.mt
 `0014_order_notify_quota.sql` (esquema 5) agrega el cupo de avisos por mail del checkout
 y del arrepentimiento y deja de borrar `trial_ends_at` al vencer la prueba; hasta
 aplicarla, Configuración muestra "base de datos desactualizada" y los mails salen sin cupo.
+`0015_billing.sql` (esquema 6) agrega el cobro con MercadoPago (`plans.mp_plan_id`,
+`billing_events`, columnas de `subscriptions`, `billing_apply_subscription` sólo para
+service role); sin ella `/admin/plan` sigue sólo con WhatsApp.
 
 Aplicarlas con la CLI de Supabase (`supabase db push`) o, desde un agente, con la
 herramienta MCP `apply_migration`. Después regenerá los tipos en

@@ -12,6 +12,7 @@ import { formatNumber } from "@/lib/money";
 import { ROLE_LABELS, isAdminRole } from "@/lib/auth";
 import { storeDisplayHost, storeHref } from "@/lib/tenant/urls";
 
+import { BillingPanel, type BillingPanelProps } from "./BillingPanel";
 import { StoreAdminForms } from "./StoreAdminForms";
 
 export const metadata: Metadata = { title: "Tienda · Plataforma" };
@@ -36,6 +37,37 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
     supabase.from("audit_log").select("id, action, summary, actor_email, created_at").eq("store_id", id).order("created_at", { ascending: false }).limit(12),
   ]);
   if (!store) notFound();
+
+  // Cobro con MercadoPago (migración 0015): si falta, el panel lo avisa.
+  const [billingRes, eventsRes] = await Promise.all([
+    supabase
+      .from("subscriptions")
+      .select("provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
+      .eq("store_id", id)
+      .maybeSingle(),
+    supabase.from("billing_events").select("id, type, result, created_at").eq("store_id", id).order("created_at", { ascending: false }).limit(8),
+  ]);
+  const b = billingRes.error ? null : billingRes.data;
+  const billing: BillingPanelProps["billing"] = billingRes.error
+    ? null
+    : {
+        provider: b?.provider ?? null,
+        providerRef: b?.provider_ref ?? null,
+        providerStatus: b?.provider_status ?? null,
+        providerPlanCode: b?.provider_plan_code ?? null,
+        cancelAtPeriodEnd: Boolean(b?.cancel_at_period_end),
+        lastPaymentAt: b?.last_payment_at ? formatDateTime(b.last_payment_at) : null,
+        currentPeriodEnd: b?.current_period_end ? formatDateTime(b.current_period_end) : null,
+      };
+  const billingEvents = (eventsRes.error ? [] : (eventsRes.data ?? [])).map((e) => {
+    const r = e.result && typeof e.result === "object" && !Array.isArray(e.result) ? e.result : {};
+    return {
+      id: e.id,
+      type: e.type,
+      summary: typeof r.summary === "string" ? r.summary : "Sin procesar todavía",
+      when: formatDateTime(e.created_at),
+    };
+  });
 
   return (
     <div className="min-h-dvh">
@@ -85,6 +117,11 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
             }}
           />
         </div>
+
+        <section className="mt-6 rounded-adm border border-adm-border bg-adm-surface">
+          <h2 className="border-b border-adm-border px-4 py-2.5 text-sm font-semibold">MercadoPago</h2>
+          <BillingPanel storeId={store.id} billing={billing} events={billingEvents} mpConfigured={Boolean(process.env.MP_ACCESS_TOKEN?.trim())} />
+        </section>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <section className="rounded-adm border border-adm-border bg-adm-surface">

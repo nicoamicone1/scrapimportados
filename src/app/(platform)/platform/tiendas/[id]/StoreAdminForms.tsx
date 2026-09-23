@@ -48,7 +48,10 @@ export function StoreAdminForms({ storeId, storeName, plans, current }: StoreAdm
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader title="Plan" description="Cambios manuales mientras no hay cobro automático (v0.2)." />
+        <CardHeader
+          title="Plan"
+          description="Cambio manual. Si la tienda paga con MercadoPago, guardar un plan (salvo extender la prueba) la pasa a manual y los avisos de MP dejan de tocarla: cancelá antes la suscripción en MercadoPago."
+        />
         <CardBody className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Plan">

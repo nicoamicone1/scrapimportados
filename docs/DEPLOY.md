@@ -24,7 +24,9 @@ Estado actual de producción (spec §14.4):
 | `RESEND_API_KEY` | `re_…` (marcado *sensitive*) | emails transaccionales (ver §4b). Sin ella no se manda ningún email y la app funciona igual |
 | `EMAIL_FROM` | `Ecommy <no-reply@ecommy.app>` (default si falta) | remitente; el dominio tiene que estar verificado en Resend. Las tiendas mandan como `"{Tienda} vía Ecommy" <misma dirección>` |
 | `PLATFORM_EMAIL` | casilla de soporte de Ecommy | recibe los pedidos de cambio de plan y es el reply-to de los mails de cuenta. Opcional |
-| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usa SÓLO el cron diario para los avisos de "tu prueba termina" / "tu prueba terminó" y los de activación (día 2 y día 7). Sin ella esos avisos no salen; el cron y todo lo demás siguen igual |
+| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usan el cron diario (avisos de "tu prueba termina" / "tu prueba terminó" y de activación) y el cobro con MercadoPago (webhook y sincronización: `billing_apply_subscription` sólo la ejecuta service_role). Sin ella esos avisos no salen y los pagos de MP no se aplican; todo lo demás sigue igual |
+| `MP_ACCESS_TOKEN` | access token de **producción** de la cuenta de MercadoPago de Ecommy (marcado *sensitive*, nunca `NEXT_PUBLIC_`) | cobro automático de planes (docs/BILLING.md). Sin él `/admin/plan` sólo ofrece el pedido por WhatsApp y el webhook responde 503 |
+| `MP_WEBHOOK_SECRET` | clave secreta del webhook (MercadoPago → Tus integraciones → Webhooks) (marcado *sensitive*) | valida la firma `x-signature` de `/api/billing/mercadopago/webhook`. Sin ella el webhook responde 503 |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | `G-XXXXXXXXXX` | GA4 del sitio de Ecommy (landing, planes, registro, contacto). Opcional; sin él no se carga ningún script. Las tiendas tienen su propio GA4 en Configuración › SEO |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | token de Search Console | sólo el valor `content` del meta que da Google, sin el meta entero. Opcional |
 
@@ -115,12 +117,40 @@ por tienda (la solicitud se registra igual). Sin la migración la app manda todo
 antes. Además, en **Vercel → Firewall** crear una regla de rate limit para los POST con
 header `next-action` en `/s/*` y en los hosts de tienda (~10 por minuto por IP; ver §5).
 
+## 4c. Cobro de planes con MercadoPago
+
+Diseño y detalle en [`docs/BILLING.md`](BILLING.md). Para activarlo:
+
+1. Aplicar `supabase/migrations/0015_billing.sql` (esquema 6). Sin ella la pantalla Plan
+   sigue sólo con WhatsApp.
+2. MercadoPago (cuenta de Ecommy) → Suscripciones → crear un plan de suscripción por plan
+   pago (Starter y Pro), mensual, en ARS y con el mismo precio que `/platform/planes`.
+3. `/platform/planes` → pegar el id de cada `preapproval_plan` en "Plan de MercadoPago" y
+   guardar (con `MP_ACCESS_TOKEN` cargado se verifica que exista).
+4. MercadoPago → Tus integraciones → la aplicación → Webhooks → URL de producción
+   `https://www.ecommy.app/api/billing/mercadopago/webhook`, eventos "Planes y
+   suscripciones". Copiar la clave secreta.
+5. Vercel: `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` y `SUPABASE_SERVICE_ROLE_KEY`.
+   Redeployar.
+6. Probar primero con credenciales y usuarios de prueba de MP (sandbox): pagar Pro desde
+   una tienda de prueba, ver el aviso en `/platform/tiendas/<id>` (sección MercadoPago),
+   cancelar la renovación y simular un cobro rechazado.
+
+Probar el webhook sin firma (tiene que dar 401):
+
+```bash
+curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
+```
+
 ## 5. Checklist post-deploy
 
 - [ ] `https://ecommy-app.vercel.app/` muestra la landing con planes.
 - [ ] `/s/demo/` muestra la tienda demo con imágenes.
 - [ ] Registro → confirmación de email → `/app/nueva` → tienda creada → `/admin`.
 - [ ] `/admin/plan` muestra el trial; "Quiero este plan" abre WhatsApp.
+- [ ] Migración `0015_billing.sql` aplicada; con `MP_ACCESS_TOKEN` y los `mp_plan_id`
+      cargados, el dueño ve "Pagar con MercadoPago" en `/admin/plan`, y el webhook de MP
+      apunta a `/api/billing/mercadopago/webhook` (sin firma responde 401).
 - [ ] `/platform` (superadmin) lista las tiendas.
 - [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401.
 - [ ] Con `RESEND_API_KEY`: un pedido en `/s/demo/` manda "Recibimos tu pedido" al comprador
