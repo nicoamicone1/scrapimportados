@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Envío de emails transaccionales por la API REST de Resend (sin SDK).
  *
@@ -14,6 +16,11 @@
 export const DEFAULT_EMAIL_FROM = "Ecommy <no-reply@ecommy.app>";
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const TIMEOUT_MS = 10_000;
+/** Resend admite ~2 pedidos por segundo por cuenta: se espacian los envíos del proceso. */
+const MIN_GAP_MS = 550;
+/** Espera base antes de reintentar (429 / 5xx / red) si no viene `retry-after`. */
+const RETRY_BASE_MS = 1_000;
+const MAX_RETRIES = 2;
 
 export interface EmailTag {
   name: string;
@@ -95,8 +102,51 @@ function recipients(value: string | string[] | null | undefined): string[] {
   return list.map((v) => v.trim()).filter(isEmail);
 }
 
+let timing = { gap: MIN_GAP_MS, retry: RETRY_BASE_MS };
+let nextSlot = 0;
+
+/** Sólo para tests: sin esperas entre envíos ni antes de reintentar. */
+export function setEmailTimingForTests(value: { gap: number; retry: number } | null): void {
+  timing = value ?? { gap: MIN_GAP_MS, retry: RETRY_BASE_MS };
+  nextSlot = 0;
+}
+
+const sleep = (ms: number) => (ms > 0 ? new Promise<void>((resolve) => setTimeout(resolve, ms)) : Promise.resolve());
+
+/**
+ * Turno para el próximo pedido a Resend. Una acción masiva (marcar 30 pedidos
+ * como pagados) agenda 30 mails a la vez: sin esto, casi todos rebotan con 429.
+ */
+function waitForSlot(): Promise<void> {
+  const now = Date.now();
+  const start = Math.max(now, nextSlot);
+  nextSlot = start + timing.gap;
+  return sleep(start - now);
+}
+
 function post(headers: Record<string, string>, body: string): Promise<Response> {
   return fetch(RESEND_ENDPOINT, { method: "POST", headers, body, signal: AbortSignal.timeout(TIMEOUT_MS) });
+}
+
+function retryDelay(res: Response | null, attempt: number): number {
+  const header = Number(res?.headers.get("retry-after"));
+  const base = Number.isFinite(header) && header > 0 ? header * 1000 : timing.retry * (attempt + 1);
+  return Math.min(base, 5_000);
+}
+
+/** Cuerpo de la respuesta para el log: JSON de Resend o texto, recortado. */
+async function readBody(res: Response): Promise<{ data: { id?: string; message?: string; name?: string } | null; raw: string }> {
+  const raw = await res.text().catch(() => "");
+  try {
+    return { data: raw ? (JSON.parse(raw) as { id?: string; message?: string; name?: string }) : null, raw };
+  } catch {
+    return { data: null, raw };
+  }
+}
+
+function labelOf(message: EmailMessage): string {
+  const kind = message.tags?.find((t) => t.name === "kind")?.value;
+  return kind ? `"${kind}"` : "(sin tipo)";
 }
 
 export async function sendEmail(message: EmailMessage): Promise<SendResult> {
@@ -105,6 +155,7 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
     warnEmailDisabled();
     return { skipped: true };
   }
+  const label = labelOf(message);
 
   try {
     const to = recipients(message.to);
@@ -127,27 +178,47 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     };
+    const idempotent = Boolean(message.idempotencyKey);
     if (message.idempotencyKey) headers["Idempotency-Key"] = message.idempotencyKey.slice(0, 256);
-
     const payload = JSON.stringify(body);
-    let res = await post(headers, payload);
-    // Resend limita a ~2 envíos por segundo por cuenta: ante un 429 se reintenta
-    // hasta dos veces respetando `retry-after` (la idempotency key evita duplicados).
-    for (let attempt = 0; res.status === 429 && attempt < 2; attempt++) {
-      const wait = Math.min(Number(res.headers.get("retry-after")) * 1000 || 1000, 5000);
-      await new Promise((resolve) => setTimeout(resolve, wait));
-      res = await post(headers, payload);
-    }
-    const data = (await res.json().catch(() => null)) as { id?: string; message?: string; name?: string } | null;
-    if (!res.ok) {
+
+    // Reintentos: 429 siempre (Resend no lo procesó). 5xx, timeout o error de red
+    // sólo con idempotency key (si el primer intento sí salió, Resend no lo repite).
+    for (let attempt = 0; ; attempt++) {
+      await waitForSlot();
+      let res: Response;
+      try {
+        res = await post(headers, payload);
+      } catch (err) {
+        if (idempotent && attempt < MAX_RETRIES) {
+          await sleep(retryDelay(null, attempt));
+          continue;
+        }
+        throw err;
+      }
+
+      const { data, raw } = await readBody(res);
+      if (res.ok) return { ok: true, id: data?.id ?? null };
+
+      const code = data?.name ?? "";
+      const retryable =
+        res.status === 429 || (idempotent && (res.status >= 500 || code === "concurrent_idempotent_requests"));
+      if (retryable && attempt < MAX_RETRIES) {
+        await sleep(retryDelay(res, attempt));
+        continue;
+      }
+      // Misma clave con otro contenido: ese mail ya salió en las últimas 24 h.
+      if (res.status === 409 && code === "invalid_idempotent_request") {
+        console.info(`[email] ${label} ya enviado (Idempotency-Key repetida): no se reenvía.`);
+        return { ok: true, id: null };
+      }
       const error = data?.message || data?.name || `HTTP ${res.status}`;
-      console.error(`[email] Resend rechazó "${body.subject}": ${error}`);
+      console.error(`[email] Resend rechazó ${label}: HTTP ${res.status} ${raw.replace(/\s+/g, " ").slice(0, 300)}`);
       return { ok: false, error };
     }
-    return { ok: true, id: data?.id ?? null };
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
-    console.error(`[email] No se pudo enviar "${message.subject}": ${error}`);
+    console.error(`[email] No se pudo enviar ${label}: ${error}`);
     return { ok: false, error };
   }
 }

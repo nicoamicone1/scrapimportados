@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { brandColors, renderEmail, safeHref } from "./layout";
-import { resetEmailWarnings, sendEmail, storeFrom } from "./send";
+import { resetEmailWarnings, sendEmail, setEmailTimingForTests, storeFrom } from "./send";
 import {
   customerCancelReason,
   newOrderSellerEmail,
@@ -158,6 +158,89 @@ describe("plantillas del comprador", () => {
   });
 });
 
+const seller = { name: "Taller Luna", contactEmail: "hola@tallerluna.com", platformUrl: "https://www.ecommy.app" };
+
+describe("datos faltantes: la plantilla degrada", () => {
+  it("sin datos bancarios, sin reserva, sin nombre ni dirección: nada de undefined/null/NaN", () => {
+    const o = order({
+      customer: { name: "", email: "lucia@example.com", phone: "" },
+      transfer: { bankName: "", holder: "", cbu: "", alias: "", cuit: "", instructions: "" },
+      expiresAt: null,
+      notes: null,
+      deliveryText: "Envío a domicilio",
+      items: [],
+    });
+    for (const content of [orderReceivedEmail(o, { ...store, whatsappUrl: null, contactEmail: null, logoUrl: null }), newOrderSellerEmail(o, seller)]) {
+      for (const part of [content.subject, content.html, content.text]) {
+        expect(part).not.toMatch(/undefined|null|NaN|\[object Object\]/);
+      }
+    }
+    const received = orderReceivedEmail(o, store);
+    expect(received.text).toContain("Te pasamos los datos bancarios");
+    expect(received.text).not.toContain("Te reservamos el stock");
+    expect(received.text).toContain("Hola.");
+  });
+
+  it("reserva con fecha inválida o zona horaria rota: se omite o cae en Buenos Aires", () => {
+    expect(orderReceivedEmail(order({ expiresAt: "no-es-fecha" }), store).text).not.toContain("Te reservamos el stock");
+    expect(orderReceivedEmail(order({ timezone: "Marte/Olympus" }), store).text).toContain("Te reservamos el stock hasta el");
+  });
+
+  it("método de pago borrado pero con datos de transferencia: igual muestra cómo transferir", () => {
+    const { text } = orderReceivedEmail(order({ payment: null }), store);
+    expect(text).toContain("TALLER.LUNA.MP");
+  });
+
+  it("retiro sin dirección ni horarios: sólo el lugar", () => {
+    const { html, text } = orderShippedEmail(
+      order({ fulfillment: "pickup", pickup: { name: "Local Palermo", address: "", hoursText: "" }, status: "shipped" }),
+      store,
+    );
+    expect(text).toContain("Local Palermo");
+    expect(text).not.toContain("Dirección:");
+    expect(html).not.toContain(">Horarios<");
+  });
+
+  it("escapa también el preheader, el title y los links armados con datos del usuario", () => {
+    const evil = '"><img src=x onerror=alert(1)>';
+    const { html } = orderReceivedEmail(order({ items: [{ name: evil, variantTitle: evil, qty: 1, unitPrice: 1, total: 1 }], notes: evil }), {
+      ...store,
+      name: evil,
+    });
+    expect(html).not.toContain("<img src=x");
+    expect(html).not.toMatch(/onerror=alert\(1\)>/);
+  });
+});
+
+describe("HTML bien formado", () => {
+  it("ningún atributo style se corta (p. ej. por comillas dobles en la fuente)", () => {
+    const mails = [
+      orderReceivedEmail(order(), store),
+      orderShippedEmail(order({ status: "shipped", tracking: { carrier: "Andreani", number: "AN1", url: "https://andreani.com/x" } }), store),
+      newOrderSellerEmail(order(), seller),
+      welcomeEmail({ storeName: "Taller Luna", storeUrl: "https://taller-luna.ecommy.app", platformUrl: "https://www.ecommy.app" }),
+    ];
+    for (const { html } of mails) {
+      const styles = [...html.matchAll(/style="([^"]*)"/g)].map((m) => m[1]);
+      expect(styles.length).toBeGreaterThan(10);
+      for (const style of styles) expect(style.trim().endsWith(";")).toBe(true);
+      expect(html).not.toMatch(/gradient|box-shadow/i);
+    }
+  });
+});
+
+describe("vista previa (EMAIL_PREVIEW_DIR)", () => {
+  it.runIf(Boolean(process.env.EMAIL_PREVIEW_DIR))("guarda el HTML de Recibimos tu pedido", async () => {
+    const { writeFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const dir = process.env.EMAIL_PREVIEW_DIR as string;
+    const sample = order({ customer: { name: "Lucía Fernández", email: "lucia@example.com", phone: "11 5555 1234" } });
+    const sampleStore = { ...store, name: "Taller Luna" };
+    writeFileSync(join(dir, "email-preview.html"), orderReceivedEmail(sample, sampleStore).html);
+    writeFileSync(join(dir, "email-preview.txt"), orderReceivedEmail(sample, sampleStore).text);
+  });
+});
+
 describe("plantillas del vendedor y la plataforma", () => {
   it("Nuevo pedido con link al admin, cliente y método", () => {
     const mail = newOrderSellerEmail(order(), { name: "Taller Luna", contactEmail: "hola@tallerluna.com", platformUrl: "https://www.ecommy.app" });
@@ -250,10 +333,12 @@ describe("sendEmail", () => {
     fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
     resetEmailWarnings();
+    setEmailTimingForTests({ gap: 0, retry: 0 });
   });
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
+    setEmailTimingForTests(null);
   });
 
   const msg = { to: "lucia@example.com", subject: "Hola", html: "<p>Hola</p>", text: "Hola" };
@@ -298,6 +383,61 @@ describe("sendEmail", () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ message: "Domain not verified" }), { status: 403 }));
     expect(await sendEmail(msg)).toEqual({ ok: false, error: "Domain not verified" });
     error.mockRestore();
+  });
+
+  it("429: reintenta; 5xx y red sólo con idempotency key", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ name: "rate_limit_exceeded" }), { status: 429 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "em_2" }), { status: 200 }));
+    expect(await sendEmail(msg)).toEqual({ ok: true, id: "em_2" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(new Response("upstream error", { status: 502 }));
+    expect(await sendEmail(msg)).toEqual({ ok: false, error: "HTTP 502" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockReset();
+    fetchMock
+      .mockRejectedValueOnce(new Error("The operation was aborted due to timeout"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "em_3" }), { status: 200 }));
+    expect(await sendEmail({ ...msg, idempotencyKey: "k/1" })).toEqual({ ok: true, id: "em_3" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+
+  it("clave de idempotencia ya usada: se da por enviado, sin error", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ name: "invalid_idempotent_request", message: "already used" }), { status: 409 }),
+    );
+    expect(await sendEmail({ ...msg, idempotencyKey: "order-paid/1" })).toEqual({ ok: true, id: null });
+    info.mockRestore();
+  });
+
+  it("el log de un rechazo trae status y cuerpo recortado, nunca la API key", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_supersecreta");
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ name: "validation_error", message: "x".repeat(1000) }), { status: 422 }));
+    await sendEmail({ ...msg, tags: [{ name: "kind", value: "order_received" }] });
+    const line = String(error.mock.calls[0][0]);
+    expect(line).toContain("HTTP 422");
+    expect(line).toContain("order_received");
+    expect(line).not.toContain("re_supersecreta");
+    expect(line.length).toBeLessThan(420);
+    error.mockRestore();
+  });
+
+  it("espacia los envíos para no chocar el límite de Resend", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    setEmailTimingForTests({ gap: 40, retry: 0 });
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ id: "em" }), { status: 200 }));
+    const start = Date.now();
+    await Promise.all([sendEmail(msg), sendEmail(msg), sendEmail(msg)]);
+    expect(Date.now() - start).toBeGreaterThanOrEqual(75);
   });
 
   it("sin destinatario válido no llama a fetch", async () => {

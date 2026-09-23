@@ -26,7 +26,8 @@ export const CANVAS = "#efeae1";
 export const PLATFORM_ACCENT = "#2e4a3f";
 export const PLATFORM_ACCENT_TEXT = "#ffffff";
 
-const FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif`;
+// Comillas simples: estas pilas van dentro de atributos style="…" (una doble los cortaría).
+const FONT = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif`;
 const MONO = `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
 
 export interface Brand {
@@ -165,8 +166,8 @@ function blockHtml(block: Block, brand: Brand): string {
         rows
           .map(
             (r) =>
-              `<tr><td style="${CELL}color:${INK_MUTED};width:40%;padding-right:12px;">${esc(r.label)}</td>` +
-              `<td style="${CELL}color:${INK};text-align:right;word-break:break-all;${r.mono ? `font-family:${MONO};` : ""}">${esc(r.value)}</td></tr>`,
+              `<tr><td style="${CELL}color:${INK_MUTED};width:34%;padding-right:12px;">${esc(r.label)}</td>` +
+              `<td style="${CELL}color:${INK};text-align:right;word-break:break-all;${r.mono ? `font-family:${MONO};font-size:13px;` : ""}">${esc(r.value)}</td></tr>`,
           )
           .join("") +
         `</table>`
@@ -212,7 +213,7 @@ function blockHtml(block: Block, brand: Brand): string {
     case "box":
       return (
         `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;border:1px solid ${RULE};border-radius:4px;">` +
-        `<tr><td style="padding:20px 20px 4px;">${block.blocks
+        `<tr><td class="em-box" style="padding:20px 20px 4px;">${block.blocks
           .map((b, i) => {
             const html = blockHtml(b, brand);
             // El título de la caja va pegado al borde superior.
@@ -276,15 +277,18 @@ export function renderEmail(doc: EmailDocument): EmailContent {
     `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width, initial-scale=1">` +
     `<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light">` +
-    `<title>${esc(doc.subject)}</title></head>` +
+    `<title>${esc(doc.subject)}</title>` +
+    // Celulares (los clientes que no leen <style> quedan con los paddings de escritorio).
+    `<style>@media (max-width:480px){.em-outer{padding:12px 8px !important}.em-pad{padding-left:16px !important;padding-right:16px !important}.em-box{padding:16px 14px 4px !important}}</style>` +
+    `</head>` +
     `<body style="margin:0;padding:0;background:${CANVAS};font-family:${FONT};color:${INK};-webkit-text-size-adjust:100%;">` +
     `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${CANVAS};font-size:1px;line-height:1px;">${esc(doc.preheader)}</div>` +
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${CANVAS};">` +
-    `<tr><td align="center" style="padding:24px 12px;">` +
+    `<tr><td class="em-outer" align="center" style="padding:24px 12px;">` +
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:${PAPER};border:1px solid ${RULE};border-top:3px solid ${doc.brand.accent};font-family:${FONT};">` +
-    `<tr><td style="padding:24px 32px 8px;">${headerHtml(doc.brand)}</td></tr>` +
-    `<tr><td style="padding:16px 32px 16px;">${body}</td></tr>` +
-    `<tr><td style="padding:20px 32px 24px;border-top:1px solid ${RULE};">${footer}</td></tr>` +
+    `<tr><td class="em-pad" style="padding:24px 32px 8px;">${headerHtml(doc.brand)}</td></tr>` +
+    `<tr><td class="em-pad" style="padding:16px 32px 16px;">${body}</td></tr>` +
+    `<tr><td class="em-pad" style="padding:20px 32px 24px;border-top:1px solid ${RULE};">${footer}</td></tr>` +
     `</table></td></tr></table></body></html>`;
 
   const text = [

@@ -21,6 +21,10 @@ Estado actual de producción (spec §14.4):
 | `NEXT_PUBLIC_SITE_URL` | `https://www.ecommy.app` | links de Auth, metadata, URLs absolutas de la plataforma |
 | `PLATFORM_WHATSAPP` | `549…` (E.164 sin +) | "Quiero este plan" abre este WhatsApp |
 | `CRON_SECRET` | secreto largo aleatorio (marcado *sensitive*) | Vercel Cron lo manda como `Authorization: Bearer …` |
+| `RESEND_API_KEY` | `re_…` (marcado *sensitive*) | emails transaccionales (ver §4b). Sin ella no se manda ningún email y la app funciona igual |
+| `EMAIL_FROM` | `Ecommy <no-reply@ecommy.app>` (default si falta) | remitente; el dominio tiene que estar verificado en Resend. Las tiendas mandan como `"{Tienda} vía Ecommy" <misma dirección>` |
+| `PLATFORM_EMAIL` | casilla de soporte de Ecommy | recibe los pedidos de cambio de plan y es el reply-to de los mails de cuenta. Opcional |
+| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usa SÓLO el cron diario para los avisos de "tu prueba termina" / "tu prueba terminó". Sin ella esos avisos no salen; el cron y todo lo demás siguen igual |
 
 No definas `DEV_LOGIN_EMAIL`/`DEV_LOGIN_PASSWORD` en producción (la ruta de dev-login
 responde 404 con `NODE_ENV=production`, pero igual no hacen falta).
@@ -68,6 +72,36 @@ Además hay barridos perezosos: el listado de pedidos y el dashboard vencen rese
 su tienda, y `current_plan()` ya trata un trial vencido como Free aunque el cron no
 haya corrido.
 
+## 4b. Emails transaccionales (Resend)
+
+Qué sale: al comprador (recibimos tu pedido con los datos de transferencia y la reserva,
+pago confirmado, enviado / listo para retirar, número de seguimiento, cancelado), al
+vendedor en el email de contacto de la tienda (pedido nuevo, arrepentimiento), al dueño
+(bienvenida, prueba por terminar, prueba terminada) y a `PLATFORM_EMAIL` (pedido de
+plan). Se mandan después de responder (`after()`), nunca bloquean un pedido y usan
+`Idempotency-Key` para no duplicarse. Código: `src/lib/email/`.
+
+1. Crear la cuenta en [resend.com](https://resend.com) y una API key con permiso
+   *Sending access*.
+2. **Domains → Add domain** `ecommy.app` y cargar en el DNS los registros que muestra
+   Resend: **SPF** (TXT/MX del subdominio de envío), **DKIM** (TXT `resend._domainkey`) y
+   un **DMARC** propio (TXT `_dmarc.ecommy.app`, para empezar
+   `v=DMARC1; p=none; rua=mailto:<tu casilla>`). Esperar a que figure *Verified*.
+3. Cargar en Vercel `RESEND_API_KEY`, `EMAIL_FROM` (si no es el default),
+   `PLATFORM_EMAIL` y, si se quieren los avisos de fin de prueba,
+   `SUPABASE_SERVICE_ROLE_KEY`. Redeployar.
+4. Probar antes de verificar el dominio: con `EMAIL_FROM="Ecommy <onboarding@resend.dev>"`
+   Resend sólo entrega a la casilla dueña de la cuenta; hacer un pedido en la tienda demo
+   con ese email. Para probar sin casillas reales, usar una API key aparte (revocable) y los destinos
+   `delivered@resend.dev` / `bounced@resend.dev`.
+5. Log: en Vercel → Logs, filtrar por `[email]`. Ahí aparecen los rechazos de Resend
+   (status y cuerpo recortado, sin la API key), los envíos repetidos que se saltearon y
+   el aviso de "RESEND_API_KEY no está configurada". Los envíos que salieron se ven en el
+   dashboard de Resend (Emails), con tags `kind` y `store`.
+
+El vendedor recibe los avisos en **Configuración → Tienda → Email de contacto**: si está
+vacío, no le llega nada (el comprador igual recibe los suyos).
+
 ## 5. Checklist post-deploy
 
 - [ ] `https://ecommy-app.vercel.app/` muestra la landing con planes.
@@ -76,6 +110,8 @@ haya corrido.
 - [ ] `/admin/plan` muestra el trial; "Quiero este plan" abre WhatsApp.
 - [ ] `/platform` (superadmin) lista las tiendas.
 - [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401.
+- [ ] Con `RESEND_API_KEY`: un pedido en `/s/demo/` manda "Recibimos tu pedido" al comprador
+      y "Nuevo pedido" al email de contacto de la tienda.
 
 ## 6. Pasar a dominio propio (subdominio por tienda)
 

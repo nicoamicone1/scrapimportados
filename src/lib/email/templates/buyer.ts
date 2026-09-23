@@ -25,8 +25,9 @@ function paragraphs(text: string, muted = false): Block[] {
     .map((content) => ({ t: "p", content, muted }) as Block);
 }
 
+/** Transferencia: por el tipo del método o, si el método ya no existe, porque vinieron los datos bancarios. */
 function isTransfer(order: OrderEmailData): boolean {
-  return order.payment?.type === "transfer";
+  return order.payment?.type === "transfer" || Boolean(order.transfer);
 }
 
 function isWhatsapp(order: OrderEmailData): boolean {
@@ -62,12 +63,13 @@ function paymentBlocks(order: OrderEmailData, store: StoreEmailInfo): Block[] {
     }
     const instructions = t?.instructions || order.payment?.instructions || "";
     if (instructions) inner.push(...paragraphs(instructions, true));
-    if (order.expiresAt) {
+    const deadline = order.expiresAt ? formatDeadline(order.expiresAt, order.timezone) : "";
+    if (deadline) {
       inner.push({
         t: "p",
         content: [
           "Te reservamos el stock hasta el ",
-          { b: formatDeadline(order.expiresAt, order.timezone) },
+          { b: deadline },
           ". Si no registramos el pago para esa fecha, el pedido se cancela solo.",
         ],
       });
@@ -134,6 +136,7 @@ export function orderReceivedEmail(order: OrderEmailData, store: StoreEmailInfo)
       itemsBlock(order),
       totalsBlock(order),
       ...deliveryBlocks(order),
+      order.notes && { t: "p", content: ["Tu nota: ", order.notes], muted: true },
     ],
     footer: buyerFooter(store),
   });

@@ -83,7 +83,7 @@ export function StoreForm({ initial }: { initial: StoreSettingsInput }) {
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Email de contacto" error={error("contact_email")}>
+              <Field label="Email de contacto" hint="A esta casilla te llegan los avisos de pedidos nuevos y arrepentimientos." error={error("contact_email")}>
                 <Input type="email" value={v.contact_email} onChange={(e) => set("contact_email", e.target.value)} autoComplete="email" />
               </Field>
               <Field label="Teléfono" hint="Fijo o celular, como querés que se muestre." error={error("contact_phone")}>

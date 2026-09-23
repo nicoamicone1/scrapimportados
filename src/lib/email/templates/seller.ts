@@ -35,6 +35,7 @@ export function newOrderSellerEmail(order: OrderEmailData, store: SellerStoreInf
   const customer = order.customer.name || order.customer.email || "Un cliente";
   const subject = `Nuevo pedido #${order.number} · ${money(order.total)} · ${customer}`;
   const payment = order.payment?.name ?? "Sin método";
+  const deadline = order.expiresAt ? formatDeadline(order.expiresAt, order.timezone) : "";
 
   return renderEmail({
     subject,
@@ -55,9 +56,9 @@ export function newOrderSellerEmail(order: OrderEmailData, store: SellerStoreInf
         ],
       },
       order.notes && { t: "p", content: ["Nota del cliente: ", { b: order.notes }] },
-      order.expiresAt && {
+      deadline && {
         t: "p",
-        content: `La reserva de stock vence el ${formatDeadline(order.expiresAt, order.timezone)}. Cuando llegue el pago, registralo desde el pedido.`,
+        content: `La reserva de stock vence el ${deadline}. Cuando llegue el pago, registralo desde el pedido.`,
         muted: true,
       },
       { t: "button", href: adminUrl, label: "Abrir el pedido en el panel" },

@@ -17,8 +17,12 @@ cobro de planes (v0.2): [`docs/BILLING.md`](docs/BILLING.md).
 - **Tailwind CSS v4**. El storefront usa CSS variables del tema (`store_settings.theme`);
   el admin y la plataforma, tokens fijos `--adm-*`.
 - **Supabase**: Postgres con RLS en todas las tablas (aislamiento por `store_id`), Auth
-  (email + contraseña), Storage (bucket público `media`, un prefijo por tienda). Sin
-  service-role key: todo corre como el usuario logueado (o anon) bajo RLS.
+  (email + contraseña), Storage (bucket público `media`, un prefijo por tienda). Todo
+  corre como el usuario logueado (o anon) bajo RLS. Única excepción, acotada: el cron
+  diario usa `SUPABASE_SERVICE_ROLE_KEY` (si está) sólo para leer las pruebas por vencer
+  y mandar los avisos de fin de prueba (`src/lib/email/trial-notices.ts`).
+- **Emails transaccionales** por la API REST de Resend (`src/lib/email/`), apagados sin
+  `RESEND_API_KEY`.
 - `zod`, `lucide-react`, `sonner`, `date-fns`, `vitest`.
 
 ## Puesta en marcha
@@ -44,6 +48,10 @@ Variables de entorno:
 | `NEXT_PUBLIC_TENANT_MODE` | opcional: `path` o `subdomain` para forzar el modo |
 | `PLATFORM_WHATSAPP` | WhatsApp de la plataforma (pedidos de cambio de plan) |
 | `CRON_SECRET` | secreto del cron diario `/api/cron/daily` |
+| `RESEND_API_KEY` | opcional: API key de Resend. Sin ella no sale ningún email (se avisa una vez en el log) |
+| `EMAIL_FROM` | opcional: remitente, por defecto `Ecommy <no-reply@ecommy.app>` (el dominio tiene que estar verificado en Resend) |
+| `PLATFORM_EMAIL` | opcional: casilla de la plataforma (avisos de pedido de plan y reply-to de los mails de cuenta) |
+| `SUPABASE_SERVICE_ROLE_KEY` | opcional, sólo servidor: la usa ÚNICAMENTE el cron para los avisos de fin de prueba. Sin ella esos avisos no salen; el resto funciona igual |
 | `NEXT_DIST_DIR` | opcional, build dir alternativo (ej. `.next-m`) |
 
 ### Base de datos

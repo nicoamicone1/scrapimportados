@@ -23,7 +23,7 @@ import {
   type OrderEmailData,
   type StoreEmailInfo,
 } from "./templates";
-import { plainInstructions } from "./templates/shared";
+import { plainInstructions, validTimeZone } from "./templates/shared";
 
 /*
  * Disparadores de emails transaccionales. Cada función:
@@ -96,16 +96,21 @@ async function loadBrand(storeId: string): Promise<BrandSettings> {
   }
 }
 
+/** Pago por transferencia (por el tipo del método o, si se borró el método, por el código). */
+function paysByTransfer(o: PublicOrder): boolean {
+  return o.paymentMethod?.type === "transfer" || (!o.paymentMethod && o.paymentMethodCode === "transfer");
+}
+
 function toEmailOrder(o: PublicOrder, statusUrl: string): OrderEmailData {
   const pm = o.paymentMethod;
-  const isTransfer = pm?.type === "transfer" || o.paymentMethodCode === "transfer";
+  const isTransfer = paysByTransfer(o);
   return {
     id: o.id,
     number: o.number,
     createdAt: o.createdAt,
     currency: o.currency,
     locale: o.store.locale,
-    timezone: o.store.timezone,
+    timezone: validTimeZone(o.store.timezone),
     status: o.status,
     paymentStatus: o.paymentStatus,
     customer: { name: o.customer.name, email: o.customer.email, phone: o.customer.phone },
@@ -146,7 +151,7 @@ function buyerWhatsappUrl(o: PublicOrder, statusUrl: string, purpose: "received"
   const phone = o.store.whatsappPhone;
   if (!phone) return null;
   if (purpose === "received" && o.paymentStatus !== "paid") {
-    if (o.paymentMethod?.type === "transfer") {
+    if (paysByTransfer(o)) {
       return waLink(
         phone,
         `${buildReceiptMessage({ number: o.number, total: o.total, customerName: o.customer.name, storeName: o.store.name, currency: o.currency })} ${statusUrl}`,
@@ -327,7 +332,7 @@ export function notifyWithdrawal(input: {
         orderFound: input.orderFound,
         reason: input.reason,
         createdAt: new Date().toISOString(),
-        timezone: data?.timezone || "America/Argentina/Buenos_Aires",
+        timezone: validTimeZone(data?.timezone),
       },
       { name: data?.name || store.name, contactEmail: to, platformUrl: platformOrigin() },
     );

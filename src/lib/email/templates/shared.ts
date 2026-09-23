@@ -1,4 +1,4 @@
-import { formatDateTime } from "@/lib/dates";
+import { DEFAULT_TIMEZONE, formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 
 import { brandColors, PLATFORM_ACCENT, PLATFORM_ACCENT_TEXT, type Block, type Brand, type Inline } from "../layout";
@@ -28,10 +28,22 @@ export function greeting(name: string | null | undefined): string {
   return first ? `Hola, ${first}.` : "Hola.";
 }
 
+/** Zona horaria IANA válida (una inválida hace tirar a `Intl` y el mail no saldría). */
+export function validTimeZone(tz: string | null | undefined): string {
+  if (!tz) return DEFAULT_TIMEZONE;
+  try {
+    new Intl.DateTimeFormat("es-AR", { timeZone: tz });
+    return tz;
+  } catch {
+    return DEFAULT_TIMEZONE;
+  }
+}
+
 /** "jueves 24/09 a las 18:00 h" en la zona horaria de la tienda. */
 export function formatDeadline(iso: string, timeZone: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
+  timeZone = validTimeZone(timeZone);
   const day = new Intl.DateTimeFormat("es-AR", { weekday: "long", timeZone }).format(d);
   return `${day} ${formatDateTime(iso, timeZone).replace(/\/\d{4}/, "").replace(" ", " a las ")} h`;
 }

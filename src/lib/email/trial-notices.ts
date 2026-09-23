@@ -124,12 +124,16 @@ export async function collectTrialNotices(now: Date = new Date()): Promise<Trial
 
     const storeById = new Map((stores ?? []).map((s) => [s.id, s]));
     const ownerById = new Map((owners ?? []).map((p) => [p.id, p]));
+    const emailById = await authEmails(db, ownerIds);
     const plan: TrialNoticePlan = { db, ending: [], ended: [] };
 
     for (const sub of subs) {
       const store = storeById.get(sub.store_id);
       const owner = store?.owner_id ? ownerById.get(store.owner_id) : undefined;
-      if (!store || !owner || !isEmail(owner.email) || !sub.trial_ends_at) continue;
+      // El email de auth.users manda (profiles.email se copia sólo al registrarse
+      // y no sigue un cambio de email); profiles queda de respaldo.
+      const ownerEmail = store?.owner_id ? [emailById.get(store.owner_id), owner?.email].find(isEmail) : undefined;
+      if (!store || !ownerEmail || !sub.trial_ends_at) continue;
       const kind: Kind = new Date(sub.trial_ends_at).getTime() <= now.getTime() ? "trial_ended" : "trial_ending";
       if (alreadyNotified(store.onboarding, kind, sub.trial_ends_at)) continue;
       const notice: Notice = {
@@ -140,8 +144,8 @@ export async function collectTrialNotices(now: Date = new Date()): Promise<Trial
         customDomain: store.custom_domain,
         customDomainVerified: store.custom_domain_verified,
         onboarding: store.onboarding,
-        ownerEmail: owner.email,
-        ownerName: owner.name,
+        ownerEmail,
+        ownerName: owner?.name ?? null,
         trialEndsAt: sub.trial_ends_at,
       };
       (kind === "trial_ended" ? plan.ended : plan.ending).push(notice);
@@ -153,7 +157,31 @@ export async function collectTrialNotices(now: Date = new Date()): Promise<Trial
   }
 }
 
-const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Email actual de cada dueño en auth.users (si la Admin API falla, queda profiles). */
+async function authEmails(db: Admin, ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const { data } = await db.auth.admin.getUserById(id);
+        const email = data.user?.email?.trim();
+        if (isEmail(email)) out.set(id, email);
+      } catch {
+        // respaldo: profiles.email
+      }
+    }),
+  );
+  return out;
+}
+
+/** Marca el aviso releyendo `onboarding` (el dueño pudo tildar un paso mientras tanto). */
+async function markNotice(db: Admin, n: Notice): Promise<void> {
+  const { data, error: readError } = await db.from("stores").select("onboarding").eq("id", n.storeId).maybeSingle();
+  if (readError) console.error(`[email] no se pudo leer onboarding de ${n.slug}:`, readError.message);
+  const current = data ? data.onboarding : n.onboarding;
+  const { error } = await db.from("stores").update({ onboarding: withNotice(current, n.kind, n.trialEndsAt) }).eq("id", n.storeId);
+  if (error) console.error(`[email] no se pudo marcar ${n.kind} en ${n.slug}:`, error.message);
+}
 
 /**
  * Manda los avisos juntados por `collectTrialNotices` (los de "terminó" sólo
@@ -194,15 +222,10 @@ export async function deliverTrialNotices(plan: TrialNoticePlan | null, now: Dat
         ],
         idempotencyKey: `${n.kind}/${n.storeId}/${n.trialEndsAt}`,
       });
+      // Sólo se marca si Resend lo aceptó: si falló, mañana se reintenta.
       if (!wasSent(result)) continue;
       report[n.kind]++;
-      const { error } = await plan.db
-        .from("stores")
-        .update({ onboarding: withNotice(n.onboarding, n.kind, n.trialEndsAt) })
-        .eq("id", n.storeId);
-      if (error) console.error(`[email] no se pudo marcar ${n.kind} en ${n.slug}:`, error.message);
-      // Resend admite ~2 envíos por segundo.
-      await pause(600);
+      await markNotice(plan.db, n);
     } catch (err) {
       console.error(`[email] ${n.kind} ${n.slug}:`, err instanceof Error ? err.message : err);
     }
