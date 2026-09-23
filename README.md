@@ -6,7 +6,7 @@ personalizable, panel de administración (`/admin`) y checkout sin pasarela
 (transferencia con descuento o coordinación por WhatsApp; el pedido siempre queda
 registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y límites.
 
-Versión actual: **0.3.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
+Versión actual: **0.4.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
 cobro de planes con MercadoPago: [`docs/BILLING.md`](docs/BILLING.md) ·
@@ -75,6 +75,11 @@ viejas, mové los objetos del bucket con `npx tsx scripts/move-media-to-store.mt
 `0014_order_notify_quota.sql` (esquema 5) agrega el cupo de avisos por mail del checkout
 y del arrepentimiento y deja de borrar `trial_ends_at` al vencer la prueba; hasta
 aplicarla, Configuración muestra "base de datos desactualizada" y los mails salen sin cupo.
+`0015_billing.sql` (esquema 6) cobro de planes con MercadoPago, `0016_stock_alerts.sql` (7)
+avisos de stock, `0017_promotions_bxgy.sql` (8) promociones por cantidad y
+`0018_order_bundle_discount.sql` (9) descuento por cantidad a nivel pedido con recálculo en
+`create_order`. Se aplican en ese orden; el código tolera que falten (cada función se
+oculta o degrada) y `SCHEMA_VERSION` en `src/lib/version.ts` indica la esperada.
 `0015_billing.sql` (esquema 6) agrega el cobro con MercadoPago (`plans.mp_plan_id`,
 `billing_events`, columnas de `subscriptions`, `billing_apply_subscription` sólo para
 service role); sin ella `/admin/plan` sigue sólo con WhatsApp.
@@ -149,6 +154,7 @@ src/
     media.ts                mediaPath(storeId, …)
     auth.ts                 requireAdmin() → { store, membership, plan, … }
     email/                  emails transaccionales (Resend por REST, plantillas, disparadores)
+    billing/                MercadoPago Suscripciones (cliente REST, firma del webhook, estados)
     store/ admin/ pricing/ theme/ blocks/ …
 supabase/migrations/        SQL
 scripts/                    scraper, seed, create-admin, move-media-to-store

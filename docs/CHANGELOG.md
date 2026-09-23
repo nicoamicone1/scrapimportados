@@ -2,6 +2,27 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.4.0 — 2026-09-23 · Cobro con MercadoPago, avisos de stock y promos 3x2
+
+### Agregado
+
+- Pagá tu plan con MercadoPago desde Plan: débito automático mensual con tarjeta o dinero en cuenta. El plan se activa cuando MercadoPago confirma el cobro (o con 7 días de gracia si autoriza antes de cobrar) y te llega un mail con la fecha del próximo cobro. «Cancelar renovación» te deja seguir hasta el fin del período pago y después la tienda pasa a Free sin borrar nada. Si MercadoPago no puede cobrar, Plan te avisa y te llega un mail.
+- Panel de la plataforma: id del plan de MercadoPago por plan, estado de la suscripción de cada tienda y «Sincronizar con MercadoPago».
+- «Avisame cuando haya stock»: en la ficha de un producto agotado el cliente deja su email y le llega un mail con el link y el precio cuando cargás stock. En Inventario › Avisos de stock ves quién espera cada producto y a quién ya se avisó.
+- Promociones «Llevá X, pagá Y» (2x1, 3x2, 4x3…) y «N.ª unidad con descuento» (por ejemplo, 2.ª unidad al 50 %) para toda la tienda, categorías o productos. Las unidades se agrupan de a X de la más cara a la más barata y en cada grupo sale gratis la más barata. Las cards muestran el badge, la ficha «Llevá 3 y pagá 2» y el carrito, el checkout, el seguimiento, el remito y los mails muestran «Promociones por cantidad» como una línea del pedido, en pesos enteros.
+
+### Cambiado
+
+- El pedido de plan por WhatsApp sigue disponible al lado del pago con MercadoPago. Sólo el dueño puede pagar o cancelar la renovación.
+- La sección Ofertas de la tienda incluye los productos con promociones por cantidad.
+- El menú del panel resalta sólo la sección más específica (Inventario y Avisos de stock ya no se marcan a la vez).
+- Requiere aplicar las migraciones 0015 a 0018 (en orden): cobro de planes, avisos de stock, promociones por cantidad y descuento a nivel pedido.
+
+### Corregido
+
+- El checkout valida en la base el descuento de las promociones por cantidad con la misma regla que la tienda, así nadie puede armar un pedido con más descuento del que corresponde.
+- Un producto que sólo suma unidades para un 3x2 conserva su propia promoción, y sumar un producto barato ya no encarece el pedido.
+
 ## v0.3.0 — 2026-09-23 · Centro de ayuda, avisos de activación y seguridad
 
 ### Agregado
