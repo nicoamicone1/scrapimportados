@@ -92,7 +92,7 @@ export function ProductSkeleton() {
         {/* Mismo límite de alto que ProductGallery (DESIGN.md §6.3) para que no salte al cargar. */}
         <div
           className="lg:col-span-7 lg:flex lg:justify-center lg:gap-4"
-          style={{ "--pdp-media-h": "clamp(400px, calc(100svh - var(--header-h, 68px) - 96px), 720px)" } as CSSProperties}
+          style={{ "--pdp-media-h": "clamp(400px, calc(100svh - var(--header-h, 68px) - 128px), 680px)" } as CSSProperties}
         >
           <div className="hidden w-20 shrink-0 flex-col gap-2 lg:flex">
             {Array.from({ length: 4 }, (_, i) => (

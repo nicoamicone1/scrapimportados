@@ -14,24 +14,24 @@ export interface GalleryImage {
 /**
  * Alto máximo de la imagen principal en desktop (DESIGN.md §6.3): tiene que
  * entrar completa en el viewport debajo del header sticky.
- * - `100svh − --header-h − 96px`: 96px = lo que hay arriba de la foto en la
- *   primera pantalla (padding de sección + breadcrumb, ~70px en `comfortable`)
- *   + ~24px de aire abajo. Ya sticky (`top: header + 24px`) sobra margen.
- * - Techo 720px: más alto ya no suma detalle (la foto se pide a ≤ 1440px en 2x)
+ * - `100svh − --header-h − 128px`: 128px = lo que hay arriba de la foto en la
+ *   primera pantalla (announcement bar ~24px + padding de sección + breadcrumb,
+ *   ~90px en `airy`) + aire abajo. Ya sticky (`top: header + 24px`) sobra margen.
+ * - Techo 680px: más alto ya no suma detalle (la foto se pide a ≤ 1360px en 2x)
  *   y rompe la relación con el buy box. Piso 400px para ventanas muy bajas.
  */
-const MEDIA_H = "clamp(400px, calc(100svh - var(--header-h, 68px) - 96px), 720px)";
+const MEDIA_H = "clamp(400px, calc(100svh - var(--header-h, 68px) - 128px), 680px)";
 /** Ancho máximo = alto máximo × ratio del tema (`--card-ratio` es "4 / 5", "1 / 1"…). */
 const MEDIA_MAX_W = "lg:max-w-[calc(var(--pdp-media-h)*var(--card-ratio,1/1))]";
 
 /**
  * `sizes` de la imagen principal. Desktop: el ancho real nunca pasa de techo × ratio
- * (4:5 → 576px, 3:4 → 540px) o de la columna 7/12 (1:1 y 16:9, ≤ ~770px en `wide`).
+ * (4:5 → 544px, 3:4 → 510px) o de la columna 7/12 (1:1 y 16:9, ≤ ~770px en `wide`).
  * Mobile: 100vw. Desktop y carrusel usan el MISMO `sizes` para que la primera foto
  * resuelva a la misma URL en los dos y se descargue una sola vez.
  */
 const mainSizes = (contain: boolean) =>
-  contain ? "(min-width: 1280px) 720px, (min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 576px, 100vw";
+  contain ? "(min-width: 1280px) 680px, (min-width: 1024px) 50vw, 100vw" : "(min-width: 1024px) 544px, 100vw";
 
 const scrollBehavior = (): ScrollBehavior =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
