@@ -12,6 +12,7 @@ import { mercadoPagoDebitActive } from "@/lib/billing/state";
 import { storeTag } from "@/lib/cache-tags";
 import { PLANS_TAG } from "@/lib/plans/catalog";
 import { FEATURE_KEYS, LIMIT_KEYS } from "@/lib/plans";
+import { BILLING_PERIODS, billingPeriodArg } from "@/lib/plans/yearly";
 
 /*
  * Acciones del superadmin (/platform). Todas validan
@@ -43,6 +44,8 @@ const planSchema = z
     trialEndsAt: z.string().optional().default(""),
     /** El superadmin confirmó "Se cancelará el débito automático en MercadoPago". */
     cancelMercadoPago: z.boolean().optional().default(false),
+    /** Periodicidad (0019): "yearly" = pagó el año por transferencia. La prueba y Free son siempre mensuales. */
+    period: z.enum(BILLING_PERIODS).optional().default("monthly"),
   })
   .refine((v) => v.status !== "trialing" || Boolean(v.trialEndsAt), { path: ["trialEndsAt"], message: "Indicá hasta cuándo dura la prueba." });
 
@@ -51,6 +54,10 @@ const planSchema = z
  * la tienda en `provider = 'manual'` (los avisos de MP ya no la tocan): si
  * tenía un débito automático vigente en MercadoPago, primero se cancela allá
  * (con confirmación en el formulario), para que no siga cobrando.
+ *
+ * `period = "yearly"` (0019) va en la MISMA llamada a `platform_set_plan`
+ * (`p_billing_period`, que exige `price_yearly`); el mensual no lo manda (es
+ * el default), así funciona sin la migración.
  */
 export async function setStorePlan(input: z.input<typeof planSchema>): Promise<ActionResult> {
   return runAction(async () => {
@@ -59,6 +66,14 @@ export async function setStorePlan(input: z.input<typeof planSchema>): Promise<A
     if (!parsed.success) return zodFail(parsed.error);
     const v = parsed.data;
     const trial = v.status === "trialing" ? new Date(`${v.trialEndsAt}T23:59:59-03:00`).toISOString() : undefined;
+
+    const period = v.status === "trialing" || v.plan === "free" ? "monthly" : v.period;
+    if (period === "yearly") {
+      // Antes de cancelar nada en MercadoPago: el anual necesita precio anual (la RPC lo vuelve a exigir).
+      const { data: yp, error: ypError } = await supabase.from("plans").select("price_yearly").eq("code", v.plan).maybeSingle();
+      if (ypError) return fail("Falta aplicar la migración 0019: todavía no se puede marcar un plan anual.");
+      if (!yp?.price_yearly) return fail("Ese plan no tiene precio anual: cargalo en Planes o guardalo como mensual.");
+    }
 
     let mpNote = "";
     if (v.status !== "trialing") {
@@ -91,9 +106,10 @@ export async function setStorePlan(input: z.input<typeof planSchema>): Promise<A
       p_plan_code: v.plan,
       p_status: v.status,
       p_trial_ends_at: trial,
+      ...billingPeriodArg(period),
     });
-    if (error) return fail(error.message);
-    await auditStore(v.storeId, "platform.plan", `Superadmin: plan ${v.plan} (${v.status})${mpNote}`);
+    if (error) return fail(mpNote ? `${error.message} (el débito automático en MercadoPago ya se canceló)` : error.message);
+    await auditStore(v.storeId, "platform.plan", `Superadmin: plan ${v.plan}${period === "yearly" ? " anual" : ""} (${v.status})${mpNote}`);
     revalidatePath("/platform");
     return ok();
   });

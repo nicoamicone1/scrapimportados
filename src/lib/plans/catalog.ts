@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/server";
 
 import { parsePlan, type BillingPeriod, type PlanInfo } from "./index";
-import { monthlyEquivalent, yearlySavingsPercent } from "./yearly";
+import { monthlyEquivalent, validYearlyOffer, yearlySavingsPercent } from "./yearly";
 
 export interface PublicPlan extends PlanInfo {
   description: string | null;
@@ -16,9 +16,15 @@ export interface PublicPlan extends PlanInfo {
   monthlyEquivalent: number | null;
 }
 
-/** Plan público a partir de la fila de `plans` (sin 0019 no hay `price_yearly` → sin anual). */
+/**
+ * Plan público a partir de la fila de `plans` (sin 0019 no hay `price_yearly` → sin anual).
+ * Un anual que no se puede ofrecer (no ahorra, o ahorra más del 60 %:
+ * `validYearlyOffer`) queda en `priceYearly: null`: ni la web ni /admin/plan
+ * lo muestran.
+ */
 export function toPublicPlan(row: Record<string, unknown> & { description: string | null; position: number }): PublicPlan {
-  const plan = parsePlan({ ...row, status: "active" });
+  const parsed = parsePlan({ ...row, status: "active" });
+  const plan = { ...parsed, priceYearly: validYearlyOffer(parsed.priceMonthly, parsed.priceYearly) };
   return {
     ...plan,
     description: row.description,
@@ -52,12 +58,17 @@ export const listPublicPlans = unstable_cache(
   { tags: [PLANS_TAG], revalidate: 600 },
 );
 
-/** "$ 14.999 / mes", "$ 149.990 / año" (anual), "Gratis" o "A medida". */
+/**
+ * "$ 14.999 / mes", "$ 149.990 / año" (anual), "Gratis" o "A medida". Un plan
+ * anual cuyo precio anual ya no está cargado (se sacó después del pago)
+ * muestra "Pago anual" sin monto: nunca "/ mes".
+ */
 export function planPriceLabel(
   plan: Pick<PlanInfo, "priceMonthly" | "currency"> & Partial<Pick<PlanInfo, "priceYearly">>,
   period: BillingPeriod = "monthly",
 ): { amount: string; suffix: string } {
-  if (period === "yearly" && plan.priceYearly) {
+  if (period === "yearly") {
+    if (!plan.priceYearly) return { amount: "Pago anual", suffix: "" };
     const amount = new Intl.NumberFormat("es-AR", { style: "currency", currency: plan.currency || "ARS", maximumFractionDigits: 0 }).format(
       plan.priceYearly,
     );

@@ -19,18 +19,40 @@
 --    'monthly') y lo guarda cuando cambia el plan o el estado.
 -- 5. current_plan(): devuelve además billing_period y price_yearly.
 --    Free y la prueba cuentan siempre como mensual.
+--    La rama "MercadoPago sin cobro 7 días después del período" no aplica
+--    a un checkout pendiente (provider_status = 'pending'): un plan manual
+--    cuyo dueño empezó a pagar con MP y abandonó el checkout no cae a Free
+--    por un current_period_end viejo.
 -- 6. platform_set_plan(): acepta p_billing_period opcional (default
---    'monthly'). Extender la prueba no toca la periodicidad.
+--    'monthly'; el anual exige price_yearly). Extender la prueba no toca la
+--    periodicidad. Un plan manual (todo salvo la prueba) deja
+--    current_period_end y provider_status en null: el período de un débito
+--    de MP anterior no lo vence.
 -- 7. platform_list_stores(): devuelve además billing_period.
+-- 8. billing_expire_subscriptions() (copia de 0015): misma excepción del
+--    checkout pendiente que current_plan() y, al pasar a Free, vuelve a
+--    billing_period = 'monthly'. expire_trials() (copia de 0014): también.
+--    El vencimiento del anual sale de current_period_end, que es el
+--    `next_payment_date` de MP (12 meses después del cobro).
 --
--- billing_expire_subscriptions() no cambia: el vencimiento sale de
--- current_period_end, que para el anual es el `next_payment_date` de MP
--- (12 meses después del cobro).
+-- COPIAS: private.store_plan_code() (0020) repite las ramas de
+-- current_plan(); si cambian acá, cambiala allá.
 --
--- Requiere 0015. Respecto del deploy del código, el orden da igual: sin esta
--- migración la app no ofrece el pago anual (los campos faltan → sin anual) y
--- todo sigue mensual como antes.
+-- Requiere 0015 (se frena con un error claro si falta). Respecto del deploy
+-- del código, el orden da igual: sin esta migración la app no ofrece el pago
+-- anual (los campos faltan → sin anual) y todo sigue mensual como antes.
 -- =====================================================================
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'subscriptions' and column_name = 'provider_status'
+  ) or to_regprocedure('public.billing_expire_subscriptions()') is null then
+    raise exception '0019 necesita 0015_billing.sql: aplicá esa migración primero.';
+  end if;
+end;
+$$;
 
 -- ---------------------------------------------------------------------
 -- 1-2. Columnas
@@ -229,7 +251,9 @@ begin
     v_code := 'free';
     v_status := 'active';
   -- 0015: MercadoPago sin cobro confirmado 7 días después del fin del período.
+  -- 0019: salvo un checkout pendiente (el período es de otro débito o de antes).
   elsif v_sub.provider = 'mercadopago' and v_sub.status in ('active', 'past_due')
+        and v_sub.provider_status is distinct from 'pending'
         and v_sub.current_period_end is not null and v_sub.current_period_end < now() - interval '7 days' then
     v_code := 'free';
     v_status := 'active';
@@ -293,6 +317,11 @@ begin
   if v_period not in ('monthly', 'yearly') then -- 0019
     raise exception 'Periodicidad inválida';
   end if;
+  -- 0019: el anual (fuera de la prueba) necesita precio anual.
+  if v_period = 'yearly' and p_status <> 'trialing'
+     and not exists (select 1 from public.plans where code = p_plan_code and price_yearly is not null) then
+    raise exception 'Ese plan no tiene pago anual';
+  end if;
   insert into public.subscriptions (store_id, plan_code, status, trial_ends_at, current_period_start, provider, billing_period)
   values (p_store_id, p_plan_code, p_status, case when p_status = 'trialing' then p_trial_ends_at end, now(), 'manual',
           case when p_status = 'trialing' then 'monthly' else v_period end)
@@ -305,6 +334,10 @@ begin
          -- 0015: extender la prueba no toca el cobro; cualquier otro cambio manual sí.
          provider = case when excluded.status = 'trialing' then coalesce(public.subscriptions.provider, 'manual') else 'manual' end,
          cancel_at_period_end = case when excluded.status = 'trialing' then public.subscriptions.cancel_at_period_end else false end,
+         -- 0019: un plan manual no hereda el período ni el estado de un débito de MP
+         -- anterior (con un checkout abandonado, ese período lo pasaría a Free).
+         current_period_end = case when excluded.status = 'trialing' then public.subscriptions.current_period_end else null end,
+         provider_status = case when excluded.status = 'trialing' then public.subscriptions.provider_status else null end,
          -- 0019: extender la prueba tampoco toca la periodicidad.
          billing_period = case when excluded.status = 'trialing' then public.subscriptions.billing_period else v_period end;
 end;
@@ -353,6 +386,69 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------
+-- 8. Vencimientos (copias de 0015 y 0014): Free vuelve a ser mensual
+-- ---------------------------------------------------------------------
+create or replace function public.billing_expire_subscriptions()
+returns int
+language sql
+security definer
+set search_path = ''
+as $$
+  -- Mismas condiciones que current_plan(). Por falta de cobro (no por
+  -- renovación cancelada) queda provider_status = 'expired': la pantalla Plan
+  -- deja de mostrar la suscripción de MP como vigente.
+  with due as (
+    select store_id,
+           (cancel_at_period_end and current_period_end < now()) as by_cancel
+      from public.subscriptions
+     where plan_code <> 'free'
+       and status in ('active', 'past_due')
+       and current_period_end is not null
+       and (
+         (cancel_at_period_end and current_period_end < now())
+         or (provider = 'mercadopago' and provider_status = 'authorized_unpaid' and current_period_end < now())
+         -- 0019: un checkout pendiente no vence un período de otro débito.
+         or (provider = 'mercadopago' and provider_status is distinct from 'pending' and current_period_end < now() - interval '7 days')
+       )
+     for update
+  ),
+  upd as (
+    update public.subscriptions s
+       set plan_code = 'free',
+           status = 'active',
+           cancel_at_period_end = false,
+           billing_period = 'monthly', -- 0019
+           provider_status = case when due.by_cancel then s.provider_status else 'expired' end,
+           notes = trim(coalesce(s.notes, '') || ' ' ||
+             case when due.by_cancel then 'Renovación cancelada: pasó a Free el '
+                  else 'Sin cobro confirmado en MercadoPago: pasó a Free el ' end
+             || to_char(now(), 'YYYY-MM-DD') || '.')
+      from due
+     where s.store_id = due.store_id
+    returning 1
+  )
+  select count(*)::int from upd;
+$$;
+
+create or replace function public.expire_trials()
+returns int
+language sql
+security definer
+set search_path = ''
+as $$
+  with upd as (
+    update public.subscriptions
+       set plan_code = 'free',
+           status = 'active',
+           billing_period = 'monthly', -- 0019
+           notes = trim(coalesce(notes, '') || ' Trial vencido el ' || to_char(now(), 'YYYY-MM-DD') || '.')
+     where status = 'trialing' and trial_ends_at is not null and trial_ends_at < now()
+    returning 1
+  )
+  select count(*)::int from upd;
+$$;
+
+-- ---------------------------------------------------------------------
 -- Permisos (las funciones recreadas con `drop` vuelven con EXECUTE para PUBLIC)
 -- ---------------------------------------------------------------------
 revoke execute on function public.billing_start_checkout(uuid, text, text, text) from public, anon, authenticated;
@@ -368,6 +464,10 @@ grant execute on function public.platform_set_plan(uuid, text, text, timestamptz
 
 revoke execute on function public.platform_list_stores() from public, anon;
 grant execute on function public.platform_list_stores() to authenticated;
+
+-- `create or replace` conserva los permisos; se repiten por si acaso (sólo el cron).
+revoke execute on function public.billing_expire_subscriptions() from public, anon, authenticated;
+revoke execute on function public.expire_trials() from public, anon, authenticated;
 
 -- Versión del esquema que espera el código (src/lib/version.ts → SCHEMA_VERSION).
 -- `greatest`: aplicarla fuera de orden no baja la versión.

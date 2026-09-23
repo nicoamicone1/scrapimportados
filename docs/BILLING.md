@@ -144,16 +144,32 @@ Starter y Pro (o cualquier plan con `price_yearly`) se pueden pagar por año: el
   - `billing_apply_subscription(…, p_billing_period default 'monthly')`: guarda el
     período cuando cambia plan o estado (`p_status` no null).
   - `current_plan()` devuelve además `billing_period` (Free y la prueba: siempre
-    `monthly`) y `price_yearly`.
+    `monthly`) y `price_yearly`. La rama "MP sin cobro 7 días después del período" no
+    aplica con `provider_status = 'pending'` (un checkout a medias no vence un período de
+    otro débito). **Copia**: `private.store_plan_code()` (0020) repite estas ramas y tiene
+    que llevar la misma condición.
   - `platform_set_plan(…, p_billing_period default 'monthly')`: el superadmin marca un
-    anual pagado por transferencia (`/platform/tiendas/<id>` → "Pago: Anual"). Extender la
-    prueba no toca el período. `platform_list_stores()` devuelve además `billing_period`.
-  - `billing_expire_subscriptions()` no cambia: el vencimiento sale de
-    `current_period_end`, que para el anual es el `next_payment_date` de MP (12 meses).
+    anual pagado por transferencia (`/platform/tiendas/<id>` → "Pago: Anual"); el anual
+    exige `price_yearly`. Extender la prueba no toca el período. Un plan manual (todo salvo
+    la prueba) deja `current_period_end` y `provider_status` en null: si el dueño después
+    abandona un checkout de MP, el período de un débito anterior no lo pasa a Free.
+    `platform_list_stores()` devuelve además `billing_period`.
+  - `billing_expire_subscriptions()` (copia de 0015) tiene la misma excepción del checkout
+    pendiente y, al pasar a Free, deja `billing_period = 'monthly'`; `expire_trials()`
+    (copia de 0014), también. El vencimiento del anual sale de `current_period_end`, que es
+    el `next_payment_date` de MP (12 meses).
+  - La migración se frena con un error claro si falta 0015.
 - **Compatibilidad**: el código funciona con y sin 0019. Las lecturas piden las columnas
   nuevas y, si fallan, repiten sin ellas (sin anual). Las RPC mandan `p_billing_period`
-  sólo cuando es `yearly` (el mensual es el default de la función), así las llamadas
-  mensuales sirven igual antes y después de aplicar la migración.
+  sólo cuando es `yearly` (`billingPeriodArg`; el mensual es el default de la función),
+  así las llamadas mensuales sirven igual antes y después de aplicar la migración. El
+  cambio manual de `/platform/tiendas/<id>` es una sola llamada a `platform_set_plan` con
+  el período.
+- **Anual que se puede ofrecer** (`validYearlyOffer` en `src/lib/plans/yearly.ts`): hace
+  falta precio mensual y el anual tiene que ahorrar algo (menos que 12 meses) sin ahorrar
+  más del 60 % (un ahorro mayor se trata como error de carga). Si no, la web, `/admin/plan`
+  y el checkout no ofrecen el anual (aunque `price_yearly` esté cargado), y
+  `/platform/planes` no deja guardarlo.
 - **Checkout anual** (`startMercadoPagoCheckout({ plan, period: "yearly" })`):
   - `external_reference` = `<store_id>:<plan_code>:yearly`. El mensual sigue siendo
     `<store_id>:<plan_code>` (un tercer campo ausente = `monthly`; así un rollback del
@@ -167,18 +183,29 @@ Starter y Pro (o cualquier plan con `price_yearly`) se pueden pagar por año: el
 - **Webhook**: `resolvePlan` reconoce `mp_plan_id_yearly` (→ anual) y, sin plan de MP, usa
   el período del `external_reference`. `recurringMatchesPlan(ar, plan, "yearly")` exige
   `price_yearly` cada 12 meses (un monto mensual cada 12 meses, o el anual cada mes, queda
-  "ignorado: plan_mismatch"). Sin `next_payment_date`, el fin del período se estima en 12
-  meses desde el cobro. Los mails dicen "Pro anual" y "se renueva solo cada año".
+  "ignorado: plan_mismatch"). Sin `next_payment_date`, con un cobro nuevo el fin del
+  período es 12 meses (o 1, el mensual) desde el cobro: nunca el `current_period_end`
+  guardado, que es del período anterior (o del mes pago de un mensual cancelado que pasa
+  al anual). Sin cobro nuevo se conserva el guardado sólo si termina después del inicio.
+  Los mails dicen "Pro anual" y "se renueva solo cada año".
 - **/admin/plan**: en los planes con anual, "Pagar mensual" y "Pagar el año (ahorrás N %)"
   con MercadoPago; por WhatsApp, "mensual · anual" (el mensaje dice "con pago anual"). Un
-  plan mensual vigente (sin débito de MP cobrando) puede pedir "Pasar al pago anual". El
-  estado dice "Plan Pro anual con MercadoPago · próximo cobro el …".
+  plan mensual vigente (sin débito de MP cobrando) puede pedir "Pasar al pago anual". Con
+  el mensual de MP cobrando, pagar el anual del mismo plan responde "Cancelá la renovación
+  mensual para pasar al anual." El estado dice "Plan Pro anual con MercadoPago · próximo
+  cobro el …". Un plan anual cuyo `price_yearly` se borró muestra "Pago anual" (nunca
+  "/ mes").
 - **Web pública**: `PlanCards` muestra bajo el precio mensual "Pagando el año: 12 meses por
   el precio de 10 · $ X por mes" (o "ahorrás N %" si el anual no es un número justo de
-  meses); `/planes` agrega un párrafo corto antes de la comparación.
-- **Precios**: `/platform/planes` → "Precio por año". Si cargás "Plan anual de
-  MercadoPago", se verifica que exista, esté activo, cobre cada 12 meses y el mismo monto
-  que el precio anual.
+  meses); `/planes` agrega un párrafo corto antes de la comparación. La FAQ "¿Puedo pagar
+  el año?" se arma con los planes que tienen anual (sin ninguno, no aparece) y la FAQ
+  nombra MercadoPago sólo si `billingEnabled()` (las páginas server pasan `mpEnabled`).
+- **Precios**: `/platform/planes` → "Precio por año" (entre 1 y 12 meses del precio
+  mensual, sin llegar a 12 y con no más de 60 % de ahorro). Si cargás "Plan anual de
+  MercadoPago", se verifica que exista, esté activo, traiga el cobro recurrente, cobre
+  cada 12 meses, en la moneda del plan y el mismo monto que el precio anual. El "Plan de
+  MercadoPago" mensual, igual: activo, con cobro recurrente, cada 1 mes y en la moneda del
+  plan. Un mismo id no puede ser el mensual y el anual, ni el de dos planes.
 
 ## Estados (`src/lib/billing/state.ts`)
 

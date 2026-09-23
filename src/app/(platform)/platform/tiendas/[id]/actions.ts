@@ -3,51 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { setStorePlan } from "@/app/(platform)/platform/actions";
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { requirePlatformAdmin } from "@/lib/auth";
 import { billingEnabled, MercadoPagoError } from "@/lib/billing/mercadopago";
 import { billingServiceClient } from "@/lib/billing/service";
 import { describeResult, supabaseBillingRepo, syncPreapproval } from "@/lib/billing/sync";
-import { BILLING_PERIODS, type BillingPeriod } from "@/lib/plans/yearly";
-
-/**
- * Cambio manual de plan con periodicidad (0019). El cambio en sí (y la
- * cancelación del débito de MercadoPago, si hay) lo hace `setStorePlan`, que
- * guarda mensual; si el superadmin eligió anual (pago del año por
- * transferencia), después se marca anual con `platform_set_plan(…,
- * p_billing_period => 'yearly')`. La prueba y Free son siempre mensuales.
- */
-export async function setStorePlanWithPeriod(
-  input: Parameters<typeof setStorePlan>[0] & { period?: BillingPeriod },
-): Promise<ActionResult> {
-  const { period: rawPeriod, ...rest } = input;
-  const period = z.enum(BILLING_PERIODS).catch("monthly").parse(rawPeriod ?? "monthly");
-  const res = await setStorePlan(rest);
-  if (!res.ok || period === "monthly" || rest.status === "trialing" || rest.plan === "free") return res;
-  return runAction(async () => {
-    const { supabase, user } = await requirePlatformAdmin();
-    const { error } = await supabase.rpc("platform_set_plan", {
-      p_store_id: rest.storeId,
-      p_plan_code: rest.plan,
-      p_status: rest.status,
-      p_billing_period: "yearly",
-    });
-    if (error) return fail(`Guardamos el plan como mensual, pero no pudimos marcarlo anual: ${error.message}`);
-    const { error: auditError } = await supabase.from("audit_log").insert({
-      store_id: rest.storeId,
-      actor_id: user.id,
-      actor_email: user.email ?? null,
-      action: "platform.plan",
-      entity: "store",
-      entity_id: rest.storeId,
-      summary: `Superadmin: plan ${rest.plan} con pago anual`,
-    });
-    if (auditError) console.error("[audit]", auditError.message);
-    revalidatePath(`/platform/tiendas/${rest.storeId}`);
-    return ok();
-  });
-}
 
 /**
  * "Sincronizar con MercadoPago" (superadmin): relee el preapproval de la

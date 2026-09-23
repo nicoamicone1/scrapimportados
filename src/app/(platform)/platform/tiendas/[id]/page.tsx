@@ -10,6 +10,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { mercadoPagoDebitActive } from "@/lib/billing/state";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatNumber } from "@/lib/money";
+import { parsePlan } from "@/lib/plans";
 import { billingPeriodLabel, isBillingPeriod, type BillingPeriod } from "@/lib/plans/yearly";
 import { ROLE_LABELS, isAdminRole } from "@/lib/auth";
 import { storeDisplayHost, storeHref } from "@/lib/tenant/urls";
@@ -41,8 +42,9 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
   if (!store) notFound();
 
   // Cobro con MercadoPago (migración 0015): si falta, el panel lo avisa.
-  // Periodicidad (0019): si falta, no se muestra.
-  const [billingRes, eventsRes, periodRes] = await Promise.all([
+  // Periodicidad (0019): si falta, no se muestra. La vigente sale de current_plan()
+  // (Free, la prueba o un plan vencido cuentan como mensual aunque la fila diga otra cosa).
+  const [billingRes, eventsRes, periodRes, effectiveRes] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
@@ -50,8 +52,9 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
       .maybeSingle(),
     supabase.from("billing_events").select("id, type, result, created_at").eq("store_id", id).order("created_at", { ascending: false }).limit(8),
     supabase.from("subscriptions").select("billing_period, provider_billing_period").eq("store_id", id).maybeSingle(),
+    supabase.rpc("current_plan", { p_store_id: id }),
   ]);
-  const period: BillingPeriod | null = periodRes.error ? null : isBillingPeriod(periodRes.data?.billing_period) ? periodRes.data.billing_period : "monthly";
+  const period: BillingPeriod | null = periodRes.error ? null : effectiveRes.error ? "monthly" : parsePlan(effectiveRes.data).billingPeriod;
   const providerPeriod = periodRes.error ? null : isBillingPeriod(periodRes.data?.provider_billing_period) ? periodRes.data.provider_billing_period : null;
   const b = billingRes.error ? null : billingRes.data;
   const billing: BillingPanelProps["billing"] = billingRes.error

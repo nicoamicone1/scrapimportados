@@ -1,6 +1,6 @@
-import { isBillingPeriod, type BillingPeriod } from "@/lib/plans/yearly";
+import { billingPeriodLabel, isBillingPeriod, type BillingPeriod } from "@/lib/plans/yearly";
 
-import type { BillingSubscriptionRow, MpAuthorizedPayment, MpAutoRecurring, MpPreapproval } from "./types";
+import type { BillingSubscriptionRow, MpAuthorizedPayment, MpAutoRecurring, MpPreapproval, MpPreapprovalPlan } from "./types";
 
 /*
  * Máquina de estados: qué hacer con `subscriptions` según lo que dice
@@ -177,9 +177,15 @@ export function decideSubscription({ preapproval, payment, current, planCode, pe
       }
 
       const periodStart = lastCharged ?? approvedAt ?? iso(current.current_period_start) ?? iso(preapproval.date_created) ?? now.toISOString();
-      // El anual lo da MP en next_payment_date (12 meses después del cobro); si falta, se estima.
+      // El fin lo da MP en next_payment_date (12 meses después del cobro en el anual). Si falta:
+      // con un cobro nuevo, el período que ese cobro paga (1 o 12 meses desde el cobro; el
+      // current_period_end guardado es del período anterior, o de un mensual cancelado que
+      // pasa a anual). Sin cobro nuevo, el guardado sólo si termina después del inicio.
+      const estimatedEnd = addMonths(periodStart, period === "yearly" ? 12 : 1);
+      const storedEnd = newCharge || unpaidNow ? null : iso(current.current_period_end);
       const periodEnd =
-        iso(preapproval.next_payment_date) ?? (unpaidNow ? null : iso(current.current_period_end)) ?? addMonths(periodStart, period === "yearly" ? 12 : 1);
+        iso(preapproval.next_payment_date) ??
+        (storedEnd !== null && new Date(storedEnd).getTime() > new Date(periodStart).getTime() ? storedEnd : estimatedEnd);
       const alreadyActive = paid && current.status === "active" && current.plan_code === planCode && !current.cancel_at_period_end;
       return {
         status: "active",
@@ -285,4 +291,59 @@ export function recurringMatchesPlan(
   if ((ar.currency_id ?? "").toUpperCase() !== (plan.currency || "ARS").toUpperCase()) return false;
   const freq = PERIOD_FREQUENCY[period];
   return Number(ar.frequency) === freq.frequency && ar.frequency_type === freq.frequency_type;
+}
+
+/**
+ * Control de un `preapproval_plan` de MercadoPago antes de guardarlo en
+ * /platform/planes (mensual en `mp_plan_id`, anual en `mp_plan_id_yearly`):
+ * tiene que traer el cobro recurrente, con la frecuencia del período (cada 1
+ * mes o cada 12 meses) y la moneda del plan; con `amount`, además ese monto.
+ * Devuelve el problema para el superadmin, o `null`.
+ */
+export function mpPlanProblem(
+  mp: Pick<MpPreapprovalPlan, "auto_recurring">,
+  expected: { period: BillingPeriod; currency: string | null | undefined; amount?: number | null },
+): string | null {
+  const ar = mp.auto_recurring;
+  const label = billingPeriodLabel(expected.period);
+  if (!ar) return "MercadoPago no devolvió el cobro recurrente de ese plan (monto y frecuencia): revisalo en MercadoPago.";
+  const freq = PERIOD_FREQUENCY[expected.period];
+  if (!(Number(ar.frequency) === freq.frequency && ar.frequency_type === freq.frequency_type)) {
+    return `Ese plan de MercadoPago cobra cada ${ar.frequency ?? "?"} ${ar.frequency_type ?? "?"}: el ${label} tiene que cobrar cada ${freq.frequency === 1 ? "mes" : "12 meses"}.`;
+  }
+  const currency = (expected.currency || "ARS").toUpperCase();
+  if ((ar.currency_id ?? "").toUpperCase() !== currency) {
+    return `Ese plan de MercadoPago cobra en ${ar.currency_id ?? "?"} y el plan está en ${currency}: tienen que coincidir.`;
+  }
+  if (typeof expected.amount === "number") {
+    const amount = Number(ar.transaction_amount);
+    if (!Number.isFinite(amount) || Math.abs(amount - expected.amount) > 0.005) {
+      return `Ese plan de MercadoPago cobra ${ar.transaction_amount ?? "?"} y el precio ${label} es ${expected.amount}: igualalos antes de guardar.`;
+    }
+  }
+  return null;
+}
+
+/**
+ * ¿El id de MercadoPago ya lo usa otro campo? Un mismo `preapproval_plan` no
+ * puede ser el mensual y el anual (del mismo plan o de otro), ni el de dos
+ * planes: el webhook no sabría qué plan ni qué período activar.
+ */
+export function mpPlanIdConflict(
+  id: string,
+  target: { code: string; period: BillingPeriod },
+  plans: readonly { code: string; mp_plan_id?: string | null; mp_plan_id_yearly?: string | null }[],
+): string | null {
+  if (!id) return null;
+  for (const p of plans) {
+    for (const period of ["monthly", "yearly"] as const) {
+      if (p.code === target.code && period === target.period) continue;
+      const other = period === "yearly" ? p.mp_plan_id_yearly : p.mp_plan_id;
+      if (other && other === id) {
+        const where = p.code === target.code ? "este plan" : `el plan ${p.code}`;
+        return `Ese id ya es el plan ${billingPeriodLabel(period)} de MercadoPago de ${where}: cada plan y período necesita su propio plan en MercadoPago.`;
+      }
+    }
+  }
+  return null;
 }

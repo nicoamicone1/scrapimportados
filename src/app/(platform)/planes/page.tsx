@@ -42,7 +42,8 @@ export default async function PlanesPage() {
   const [{ user }, plans] = await Promise.all([getSession(), plansOrEmpty("planes")]);
   const start = user ? "/app/nueva" : "/registro";
   const yearlyPlans = plans.filter((p) => p.monthlyEquivalent != null);
-  const faq = pickFaq(platformFaq({ storeAddress: exampleStoreAddress(), plans }), [
+  const mpEnabled = billingEnabled();
+  const faq = pickFaq(platformFaq({ storeAddress: exampleStoreAddress(), plans, mpEnabled }), [
     "prueba",
     "cambio-plan",
     "anual",
@@ -85,7 +86,7 @@ export default async function PlanesPage() {
           }
         />
 
-        {yearlyPlans.length ? <YearlyNote yearly={yearlyPlans} mercadoPago={billingEnabled()} /> : null}
+        {yearlyPlans.length ? <YearlyNote yearly={yearlyPlans} mercadoPago={mpEnabled} /> : null}
 
         <h2 id="comparar" className={yearlyPlans.length ? "mt-8 text-[20px] font-semibold" : "mt-14 text-[20px] font-semibold"}>
           Comparación completa

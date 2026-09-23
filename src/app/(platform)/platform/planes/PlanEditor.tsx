@@ -12,7 +12,7 @@ import { Field } from "@/components/ui/Field";
 import { Checkbox, Input } from "@/components/ui/Input";
 import { formatMoney } from "@/lib/money";
 import { FEATURE_KEYS, FEATURES, LIMIT_KEYS, LIMITS, type PlanInfo } from "@/lib/plans";
-import { yearlyLine } from "@/lib/plans/yearly";
+import { yearlyLine, yearlyPriceProblem } from "@/lib/plans/yearly";
 
 export interface EditablePlan {
   code: string;
@@ -42,8 +42,12 @@ export function PlanEditor({ value }: { value: EditablePlan }) {
   const [mpPlanIdYearly, setMpPlanIdYearly] = useState(value.yearly?.mpPlanId ?? "");
   const [pending, startTransition] = useTransition();
   const monthly = price === "" ? null : Number(price);
+  // Vista previa de la línea pública o, si el anual no se puede ofrecer, por qué (lo mismo que rechaza al guardar).
   const yearlyPreview =
-    priceYearly === "" ? null : yearlyLine({ priceMonthly: monthly, priceYearly: Number(priceYearly), currency: value.plan.currency });
+    priceYearly === ""
+      ? null
+      : (yearlyLine({ priceMonthly: monthly, priceYearly: Number(priceYearly), currency: value.plan.currency }) ??
+        yearlyPriceProblem(monthly, Number(priceYearly)));
 
   const save = () =>
     startTransition(async () => {

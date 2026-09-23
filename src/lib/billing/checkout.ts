@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { planWithPeriod, validYearly, type BillingPeriod } from "@/lib/plans/yearly";
+import { billingPeriodArg, isBillingPeriod, planWithPeriod, validYearly, validYearlyOffer, type BillingPeriod } from "@/lib/plans/yearly";
 
 import { cancelPreapproval, createPreapproval, getPreapprovalPlan, MercadoPagoError, type CreatePreapprovalBody } from "./mercadopago";
 import { isChargingStatus, PERIOD_FREQUENCY } from "./state";
@@ -47,15 +47,20 @@ export interface CheckoutPlan {
   /** 0019 (ausentes sin la migración = sin anual). */
   mp_plan_id_yearly?: string | null;
   price_yearly?: number | string | null;
+  /** Para validar el anual contra el mensual (`validYearlyOffer`). Ausente = sólo se exige `price_yearly > 0`. */
+  price_monthly?: number | string | null;
   currency?: string | null;
 }
 
+/** Suscripción que mira el checkout. `billing_period` llega con 0019 (ausente = mensual). */
+export type CheckoutSubscription = Pick<
+  BillingSubscriptionRow,
+  "provider" | "provider_ref" | "provider_status" | "cancel_at_period_end" | "plan_code" | "status"
+> & { billing_period?: string | null };
+
 export interface CheckoutDeps {
   loadPlan(code: string): Promise<CheckoutPlan | null>;
-  loadSubscription(): Promise<Pick<
-    BillingSubscriptionRow,
-    "provider" | "provider_ref" | "provider_status" | "cancel_at_period_end" | "plan_code" | "status"
-  > | null>;
+  loadSubscription(): Promise<CheckoutSubscription | null>;
   /** RPC `billing_start_checkout` (service role). Devuelve el mensaje de error o null. */
   recordCheckout(args: { planCode: string; preapprovalId: string; period: BillingPeriod }): Promise<string | null>;
   createPreapproval?: typeof createPreapproval;
@@ -151,6 +156,20 @@ export function previousToCancel(
   return sub.provider_status === "pending" || sub.provider_status === "expired" || isChargingStatus(sub.provider_status) ? sub.provider_ref : null;
 }
 
+/**
+ * Argumentos de la RPC `billing_start_checkout`. Sólo el anual manda
+ * `p_billing_period`: el mensual es el default de 0019, así la llamada
+ * mensual funciona con o sin la migración.
+ */
+export function billingStartCheckoutArgs(args: { storeId: string; planCode: string; preapprovalId: string; period: BillingPeriod }) {
+  return {
+    p_store_id: args.storeId,
+    p_plan_code: args.planCode,
+    p_provider_ref: args.preapprovalId,
+    ...billingPeriodArg(args.period),
+  };
+}
+
 /** `X-Idempotency-Key`: mismo intento (doble clic en el mismo minuto) = misma clave. */
 function idempotencyKey(parts: string[]): string {
   return `ecommy-${createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 48)}`;
@@ -165,7 +184,15 @@ export async function startCheckout(input: CheckoutInput, deps: CheckoutDeps): P
   const plan = await deps.loadPlan(input.planCode);
   // Plan de MP que cobra: el mensual o el anual. El anual puede no tener (se crea sin plan asociado).
   const mpPlanId = (period === "yearly" ? plan?.mp_plan_id_yearly : plan?.mp_plan_id) || null;
-  const yearlyPrice = period === "yearly" ? validYearly(Number(plan?.price_yearly ?? Number.NaN)) : null;
+  const yearlyNumber = Number(plan?.price_yearly ?? Number.NaN);
+  const monthlyRaw = plan?.price_monthly;
+  // Con el precio mensual a mano, el anual tiene que ser una oferta creíble (ahorra algo, no más del 60 %).
+  const yearlyPrice =
+    period !== "yearly"
+      ? null
+      : monthlyRaw === undefined
+        ? validYearly(yearlyNumber)
+        : validYearlyOffer(monthlyRaw === null ? null : Number(monthlyRaw), yearlyNumber);
   if (!plan || (period === "monthly" && !mpPlanId)) {
     return { ok: false, error: "Ese plan todavía no se puede pagar con MercadoPago. Pedilo por WhatsApp." };
   }
@@ -174,7 +201,17 @@ export async function startCheckout(input: CheckoutInput, deps: CheckoutDeps): P
   const sub = await deps.loadSubscription();
   // Una suscripción autorizada o pausada puede volver a cobrar: primero se cancela la renovación.
   if (sub?.provider === "mercadopago" && isChargingStatus(sub.provider_status) && !sub.cancel_at_period_end) {
-    if (sub.plan_code === plan.code && sub.status === "active") return { ok: false, error: "Ya estás pagando este plan con MercadoPago." };
+    if (sub.plan_code === plan.code && sub.status === "active") {
+      const subPeriod: BillingPeriod = isBillingPeriod(sub.billing_period) ? sub.billing_period : "monthly";
+      if (subPeriod === period) return { ok: false, error: "Ya estás pagando este plan con MercadoPago." };
+      return {
+        ok: false,
+        error:
+          period === "yearly"
+            ? "Cancelá la renovación mensual para pasar al anual."
+            : "Cancelá la renovación anual para pasar al mensual.",
+      };
+    }
     return { ok: false, error: "Ya tenés una suscripción activa en MercadoPago: cancelá la renovación antes de cambiar de plan." };
   }
 

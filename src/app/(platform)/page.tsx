@@ -22,6 +22,7 @@ import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site"
 import { presetSpecimens, specimenFontSheets, specimenTexts } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSession } from "@/lib/auth";
+import { billingEnabled } from "@/lib/billing/mercadopago";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { listPublicPlans, type PublicPlan } from "@/lib/plans/catalog";
@@ -182,7 +183,7 @@ export default async function LandingPage() {
     ...specimens.map((s, i) => ({ presetId: s.presetId, texts: specimenTexts(s, planLabels[i]) })),
   ]);
 
-  const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans });
+  const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans, mpEnabled: billingEnabled() });
   const landingFaq = pickFaq(faq, ["comision", "tarjeta", "prueba", "mudanza", "datos", "facturacion"]);
 
   const subtotal = ORDER.items.reduce((sum, i) => sum + i.price, 0);

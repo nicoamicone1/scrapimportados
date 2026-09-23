@@ -1,4 +1,5 @@
 import type { Json } from "@/lib/supabase/database.types";
+import { billingPeriodArg } from "@/lib/plans/yearly";
 
 import { cancelPreapproval, getAuthorizedPayment, getPreapproval, MercadoPagoError } from "./mercadopago";
 import type { BillingDb } from "./service";
@@ -279,7 +280,7 @@ export function supabaseBillingRepo(db: BillingDb): BillingRepo {
         p_adopt: adopt ?? false,
         // Sólo el anual manda el período: el mensual es el default de 0019 y así
         // la llamada sigue funcionando sin la migración.
-        ...(decision.billingPeriod === "yearly" ? { p_billing_period: "yearly" } : {}),
+        ...billingPeriodArg(decision.billingPeriod),
       });
       if (error) throw new BillingDbError("billing_apply_subscription", error);
     },

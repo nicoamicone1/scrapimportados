@@ -7,6 +7,7 @@ import { platformFaq } from "@/components/platform/faq";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { exampleStoreAddress, PLATFORM_EMAIL, platformWhatsappHref } from "@/components/platform/site";
 import { getSession } from "@/lib/auth";
+import { billingEnabled } from "@/lib/billing/mercadopago";
 
 import { plansOrEmpty, platformMailto } from "../_lib/public-site";
 
@@ -38,7 +39,7 @@ export default async function ContactoPage() {
   const whatsappDisplay = whatsapp ? `+${(whatsappNumber ?? "").replace(/\D/g, "")}` : null;
 
   const proProducts = plans.find((p) => p.code === "pro")?.limits.products ?? null;
-  const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans });
+  const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans, mpEnabled: billingEnabled() });
 
   return (
     <PlatformPage signedIn={Boolean(user)}>

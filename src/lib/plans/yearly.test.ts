@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { parsePlan } from "./index";
 import {
+  billingPeriodArg,
   billingPeriodLabel,
   monthlyEquivalent,
   planWithPeriod,
+  validYearlyOffer,
   yearlyLine,
   yearlyMonthsPaid,
   yearlyOffer,
+  yearlyPriceProblem,
   yearlySavingsPercent,
 } from "./yearly";
 
@@ -51,9 +54,42 @@ describe("pago anual", () => {
       "Pagando el año: 12 meses por el precio de 10 · $ 12.499 por mes",
     );
     expect(yearlyLine({ priceMonthly: 10000, priceYearly: 105000, currency: "ARS" })).toBe("Pagando el año: ahorrás 13 % · $ 8.750 por mes");
-    // Anual sin ahorro (o sin mensual): sólo el equivalente.
-    expect(yearlyLine({ priceMonthly: null, priceYearly: 120000, currency: "ARS" })).toBe("Pagando el año: $ 10.000 por mes");
+    // Sin mensual, sin ahorro o con un ahorro increíble (> 60 %): no se ofrece.
+    expect(yearlyLine({ priceMonthly: null, priceYearly: 120000, currency: "ARS" })).toBeNull();
+    expect(yearlyLine({ priceMonthly: 10000, priceYearly: 120000, currency: "ARS" })).toBeNull();
+    expect(yearlyLine({ priceMonthly: 10000, priceYearly: 130000, currency: "ARS" })).toBeNull();
+    expect(yearlyLine({ priceMonthly: 14999, priceYearly: 14999, currency: "ARS" })).toBeNull(); // el mensual cargado como anual
     expect(yearlyLine({ priceMonthly: 14999, priceYearly: null, currency: "ARS" })).toBeNull();
+  });
+
+  it("bordes del anual: menos que 12 meses y no más de 60 % de ahorro", () => {
+    // 12 meses justos o más: no ahorra.
+    expect(yearlyPriceProblem(10000, 120000)).toMatch(/menor que 12 meses/);
+    expect(yearlyPriceProblem(10000, 119999)).toBeNull();
+    // 60 % de ahorro = 4,8 meses: sirve; un peso menos, no.
+    expect(yearlyPriceProblem(10000, 48000)).toBeNull();
+    expect(yearlyPriceProblem(10000, 47999)).toMatch(/60/);
+    // Menos que un mes (dato mal cargado).
+    expect(yearlyPriceProblem(10000, 9000)).toMatch(/menor que un mes/);
+    // Sin precio mensual (a medida o Free) o sin anual.
+    expect(yearlyPriceProblem(null, 100000)).toMatch(/precio por mes/);
+    expect(yearlyPriceProblem(0, 100000)).toMatch(/precio por mes/);
+    expect(yearlyPriceProblem(10000, 0)).toMatch(/mayor que cero/);
+    expect(yearlyPriceProblem(10000, Number.NaN)).toMatch(/mayor que cero/);
+    expect(validYearlyOffer(14999, 149990)).toBe(149990);
+    expect(validYearlyOffer(14999, 14999)).toBeNull();
+    expect(validYearlyOffer(10000, 120000)).toBeNull();
+    // El % y "12 meses por el precio de N" siguen la misma regla.
+    expect(yearlySavingsPercent(10000, 30000)).toBeNull(); // 75 %: dato inválido
+    expect(yearlyMonthsPaid(10000, 30000)).toBeNull(); // no "12 meses por el precio de 3"
+    expect(yearlyOffer(10000, 48000)).toMatch(/^ahorrás 60.%$/);
+  });
+
+  it("billingPeriodArg: sólo el anual manda p_billing_period", () => {
+    expect(billingPeriodArg("monthly")).toEqual({});
+    expect(billingPeriodArg(null)).toEqual({});
+    expect(billingPeriodArg(undefined)).toEqual({});
+    expect(billingPeriodArg("yearly")).toEqual({ p_billing_period: "yearly" });
   });
 
   it("etiquetas", () => {

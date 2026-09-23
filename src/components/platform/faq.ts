@@ -6,6 +6,9 @@
  * "desde qué plan" salen de los planes de la base (`plan-notes`).
  */
 
+import type { PlanInfo } from "@/lib/plans";
+import { validYearlyOffer, yearlyMonthsPaid } from "@/lib/plans/yearly";
+
 import { minPlanName, type PlanLike } from "./plan-notes";
 
 export type FaqId =
@@ -26,14 +29,46 @@ export interface FaqItem {
   a: string;
 }
 
+/** Plan para la FAQ: con `priceYearly` (0019) arma la respuesta del pago anual. */
+export type FaqPlan = PlanLike & Partial<Pick<PlanInfo, "priceYearly">>;
+
 export interface FaqContext {
   /** Dirección de ejemplo de una tienda en este entorno (`exampleStoreAddress()`). */
   storeAddress: string;
   /** Planes públicos (`listPublicPlans`); vacío o ausente = defaults del código. */
-  plans?: readonly PlanLike[];
+  plans?: readonly FaqPlan[];
+  /**
+   * El cobro con MercadoPago está prendido (`billingEnabled()`, sólo servidor).
+   * Sin él (default), la FAQ no promete MercadoPago: cambio de plan y pago
+   * anual se piden por WhatsApp y se pagan por transferencia.
+   */
+  mpEnabled?: boolean;
 }
 
-export function platformFaq({ storeAddress, plans = [] }: FaqContext): FaqItem[] {
+/** "Starter" · "Starter y Pro" · "Starter, Pro y Business". */
+function joinNames(names: readonly string[]): string {
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
+}
+
+/**
+ * Respuesta de "¿Puedo pagar el año?" a partir de los planes con un anual que
+ * se puede ofrecer (`validYearlyOffer`); `null` si ninguno lo tiene (la
+ * pregunta no se muestra). Sin porcentajes (la FAQ no promete cifras sueltas):
+ * "12 meses por el precio de N" sólo si es el mismo N en todos.
+ */
+function yearlyAnswer(plans: readonly FaqPlan[], mpEnabled: boolean): string | null {
+  const yearly = plans.filter((p) => validYearlyOffer(p.priceMonthly ?? null, p.priceYearly ?? null) !== null);
+  if (!yearly.length) return null;
+  const months = new Set(yearly.map((p) => yearlyMonthsPaid(p.priceMonthly ?? null, p.priceYearly ?? null)));
+  const [n] = months;
+  const deal = months.size === 1 && n !== null && n !== undefined ? `pagás 12 meses por el precio de ${n}` : "pagás el año por adelantado, con descuento";
+  const how = mpEnabled ? "por transferencia o con MercadoPago" : "por transferencia";
+  const renew = mpEnabled ? " Se renueva al año; con MercadoPago cancelás la renovación cuando quieras desde Plan en el panel." : " Se renueva al año.";
+  return `Sí, en ${joinNames(yearly.map((p) => p.name))}: ${deal}, ${how}, y ese precio queda fijo durante el año.${renew}`;
+}
+
+export function platformFaq({ storeAddress, plans = [], mpEnabled = false }: FaqContext): FaqItem[] {
+  const yearly = yearlyAnswer(plans, mpEnabled);
   const webPlan = minPlanName(plans, "catalog.import_web") ?? "Pro";
   const csvPlan = minPlanName(plans, "catalog.import_csv") ?? "Starter";
   const domainPlan = minPlanName(plans, "domain.custom") ?? "Pro";
@@ -57,13 +92,11 @@ export function platformFaq({ storeAddress, plans = [] }: FaqContext): FaqItem[]
     {
       id: "cambio-plan",
       q: "¿Puedo cambiar de plan cuando quiera?",
-      a: "Sí. Desde el panel, en Plan, pagás el plan con MercadoPago (débito automático) o lo pedís por WhatsApp y lo activamos en el día. Si bajás de plan, no se borra nada: lo que excede el plan nuevo queda bloqueado para crear.",
+      a: `Sí. Desde el panel, en Plan, ${
+        mpEnabled ? "pagás el plan con MercadoPago (débito automático) o lo pedís por WhatsApp y lo activamos en el día" : "lo pedís por WhatsApp y lo activamos en el día"
+      }. Si bajás de plan, no se borra nada: lo que excede el plan nuevo queda bloqueado para crear.`,
     },
-    {
-      id: "anual",
-      q: "¿Puedo pagar el año?",
-      a: "Sí, en Starter y Pro: pagás 12 meses por el precio de 10, por transferencia o con MercadoPago, y ese precio queda fijo durante el año. Se renueva al año; con MercadoPago cancelás la renovación cuando quieras desde Plan en el panel.",
-    },
+    ...(yearly ? [{ id: "anual" as const, q: "¿Puedo pagar el año?", a: yearly }] : []),
     {
       id: "varias-tiendas",
       q: "¿Puedo tener más de una tienda?",

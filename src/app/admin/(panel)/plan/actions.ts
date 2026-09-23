@@ -6,7 +6,7 @@ import { z } from "zod";
 import { fail, ok, runAction, type ActionResult } from "@/lib/actions";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
-import { startCheckout } from "@/lib/billing/checkout";
+import { billingStartCheckoutArgs, startCheckout } from "@/lib/billing/checkout";
 import { billingEnabled, cancelPreapproval, MercadoPagoError } from "@/lib/billing/mercadopago";
 import { billingServiceClient } from "@/lib/billing/service";
 import { describeResult, supabaseBillingRepo, syncPreapproval } from "@/lib/billing/sync";
@@ -121,7 +121,7 @@ export async function startMercadoPagoCheckout(input: { plan: string; period?: B
             // Columnas del anual (0019); sin ellas, el plan se lee sin anual.
             const full = await ctx.supabase
               .from("plans")
-              .select("code, name, mp_plan_id, mp_plan_id_yearly, price_yearly, currency")
+              .select("code, name, mp_plan_id, mp_plan_id_yearly, price_monthly, price_yearly, currency")
               .eq("code", code)
               .maybeSingle();
             if (!full.error) return full.data;
@@ -130,6 +130,13 @@ export async function startMercadoPagoCheckout(input: { plan: string; period?: B
             return data;
           },
           loadSubscription: async () => {
+            // billing_period llega con 0019; sin la columna, se lee sin ella (= mensual).
+            const full = await ctx.supabase
+              .from("subscriptions")
+              .select("plan_code, status, provider, provider_ref, provider_status, cancel_at_period_end, billing_period")
+              .eq("store_id", ctx.store.id)
+              .maybeSingle();
+            if (!full.error) return full.data;
             const { data, error } = await ctx.supabase
               .from("subscriptions")
               .select("plan_code, status, provider, provider_ref, provider_status, cancel_at_period_end")
@@ -141,12 +148,10 @@ export async function startMercadoPagoCheckout(input: { plan: string; period?: B
           recordCheckout: async ({ planCode, preapprovalId, period: chosen }) => {
             // Service role: la tienda sale de la sesión (ctx) y el plan, de la tabla plans.
             // El mensual no manda el período (default de 0019): funciona con o sin la migración.
-            const { error } = await db.rpc("billing_start_checkout", {
-              p_store_id: ctx.store.id,
-              p_plan_code: planCode,
-              p_provider_ref: preapprovalId,
-              ...(chosen === "yearly" ? { p_billing_period: "yearly" } : {}),
-            });
+            const { error } = await db.rpc(
+              "billing_start_checkout",
+              billingStartCheckoutArgs({ storeId: ctx.store.id, planCode, preapprovalId, period: chosen }),
+            );
             if (!error) return null;
             console.error("[billing] billing_start_checkout:", error.message);
             return error.code === "P0001" ? error.message : "No pudimos registrar el pago. Probá de nuevo en unos minutos.";
