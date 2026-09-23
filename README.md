@@ -54,6 +54,8 @@ Variables de entorno:
 | `RESEND_API_KEY` | opcional: API key de Resend. Sin ella no sale ningún email (se avisa una vez en el log) |
 | `EMAIL_FROM` | opcional: remitente, por defecto `Ecommy <no-reply@ecommy.app>` (el dominio tiene que estar verificado en Resend) |
 | `PLATFORM_EMAIL` | opcional: casilla de la plataforma (avisos de pedido de plan y reply-to de los mails de cuenta) |
+| `NEXT_PUBLIC_PLATFORM_GA4_ID` | opcional: GA4 del sitio de Ecommy (landing, planes, registro), `G-XXXX`. No afecta a las tiendas, que tienen su propio GA4 en Configuración › SEO |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | opcional: token de Google Search Console para `www.ecommy.app` |
 | `SUPABASE_SERVICE_ROLE_KEY` | opcional, sólo servidor: la usa ÚNICAMENTE el cron para los avisos de fin de prueba. Sin ella esos avisos no salen; el resto funciona igual |
 | `NEXT_DIST_DIR` | opcional, build dir alternativo (ej. `.next-m`) |
 

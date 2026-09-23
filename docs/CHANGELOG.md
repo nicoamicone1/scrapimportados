@@ -13,6 +13,7 @@ Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changel
 - Nueva sección Marketing › Compartir: tu link con «Copiar», el QR de tu tienda para descargar e imprimir, y mensajes listos para pegar en la bio de Instagram, para responder por WhatsApp y para historias, armados con tu descuento por transferencia y tu envío gratis si los tenés. También el link o el QR de un producto o categoría.
 - Una franja arriba del panel te avisa cuántos días de prueba te quedan y, el último día, a qué hora termina. En Free, un recordatorio de los límites del plan que se puede cerrar por 7 días.
 - En Configuración › Tienda, el email de contacto aclara que ahí llegan los avisos de pedidos y arrepentimientos.
+- Medición del sitio de Ecommy con Google Analytics 4 y verificación de Search Console, configurables por variables de entorno.
 - Documentación de marketing y lanzamiento (`docs/MARKETING.md`, `docs/LAUNCH-PLAN.md`, `docs/LAUNCH-CHECKLIST.md`, `docs/SOCIAL-KIT.md`).
 
 ### Cambiado

@@ -25,6 +25,8 @@ Estado actual de producción (spec §14.4):
 | `EMAIL_FROM` | `Ecommy <no-reply@ecommy.app>` (default si falta) | remitente; el dominio tiene que estar verificado en Resend. Las tiendas mandan como `"{Tienda} vía Ecommy" <misma dirección>` |
 | `PLATFORM_EMAIL` | casilla de soporte de Ecommy | recibe los pedidos de cambio de plan y es el reply-to de los mails de cuenta. Opcional |
 | `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usa SÓLO el cron diario para los avisos de "tu prueba termina" / "tu prueba terminó". Sin ella esos avisos no salen; el cron y todo lo demás siguen igual |
+| `NEXT_PUBLIC_PLATFORM_GA4_ID` | `G-XXXXXXXXXX` | GA4 del sitio de Ecommy (landing, planes, registro, contacto). Opcional; sin él no se carga ningún script. Las tiendas tienen su propio GA4 en Configuración › SEO |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | token de Search Console | sólo el valor `content` del meta que da Google, sin el meta entero. Opcional |
 
 No definas `DEV_LOGIN_EMAIL`/`DEV_LOGIN_PASSWORD` en producción (la ruta de dev-login
 responde 404 con `NODE_ENV=production`, pero igual no hacen falta).

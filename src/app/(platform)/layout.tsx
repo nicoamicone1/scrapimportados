@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { googleSiteVerification } from "@/components/platform/analytics";
+import { PlatformAnalytics } from "@/components/platform/PlatformAnalytics";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { Toaster } from "@/components/ui/Toaster";
 import { APP_NAME } from "@/lib/version";
@@ -16,6 +18,8 @@ export const metadata: Metadata = {
   // incluida). Twitter/X toma la misma imagen.
   openGraph: { siteName: APP_NAME, locale: "es_AR", type: "website" },
   twitter: { card: "summary_large_image" },
+  // Search Console: `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (sólo el token).
+  verification: googleSiteVerification() ? { google: googleSiteVerification() } : undefined,
 };
 
 /**
@@ -29,6 +33,7 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
       <NavigationProgress />
       {children}
       <Toaster />
+      <PlatformAnalytics />
     </div>
   );
 }
