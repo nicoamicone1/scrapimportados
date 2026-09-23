@@ -2,6 +2,22 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.4.1 — 2026-09-23 · Kit de redes, CI y una landing más rápida
+
+### Agregado
+
+- Plataforma › Redes: piezas listas para Instagram y TikTok. Los 15 posts y reels y las 10 historias del kit se generan como imágenes de 1080 × 1080 y 1080 × 1920 con la marca, se descargan en PNG y tienen «Copiar texto» con gancho, texto, CTA y hashtags. Las que dependen de una grabación real se marcan «Completar antes de publicar» hasta que escribís el dato.
+- Cada cambio del código pasa automáticamente por tipos, lint, tests y un build, más una recorrida del sitio público en computadora y en celular (páginas, SEO básico, links, sitemap, buscador de ayuda).
+
+### Cambiado
+
+- La página de inicio carga más rápido: las fuentes de las muestras de estilos se piden recién cuando la muestra se acerca en pantalla, y nada bloquea el primer render.
+- El centro de ayuda y las guías se sirven como páginas estáticas desde la CDN; los íconos y las imágenes para compartir se cachean un día.
+
+### Corregido
+
+- Las imágenes para compartir el sitio ya no tienen espacios dobles entre palabras.
+
 ## v0.4.0 — 2026-09-23 · Cobro con MercadoPago, avisos de stock y promos 3x2
 
 ### Agregado
