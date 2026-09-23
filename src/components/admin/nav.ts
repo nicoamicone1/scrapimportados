@@ -137,10 +137,20 @@ export const NAV: NavGroup[] = [
 /** Todas las entradas en una lista plana. */
 export const NAV_ITEMS: NavItem[] = NAV.flatMap((g) => g.items);
 
-export function isNavActive(item: NavItem, pathname: string): boolean {
+function matchesPath(item: NavItem, pathname: string): boolean {
   if (item.external) return false;
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+/**
+ * Ítem activo para una ruta. Si otro ítem del menú coincide con un `href`
+ * más largo (por ejemplo `/admin/inventario/avisos` dentro de
+ * `/admin/inventario`), gana el más específico y sólo ese se resalta.
+ */
+export function isNavActive(item: NavItem, pathname: string): boolean {
+  if (!matchesPath(item, pathname)) return false;
+  return !NAV.some((g) => g.items.some((o) => o !== item && o.href.length > item.href.length && matchesPath(o, pathname)));
 }
 
 /** Ítem del menú que corresponde a una ruta (para el breadcrumb). */
