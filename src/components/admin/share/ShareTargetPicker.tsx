@@ -15,6 +15,8 @@ export interface ShareTarget {
   id: string;
   kind: "product" | "category";
   name: string;
+  /** Texto del selector si difiere del nombre ("Hogar › Cocina"). */
+  label?: string;
   /** URL pública absoluta. */
   url: string;
   /** Path dentro de la tienda ("/producto/mate"), para el QR. */
@@ -148,7 +150,7 @@ export function ShareTargetPicker({
             }}
             placeholder={categories.length ? "Elegir categoría" : "No hay categorías visibles"}
             disabled={!categories.length}
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+            options={categories.map((c) => ({ value: c.id, label: c.label ?? c.name }))}
           />
           <p className="mt-1 text-[12px] text-adm-fg-muted">Sirve para promocionar una línea entera: &quot;todo lo de temporada&quot;.</p>
         </div>

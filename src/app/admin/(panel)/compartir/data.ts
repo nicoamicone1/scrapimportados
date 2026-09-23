@@ -1,10 +1,12 @@
 import "server-only";
 
 import { catalogDb } from "@/lib/admin/catalog-db";
+import { flattenTree } from "@/lib/admin/category-tree";
 import type { AdminContext } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
 import { storeUrl } from "@/lib/tenant/urls";
 
+import { freeShippingThreshold } from "@/components/admin/share/messages";
 import type { ShareTarget } from "@/components/admin/share/ShareTargetPicker";
 
 /** Lecturas de `/admin/compartir` (tienda activa, sesión del usuario). */
@@ -46,7 +48,7 @@ export async function getShareData(ctx: Pick<AdminContext, "supabase" | "store">
   const [settings, methods, zones, active, products, categories] = await Promise.all([
     supabase.from("store_settings").select("currency, maintenance").eq("store_id", store.id).maybeSingle(),
     supabase.from("payment_methods").select("discount_percent").eq("store_id", store.id).eq("is_active", true).eq("type", "transfer"),
-    supabase.from("shipping_zones").select("free_over").eq("store_id", store.id).eq("is_active", true).not("free_over", "is", null),
+    supabase.from("shipping_zones").select("free_over").eq("store_id", store.id).eq("is_active", true),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", store.id).eq("status", "active"),
     catalogDb(supabase)
       .from("admin_products")
@@ -55,7 +57,14 @@ export async function getShareData(ctx: Pick<AdminContext, "supabase" | "store">
       .eq("status", "active")
       .order("updated_at", { ascending: false })
       .limit(10),
-    supabase.from("categories").select("id, name, slug").eq("store_id", store.id).eq("is_visible", true).order("position").order("name"),
+    supabase
+      .from("categories")
+      .select("id, name, slug, parent_id, position")
+      .eq("store_id", store.id)
+      .eq("is_visible", true)
+      .order("position")
+      .order("name")
+      .limit(200),
   ]);
 
   const currency = settings.data?.currency || "ARS";
@@ -64,7 +73,9 @@ export async function getShareData(ctx: Pick<AdminContext, "supabase" | "store">
     maintenanceRaw && typeof maintenanceRaw === "object" && !Array.isArray(maintenanceRaw) && maintenanceRaw.enabled === true,
   );
   const transferDiscount = (methods.data ?? []).reduce((max, m) => Math.max(max, Number(m.discount_percent) || 0), 0);
-  const freeOver = (zones.data ?? []).map((z) => Number(z.free_over)).filter((v) => Number.isFinite(v) && v > 0);
+  // Una categoría visible con padre oculto queda en la raíz (flattenTree).
+  const tree = flattenTree(categories.data ?? []);
+  const trail: string[] = [];
   const onboarding = store.onboarding && typeof store.onboarding === "object" && !Array.isArray(store.onboarding) ? store.onboarding : {};
 
   return {
@@ -72,19 +83,24 @@ export async function getShareData(ctx: Pick<AdminContext, "supabase" | "store">
     maintenance,
     activeProducts: active.count ?? 0,
     transferDiscount,
-    freeShippingFrom: freeOver.length ? Math.min(...freeOver) : null,
+    freeShippingFrom: freeShippingThreshold(zones.data ?? []),
     sharedDone: onboarding.shared === true,
     products: (products.data ?? []).map((p) => toProductTarget(ctx, p, currency)),
-    categories: (categories.data ?? []).map((c) => ({
-      id: c.id,
-      kind: "category" as const,
-      name: c.name,
-      url: storeUrl(store, `/categoria/${c.slug}`),
-      path: `/categoria/${c.slug}`,
-      price: null,
-      maxPrice: null,
-      priceText: null,
-      imageUrl: null,
-    })),
+    categories: tree.map(({ item: c, depth }) => {
+      trail.length = depth;
+      trail.push(c.name);
+      return {
+        id: c.id,
+        kind: "category" as const,
+        name: c.name,
+        label: trail.join(" › "),
+        url: storeUrl(store, `/categoria/${c.slug}`),
+        path: `/categoria/${c.slug}`,
+        price: null,
+        maxPrice: null,
+        priceText: null,
+        imageUrl: null,
+      };
+    }),
   };
 }

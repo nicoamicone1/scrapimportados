@@ -1,7 +1,6 @@
 "use client";
 
 import { Check, Copy, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -20,16 +19,14 @@ import { whatsappShareUrl } from "./messages";
 const MarkSharedContext = createContext<() => void>(() => {});
 
 export function ShareOnboarding({ done, children }: { done: boolean; children: ReactNode }) {
-  const router = useRouter();
   const sent = useRef(done);
   const mark = useCallback(() => {
     if (sent.current) return;
     sent.current = true;
     void markOnboardingStep({ step: "shared" }).then((res) => {
-      if (res.ok) router.refresh();
-      else sent.current = false;
+      if (!res.ok) sent.current = false;
     });
-  }, [router]);
+  }, []);
   return <MarkSharedContext.Provider value={mark}>{children}</MarkSharedContext.Provider>;
 }
 

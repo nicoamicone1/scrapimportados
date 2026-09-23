@@ -34,10 +34,11 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
   const [cookieStore, myStores] = await Promise.all([cookies(), listMyStores()]);
   const chip = getPlanChip(ctx);
   const switcherStores = myStores.filter((s) => s.is_active).map((s) => ({ id: s.id, name: s.name, slug: s.slug, role: s.role }));
-  // Franja de prueba/Free (sólo para quien decide el plan).
+  // Franja de prueba/Free: sólo para quien decide el plan (no para un superadmin mirando la tienda).
+  // Usa la zona horaria por defecto a propósito, no store_settings.timezone: evita una lectura más por navegación.
   const activeSub = myStores.find((s) => s.id === ctx.store.id);
   const banner =
-    ctx.membership.role === "owner"
+    ctx.membership.role === "owner" && !ctx.membership.impersonating
       ? trialBannerState({
           status: ctx.plan.status,
           trialEndsAt: ctx.plan.trialEndsAt,

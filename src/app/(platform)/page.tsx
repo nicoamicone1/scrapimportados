@@ -17,6 +17,7 @@ import {
 import { PlanCards, PlanCtaLink } from "@/components/platform/PlanCards";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { PresetSpecimens, specimenPlanLabel } from "@/components/platform/PresetSpecimens";
+import { landingPlanLines, type PlanLike } from "@/components/platform/plan-notes";
 import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site";
 import { presetSpecimens, SPECIMEN_BUTTON, specimenFontsHref } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
@@ -36,7 +37,8 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/" },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: "/" },
+  // Next reemplaza el objeto `openGraph` entero: se repite lo del layout.
+  openGraph: { siteName: APP_NAME, locale: "es_AR", type: "website", title: TITLE, description: DESCRIPTION, url: "/" },
 };
 export const dynamic = "force-dynamic";
 
@@ -44,82 +46,96 @@ export const dynamic = "force-dynamic";
 /* Contenido                                                            */
 /* ------------------------------------------------------------------ */
 
-const STEPS: { title: string; text: ReactNode; time: string }[] = [
-  {
-    title: "Creás la tienda",
-    text: "Elegís nombre, dirección y rubro; el rubro define el estilo con el que arranca, y lo cambiás cuando quieras. Cargás el WhatsApp donde te llegan los pedidos y el alias o CBU para las transferencias.",
-    time: "Unos 5 minutos: son 3 pasos.",
-  },
-  {
-    title: "Cargás el catálogo",
-    text: "A mano, con fotos, variantes de talle y color y stock por variante. Si lo tenés en una planilla, lo subís en CSV (desde Starter). Si ya vendés en WooCommerce, Shopify u otra web con datos de producto, lo importás pegando la dirección (Pro, incluido en la prueba): entra como borrador para que lo revises antes de publicar.",
-    time: "Depende del catálogo. A mano, un par de minutos por producto; importado, lo que tardes en revisarlo.",
-  },
-  {
-    title: "Compartís el link y cobrás",
-    text: "Lo pegás en la bio de Instagram, en tus estados de WhatsApp o donde ya vendés. El cliente arma el carrito, elige envío o retiro y confirma: el pedido queda registrado con número y te llega por WhatsApp. Si paga por transferencia, ve tu alias y el descuento; vos lo marcás pagado cuando ves el comprobante.",
-    time: "El mismo día que publicás.",
-  },
-];
+/*
+ * Los "desde qué plan" salen de los planes de la base (`plan-notes`); sin
+ * planes cargados, de los defaults del código (mismo texto que con el seed).
+ */
 
-const FEATURES: { icon: ReactNode; title: string; text: string; plans: string; mock: ReactNode }[] = [
-  {
-    icon: <Layers className="size-5" strokeWidth={1.5} aria-hidden />,
-    title: "Tu catálogo, cargado en una tarde",
-    text: "Productos con variantes de talle y color, fotos, stock por variante y categorías anidadas. Si ya lo tenés en una planilla o en otra tienda, lo importás y seguís desde ahí.",
-    plans: "Variantes en todos los planes · planilla CSV desde Starter · importación desde otra web en Pro",
-    mock: <CatalogMock />,
-  },
-  {
-    icon: <Tags className="size-5" strokeWidth={1.5} aria-hidden />,
-    title: "Precios que se actualizan en un paso",
-    text: "Subí un 8 % a toda una categoría con redondeo y vista previa, y deshacelo si te equivocaste. Promos programadas por fecha y cupones con tope de usos.",
-    plans: "Cupones en todos los planes · promos programadas desde Starter · precios masivos en Pro",
-    mock: <PricesMock />,
-  },
-  {
-    icon: <Landmark className="size-5" strokeWidth={1.5} aria-hidden />,
-    title: "Cobrás como ya cobrás",
-    text: "Sin pasarela ni comisión: transferencia con descuento o acordar por WhatsApp. El pedido queda registrado antes de derivar y te llega armado, con total y dirección.",
-    plans: "En todos los planes",
-    mock: <CheckoutMock />,
-  },
-  {
-    icon: <MapPinned className="size-5" strokeWidth={1.5} aria-hidden />,
-    title: "Envíos por zona, dibujadas en el mapa",
-    text: "Marcá tu zona de reparto sobre el mapa, sumá provincias o códigos postales con su costo y plazo, y ofrecé retiro en tu local. El checkout calcula el envío solo.",
-    plans: "En todos los planes",
-    mock: <ShippingMock />,
-  },
-];
+function steps(plans: readonly PlanLike[]): { title: string; text: ReactNode; time: string }[] {
+  const { csvPlan, webPlan } = landingPlanLines(plans);
+  return [
+    {
+      title: "Creás la tienda",
+      text: "Elegís nombre, dirección y rubro; el rubro define el estilo con el que arranca, y lo cambiás cuando quieras. Cargás el WhatsApp donde te llegan los pedidos y el alias o CBU para las transferencias.",
+      time: "Unos 5 minutos: son 3 pasos.",
+    },
+    {
+      title: "Cargás el catálogo",
+      text: `A mano, con fotos, variantes de talle y color y stock por variante. Si lo tenés en una planilla, lo subís en CSV (desde ${csvPlan}). Si ya vendés en WooCommerce, Shopify u otra web con datos de producto, lo importás pegando la dirección (${webPlan}, incluido en la prueba): entra como borrador para que lo revises antes de publicar.`,
+      time: "Depende del catálogo. A mano, un par de minutos por producto; importado, lo que tardes en revisarlo.",
+    },
+    {
+      title: "Compartís el link y cobrás",
+      text: "Lo pegás en la bio de Instagram, en tus estados de WhatsApp o donde ya vendés. El cliente arma el carrito, elige envío o retiro y confirma: el pedido queda registrado con número y te llega por WhatsApp. Si paga por transferencia, ve tu alias y el descuento; vos lo marcás pagado cuando ves el comprobante.",
+      time: "El mismo día que publicás.",
+    },
+  ];
+}
 
-const ALSO: { title: string; text: string; plans: string }[] = [
-  {
-    title: "Ley argentina, resuelta",
-    text: "Botón de arrepentimiento con registro de cada solicitud, precio sin impuestos nacionales (Ley 27.743), Data Fiscal de ARCA y el aviso de Defensa del Consumidor en el pie de la tienda.",
-    plans: "Todos los planes",
-  },
-  {
-    title: "SEO técnico",
-    text: "Sitemap y robots por tienda, título y descripción editables, imagen para compartir en redes, datos estructurados de producto (JSON-LD) y redirecciones 301 desde las direcciones de tu tienda anterior.",
-    plans: "Todos los planes",
-  },
-  {
-    title: "Mudanza desde otra tienda",
-    text: "Importás desde WooCommerce, Shopify o webs con datos schema.org, con recargo y redondeo sobre el precio de origen, y volvés a sincronizar cuando cambian los precios.",
-    plans: "Pro",
-  },
-  {
-    title: "Equipo y auditoría",
-    text: "Sumás usuarios con permisos por rol y cada cambio queda registrado: quién tocó qué precio y cuándo.",
-    plans: "Equipo desde Starter · auditoría en Pro",
-  },
-  {
-    title: "Páginas por bloques",
-    text: "Armás el inicio y landings de campaña con bloques (portada, banners, grillas y sliders de productos, preguntas frecuentes, cuenta regresiva) sin tocar código.",
-    plans: "Inicio en todos los planes · landings desde Starter",
-  },
-];
+function features(plans: readonly PlanLike[]): { icon: ReactNode; title: string; text: string; plans: string; mock: ReactNode }[] {
+  const lines = landingPlanLines(plans);
+  return [
+    {
+      icon: <Layers className="size-5" strokeWidth={1.5} aria-hidden />,
+      title: "Tu catálogo, cargado en una tarde",
+      text: "Productos con variantes de talle y color, fotos, stock por variante y categorías anidadas. Si ya lo tenés en una planilla o en otra tienda, lo importás y seguís desde ahí.",
+      plans: lines.catalog,
+      mock: <CatalogMock />,
+    },
+    {
+      icon: <Tags className="size-5" strokeWidth={1.5} aria-hidden />,
+      title: "Precios que se actualizan en un paso",
+      text: "Subí un 8 % a toda una categoría con redondeo y vista previa, y deshacelo si te equivocaste. Promos programadas por fecha y cupones con tope de usos.",
+      plans: lines.pricing,
+      mock: <PricesMock />,
+    },
+    {
+      icon: <Landmark className="size-5" strokeWidth={1.5} aria-hidden />,
+      title: "Cobrás como ya cobrás",
+      text: "Sin pasarela ni comisión: transferencia con descuento o acordar por WhatsApp. El pedido queda registrado antes de derivar y te llega armado, con total y dirección.",
+      plans: "En todos los planes",
+      mock: <CheckoutMock />,
+    },
+    {
+      icon: <MapPinned className="size-5" strokeWidth={1.5} aria-hidden />,
+      title: "Envíos por zona, dibujadas en el mapa",
+      text: "Marcá tu zona de reparto sobre el mapa, sumá provincias o códigos postales con su costo y plazo, y ofrecé retiro en tu local. El checkout calcula el envío solo.",
+      plans: lines.shipping,
+      mock: <ShippingMock />,
+    },
+  ];
+}
+
+function also(plans: readonly PlanLike[]): { title: string; text: string; plans: string }[] {
+  const lines = landingPlanLines(plans);
+  return [
+    {
+      title: "Ley argentina, resuelta",
+      text: "Botón de arrepentimiento con registro de cada solicitud, precio sin impuestos nacionales (Ley 27.743), Data Fiscal de ARCA y el aviso de Defensa del Consumidor en el pie de la tienda.",
+      plans: "Todos los planes",
+    },
+    {
+      title: "SEO técnico",
+      text: `Sitemap y robots por tienda, título y descripción editables, imagen para compartir en redes, datos estructurados de producto (JSON-LD) y redirecciones 301 desde las direcciones de tu dominio anterior (con dominio propio, ${lines.customDomain}).`,
+      plans: "Todos los planes",
+    },
+    {
+      title: "Mudanza desde otra tienda",
+      text: "Importás desde WooCommerce, Shopify o webs con datos schema.org, con recargo y redondeo sobre el precio de origen, y volvés a sincronizar cuando cambian los precios.",
+      plans: lines.migration,
+    },
+    {
+      title: "Equipo y auditoría",
+      text: "Sumás usuarios con permisos por rol y cada cambio queda registrado: quién tocó qué precio y cuándo.",
+      plans: lines.team,
+    },
+    {
+      title: "Páginas por bloques",
+      text: "Armás el inicio y landings de campaña con bloques (portada, banners, grillas y sliders de productos, preguntas frecuentes, cuenta regresiva) sin tocar código.",
+      plans: lines.pages,
+    },
+  ];
+}
 
 /** Ejemplo del recibo: mismos números que el mock del pedido #1042. */
 const ORDER = {
@@ -170,7 +186,7 @@ export default async function LandingPage() {
   preconnect("https://fonts.googleapis.com");
   preconnect("https://fonts.gstatic.com", { crossOrigin: "anonymous" });
 
-  const faq = platformFaq({ storeAddress: exampleStoreAddress() });
+  const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans });
   const landingFaq = pickFaq(faq, ["comision", "tarjeta", "prueba", "mudanza", "datos", "facturacion"]);
 
   const subtotal = ORDER.items.reduce((sum, i) => sum + i.price, 0);
@@ -215,7 +231,7 @@ export default async function LandingPage() {
   return (
     <PlatformPage signedIn={signedIn}>
       <JsonLd data={jsonLd} />
-      {fontsHref ? <link rel="stylesheet" href={fontsHref} /> : null}
+      {fontsHref ? <link rel="stylesheet" href={fontsHref} precedence="default" /> : null}
 
       {/* Hero ----------------------------------------------------------- */}
       <section className="border-b border-adm-border bg-adm-surface">
@@ -276,7 +292,7 @@ export default async function LandingPage() {
             </p>
           </div>
           <ol className="border-b border-adm-border">
-            {STEPS.map((step, i) => (
+            {steps(plans).map((step, i) => (
               <li key={step.title} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 border-t border-adm-border py-6 sm:grid-cols-[3.5rem_minmax(0,1fr)]">
                 <span className="tnum text-[28px] leading-none font-light tracking-[-0.03em] text-adm-accent sm:text-[36px]" aria-hidden>
                   {i + 1}
@@ -327,7 +343,7 @@ export default async function LandingPage() {
             Lo que hacés todos los días, en un panel pensado para eso.
           </h2>
           <div className="mt-12 space-y-14 md:space-y-16">
-            {FEATURES.map((f, i) => (
+            {features(plans).map((f, i) => (
               <div key={f.title} className="grid items-center gap-6 md:grid-cols-2 md:gap-12">
                 <div className={cn("min-w-0", i % 2 && "md:order-2")}>
                   <h3 className="flex items-center gap-2.5 text-[18px] font-semibold tracking-[-0.01em]">
@@ -345,7 +361,7 @@ export default async function LandingPage() {
           <div className="mt-20 grid gap-8 border-t-2 border-adm-fg pt-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
             <h3 className="text-[22px] leading-tight font-semibold tracking-[-0.02em]">Y lo que no se ve, también.</h3>
             <dl>
-              {ALSO.map((a) => (
+              {also(plans).map((a) => (
                 <div
                   key={a.title}
                   className="grid gap-x-8 gap-y-1 border-b border-adm-border py-4 first:pt-0 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"

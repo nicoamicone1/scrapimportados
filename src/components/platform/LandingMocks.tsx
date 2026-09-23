@@ -195,7 +195,7 @@ export const STOREFRONT_MOCK_TEXTS = [
 export function StorefrontMock({ address, className }: { address: string; className?: string }) {
   const vars = themeVars(PRESETS.mercado) as CSSProperties;
   return (
-    <div className={cn("overflow-hidden rounded-adm border border-adm-border shadow-[var(--adm-shadow)]", className)} aria-hidden>
+    <div className={cn("overflow-hidden rounded-adm border border-adm-border shadow-adm-card", className)} aria-hidden>
       <div className="flex h-7 items-center gap-1.5 border-b border-adm-border bg-adm-surface-2 px-2.5">
         <span className="size-2 rounded-full bg-adm-border" />
         <span className="size-2 rounded-full bg-adm-border" />

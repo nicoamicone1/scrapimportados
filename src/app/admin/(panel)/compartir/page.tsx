@@ -18,7 +18,7 @@ import { getShareData } from "./data";
 export const metadata: Metadata = { title: "Compartir" };
 
 const TIPS: { title: string; body: string }[] = [
-  { title: "En la bio de Instagram", body: "Pegá el link en el campo Sitio web del perfil: es el único link que se puede tocar." },
+  { title: "En la bio de Instagram", body: "Pegá el link en los enlaces del perfil de Instagram (el texto de la bio no admite links)." },
   {
     title: "En WhatsApp Business",
     body: "Sumalo al mensaje de bienvenida y a una respuesta rápida (por ejemplo /catalogo) para contestar en dos toques.",
@@ -202,7 +202,7 @@ export default async function SharePage() {
           </Card>
         </div>
 
-        <section aria-labelledby="tips-title" className="lg:sticky lg:top-4 lg:col-span-4">
+        <section aria-labelledby="tips-title" className="lg:sticky lg:top-16 lg:col-span-4 lg:self-start">
           <h2 id="tips-title" className="text-[15px] font-semibold text-adm-fg">
             Dónde poner el link
           </h2>

@@ -49,7 +49,7 @@ describe("trialBannerState", () => {
     expect(s).toEqual({
       kind: "free",
       afterTrial: true,
-      message: "Terminó tu prueba y la tienda pasó a Free: hasta 50 productos y sólo la portada en el editor.",
+      message: "Terminó tu prueba y la tienda pasó a Free: hasta 50 productos y sólo la página de inicio.",
     });
   });
 
@@ -57,7 +57,7 @@ describe("trialBannerState", () => {
     expect(trialBannerState({ status: "active", trialEndsAt: null, planCode: "free", now: NOW })).toEqual({
       kind: "free",
       afterTrial: false,
-      message: "Estás en Free: hasta 50 productos y sólo la portada en el editor.",
+      message: "Estás en Free: hasta 50 productos y sólo la página de inicio.",
     });
     expect(trialBannerState({ status: "active", trialEndsAt: null, planCode: "free", trialExpired: true, now: NOW })).toMatchObject({
       afterTrial: true,
@@ -79,7 +79,7 @@ describe("trialBannerState", () => {
 
 describe("freeLimitsText", () => {
   it("usa los límites del plan", () => {
-    expect(freeLimitsText({ products: 50, pages: 1 })).toBe("hasta 50 productos y sólo la portada en el editor");
+    expect(freeLimitsText({ products: 50, pages: 1 })).toBe("hasta 50 productos y sólo la página de inicio");
     expect(freeLimitsText({ products: 1000, pages: 3 })).toBe("hasta 1.000 productos y 3 páginas en el editor");
     expect(freeLimitsText({ products: null, pages: null })).toBe("");
   });

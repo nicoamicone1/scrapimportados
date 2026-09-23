@@ -77,7 +77,7 @@ export default async function CuponPage({ params }: { params: Promise<{ id: stri
             timezone={timezone}
           />
         </div>
-        <div className="space-y-5 lg:sticky lg:top-4 lg:self-start">
+        <div className="space-y-5 lg:sticky lg:top-16 lg:self-start">
           <CouponTester code={coupon.code} />
           <Card>
             <CardHeader title="Usos" description={redemptions.length ? `${formatNumber(redemptions.length)} registrados` : undefined} />

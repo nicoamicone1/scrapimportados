@@ -12,7 +12,7 @@ export interface ShareFacts {
   url: string;
   /** Mayor % de descuento de los métodos de transferencia activos (0 = no hay). */
   transferDiscount: number;
-  /** Menor "envío gratis desde" entre las zonas activas (null = no hay). */
+  /** "Envío gratis desde" que vale para todas las zonas activas (null = no hay; ver `freeShippingThreshold`). */
   freeShippingFrom: number | null;
   currency?: string;
 }
@@ -30,6 +30,23 @@ export const INSTAGRAM_BIO_MAX = 150;
 /** "taller-luna.ecommy.app" (sin protocolo ni barra final). */
 export function displayUrl(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+}
+
+/**
+ * Umbral de "envío gratis desde" que se puede prometer sin mentir: sólo si
+ * TODAS las zonas activas tienen envío gratis a partir de un monto, y se
+ * toma el mayor (a partir de ahí es gratis vaya a donde vaya). Si alguna
+ * zona activa no tiene envío gratis, o no hay zonas, devuelve null.
+ */
+export function freeShippingThreshold(zones: { free_over: number | string | null }[]): number | null {
+  if (!zones.length) return null;
+  let max = 0;
+  for (const z of zones) {
+    const v = z.free_over === null ? NaN : Number(z.free_over);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    max = Math.max(max, v);
+  }
+  return max;
 }
 
 function perks(f: ShareFacts): { discount: string | null; shipping: string | null } {
@@ -74,7 +91,7 @@ export function shareMessages(f: ShareFacts): ShareMessage[] {
     {
       id: "bio",
       title: "Bio de Instagram",
-      hint: "Pegá el texto en la biografía y el link en el campo Sitio web: es el único que se puede tocar.",
+      hint: "Pegá el link en los enlaces del perfil de Instagram (el texto de la bio no admite links).",
       text: bioMessage(f),
     },
     {

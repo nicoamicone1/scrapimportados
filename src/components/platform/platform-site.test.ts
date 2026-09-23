@@ -90,4 +90,66 @@ describe("plan-notes", () => {
     // Sin planes cargados usa los defaults del código.
     expect(availability([], "pricing.bulk")).toBe("desde Pro");
   });
+
+  // Planes como los devuelve `listPublicPlans` con el seed (Business, a medida, sin precio).
+  const seeded = PLAN_CODES.map((code) => ({
+    code,
+    name: PLAN_NAMES[code],
+    features: PLAN_DEFAULTS[code].features,
+    priceMonthly: PLAN_DEFAULTS[code].price,
+  }));
+
+  it("con el seed, la landing dice exactamente lo de siempre (y sin planes, lo mismo)", async () => {
+    const { landingPlanLines } = await import("./plan-notes");
+    for (const list of [seeded, []]) {
+      expect(landingPlanLines(list)).toEqual({
+        csvPlan: "Starter",
+        webPlan: "Pro",
+        catalog: "Variantes en todos los planes · planilla CSV desde Starter · importación desde otra web en Pro",
+        pricing: "Cupones en todos los planes · promos programadas desde Starter · precios masivos en Pro",
+        shipping: "En todos los planes",
+        customDomain: "desde Pro",
+        migration: "Pro",
+        team: "Equipo desde Starter · auditoría en Pro",
+        pages: "Inicio en todos los planes · landings desde Starter",
+      });
+    }
+  });
+
+  it("si cambian los planes, la landing y la FAQ se actualizan", async () => {
+    const { availabilityPhrase, landingPlanLines } = await import("./plan-notes");
+    // Importar desde otra web y dominio propio bajan a Starter; el mapa sube a Pro.
+    const moved = seeded.map((p) => ({
+      ...p,
+      features: {
+        ...p.features,
+        "catalog.import_web": p.code !== "free",
+        "domain.custom": p.code !== "free",
+        "shipping.polygons": p.code === "pro" || p.code === "business",
+      },
+    }));
+    const lines = landingPlanLines(moved);
+    expect(lines.catalog).toBe("Variantes en todos los planes · planilla CSV desde Starter · importación desde otra web desde Starter");
+    expect(lines.migration).toBe("Desde Starter");
+    expect(lines.shipping).toBe("En Pro");
+    expect(lines.customDomain).toBe("desde Starter");
+    // Con un plan pago después, ya no es "en Pro" sino "desde Pro".
+    expect(availabilityPhrase(seeded.map((p) => ({ ...p, priceMonthly: 1 })), "pricing.bulk")).toBe("desde Pro");
+
+    const mudanza = pickFaq(platformFaq({ storeAddress: "x", plans: moved }), ["mudanza", "dominio"]);
+    expect(mudanza[0].a).toContain("(plan Starter, incluido en la prueba)");
+    expect(mudanza[0].a).toContain("si traés tu dominio (Starter)");
+    expect(mudanza[1].a).toContain("desde el plan Starter");
+  });
+
+  it("la FAQ con el seed nombra los planes de siempre", () => {
+    const faq = platformFaq({ storeAddress: "x", plans: seeded });
+    expect(faq).toEqual(platformFaq({ storeAddress: "x" }));
+    const [mudanza, dominio, datos] = pickFaq(faq, ["mudanza", "dominio", "datos"]);
+    expect(mudanza.a).toContain("(plan Pro, incluido en la prueba)");
+    expect(mudanza.a).toContain("(desde Starter)");
+    expect(mudanza.a).toContain("si traés tu dominio (Pro), cargás redirecciones 301");
+    expect(dominio.a.startsWith("Sí, desde el plan Pro.")).toBe(true);
+    expect(datos.a).toContain("Desde Pro exportás");
+  });
 });

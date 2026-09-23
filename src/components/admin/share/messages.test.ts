@@ -4,6 +4,7 @@ import {
   bioMessage,
   categoryMessage,
   displayUrl,
+  freeShippingThreshold,
   INSTAGRAM_BIO_MAX,
   productMessage,
   replyMessage,
@@ -58,6 +59,13 @@ describe("mensajes para compartir", () => {
 
   it("devuelve los tres mensajes en orden", () => {
     expect(shareMessages(base).map((m) => m.id)).toEqual(["bio", "reply", "story"]);
+  });
+
+  it("envío gratis sólo si todas las zonas activas lo tienen, y el mayor umbral", () => {
+    expect(freeShippingThreshold([{ free_over: 60000 }, { free_over: "90000" }, { free_over: 45000 }])).toBe(90000);
+    expect(freeShippingThreshold([{ free_over: 60000 }, { free_over: null }])).toBeNull();
+    expect(freeShippingThreshold([{ free_over: 60000 }, { free_over: 0 }])).toBeNull();
+    expect(freeShippingThreshold([])).toBeNull();
   });
 
   it("whatsappShareUrl codifica el texto", () => {

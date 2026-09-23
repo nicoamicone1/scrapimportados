@@ -2,8 +2,11 @@
  * Preguntas frecuentes de la plataforma: una sola fuente para la landing,
  * /planes y /contacto, así no se contradicen. Cada página elige cuáles
  * muestra con `pickFaq`. Todo lo que se afirma acá tiene que ser cierto en
- * el producto (features y límites en `src/lib/plans/features.ts`).
+ * el producto (features y límites en `src/lib/plans/features.ts`). Los
+ * "desde qué plan" salen de los planes de la base (`plan-notes`).
  */
+
+import { minPlanName, type PlanLike } from "./plan-notes";
 
 export type FaqId =
   | "comision"
@@ -25,9 +28,15 @@ export interface FaqItem {
 export interface FaqContext {
   /** Dirección de ejemplo de una tienda en este entorno (`exampleStoreAddress()`). */
   storeAddress: string;
+  /** Planes públicos (`listPublicPlans`); vacío o ausente = defaults del código. */
+  plans?: readonly PlanLike[];
 }
 
-export function platformFaq({ storeAddress }: FaqContext): FaqItem[] {
+export function platformFaq({ storeAddress, plans = [] }: FaqContext): FaqItem[] {
+  const webPlan = minPlanName(plans, "catalog.import_web") ?? "Pro";
+  const csvPlan = minPlanName(plans, "catalog.import_csv") ?? "Starter";
+  const domainPlan = minPlanName(plans, "domain.custom") ?? "Pro";
+  const exportPlan = minPlanName(plans, "orders.export") ?? "Pro";
   return [
     {
       id: "comision",
@@ -42,7 +51,7 @@ export function platformFaq({ storeAddress }: FaqContext): FaqItem[] {
     {
       id: "prueba",
       q: "¿Qué pasa cuando termina la prueba de 14 días?",
-      a: "Si no elegiste un plan pago, tu tienda pasa a Free. No se borra nada: los productos, pedidos y páginas quedan; lo que excede el plan (por ejemplo, más de 50 productos activos) queda bloqueado para crear hasta que subas de plan.",
+      a: "Si no elegiste un plan pago, tu tienda pasa a Free. No se borra nada: los productos, pedidos y páginas quedan; lo que excede el plan (por ejemplo, más de 50 productos, sin contar los archivados) queda bloqueado para crear hasta que subas de plan.",
     },
     {
       id: "cambio-plan",
@@ -57,17 +66,17 @@ export function platformFaq({ storeAddress }: FaqContext): FaqItem[] {
     {
       id: "mudanza",
       q: "Ya vendo en otra plataforma. ¿Puedo pasar el catálogo?",
-      a: "Sí. Si tu tienda actual es WooCommerce, Shopify u otra web que publica sus productos con datos estructurados, la importás pegando la dirección (plan Pro, incluido en la prueba). Si no, bajás una planilla y la subís en CSV (desde Starter). Los productos entran como borrador, con fotos y variantes, y cargás redirecciones 301 desde las direcciones viejas para no perder lo que ya tenías en Google.",
+      a: `Sí. Si tu tienda actual es WooCommerce, Shopify u otra web que publica sus productos con datos estructurados, la importás pegando la dirección (plan ${webPlan}, incluido en la prueba). Si no, bajás una planilla y la subís en CSV (desde ${csvPlan}). Los productos entran como borrador, con fotos y variantes, y, si traés tu dominio (${domainPlan}), cargás redirecciones 301 para que las direcciones viejas sigan funcionando.`,
     },
     {
       id: "dominio",
       q: "¿Puedo usar mi propio dominio?",
-      a: `Sí, desde el plan Pro. Mientras tanto, tu tienda tiene su dirección en Ecommy, del estilo ${storeAddress}.`,
+      a: `Sí, desde el plan ${domainPlan}. Mientras tanto, tu tienda tiene su dirección en Ecommy, del estilo ${storeAddress}.`,
     },
     {
       id: "datos",
       q: "¿Qué pasa con mis datos si me voy?",
-      a: "Son tuyos. Desde Pro exportás productos, pedidos y clientes en CSV cuando quieras. En cualquier plan, si cerrás la cuenta, te mandamos una copia si la pedís dentro de los 30 días. El detalle está en los términos del servicio.",
+      a: `Son tuyos. Desde ${exportPlan} exportás productos, pedidos y clientes en CSV cuando quieras. En cualquier plan, si cerrás la cuenta, te mandamos una copia si la pedís dentro de los 30 días. El detalle está en los términos del servicio.`,
     },
     {
       id: "facturacion",

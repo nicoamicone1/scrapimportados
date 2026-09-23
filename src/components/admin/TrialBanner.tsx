@@ -45,7 +45,7 @@ export function TrialBanner({ state }: { state: Exclude<TrialBannerState, { kind
           onClick={dismiss}
           aria-label={`Ocultar este aviso por ${FREE_BANNER_DISMISS_DAYS} días`}
           title={`Ocultar por ${FREE_BANNER_DISMISS_DAYS} días`}
-          className="-mr-1 inline-flex size-6 shrink-0 items-center justify-center rounded-adm-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+          className="-my-1 -mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-adm-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
         >
           <X className="size-3.5" strokeWidth={1.75} aria-hidden />
         </button>
