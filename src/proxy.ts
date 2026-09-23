@@ -105,10 +105,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Todo excepto: /api, assets de Next (_next/static, _next/image),
-     * favicon y archivos estáticos por extensión. robots.txt y sitemap.xml
-     * SÍ pasan (dependen de la tienda).
+     * Todo excepto: /api, assets de Next (_next/static, _next/image), los
+     * íconos e imágenes de metadata generados (`/icon`, `/apple-icon`,
+     * `/opengraph-image-<hash>`: sin extensión, y las tiendas sin favicon
+     * propio heredan el ícono raíz) y archivos estáticos por extensión.
+     * robots.txt y sitemap.xml SÍ pasan (dependen de la tienda).
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|map|woff2?)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|icon$|apple-icon$|opengraph-image[^/]*$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|map|woff2?)$).*)",
   ],
 };
