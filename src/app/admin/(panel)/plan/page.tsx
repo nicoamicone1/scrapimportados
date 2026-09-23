@@ -8,7 +8,9 @@ import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/dates";
 import { LIMITS, trialDaysLeft, type LimitKey } from "@/lib/plans";
-import { listPublicPlans, planPriceLabel } from "@/lib/plans/catalog";
+import { listPublicPlans, planPriceLabel, type PublicPlan } from "@/lib/plans/catalog";
+import { billingPeriodLabel, monthlyEquivalent, planWithPeriod, type BillingPeriod } from "@/lib/plans/yearly";
+import { formatMoney } from "@/lib/money";
 import { countUsage } from "@/lib/plans/server";
 import { AUTHORIZED_UNPAID } from "@/lib/billing/state";
 import { loadBillingView, type BillingView } from "@/lib/billing/view";
@@ -49,6 +51,32 @@ function UsageBar({ label, used, max }: { label: string; used: number; max: numb
 
 const GRACE_MS = 7 * 86_400_000;
 
+/** "Pagar el año (ahorrás 17 %)" · "Pagar el año". */
+function yearlyLabel(p: PublicPlan, prefix: string): string {
+  return p.yearlySavingsPercent ? `${prefix} (ahorrás ${p.yearlySavingsPercent}\u00a0%)` : prefix;
+}
+
+/**
+ * Botones de MercadoPago de un plan: "Pagar mensual" y "Pagar el año
+ * (ahorrás N %)" si tiene los dos; si tiene uno solo, ese.
+ */
+function MercadoPagoButtons(props: { p: PublicPlan; monthly: boolean; yearly: boolean; primary: boolean; renewLabel?: string }) {
+  const { p, monthly, yearly, primary, renewLabel } = props;
+  return (
+    <>
+      {monthly ? <MercadoPagoButton plan={p.code} period="monthly" primary={primary} label={yearly ? "Pagar mensual" : renewLabel} /> : null}
+      {yearly ? (
+        <MercadoPagoButton
+          plan={p.code}
+          period="yearly"
+          primary={primary && !monthly}
+          label={yearlyLabel(p, monthly ? "Pagar el año" : "Pagar el año con MercadoPago")}
+        />
+      ) : null}
+    </>
+  );
+}
+
 /** Aviso al volver del checkout de MercadoPago (`back_url` = /admin/plan?mp=ok). */
 function ReturnNotice({ mp, billing, planName }: { mp: string | undefined; billing: BillingView | null; planName: string }) {
   if (mp !== "ok" && mp !== "error") return null;
@@ -83,16 +111,22 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
   ]);
   const { plan } = ctx;
   const days = trialDaysLeft(plan);
-  const price = planPriceLabel(plan);
+  const price = planPriceLabel(plan, plan.billingPeriod);
+  const yearlyNow = plan.billingPeriod === "yearly";
+  // "Pro" · "Pro anual" (Free y la prueba son siempre mensuales).
+  const planLabel = planWithPeriod(plan.name, plan.billingPeriod);
   const hasWhatsApp = Boolean(process.env.PLATFORM_WHATSAPP);
   const isOwner = ctx.membership.role === "owner" && !ctx.membership.impersonating;
   const mpState = billing?.state ?? "none";
   // Con una suscripción de MP cobrando, para cambiar de plan primero se cancela la renovación.
   const mpLocked = mpState === "active" || mpState === "past_due";
-  const canPayWithMp = (code: string) => Boolean(billing?.enabled && isOwner && !mpLocked && billing.payablePlans.includes(code));
-  const anyMp = plans.some((p) => canPayWithMp(p.code));
+  const canPayWithMp = (code: string, period: BillingPeriod = "monthly") =>
+    Boolean(billing?.enabled && isOwner && !mpLocked && (period === "yearly" ? billing.payableYearly : billing.payablePlans).includes(code));
+  const anyMp = plans.some((p) => canPayWithMp(p.code) || canPayWithMp(p.code, "yearly"));
+  const anyYearlyMp = plans.some((p) => canPayWithMp(p.code, "yearly"));
   const periodEnd = billing?.currentPeriodEnd ?? plan.currentPeriodEnd;
-  const pendingPlan = billing?.providerPlanCode ? (plans.find((p) => p.code === billing.providerPlanCode)?.name ?? null) : null;
+  const pendingName = billing?.providerPlanCode ? (plans.find((p) => p.code === billing.providerPlanCode)?.name ?? null) : null;
+  const pendingPlan = pendingName ? planWithPeriod(pendingName, billing?.providerBillingPeriod ?? "monthly") : null;
   const mp = typeof query.mp === "string" ? query.mp : undefined;
   const awaitingFirstCharge = mpState === "active" && billing?.providerStatus === AUTHORIZED_UNPAID;
   // Se puede pagar el MISMO plan en prueba (para quedárselo) o con la renovación cancelada (para seguir).
@@ -105,18 +139,23 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
         title="Plan"
         section="system"
         icon={<CreditCard />}
-        description={`${ctx.store.name} · ${plan.name} · ${STATUS_TEXT[plan.status] ?? plan.status}`}
+        description={`${ctx.store.name} · ${planLabel} · ${STATUS_TEXT[plan.status] ?? plan.status}`}
       />
 
-      <ReturnNotice mp={mp} billing={billing} planName={plan.name} />
+      <ReturnNotice mp={mp} billing={billing} planName={planLabel} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <Card>
-          <CardHeader title={`Plan ${plan.name}`} description={plan.status === "trialing" ? "Prueba gratuita con todas las funciones de este plan." : undefined} />
+          <CardHeader title={`Plan ${planLabel}`} description={plan.status === "trialing" ? "Prueba gratuita con todas las funciones de este plan." : undefined} />
           <CardBody className="space-y-3 text-sm">
             <p className="flex items-baseline gap-1.5">
               <span className="tnum text-[26px] leading-none font-semibold tracking-[-0.02em]">{price.amount}</span>
               {price.suffix ? <span className="text-[13px] text-adm-fg-muted">{price.suffix}</span> : null}
+              {yearlyNow && plan.priceYearly ? (
+                <span className="tnum text-[13px] text-adm-fg-muted">
+                  · {formatMoney(monthlyEquivalent(plan.priceYearly), { currency: plan.currency })} por mes
+                </span>
+              ) : null}
             </p>
             {plan.status === "trialing" && plan.trialEndsAt ? (
               <p className="rounded-adm bg-adm-accent-2-soft px-3 py-2 text-[13px]">
@@ -139,18 +178,19 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
                   Tu plan está activo: MercadoPago autorizó el débito automático y el primer cobro se acredita en los próximos días.
                   {periodEnd ? ` Si no entra antes del ${formatDate(periodEnd)}, la tienda vuelve a Free.` : ""}
                 </p>
-                {isOwner ? <CancelRenewalButton planName={plan.name} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
+                {isOwner ? <CancelRenewalButton planName={planLabel} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
               </div>
             ) : mpState === "active" ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-adm-fg-muted">
-                  Se cobra con MercadoPago{periodEnd ? `. Próximo cobro: ${formatDate(periodEnd)}` : ""}.
+                  Plan {plan.name} {billingPeriodLabel(plan.billingPeriod)} con MercadoPago
+                  {periodEnd ? ` · próximo cobro el ${formatDate(periodEnd)}` : ""}.
                 </p>
-                {isOwner ? <CancelRenewalButton planName={plan.name} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
+                {isOwner ? <CancelRenewalButton planName={planLabel} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
               </div>
             ) : mpState === "cancelling" ? (
               <p className="rounded-adm bg-adm-accent-2-soft px-3 py-2 text-[13px]">
-                Cancelaste la renovación: seguís con {plan.name}
+                Cancelaste la renovación: seguís con {planLabel}
                 {periodEnd ? ` hasta el ${formatDate(periodEnd)}` : " hasta el final del período pago"}. Después la tienda pasa a Free sin borrar
                 nada. Si cambiaste de idea, volvé a suscribirte abajo: MercadoPago cobra desde que lo autorizás.
               </p>
@@ -160,11 +200,15 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
                 confirme; si no, podés volver a intentarlo abajo.
               </p>
             ) : plan.currentPeriodEnd ? (
-              <p className="text-adm-fg-muted">Período actual hasta el {formatDate(plan.currentPeriodEnd)}.</p>
+              <p className="text-adm-fg-muted">
+                {yearlyNow ? `Plan ${planLabel} · período pago` : "Período actual"} hasta el {formatDate(plan.currentPeriodEnd)}.
+              </p>
+            ) : yearlyNow ? (
+              <p className="text-adm-fg-muted">Plan {planLabel}: pagás el año por adelantado.</p>
             ) : null}
             {mpState === "past_due" && isOwner ? (
               <div className="flex justify-end">
-                <CancelRenewalButton planName={plan.name} until={null} pastDue />
+                <CancelRenewalButton planName={planLabel} until={null} pastDue />
               </div>
             ) : null}
           </CardBody>
@@ -183,7 +227,7 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
       <h2 className="mt-8 mb-3 text-[15px] font-semibold">Cambiar de plan</h2>
       <p className="mb-4 max-w-2xl text-[13px] text-adm-fg-muted">
         {anyMp
-          ? `Pagá con MercadoPago (tarjeta o dinero en cuenta, se renueva solo cada mes y lo cancelás cuando quieras) y el plan se activa apenas MercadoPago lo confirma. Entrá a MercadoPago con la cuenta de ${payerEmail ?? "tu email de Ecommy"}: el débito automático queda a nombre de ese email. Si preferís, pedilo por WhatsApp.`
+          ? `Pagá con MercadoPago (tarjeta o dinero en cuenta, se renueva solo ${anyYearlyMp ? "cada mes o cada año, según elijas," : "cada mes"} y lo cancelás cuando quieras) y el plan se activa apenas MercadoPago lo confirma.${anyYearlyMp ? " Pagando el año, el precio queda fijo 12 meses." : ""} Entrá a MercadoPago con la cuenta de ${payerEmail ?? "tu email de Ecommy"}: el débito automático queda a nombre de ese email. Si preferís, pedilo por WhatsApp.`
           : mpLocked && billing?.enabled
             ? "Tu plan se cobra con MercadoPago. Para pasar a otro, cancelá la renovación arriba y después pagá el nuevo, o pedilo por WhatsApp."
             : hasWhatsApp
@@ -195,10 +239,19 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
         current={plan.code}
         highlight={plan.code === "pro" ? undefined : "pro"}
         renderCta={(p) => {
-          const mpHere = canPayWithMp(p.code);
+          const mpMonthly = canPayWithMp(p.code);
+          const mpYearly = canPayWithMp(p.code, "yearly");
+          const mpHere = mpMonthly || mpYearly;
+          // El plan tiene pago anual (0019): el pedido por WhatsApp dice qué periodicidad eligió.
+          const hasYearly = p.monthlyEquivalent != null;
           if (p.code === plan.code && !(canRenewSamePlan && mpHere)) {
+            // Plan mensual vigente (sin débito de MP cobrando) que tiene anual: pedir el cambio a anual.
+            const toYearly = hasYearly && !yearlyNow && plan.status === "active" && !mpLocked && mpState !== "cancelling";
             return (
-              <p className="text-center text-[13px] text-adm-fg-muted">{plan.status === "trialing" ? "Estás probando este plan" : "Es tu plan actual"}</p>
+              <div className="space-y-1 text-center">
+                <p className="text-[13px] text-adm-fg-muted">{plan.status === "trialing" ? "Estás probando este plan" : "Es tu plan actual"}</p>
+                {toYearly ? <UpgradeButton plan={p.code} period="yearly" variant="link" label={yearlyLabel(p, "Pasar al pago anual")} /> : null}
+              </div>
             );
           }
           if (p.code === plan.code) {
@@ -206,18 +259,31 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
             const trial = plan.status === "trialing";
             return (
               <div className="space-y-2">
-                <MercadoPagoButton plan={p.code} primary label={trial ? undefined : "Volver a suscribirme"} />
+                <MercadoPagoButtons p={p} monthly={mpMonthly} yearly={mpYearly} primary renewLabel={trial ? undefined : "Volver a suscribirme"} />
                 <p className="text-center text-xs text-adm-fg-muted">{trial ? "Estás probando este plan" : "Cancelaste la renovación de este plan"}</p>
               </div>
             );
           }
           if (!mpHere) {
-            return <UpgradeButton plan={p.code} label={p.code === "business" ? "Hablemos" : `Quiero ${p.name}`} primary={p.code === "pro"} />;
+            if (p.code === "business") return <UpgradeButton plan={p.code} label="Hablemos" />;
+            return (
+              <div className="space-y-1.5 text-center">
+                <UpgradeButton plan={p.code} period={hasYearly ? "monthly" : undefined} label={`Quiero ${p.name}`} primary={p.code === "pro"} />
+                {hasYearly ? <UpgradeButton plan={p.code} period="yearly" variant="link" label={yearlyLabel(p, "Pedir el año")} /> : null}
+              </div>
+            );
           }
           return (
             <div className="space-y-2">
-              <MercadoPagoButton plan={p.code} primary={p.code === "pro"} />
-              <UpgradeButton plan={p.code} label="Pedir por WhatsApp" />
+              <MercadoPagoButtons p={p} monthly={mpMonthly} yearly={mpYearly} primary={p.code === "pro"} />
+              {hasYearly ? (
+                <p className="text-center text-[13px] text-adm-fg-muted">
+                  Por WhatsApp: <UpgradeButton plan={p.code} period="monthly" variant="link" label="mensual" /> ·{" "}
+                  <UpgradeButton plan={p.code} period="yearly" variant="link" label="anual" />
+                </p>
+              ) : (
+                <UpgradeButton plan={p.code} label="Pedir por WhatsApp" />
+              )}
             </div>
           );
         }}

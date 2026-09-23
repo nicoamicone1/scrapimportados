@@ -1,3 +1,5 @@
+import { isBillingPeriod, type BillingPeriod } from "@/lib/plans/yearly";
+
 import type { BillingSubscriptionRow, MpAuthorizedPayment, MpAutoRecurring, MpPreapproval } from "./types";
 
 /*
@@ -36,6 +38,8 @@ export interface BillingDecision {
   /** `null` = no cambia plan ni estado (sólo se registra `providerStatus`). */
   status: AppliedStatus | null;
   planCode: string;
+  /** Periodicidad del preapproval (0019): se guarda junto con el plan cuando `status` no es null. */
+  billingPeriod: BillingPeriod;
   periodStart: string | null;
   periodEnd: string | null;
   providerStatus: string;
@@ -54,6 +58,8 @@ export interface DecideInput {
   >;
   /** Plan que corresponde al preapproval (por `preapproval_plan_id` o el del `external_reference`). */
   planCode: string;
+  /** Periodicidad del preapproval (`resolvePlan`). Por defecto, mensual. */
+  period?: BillingPeriod;
   now?: Date;
 }
 
@@ -70,9 +76,9 @@ function iso(value: string | null | undefined): string | null {
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 
-function addMonth(isoDate: string): string {
+function addMonths(isoDate: string, months: number): string {
   const d = new Date(isoDate);
-  d.setUTCMonth(d.getUTCMonth() + 1);
+  d.setUTCMonth(d.getUTCMonth() + months);
   return d.toISOString();
 }
 
@@ -109,12 +115,13 @@ export function paymentApproved(payment: DecideInput["payment"]): boolean {
   return payment?.payment?.status === "approved";
 }
 
-export function decideSubscription({ preapproval, payment, current, planCode, now = new Date() }: DecideInput): BillingDecision {
+export function decideSubscription({ preapproval, payment, current, planCode, period = "monthly", now = new Date() }: DecideInput): BillingDecision {
   const providerStatus = String(preapproval.status || "unknown");
   const paid = hasPaidPeriod(current);
   const keep: BillingDecision = {
     status: null,
     planCode: current.plan_code,
+    billingPeriod: period,
     periodStart: null,
     periodEnd: null,
     providerStatus,
@@ -159,6 +166,7 @@ export function decideSubscription({ preapproval, payment, current, planCode, no
         return {
           status: "active",
           planCode,
+          billingPeriod: period,
           periodStart: keepGrace ? iso(current.current_period_start) : now.toISOString(),
           periodEnd: keepGrace ? iso(current.current_period_end) : new Date(paidUntil > graceEnd ? paidUntil : graceEnd).toISOString(),
           providerStatus: AUTHORIZED_UNPAID,
@@ -169,11 +177,14 @@ export function decideSubscription({ preapproval, payment, current, planCode, no
       }
 
       const periodStart = lastCharged ?? approvedAt ?? iso(current.current_period_start) ?? iso(preapproval.date_created) ?? now.toISOString();
-      const periodEnd = iso(preapproval.next_payment_date) ?? (unpaidNow ? null : iso(current.current_period_end)) ?? addMonth(periodStart);
+      // El anual lo da MP en next_payment_date (12 meses después del cobro); si falta, se estima.
+      const periodEnd =
+        iso(preapproval.next_payment_date) ?? (unpaidNow ? null : iso(current.current_period_end)) ?? addMonths(periodStart, period === "yearly" ? 12 : 1);
       const alreadyActive = paid && current.status === "active" && current.plan_code === planCode && !current.cancel_at_period_end;
       return {
         status: "active",
         planCode,
+        billingPeriod: period,
         periodStart,
         periodEnd,
         providerStatus,
@@ -201,16 +212,19 @@ export function decideSubscription({ preapproval, payment, current, planCode, no
 }
 
 /**
- * `external_reference` del preapproval: `<store_id>:<plan_code>` (lo arma el
- * checkout con el plan validado en el servidor). MercadoPago lo guarda y el
- * pagador no lo puede cambiar.
+ * `external_reference` del preapproval: `<store_id>:<plan_code>[:<period>]`
+ * (lo arma el checkout con el plan validado en el servidor). MercadoPago lo
+ * guarda y el pagador no lo puede cambiar. Sin tercer campo (checkouts
+ * anteriores a 0019 y todos los mensuales) = `monthly`.
  */
-export function parseExternalReference(value: unknown): { storeId: string; planCode: string | null } | null {
+export function parseExternalReference(value: unknown): { storeId: string; planCode: string | null; period: BillingPeriod } | null {
   if (typeof value !== "string") return null;
-  const [storeId, planCode, ...rest] = value.split(":");
+  const [storeId, planCode, period, ...rest] = value.split(":");
   if (rest.length || !isUuid(storeId)) return null;
-  if (planCode === undefined) return { storeId, planCode: null };
-  return /^[a-z0-9_-]{1,40}$/.test(planCode) ? { storeId, planCode } : null;
+  if (planCode === undefined) return { storeId, planCode: null, period: "monthly" };
+  if (!/^[a-z0-9_-]{1,40}$/.test(planCode)) return null;
+  if (period === undefined) return { storeId, planCode, period: "monthly" };
+  return isBillingPeriod(period) ? { storeId, planCode, period } : null;
 }
 
 export interface BillingPlan {
@@ -218,6 +232,9 @@ export interface BillingPlan {
   mp_plan_id: string | null;
   price_monthly: number | string | null;
   currency: string | null;
+  /** 0019 (ausentes sin la migración = sin anual). */
+  mp_plan_id_yearly?: string | null;
+  price_yearly?: number | string | null;
 }
 
 /**
@@ -231,22 +248,41 @@ export function resolvePlan(
   preapproval: Pick<MpPreapproval, "preapproval_plan_id">,
   plans: BillingPlan[],
   referencePlan: string | null,
-): { plan: BillingPlan; via: "mp_plan" | "reference" } | null {
+  referencePeriod: BillingPeriod = "monthly",
+): { plan: BillingPlan; via: "mp_plan" | "reference"; period: BillingPeriod } | null {
   const mpPlan = preapproval.preapproval_plan_id;
   if (mpPlan) {
-    const match = plans.find((p) => p.mp_plan_id === mpPlan);
-    if (match) return { plan: match, via: "mp_plan" };
+    const monthly = plans.find((p) => p.mp_plan_id === mpPlan);
+    if (monthly) return { plan: monthly, via: "mp_plan", period: "monthly" };
+    const yearly = plans.find((p) => p.mp_plan_id_yearly === mpPlan);
+    if (yearly) return { plan: yearly, via: "mp_plan", period: "yearly" };
   }
   const byRef = referencePlan ? plans.find((p) => p.code === referencePlan) : undefined;
-  return byRef ? { plan: byRef, via: "reference" } : null;
+  return byRef ? { plan: byRef, via: "reference", period: referencePeriod } : null;
 }
 
-/** ¿El cobro recurrente del preapproval es el precio mensual del plan (monto, moneda y frecuencia)? */
-export function recurringMatchesPlan(ar: MpAutoRecurring | null | undefined, plan: Pick<BillingPlan, "price_monthly" | "currency">): boolean {
-  if (!ar || plan.price_monthly === null || plan.price_monthly === undefined) return false;
+/** Frecuencia de MP de cada periodicidad: cada 1 mes o cada 12 meses. */
+export const PERIOD_FREQUENCY: Record<BillingPeriod, { frequency: number; frequency_type: "months" }> = {
+  monthly: { frequency: 1, frequency_type: "months" },
+  yearly: { frequency: 12, frequency_type: "months" },
+};
+
+/**
+ * ¿El cobro recurrente del preapproval es el precio del plan en esa
+ * periodicidad (monto, moneda y frecuencia)? Mensual: `price_monthly` cada 1
+ * mes. Anual: `price_yearly` cada 12 meses.
+ */
+export function recurringMatchesPlan(
+  ar: MpAutoRecurring | null | undefined,
+  plan: Pick<BillingPlan, "price_monthly" | "currency"> & Partial<Pick<BillingPlan, "price_yearly">>,
+  period: BillingPeriod = "monthly",
+): boolean {
+  const expected = period === "yearly" ? plan.price_yearly : plan.price_monthly;
+  if (!ar || expected === null || expected === undefined) return false;
   const amount = Number(ar.transaction_amount);
-  const price = Number(plan.price_monthly);
+  const price = Number(expected);
   if (!Number.isFinite(amount) || !Number.isFinite(price) || price <= 0 || Math.abs(amount - price) > 0.005) return false;
   if ((ar.currency_id ?? "").toUpperCase() !== (plan.currency || "ARS").toUpperCase()) return false;
-  return Number(ar.frequency) === 1 && ar.frequency_type === "months";
+  const freq = PERIOD_FREQUENCY[period];
+  return Number(ar.frequency) === freq.frequency && ar.frequency_type === freq.frequency_type;
 }

@@ -4,22 +4,32 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { extendTrial, setStorePlan, setStoreStatus } from "@/app/(platform)/platform/actions";
+import { extendTrial, setStoreStatus } from "@/app/(platform)/platform/actions";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field } from "@/components/ui/Field";
 import { Input, Select } from "@/components/ui/Input";
 import type { ActionResult } from "@/lib/actions";
+import type { BillingPeriod } from "@/lib/plans/yearly";
+
+import { setStorePlanWithPeriod } from "./actions";
 
 export interface StoreAdminFormsProps {
   storeId: string;
   storeName: string;
   plans: { code: string; name: string }[];
   current: { plan: string; status: string; trialEndsAt: string; storeStatus: string };
+  /** Periodicidad del plan (0019). `null` = la base todavía no tiene la columna: no se muestra. */
+  period: BillingPeriod | null;
   /** La tienda tiene un débito automático de MercadoPago que puede cobrar: guardar un plan lo cancela. */
   mercadoPagoDebit: boolean;
 }
+
+const PERIOD_OPTIONS = [
+  { value: "monthly", label: "Mensual" },
+  { value: "yearly", label: "Anual (pagó el año)" },
+];
 
 const SUB_OPTIONS = [
   { value: "active", label: "Activa (pagando)" },
@@ -28,10 +38,14 @@ const SUB_OPTIONS = [
   { value: "cancelled", label: "Cancelada (cuenta como Free)" },
 ];
 
-export function StoreAdminForms({ storeId, storeName, plans, current, mercadoPagoDebit }: StoreAdminFormsProps) {
+export function StoreAdminForms({ storeId, storeName, plans, current, period: currentPeriod, mercadoPagoDebit }: StoreAdminFormsProps) {
   const router = useRouter();
   const [plan, setPlan] = useState(current.plan);
   const [status, setStatus] = useState(current.status);
+  const [period, setPeriod] = useState<BillingPeriod>(currentPeriod ?? "monthly");
+  // La prueba y Free son siempre mensuales.
+  const showPeriod = currentPeriod !== null && status !== "trialing" && plan !== "free";
+  const savePeriod: BillingPeriod = showPeriod ? period : "monthly";
   const [trial, setTrial] = useState(current.trialEndsAt);
   const [confirm, setConfirm] = useState<"suspended" | "deleted" | "active" | null>(null);
   const [confirmMp, setConfirmMp] = useState(false);
@@ -60,13 +74,18 @@ export function StoreAdminForms({ storeId, storeName, plans, current, mercadoPag
           }
         />
         <CardBody className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={showPeriod ? "grid gap-3 sm:grid-cols-3" : "grid gap-3 sm:grid-cols-2"}>
             <Field label="Plan">
               <Select value={plan} onChange={(e) => setPlan(e.target.value)} options={plans.map((p) => ({ value: p.code, label: p.name }))} />
             </Field>
             <Field label="Estado">
               <Select value={status} onChange={(e) => setStatus(e.target.value)} options={SUB_OPTIONS} />
             </Field>
+            {showPeriod ? (
+              <Field label="Pago">
+                <Select value={period} onChange={(e) => setPeriod(e.target.value === "yearly" ? "yearly" : "monthly")} options={PERIOD_OPTIONS} />
+              </Field>
+            ) : null}
           </div>
           {status === "trialing" ? (
             <Field label="Prueba hasta">
@@ -79,7 +98,7 @@ export function StoreAdminForms({ storeId, storeName, plans, current, mercadoPag
               loading={pending}
               onClick={() => {
                 if (mercadoPagoDebit && status !== "trialing") setConfirmMp(true);
-                else run(() => setStorePlan({ storeId, plan, status: status as "active", trialEndsAt: trial }), "Plan actualizado.");
+                else run(() => setStorePlanWithPeriod({ storeId, plan, status: status as "active", trialEndsAt: trial, period: savePeriod }), "Plan actualizado.");
               }}
             >
               Guardar plan
@@ -123,7 +142,7 @@ export function StoreAdminForms({ storeId, storeName, plans, current, mercadoPag
         cancelLabel="Volver"
         destructive
         onConfirm={async () => {
-          const res = await setStorePlan({ storeId, plan, status: status as "active", trialEndsAt: trial, cancelMercadoPago: true });
+          const res = await setStorePlanWithPeriod({ storeId, plan, status: status as "active", trialEndsAt: trial, cancelMercadoPago: true, period: savePeriod });
           if (!res.ok) {
             toast.error(res.error);
             return;

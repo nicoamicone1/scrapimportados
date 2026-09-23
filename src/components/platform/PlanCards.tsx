@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { planPriceLabel, type PublicPlan } from "@/lib/plans/catalog";
 import { FEATURE_KEYS, FEATURES, LIMITS, type LimitKey, type PlanInfo } from "@/lib/plans";
+import { yearlyLine } from "@/lib/plans/yearly";
 
 /** Renglones de límites que importan para elegir (en ese orden). */
 function limitLines(plan: PlanInfo): string[] {
@@ -42,6 +43,7 @@ export function PlanCards({ plans, renderCta, highlight, current, className }: P
       {plans.map((plan, i) => {
         const prev = i > 0 ? plans[i - 1] : null;
         const price = planPriceLabel(plan);
+        const yearly = yearlyLine(plan);
         const extras = newFeatures(plan, prev);
         const isHighlight = plan.code === highlight;
         return (
@@ -65,6 +67,7 @@ export function PlanCards({ plans, renderCta, highlight, current, className }: P
               <span className="tnum text-[26px] leading-none font-semibold tracking-[-0.02em]">{price.amount}</span>
               {price.suffix ? <span className="text-[13px] text-adm-fg-muted">{price.suffix}</span> : null}
             </p>
+            {yearly ? <p className="tnum mt-2 text-[12px] leading-snug text-adm-fg-muted">{yearly}</p> : null}
             <ul className="mt-4 space-y-1.5 border-t border-adm-border pt-4 text-[13px]">
               {limitLines(plan).map((line) => (
                 <li key={line} className="font-medium">

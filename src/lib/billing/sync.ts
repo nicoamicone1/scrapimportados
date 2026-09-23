@@ -22,7 +22,7 @@ import {
 /*
  * Sincronización con MercadoPago: lee el recurso en la API de MP (NUNCA se
  * confía en el cuerpo de la notificación), cruza `external_reference`
- * (`<store_id>:<plan_code>`) con `subscriptions.provider_ref` y aplica la
+ * (`<store_id>:<plan_code>[:yearly]`) con `subscriptions.provider_ref` y aplica la
  * decisión de `state.ts` con `billing_apply_subscription` (service role).
  */
 
@@ -117,7 +117,7 @@ export function describeResult(r: SyncResult): string {
   const d = r.decision;
   const adopted = r.adopted ? " Adoptada en reemplazo del checkout anterior." : "";
   if (d.status === null) return `MP: ${d.providerStatus}. Sin cambios en el plan.${adopted}`;
-  return `MP: ${d.providerStatus} → ${d.planCode} ${d.status}${d.cancelAtPeriodEnd ? " (no renueva)" : ""}.${adopted}`;
+  return `MP: ${d.providerStatus} → ${d.planCode}${d.billingPeriod === "yearly" ? " anual" : ""} ${d.status}${d.cancelAtPeriodEnd ? " (no renueva)" : ""}.${adopted}`;
 }
 
 export function resultJson(r: SyncResult): Json {
@@ -169,26 +169,27 @@ export async function syncPreapproval(
     adopt = true;
   }
 
-  const resolved = resolvePlan(pre, await deps.repo.listPlans(), ref.planCode);
+  const resolved = resolvePlan(pre, await deps.repo.listPlans(), ref.planCode, ref.period);
   if (!resolved) return { outcome: "ignored", reason: "plan", storeId, preapprovalId: pre.id };
   const planCode = resolved.plan.code;
+  const period = resolved.period;
 
   // Sin plan de MP asociado, el precio lo fijó el checkout: tiene que ser el del plan.
   // Una renovación del mismo preapproval ya verificado no se vuelve a chequear
   // (un cambio de precio en /platform/planes no corta las suscripciones vigentes).
   const verified = !adopt && sub.plan_code === planCode && isChargingStatus(sub.provider_status) && (sub.status === "active" || sub.status === "past_due");
-  if (resolved.via === "reference" && !verified && !recurringMatchesPlan(pre.auto_recurring, resolved.plan)) {
+  if (resolved.via === "reference" && !verified && !recurringMatchesPlan(pre.auto_recurring, resolved.plan, period)) {
     const ar = pre.auto_recurring;
     return {
       outcome: "ignored",
       reason: "plan_mismatch",
       storeId,
       preapprovalId: pre.id,
-      detail: `${ar?.transaction_amount ?? "?"} ${ar?.currency_id ?? "?"} cada ${ar?.frequency ?? "?"} ${ar?.frequency_type ?? "?"} para ${planCode}`,
+      detail: `${ar?.transaction_amount ?? "?"} ${ar?.currency_id ?? "?"} cada ${ar?.frequency ?? "?"} ${ar?.frequency_type ?? "?"} para ${planCode}${period === "yearly" ? " anual" : ""}`,
     };
   }
 
-  const decision = decideSubscription({ preapproval: pre, payment: opts.payment, current: sub, planCode, now: opts.now });
+  const decision = decideSubscription({ preapproval: pre, payment: opts.payment, current: sub, planCode, period, now: opts.now });
   if (adopt && decision.status !== "active") return { outcome: "ignored", reason: "provider_ref", storeId, preapprovalId: pre.id };
   await deps.repo.apply({ storeId, preapprovalId: pre.id, decision, adopt });
   const paymentId = opts.payment?.payment?.id ?? opts.payment?.id ?? null;
@@ -252,6 +253,9 @@ export async function processNotification(input: NotificationInput, deps: { repo
 export function supabaseBillingRepo(db: BillingDb): BillingRepo {
   return {
     async listPlans() {
+      // Columnas del anual (0019): si faltan, los planes se leen sin anual.
+      const withYearly = await db.from("plans").select("code, mp_plan_id, price_monthly, currency, mp_plan_id_yearly, price_yearly");
+      if (!withYearly.error) return withYearly.data ?? [];
       const { data, error } = await db.from("plans").select("code, mp_plan_id, price_monthly, currency");
       if (error) throw new BillingDbError("plans", error);
       return data ?? [];
@@ -273,6 +277,9 @@ export function supabaseBillingRepo(db: BillingDb): BillingRepo {
         p_cancel_at_period_end: decision.cancelAtPeriodEnd,
         p_last_payment_at: decision.lastPaymentAt,
         p_adopt: adopt ?? false,
+        // Sólo el anual manda el período: el mensual es el default de 0019 y así
+        // la llamada sigue funcionando sin la migración.
+        ...(decision.billingPeriod === "yearly" ? { p_billing_period: "yearly" } : {}),
       });
       if (error) throw new BillingDbError("billing_apply_subscription", error);
     },

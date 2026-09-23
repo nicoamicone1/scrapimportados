@@ -1,4 +1,5 @@
 import { formatDate } from "@/lib/dates";
+import { planWithPeriod, type BillingPeriod } from "@/lib/plans/yearly";
 
 import { renderEmail, type EmailContent } from "../layout";
 import type { AccountEmailBase } from "./account";
@@ -23,15 +24,20 @@ export interface PlanActivatedEmailData extends AccountEmailBase {
    * primer cobro (el mail no dice "cobramos"). Por defecto true.
    */
   charged?: boolean;
+  /** Periodicidad del plan (0019): "Pro anual", se renueva cada año. Por defecto, mensual. */
+  period?: BillingPeriod;
 }
 
-export function planActivatedEmail(d: PlanActivatedEmailData): EmailContent {
-  if (d.charged === false) return planActivatedUnpaidEmail(d);
+export function planActivatedEmail(input: PlanActivatedEmailData): EmailContent {
+  const yearly = input.period === "yearly";
+  // "Pro anual" en todo el mail cuando se paga el año.
+  const d = { ...input, planName: planWithPeriod(input.planName, input.period ?? "monthly") };
+  if (d.charged === false) return planActivatedUnpaidEmail(d, yearly);
   const until = d.periodEnd ? formatDate(d.periodEnd) : null;
   const subject = until ? `Tu plan ${d.planName} está activo hasta el ${until}` : `Tu plan ${d.planName} está activo`;
   return renderEmail({
     subject,
-    preheader: `Cobramos el plan ${d.planName} de ${d.storeName} con MercadoPago. Se renueva solo cada mes.`,
+    preheader: `Cobramos el plan ${d.planName} de ${d.storeName} con MercadoPago. Se renueva solo cada ${yearly ? "año" : "mes"}.`,
     brand: platformBrand(d.platformUrl),
     blocks: [
       { t: "heading", text: `Tu plan ${d.planName} está activo` },
@@ -64,7 +70,7 @@ export function planActivatedEmail(d: PlanActivatedEmailData): EmailContent {
 }
 
 /** Activado sin cobro confirmado: el plan ya se usa y el primer cobro se acredita en unos días. */
-function planActivatedUnpaidEmail(d: PlanActivatedEmailData): EmailContent {
+function planActivatedUnpaidEmail(d: PlanActivatedEmailData, yearly: boolean): EmailContent {
   const grace = d.periodEnd ? formatDate(d.periodEnd) : null;
   const subject = `Tu plan ${d.planName} está activo`;
   return renderEmail({
@@ -77,7 +83,7 @@ function planActivatedUnpaidEmail(d: PlanActivatedEmailData): EmailContent {
         t: "p",
         content: [
           hello(d.ownerName),
-          ` Tu plan está activo: ya tenés todo lo del plan ${d.planName} en ${d.storeName}. MercadoPago autorizó el débito automático y el primer cobro se acredita en los próximos días; cuando entre, te queda el mes completo.`,
+          ` Tu plan está activo: ya tenés todo lo del plan ${d.planName} en ${d.storeName}. MercadoPago autorizó el débito automático y el primer cobro se acredita en los próximos días; cuando entre, te queda ${yearly ? "el año completo" : "el mes completo"}.`,
         ],
       },
       grace && {

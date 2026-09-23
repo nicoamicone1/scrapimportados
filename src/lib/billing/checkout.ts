@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 
+import { planWithPeriod, validYearly, type BillingPeriod } from "@/lib/plans/yearly";
+
 import { cancelPreapproval, createPreapproval, getPreapprovalPlan, MercadoPagoError, type CreatePreapprovalBody } from "./mercadopago";
-import { isChargingStatus } from "./state";
+import { isChargingStatus, PERIOD_FREQUENCY } from "./state";
 import type { BillingSubscriptionRow } from "./types";
 
 /*
@@ -12,8 +14,15 @@ import type { BillingSubscriptionRow } from "./types";
  * provider_ref, provider_status = pending). El plan NO se activa acá: lo
  * activa el webhook cuando MP avisa que la suscripción quedó `authorized`.
  *
- * `external_reference` = `<store_id>:<plan_code>`: el webhook saca el plan de
- * ahí (o del `preapproval_plan_id`), nunca de lo que haya quedado en la base.
+ * `external_reference` = `<store_id>:<plan_code>` (mensual) o
+ * `<store_id>:<plan_code>:yearly` (anual, 0019): el webhook saca el plan y la
+ * periodicidad de ahí (o del `preapproval_plan_id`), nunca de lo que haya
+ * quedado en la base.
+ *
+ * Anual: con `plans.mp_plan_id_yearly` se usa ese plan de MP (frecuencia de
+ * 12 meses); sin él, la suscripción se crea sin plan asociado con
+ * `auto_recurring` = `price_yearly` cada 12 meses (el webhook exige ese monto
+ * y esa frecuencia con `recurringMatchesPlan`).
  *
  * Antes de crear uno nuevo se cancela en MP el preapproval anterior de la
  * tienda si todavía puede cobrar (checkout a medias o renovación cancelada
@@ -27,12 +36,18 @@ export interface CheckoutInput {
   /** Origen de la plataforma (`https://www.ecommy.app`), para el `back_url`. */
   origin: string;
   payerEmail: string;
+  /** Periodicidad elegida (0019). Por defecto, mensual. */
+  period?: BillingPeriod;
 }
 
 export interface CheckoutPlan {
   code: string;
   name: string;
   mp_plan_id: string | null;
+  /** 0019 (ausentes sin la migración = sin anual). */
+  mp_plan_id_yearly?: string | null;
+  price_yearly?: number | string | null;
+  currency?: string | null;
 }
 
 export interface CheckoutDeps {
@@ -42,7 +57,7 @@ export interface CheckoutDeps {
     "provider" | "provider_ref" | "provider_status" | "cancel_at_period_end" | "plan_code" | "status"
   > | null>;
   /** RPC `billing_start_checkout` (service role). Devuelve el mensaje de error o null. */
-  recordCheckout(args: { planCode: string; preapprovalId: string }): Promise<string | null>;
+  recordCheckout(args: { planCode: string; preapprovalId: string; period: BillingPeriod }): Promise<string | null>;
   createPreapproval?: typeof createPreapproval;
   getPreapprovalPlan?: typeof getPreapprovalPlan;
   cancelPreapproval?: typeof cancelPreapproval;
@@ -69,20 +84,40 @@ export function checkoutBackUrl(origin: string): string {
   return `${origin.replace(/\/+$/, "")}/admin/plan?mp=ok`;
 }
 
-/** `<store_id>:<plan_code>` (ver `parseExternalReference` en state.ts). */
-export function externalReference(storeId: string, planCode: string): string {
-  return `${storeId}:${planCode}`;
+/**
+ * `<store_id>:<plan_code>` (mensual, igual que antes de 0019) o
+ * `<store_id>:<plan_code>:yearly` (ver `parseExternalReference` en state.ts).
+ */
+export function externalReference(storeId: string, planCode: string, period: BillingPeriod = "monthly"): string {
+  return period === "yearly" ? `${storeId}:${planCode}:yearly` : `${storeId}:${planCode}`;
+}
+
+type BodyInput = CheckoutInput & { planName: string };
+
+function baseBody(input: BodyInput): Omit<CreatePreapprovalBody, "preapproval_plan_id" | "status" | "auto_recurring"> {
+  const period = input.period ?? "monthly";
+  return {
+    payer_email: input.payerEmail,
+    external_reference: externalReference(input.storeId, input.planCode, period),
+    back_url: checkoutBackUrl(input.origin),
+    reason: checkoutReason(planWithPeriod(input.planName, period), input.storeName),
+  };
 }
 
 /** Cuerpo del `POST /preapproval` con plan asociado. */
-export function buildPreapprovalBody(input: CheckoutInput & { planName: string; mpPlanId: string }): CreatePreapprovalBody {
-  return {
-    preapproval_plan_id: input.mpPlanId,
-    payer_email: input.payerEmail,
-    external_reference: externalReference(input.storeId, input.planCode),
-    back_url: checkoutBackUrl(input.origin),
-    reason: checkoutReason(input.planName, input.storeName),
-  };
+export function buildPreapprovalBody(input: BodyInput & { mpPlanId: string }): CreatePreapprovalBody {
+  return { preapproval_plan_id: input.mpPlanId, ...baseBody(input) };
+}
+
+/**
+ * Cuerpo del `POST /preapproval` SIN plan asociado (`status: pending`: MP
+ * devuelve un `init_point` donde el dueño carga la tarjeta).
+ */
+export function buildInlinePreapprovalBody(
+  input: BodyInput,
+  recurring: { frequency: number; frequency_type: string; transaction_amount: number; currency_id: string },
+): CreatePreapprovalBody {
+  return { ...baseBody(input), status: "pending", auto_recurring: recurring };
 }
 
 /**
@@ -126,8 +161,15 @@ export async function startCheckout(input: CheckoutInput, deps: CheckoutDeps): P
   const readPlan = deps.getPreapprovalPlan ?? getPreapprovalPlan;
   const cancel = deps.cancelPreapproval ?? cancelPreapproval;
 
+  const period: BillingPeriod = input.period ?? "monthly";
   const plan = await deps.loadPlan(input.planCode);
-  if (!plan?.mp_plan_id) return { ok: false, error: "Ese plan todavía no se puede pagar con MercadoPago. Pedilo por WhatsApp." };
+  // Plan de MP que cobra: el mensual o el anual. El anual puede no tener (se crea sin plan asociado).
+  const mpPlanId = (period === "yearly" ? plan?.mp_plan_id_yearly : plan?.mp_plan_id) || null;
+  const yearlyPrice = period === "yearly" ? validYearly(Number(plan?.price_yearly ?? Number.NaN)) : null;
+  if (!plan || (period === "monthly" && !mpPlanId)) {
+    return { ok: false, error: "Ese plan todavía no se puede pagar con MercadoPago. Pedilo por WhatsApp." };
+  }
+  if (period === "yearly" && yearlyPrice === null) return { ok: false, error: "Ese plan no tiene pago anual. Pedilo por WhatsApp." };
 
   const sub = await deps.loadSubscription();
   // Una suscripción autorizada o pausada puede volver a cobrar: primero se cancela la renovación.
@@ -150,39 +192,49 @@ export async function startCheckout(input: CheckoutInput, deps: CheckoutDeps): P
     }
   }
 
-  const body = buildPreapprovalBody({ ...input, planCode: plan.code, planName: plan.name, mpPlanId: plan.mp_plan_id });
+  const bodyInput: BodyInput = { ...input, planCode: plan.code, planName: plan.name, period };
   // Mismo intento (doble clic) = misma clave; otro minuto u otro preapproval reemplazado, otra clave.
-  const key = idempotencyKey([input.storeId, plan.code, String(Math.floor(Date.now() / 60_000)), previous ?? ""]);
+  const keyParts = [input.storeId, plan.code, String(Math.floor(Date.now() / 60_000)), previous ?? ""];
+  const key = idempotencyKey(period === "yearly" ? [...keyParts, "yearly"] : keyParts);
   let mode: "plan" | "inline" = "plan";
   let preapproval;
-  try {
-    preapproval = await create(body, key);
-  } catch (err) {
-    if (!needsCardToken(err)) throw err;
-    const mpPlan = await readPlan(plan.mp_plan_id);
-    const ar = mpPlan.auto_recurring;
-    if (!ar?.transaction_amount || !ar.frequency || !ar.frequency_type) throw err;
+  if (!mpPlanId) {
+    // Anual sin plan de MP: precio anual cada 12 meses.
+    if (yearlyPrice === null) return { ok: false, error: "Ese plan no tiene pago anual. Pedilo por WhatsApp." };
     mode = "inline";
-    const { preapproval_plan_id: _omit, ...rest } = body;
-    void _omit;
     preapproval = await create(
-      {
-        ...rest,
-        status: "pending",
-        auto_recurring: {
+      buildInlinePreapprovalBody(bodyInput, {
+        ...PERIOD_FREQUENCY.yearly,
+        transaction_amount: yearlyPrice,
+        currency_id: (plan.currency || "ARS").toUpperCase(),
+      }),
+      `${key}-inline`,
+    );
+  } else {
+    const mpId = mpPlanId;
+    try {
+      preapproval = await create(buildPreapprovalBody({ ...bodyInput, mpPlanId: mpId }), key);
+    } catch (err) {
+      if (!needsCardToken(err)) throw err;
+      const mpPlan = await readPlan(mpId);
+      const ar = mpPlan.auto_recurring;
+      if (!ar?.transaction_amount || !ar.frequency || !ar.frequency_type) throw err;
+      mode = "inline";
+      preapproval = await create(
+        buildInlinePreapprovalBody(bodyInput, {
           frequency: ar.frequency,
           frequency_type: ar.frequency_type,
           transaction_amount: ar.transaction_amount,
           currency_id: ar.currency_id ?? "ARS",
-        },
-      },
-      `${key}-inline`,
-    );
+        }),
+        `${key}-inline`,
+      );
+    }
   }
   if (!preapproval?.id || !isMercadoPagoUrl(preapproval.init_point)) {
     return { ok: false, error: "MercadoPago no devolvió el link de pago. Probá de nuevo en unos minutos." };
   }
-  const recordError = await deps.recordCheckout({ planCode: plan.code, preapprovalId: preapproval.id });
+  const recordError = await deps.recordCheckout({ planCode: plan.code, preapprovalId: preapproval.id, period });
   if (recordError) return { ok: false, error: recordError };
   return { ok: true, url: preapproval.init_point, preapprovalId: preapproval.id, mode, replaced };
 }

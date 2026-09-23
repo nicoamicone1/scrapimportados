@@ -6,7 +6,16 @@ vi.mock("server-only", () => ({}));
 
 import { planActivatedEmail, planPaymentFailedEmail } from "@/lib/email/templates/billing";
 
-import { buildPreapprovalBody, checkoutReason, isMercadoPagoUrl, previousToCancel, startCheckout, type CheckoutDeps } from "./checkout";
+import {
+  buildInlinePreapprovalBody,
+  buildPreapprovalBody,
+  checkoutReason,
+  externalReference,
+  isMercadoPagoUrl,
+  previousToCancel,
+  startCheckout,
+  type CheckoutDeps,
+} from "./checkout";
 import { MercadoPagoError, redactTokens } from "./mercadopago";
 import { buildManifest, parseSignatureHeader, signatureTsMs, verifyWebhookSignature } from "./signature";
 import {
@@ -305,12 +314,17 @@ describe("mapeo preapproval → subscriptions", () => {
     expect(resolvePlan({ preapproval_plan_id: null }, PLANS, null)).toBeNull();
   });
 
-  it("parseExternalReference: <tienda>:<plan>", () => {
-    expect(parseExternalReference(`${STORE}:pro`)).toEqual({ storeId: STORE, planCode: "pro" });
-    expect(parseExternalReference(STORE)).toEqual({ storeId: STORE, planCode: null });
-    for (const bad of ["pro", `${STORE}:PRO`, `${STORE}:pro:x`, `x:${STORE}`, `${STORE}:`, null, 1]) {
+  it("parseExternalReference: <tienda>:<plan>[:<período>] (sin período = mensual)", () => {
+    expect(parseExternalReference(`${STORE}:pro`)).toEqual({ storeId: STORE, planCode: "pro", period: "monthly" });
+    expect(parseExternalReference(STORE)).toEqual({ storeId: STORE, planCode: null, period: "monthly" });
+    expect(parseExternalReference(`${STORE}:pro:yearly`)).toEqual({ storeId: STORE, planCode: "pro", period: "yearly" });
+    expect(parseExternalReference(`${STORE}:starter:monthly`)).toEqual({ storeId: STORE, planCode: "starter", period: "monthly" });
+    for (const bad of ["pro", `${STORE}:PRO`, `${STORE}:pro:x`, `${STORE}:pro:YEARLY`, `${STORE}:pro:yearly:1`, `${STORE}:pro:`, `x:${STORE}`, `${STORE}:`, null, 1]) {
       expect(parseExternalReference(bad)).toBeNull();
     }
+    // Ida y vuelta con lo que arma el checkout.
+    expect(externalReference(STORE, "pro")).toBe(`${STORE}:pro`);
+    expect(parseExternalReference(externalReference(STORE, "pro", "yearly"))).toEqual({ storeId: STORE, planCode: "pro", period: "yearly" });
   });
 
   it("recurringMatchesPlan: monto, moneda y frecuencia mensual del plan", () => {
@@ -324,6 +338,56 @@ describe("mapeo preapproval → subscriptions", () => {
     expect(recurringMatchesPlan(null, pro)).toBe(false);
     expect(recurringMatchesPlan(ok, { price_monthly: null, currency: "ARS" })).toBe(false);
     expect(recurringMatchesPlan(ok, { price_monthly: "34999.00", currency: "ARS" })).toBe(true);
+  });
+
+  it("recurringMatchesPlan anual: price_yearly cada 12 meses", () => {
+    const pro = { ...PLANS[1], price_yearly: "349990.00" };
+    const yearly = { transaction_amount: 349990, currency_id: "ARS", frequency: 12, frequency_type: "months" };
+    expect(recurringMatchesPlan(yearly, pro, "yearly")).toBe(true);
+    // El precio mensual cada 12 meses, o el anual cada mes, no.
+    expect(recurringMatchesPlan({ ...yearly, transaction_amount: 34999 }, pro, "yearly")).toBe(false);
+    expect(recurringMatchesPlan({ ...yearly, frequency: 1 }, pro, "yearly")).toBe(false);
+    expect(recurringMatchesPlan(yearly, pro, "monthly")).toBe(false);
+    expect(recurringMatchesPlan({ ...yearly, currency_id: "USD" }, pro, "yearly")).toBe(false);
+    // Sin precio anual (o sin 0019) no hay anual que verificar.
+    expect(recurringMatchesPlan(yearly, PLANS[1], "yearly")).toBe(false);
+    expect(recurringMatchesPlan(yearly, { ...PLANS[1], price_yearly: null }, "yearly")).toBe(false);
+  });
+
+  it("resolvePlan anual: por mp_plan_id_yearly o por el período del external_reference", () => {
+    const plans: BillingPlan[] = [...PLANS.slice(0, 1), { ...PLANS[1], mp_plan_id_yearly: "mp_p_y", price_yearly: 349990 }];
+    expect(resolvePlan({ preapproval_plan_id: "mp_p_y" }, plans, "starter")).toMatchObject({ plan: { code: "pro" }, via: "mp_plan", period: "yearly" });
+    expect(resolvePlan({ preapproval_plan_id: "mp_p" }, plans, "pro", "yearly")).toMatchObject({ plan: { code: "pro" }, via: "mp_plan", period: "monthly" });
+    expect(resolvePlan({ preapproval_plan_id: null }, plans, "pro", "yearly")).toMatchObject({ plan: { code: "pro" }, via: "reference", period: "yearly" });
+    expect(resolvePlan({ preapproval_plan_id: null }, plans, "pro")).toMatchObject({ period: "monthly" });
+  });
+
+  it("anual: guarda el período y, sin next_payment_date, estima 12 meses", () => {
+    const d = decideSubscription({
+      preapproval: { ...pre("authorized"), next_payment_date: null, summarized: { charged_quantity: 1, last_charged_date: "2026-09-23T10:00:00Z" } },
+      current: current(),
+      planCode: "pro",
+      period: "yearly",
+      now: NOW,
+    });
+    expect(d).toMatchObject({ status: "active", billingPeriod: "yearly", periodEnd: "2027-09-23T10:00:00.000Z" });
+    const monthly = decideSubscription({
+      preapproval: { ...pre("authorized"), next_payment_date: null, summarized: { charged_quantity: 1, last_charged_date: "2026-09-23T10:00:00Z" } },
+      current: current(),
+      planCode: "pro",
+      now: NOW,
+    });
+    expect(monthly).toMatchObject({ billingPeriod: "monthly", periodEnd: "2026-10-23T10:00:00.000Z" });
+    // Con next_payment_date manda MercadoPago.
+    const fromMp = decideSubscription({
+      preapproval: { ...pre("authorized"), next_payment_date: "2027-09-20T10:00:00Z" },
+      payment: { status: "processed", payment: { status: "approved" }, debit_date: "2026-09-20T10:00:00Z" },
+      current: current(),
+      planCode: "pro",
+      period: "yearly",
+      now: NOW,
+    });
+    expect(fromMp).toMatchObject({ billingPeriod: "yearly", periodEnd: "2027-09-20T10:00:00.000Z" });
   });
 
   it("isUuid, billingState y débito vigente", () => {
@@ -511,6 +575,38 @@ describe("procesamiento de avisos", () => {
     expect(renewal).toMatchObject({ outcome: "applied" });
   });
 
+  it("anual sin plan de MP: el período sale del external_reference y el monto tiene que ser el precio anual cada 12 meses", async () => {
+    const yearlyPlans: BillingPlan[] = PLANS.map((p) => ({ ...p, price_yearly: Number(p.price_monthly) * 10 }));
+    const proYearly = {
+      preapproval_plan_id: null,
+      external_reference: `${STORE}:pro:yearly`,
+      next_payment_date: "2027-09-23T12:00:00.000Z",
+      summarized: { charged_quantity: 1, last_charged_date: "2026-09-23T11:55:00.000Z" },
+      auto_recurring: { transaction_amount: 349990, currency_id: "ARS", frequency: 12, frequency_type: "months" },
+    };
+    const a = fakeRepo(subRow());
+    a.repo.listPlans = async () => yearlyPlans;
+    const r = await syncPreapproval("pre_1", { now: NOW }, { repo: a.repo, mp: fakeMp(proYearly) });
+    expect(r).toMatchObject({ outcome: "applied" });
+    expect(a.applied[0].decision).toMatchObject({ planCode: "pro", billingPeriod: "yearly", periodEnd: "2027-09-23T12:00:00.000Z" });
+
+    // Precio mensual con referencia anual (o anual cada mes) → no se activa.
+    for (const auto_recurring of [
+      { transaction_amount: 34999, currency_id: "ARS", frequency: 12, frequency_type: "months" },
+      { transaction_amount: 349990, currency_id: "ARS", frequency: 1, frequency_type: "months" },
+    ]) {
+      const b = fakeRepo(subRow());
+      b.repo.listPlans = async () => yearlyPlans;
+      const mismatch = await syncPreapproval("pre_1", { now: NOW }, { repo: b.repo, mp: fakeMp({ ...proYearly, auto_recurring }) });
+      expect(mismatch).toMatchObject({ outcome: "ignored", reason: "plan_mismatch" });
+      expect(b.applied).toHaveLength(0);
+    }
+
+    // Sin 0019 (planes sin price_yearly) un preapproval anual no activa nada.
+    const c = fakeRepo(subRow());
+    expect(await syncPreapproval("pre_1", { now: NOW }, { repo: c.repo, mp: fakeMp(proYearly) })).toMatchObject({ reason: "plan_mismatch" });
+  });
+
   it("A2: adopta un preapproval autorizado de la tienda si el guardado quedó pendiente", async () => {
     const { repo, applied } = fakeRepo(subRow({ provider_ref: "pre_viejo", provider_status: "pending" }));
     const mp = fakeMp();
@@ -625,7 +721,7 @@ describe("startCheckout", () => {
       reason: "Ecommy Pro · Taller Luna",
     });
     // Sólo se registra el preapproval (billing_start_checkout): nada de billing_apply_subscription.
-    expect(recorded).toEqual([{ planCode: "pro", preapprovalId: "pre_new" }]);
+    expect(recorded).toEqual([{ planCode: "pro", preapprovalId: "pre_new", period: "monthly" }]);
   });
 
   it("si MP pide card_token_id, crea la suscripción sin plan con el mismo auto_recurring", async () => {
@@ -645,7 +741,56 @@ describe("startCheckout", () => {
       external_reference: `${STORE}:pro`,
       auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: 34999, currency_id: "ARS" },
     });
-    expect(recorded).toEqual([{ planCode: "pro", preapprovalId: "pre_inline" }]);
+    expect(recorded).toEqual([{ planCode: "pro", preapprovalId: "pre_inline", period: "monthly" }]);
+  });
+
+  it("anual sin plan de MP: suscripción sin plan asociado, precio anual cada 12 meses", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: "pre_year", init_point: "https://www.mercadopago.com.ar/subscriptions/checkout?x=2" }), { status: 201 }),
+    );
+    const { d, recorded } = deps({
+      loadPlan: async (code) => ({ code, name: "Pro", mp_plan_id: "mp_pro", mp_plan_id_yearly: null, price_yearly: "349990.00", currency: "ARS" }),
+    });
+    const res = await startCheckout({ ...input, period: "yearly" }, d);
+    expect(res).toMatchObject({ ok: true, mode: "inline", preapprovalId: "pre_year" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body))).toEqual({
+      payer_email: "lucia@example.com",
+      external_reference: `${STORE}:pro:yearly`,
+      back_url: "https://www.ecommy.app/admin/plan?mp=ok",
+      reason: "Ecommy Pro anual · Taller Luna",
+      status: "pending",
+      auto_recurring: { frequency: 12, frequency_type: "months", transaction_amount: 349990, currency_id: "ARS" },
+    });
+    expect(recorded).toEqual([{ planCode: "pro", preapprovalId: "pre_year", period: "yearly" }]);
+  });
+
+  it("anual con plan de MP: usa mp_plan_id_yearly", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: "pre_year2", init_point: "https://www.mercadopago.com.ar/subscriptions/checkout?x=3" }), { status: 201 }),
+    );
+    const { d, recorded } = deps({
+      loadPlan: async (code) => ({ code, name: "Pro", mp_plan_id: "mp_pro", mp_plan_id_yearly: "mp_pro_y", price_yearly: 349990, currency: "ARS" }),
+    });
+    const res = await startCheckout({ ...input, period: "yearly" }, d);
+    expect(res).toMatchObject({ ok: true, mode: "plan" });
+    expect(JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body))).toMatchObject({
+      preapproval_plan_id: "mp_pro_y",
+      external_reference: `${STORE}:pro:yearly`,
+    });
+    expect(recorded).toEqual([{ planCode: "pro", preapprovalId: "pre_year2", period: "yearly" }]);
+  });
+
+  it("anual sin precio anual (o sin 0019): no crea nada", async () => {
+    const { d, recorded } = deps();
+    expect(await startCheckout({ ...input, period: "yearly" }, d)).toMatchObject({ ok: false, error: expect.stringMatching(/pago anual/) });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(recorded).toEqual([]);
+    // El anual no necesita el plan mensual de MP.
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: "pre_y3", init_point: "https://www.mercadopago.com.ar/x" }), { status: 201 }));
+    const onlyYearly = deps({ loadPlan: async (code) => ({ code, name: "Pro", mp_plan_id: null, price_yearly: 349990 }) });
+    expect(await startCheckout({ ...input, period: "yearly" }, onlyYearly.d)).toMatchObject({ ok: true });
+    expect(await startCheckout(input, onlyYearly.d)).toMatchObject({ ok: false });
   });
 
   it("no crea nada si el plan no tiene mp_plan_id o ya hay una suscripción cobrando", async () => {
@@ -739,6 +884,17 @@ describe("startCheckout", () => {
   it("buildPreapprovalBody y checkoutReason", () => {
     expect(checkoutReason("Pro", "  Taller   Luna ")).toBe("Ecommy Pro · Taller Luna");
     expect(buildPreapprovalBody({ ...input, planName: "Pro", mpPlanId: "mp_pro" }).external_reference).toBe(`${STORE}:pro`);
+    const yearly = buildInlinePreapprovalBody(
+      { ...input, planName: "Starter", planCode: "starter", period: "yearly" },
+      { frequency: 12, frequency_type: "months", transaction_amount: 149990, currency_id: "ARS" },
+    );
+    expect(yearly).toMatchObject({
+      external_reference: `${STORE}:starter:yearly`,
+      reason: "Ecommy Starter anual · Taller Luna",
+      status: "pending",
+      auto_recurring: { frequency: 12, transaction_amount: 149990 },
+    });
+    expect(yearly.preapproval_plan_id).toBeUndefined();
   });
 });
 
@@ -762,6 +918,15 @@ describe("mails de cobro", () => {
     expect(m.text).toContain("30/09/2026");
     expect(`${m.text} ${m.html}`).not.toMatch(/Cobramos/);
     expect(planActivatedEmail({ ...base, planName: "Pro", periodEnd: null }).html).toMatch(/Cobramos/);
+  });
+  it("activado anual: dice anual y que se renueva cada año", () => {
+    const m = planActivatedEmail({ ...base, planName: "Pro", periodEnd: "2027-09-23T15:00:00Z", period: "yearly" });
+    expect(m.subject).toBe("Tu plan Pro anual está activo hasta el 23/09/2027");
+    expect(m.html).toContain("Se renueva solo cada año");
+    expect(m.text).toContain("Plan: Pro anual");
+    const unpaid = planActivatedEmail({ ...base, planName: "Pro", periodEnd: "2026-09-30T15:00:00Z", charged: false, period: "yearly" });
+    expect(unpaid.text).toContain("el año completo");
+    expect(planActivatedEmail({ ...base, planName: "Pro", periodEnd: null }).html).toContain("Se renueva solo cada mes");
   });
   it("no pudimos cobrar: pide revisar el medio de pago en MercadoPago", () => {
     const m = planPaymentFailedEmail({ ...base, planName: "Pro", graceUntil: "2026-10-30T15:00:00Z" });

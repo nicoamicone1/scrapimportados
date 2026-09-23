@@ -3,6 +3,7 @@ import "server-only";
 import { isEmail, platformFrom, sendEmail } from "@/lib/email/send";
 import { planActivatedEmail, planPaymentFailedEmail } from "@/lib/email/templates/billing";
 import { PLAN_NAMES, type PlanCode } from "@/lib/plans";
+import { planWithPeriod } from "@/lib/plans/yearly";
 import { platformOrigin, storeUrl } from "@/lib/tenant/urls";
 
 import type { BillingDb } from "./service";
@@ -47,10 +48,10 @@ export async function sendBillingEmail(db: BillingDb, result: SyncResult): Promi
     const unpaid = decision.providerStatus === AUTHORIZED_UNPAID;
     const content =
       decision.email === "activated"
-        ? planActivatedEmail({ ...base, planName, periodEnd, charged: !unpaid })
+        ? planActivatedEmail({ ...base, planName, periodEnd, charged: !unpaid, period: decision.billingPeriod })
         : planPaymentFailedEmail({
             ...base,
-            planName,
+            planName: planWithPeriod(planName, decision.billingPeriod),
             graceUntil: periodEnd
               ? unpaid
                 ? new Date(periodEnd).toISOString()

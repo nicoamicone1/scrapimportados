@@ -13,6 +13,7 @@ export type FaqId =
   | "tarjeta"
   | "prueba"
   | "cambio-plan"
+  | "anual"
   | "varias-tiendas"
   | "mudanza"
   | "dominio"
@@ -56,7 +57,12 @@ export function platformFaq({ storeAddress, plans = [] }: FaqContext): FaqItem[]
     {
       id: "cambio-plan",
       q: "¿Puedo cambiar de plan cuando quiera?",
-      a: "Sí. Desde el panel, en Plan, pedís el cambio y lo activamos en el día. El cobro automático con MercadoPago llega en la próxima versión.",
+      a: "Sí. Desde el panel, en Plan, pagás el plan con MercadoPago (débito automático) o lo pedís por WhatsApp y lo activamos en el día. Si bajás de plan, no se borra nada: lo que excede el plan nuevo queda bloqueado para crear.",
+    },
+    {
+      id: "anual",
+      q: "¿Puedo pagar el año?",
+      a: "Sí, en Starter y Pro: pagás 12 meses por el precio de 10, por transferencia o con MercadoPago, y ese precio queda fijo durante el año. Se renueva al año; con MercadoPago cancelás la renovación cuando quieras desde Plan en el panel.",
     },
     {
       id: "varias-tiendas",

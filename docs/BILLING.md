@@ -1,7 +1,7 @@
 # Cobro de planes con MercadoPago (implementado en v0.4)
 
 Los planes pagos (Starter, Pro) se cobran con **MercadoPago Suscripciones**: débito
-automático mensual con tarjeta o dinero en cuenta. Business sigue siendo a medida (por
+automático mensual (o anual, desde 0019) con tarjeta o dinero en cuenta. Business sigue siendo a medida (por
 WhatsApp / Contacto). El pedido por WhatsApp ("Quiero este plan") sigue disponible al
 lado del botón de MercadoPago y es el único camino cuando el cobro automático no está
 configurado.
@@ -9,6 +9,8 @@ configurado.
 Código: `src/lib/billing/` (cliente REST por `fetch`, sin SDK), webhook en
 `src/app/api/billing/mercadopago/webhook/route.ts`, pantalla `/admin/plan`, superadmin en
 `/platform/planes` y `/platform/tiendas/<id>`. Migración: `0015_billing.sql` (esquema 6).
+Pago anual (12 meses por el precio de 10): `0019_plans_yearly.sql` (esquema 10), ver
+[Plan anual](#plan-anual-0019).
 
 ## Qué hay en la base (0015)
 
@@ -124,6 +126,60 @@ Código: `src/lib/billing/` (cliente REST por `fetch`, sin SDK), webhook en
 6. **Superadmin**: `/platform/tiendas/<id>` muestra el estado de MP y los últimos avisos, y
    "Sincronizar con MercadoPago" relee el preapproval y lo aplica igual que el webhook.
 
+## Plan anual (0019)
+
+Starter y Pro (o cualquier plan con `price_yearly`) se pueden pagar por año: el dueño paga
+12 meses por adelantado y ese precio queda fijo el año. La recomendación comercial
+(docs/MARKETING.md §5.2) es `price_yearly = 10 × price_monthly` ("12 meses por el precio de
+10", ≈ 17 % menos). Business no tiene anual.
+
+- **Base** (`0019_plans_yearly.sql`, esquema 10):
+  - `plans.price_yearly numeric(12,2)` (null = sin anual; `> 0`) y
+    `plans.mp_plan_id_yearly` (plan de MP con frecuencia de 12 meses; opcional).
+  - `subscriptions.billing_period` (`monthly` | `yearly`, default `monthly`): periodicidad
+    del plan vigente. `subscriptions.provider_billing_period`: la del checkout de MP en
+    curso / aplicado (como `provider_plan_code`, sólo informativa).
+  - `billing_start_checkout(…, p_billing_period default 'monthly')`: el anual exige
+    `price_yearly`; el mensual, `mp_plan_id` (como antes).
+  - `billing_apply_subscription(…, p_billing_period default 'monthly')`: guarda el
+    período cuando cambia plan o estado (`p_status` no null).
+  - `current_plan()` devuelve además `billing_period` (Free y la prueba: siempre
+    `monthly`) y `price_yearly`.
+  - `platform_set_plan(…, p_billing_period default 'monthly')`: el superadmin marca un
+    anual pagado por transferencia (`/platform/tiendas/<id>` → "Pago: Anual"). Extender la
+    prueba no toca el período. `platform_list_stores()` devuelve además `billing_period`.
+  - `billing_expire_subscriptions()` no cambia: el vencimiento sale de
+    `current_period_end`, que para el anual es el `next_payment_date` de MP (12 meses).
+- **Compatibilidad**: el código funciona con y sin 0019. Las lecturas piden las columnas
+  nuevas y, si fallan, repiten sin ellas (sin anual). Las RPC mandan `p_billing_period`
+  sólo cuando es `yearly` (el mensual es el default de la función), así las llamadas
+  mensuales sirven igual antes y después de aplicar la migración.
+- **Checkout anual** (`startMercadoPagoCheckout({ plan, period: "yearly" })`):
+  - `external_reference` = `<store_id>:<plan_code>:yearly`. El mensual sigue siendo
+    `<store_id>:<plan_code>` (un tercer campo ausente = `monthly`; así un rollback del
+    código no rompe las suscripciones mensuales nuevas).
+  - Con `mp_plan_id_yearly`: `POST /preapproval` con ese `preapproval_plan_id` (y el mismo
+    camino `card_token_id` que el mensual si MP lo pide).
+  - Sin `mp_plan_id_yearly`: suscripción SIN plan asociado, `status: "pending"`,
+    `auto_recurring = { frequency: 12, frequency_type: "months", transaction_amount:
+    price_yearly, currency_id }`.
+  - `reason` = "Ecommy Pro anual · <Tienda>".
+- **Webhook**: `resolvePlan` reconoce `mp_plan_id_yearly` (→ anual) y, sin plan de MP, usa
+  el período del `external_reference`. `recurringMatchesPlan(ar, plan, "yearly")` exige
+  `price_yearly` cada 12 meses (un monto mensual cada 12 meses, o el anual cada mes, queda
+  "ignorado: plan_mismatch"). Sin `next_payment_date`, el fin del período se estima en 12
+  meses desde el cobro. Los mails dicen "Pro anual" y "se renueva solo cada año".
+- **/admin/plan**: en los planes con anual, "Pagar mensual" y "Pagar el año (ahorrás N %)"
+  con MercadoPago; por WhatsApp, "mensual · anual" (el mensaje dice "con pago anual"). Un
+  plan mensual vigente (sin débito de MP cobrando) puede pedir "Pasar al pago anual". El
+  estado dice "Plan Pro anual con MercadoPago · próximo cobro el …".
+- **Web pública**: `PlanCards` muestra bajo el precio mensual "Pagando el año: 12 meses por
+  el precio de 10 · $ X por mes" (o "ahorrás N %" si el anual no es un número justo de
+  meses); `/planes` agrega un párrafo corto antes de la comparación.
+- **Precios**: `/platform/planes` → "Precio por año". Si cargás "Plan anual de
+  MercadoPago", se verifica que exista, esté activo, cobre cada 12 meses y el mismo monto
+  que el precio anual.
+
 ## Estados (`src/lib/billing/state.ts`)
 
 "Con período pago" = la tienda está `active`/`past_due` y su `provider_status` ya pasó
@@ -190,6 +246,10 @@ v1         = hex(HMAC_SHA256(MP_WEBHOOK_SECRET, manifest))
    plan pago (Starter, Pro), mensual, en ARS, con el mismo precio que `/platform/planes`.
    Anotar el id de cada `preapproval_plan`.
 3. `/platform/planes` → pegar cada id en "Plan de MercadoPago" y guardar.
+   Pago anual (0019): cargar "Precio por año" (10 × el mensual) en Starter y Pro y,
+   opcionalmente, crear en MP un plan de suscripción con frecuencia de 12 meses y ese
+   precio y pegar su id en "Plan anual de MercadoPago" (sin él, el anual se cobra con una
+   suscripción sin plan asociado).
 4. MercadoPago → Tus integraciones → la aplicación → Webhooks → URL de producción
    `https://www.ecommy.app/api/billing/mercadopago/webhook`, eventos **Planes y
    suscripciones** (`subscription_preapproval`, `subscription_authorized_payment`).

@@ -86,6 +86,7 @@ describe("POST /api/billing/mercadopago/webhook", () => {
       decision: {
         status: "active",
         planCode: "pro",
+        billingPeriod: "monthly",
         periodStart: null,
         periodEnd: null,
         providerStatus: "authorized",

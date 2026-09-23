@@ -7,6 +7,9 @@ import { PlanCards, PlanComparison, PlanCtaLink } from "@/components/platform/Pl
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { exampleStoreAddress } from "@/components/platform/site";
 import { getSession } from "@/lib/auth";
+import { billingEnabled } from "@/lib/billing/mercadopago";
+import type { PublicPlan } from "@/lib/plans/catalog";
+import { yearlyOffer } from "@/lib/plans/yearly";
 
 import { plansOrEmpty } from "../_lib/public-site";
 
@@ -16,12 +19,33 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 
+/** "Starter" · "Starter y Pro" · "Starter, Pro y Business". */
+function joinNames(names: string[]): string {
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
+}
+
+/** Párrafo del pago anual (sólo si algún plan lo tiene; sin 0019 no aparece). */
+function YearlyNote({ yearly, mercadoPago }: { yearly: PublicPlan[]; mercadoPago: boolean }) {
+  const offers = new Set(yearly.map((p) => yearlyOffer(p.priceMonthly, p.priceYearly)));
+  const [offer] = offers;
+  const common = offers.size === 1 && offer?.startsWith("12 meses") ? offer : null;
+  return (
+    <p className="mt-14 max-w-[640px] text-[14px] leading-relaxed text-adm-fg-muted">
+      <span className="font-medium text-adm-fg">Pago anual en {joinNames(yearly.map((p) => p.name))}</span>
+      {common ? `: ${common}.` : "."} Pagás el año por adelantado, {mercadoPago ? "por transferencia o con MercadoPago" : "por transferencia"}, y ese precio queda fijo durante los 12
+      meses. Se renueva al año.
+    </p>
+  );
+}
+
 export default async function PlanesPage() {
   const [{ user }, plans] = await Promise.all([getSession(), plansOrEmpty("planes")]);
   const start = user ? "/app/nueva" : "/registro";
+  const yearlyPlans = plans.filter((p) => p.monthlyEquivalent != null);
   const faq = pickFaq(platformFaq({ storeAddress: exampleStoreAddress(), plans }), [
     "prueba",
     "cambio-plan",
+    "anual",
     "comision",
     "varias-tiendas",
     "dominio",
@@ -61,7 +85,9 @@ export default async function PlanesPage() {
           }
         />
 
-        <h2 id="comparar" className="mt-14 text-[20px] font-semibold">
+        {yearlyPlans.length ? <YearlyNote yearly={yearlyPlans} mercadoPago={billingEnabled()} /> : null}
+
+        <h2 id="comparar" className={yearlyPlans.length ? "mt-8 text-[20px] font-semibold" : "mt-14 text-[20px] font-semibold"}>
           Comparación completa
         </h2>
         <div className="mt-4">

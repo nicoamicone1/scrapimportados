@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isBillingPeriod, validYearly, type BillingPeriod } from "@/lib/plans/yearly";
 import type { ServerSupabase } from "@/lib/supabase/server";
 
 import { billingEnabled } from "./mercadopago";
@@ -8,7 +9,8 @@ import { AUTHORIZED_UNPAID } from "./state";
 /*
  * Lo que necesita la pantalla Plan para ofrecer MercadoPago. Tolerante: si la
  * migración 0015 no está aplicada (faltan columnas) o falla la lectura,
- * devuelve null y la pantalla sigue sólo con WhatsApp.
+ * devuelve null y la pantalla sigue sólo con WhatsApp. Sin 0019 no hay pago
+ * anual (`payableYearly` vacío) y todo es mensual.
  */
 
 export type BillingState = "none" | "pending" | "active" | "cancelling" | "past_due" | "cancelled";
@@ -16,8 +18,14 @@ export type BillingState = "none" | "pending" | "active" | "cancelling" | "past_
 export interface BillingView {
   /** Hay MP_ACCESS_TOKEN y la base tiene las columnas nuevas. */
   enabled: boolean;
-  /** Planes con `mp_plan_id` cargado (se pueden pagar con MP). */
+  /** Planes con `mp_plan_id` cargado (se pueden pagar con MP, por mes). */
   payablePlans: string[];
+  /** Planes con `price_yearly` (0019): se pueden pagar el año con MP, con o sin `mp_plan_id_yearly`. */
+  payableYearly: string[];
+  /** Periodicidad del plan vigente (0019). */
+  billingPeriod: BillingPeriod;
+  /** Periodicidad del checkout de MP en curso / aplicado (0019). */
+  providerBillingPeriod: BillingPeriod | null;
   provider: string | null;
   providerRef: string | null;
   providerStatus: string | null;
@@ -51,21 +59,43 @@ export function billingState(sub: {
   return "none";
 }
 
+const SUB_COLUMNS = "plan_code, status, provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end";
+
+/** Planes y suscripción con las columnas del anual (0019); `null` si la base todavía no las tiene. */
+async function loadYearly(supabase: ServerSupabase, storeId: string) {
+  const [plans, sub] = await Promise.all([
+    supabase.from("plans").select("code, mp_plan_id, price_yearly").eq("is_public", true),
+    supabase
+      .from("subscriptions")
+      .select(
+        "plan_code, status, provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end, billing_period, provider_billing_period",
+      )
+      .eq("store_id", storeId)
+      .maybeSingle(),
+  ]);
+  if (plans.error || sub.error) return null;
+  return { plans: plans.data ?? [], sub: sub.data };
+}
+
 export async function loadBillingView(supabase: ServerSupabase, storeId: string): Promise<BillingView | null> {
   try {
-    const [plans, sub] = await Promise.all([
-      supabase.from("plans").select("code, mp_plan_id").eq("is_public", true),
-      supabase
-        .from("subscriptions")
-        .select("plan_code, status, provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
-        .eq("store_id", storeId)
-        .maybeSingle(),
-    ]);
-    if (plans.error || sub.error) return null;
-    const s = sub.data;
+    const yearly = await loadYearly(supabase, storeId);
+    const legacy = yearly
+      ? null
+      : await Promise.all([
+          supabase.from("plans").select("code, mp_plan_id").eq("is_public", true),
+          supabase.from("subscriptions").select(SUB_COLUMNS).eq("store_id", storeId).maybeSingle(),
+        ]);
+    if (legacy && (legacy[0].error || legacy[1].error)) return null;
+    const plans: { code: string; mp_plan_id: string | null; price_yearly?: number | null }[] = yearly?.plans ?? legacy?.[0].data ?? [];
+    const s = yearly ? yearly.sub : (legacy?.[1].data ?? null);
+    const period = (v: unknown): BillingPeriod | null => (isBillingPeriod(v) ? v : null);
     return {
       enabled: billingEnabled(),
-      payablePlans: (plans.data ?? []).filter((p) => Boolean(p.mp_plan_id)).map((p) => p.code),
+      payablePlans: plans.filter((p) => Boolean(p.mp_plan_id)).map((p) => p.code),
+      payableYearly: plans.filter((p) => validYearly(Number(p.price_yearly ?? Number.NaN)) !== null).map((p) => p.code),
+      billingPeriod: (s && "billing_period" in s ? period(s.billing_period) : null) ?? "monthly",
+      providerBillingPeriod: s && "provider_billing_period" in s ? period(s.provider_billing_period) : null,
       provider: s?.provider ?? null,
       providerRef: s?.provider_ref ?? null,
       providerStatus: s?.provider_status ?? null,

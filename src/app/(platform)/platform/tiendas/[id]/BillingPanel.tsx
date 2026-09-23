@@ -26,7 +26,7 @@ export interface BillingPanelProps {
 
 const MP_STATUS: Record<string, string> = {
   pending: "Pendiente (checkout sin terminar)",
-  authorized: "Autorizada (cobra cada mes)",
+  authorized: "Autorizada (débito automático en cada renovación)",
   authorized_unpaid: "Autorizada, sin primer cobro (7 días de gracia)",
   paused: "Pausada",
   cancelled: "Cancelada",

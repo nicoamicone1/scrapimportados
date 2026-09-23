@@ -21,8 +21,10 @@ import {
   type PlanFeatures,
   type PlanLimits,
 } from "./features";
+import { isBillingPeriod, validYearly, type BillingPeriod } from "./yearly";
 
 export * from "./features";
+export type { BillingPeriod } from "./yearly";
 
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "cancelled";
 
@@ -34,6 +36,10 @@ export interface PlanInfo {
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   priceMonthly: number | null;
+  /** Precio del año pagado por adelantado (0019). `null` = el plan no tiene pago anual. */
+  priceYearly: number | null;
+  /** Periodicidad del plan vigente (0019; Free y la prueba son mensuales). Sin 0019: "monthly". */
+  billingPeriod: BillingPeriod;
   currency: string;
   features: PlanFeatures;
   limits: PlanLimits;
@@ -70,6 +76,7 @@ export function parsePlan(value: unknown): PlanInfo {
     ? (raw.status as SubscriptionStatus)
     : "active";
   const price = raw.price_monthly === null || raw.price_monthly === undefined ? defaults.price : Number(raw.price_monthly);
+  const yearly = raw.price_yearly === null || raw.price_yearly === undefined ? null : Number(raw.price_yearly);
   return {
     code,
     name: typeof raw.name === "string" && raw.name ? raw.name : PLAN_NAMES[code],
@@ -77,6 +84,8 @@ export function parsePlan(value: unknown): PlanInfo {
     trialEndsAt: typeof raw.trial_ends_at === "string" ? raw.trial_ends_at : null,
     currentPeriodEnd: typeof raw.current_period_end === "string" ? raw.current_period_end : null,
     priceMonthly: price === null || Number.isNaN(price) ? null : price,
+    priceYearly: validYearly(yearly),
+    billingPeriod: isBillingPeriod(raw.billing_period) && code !== "free" && status !== "trialing" ? raw.billing_period : "monthly",
     currency: typeof raw.currency === "string" ? raw.currency : "ARS",
     features,
     limits,

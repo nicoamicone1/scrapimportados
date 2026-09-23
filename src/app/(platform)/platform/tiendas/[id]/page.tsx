@@ -10,6 +10,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { mercadoPagoDebitActive } from "@/lib/billing/state";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatNumber } from "@/lib/money";
+import { billingPeriodLabel, isBillingPeriod, type BillingPeriod } from "@/lib/plans/yearly";
 import { ROLE_LABELS, isAdminRole } from "@/lib/auth";
 import { storeDisplayHost, storeHref } from "@/lib/tenant/urls";
 
@@ -40,14 +41,18 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
   if (!store) notFound();
 
   // Cobro con MercadoPago (migración 0015): si falta, el panel lo avisa.
-  const [billingRes, eventsRes] = await Promise.all([
+  // Periodicidad (0019): si falta, no se muestra.
+  const [billingRes, eventsRes, periodRes] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
       .eq("store_id", id)
       .maybeSingle(),
     supabase.from("billing_events").select("id, type, result, created_at").eq("store_id", id).order("created_at", { ascending: false }).limit(8),
+    supabase.from("subscriptions").select("billing_period, provider_billing_period").eq("store_id", id).maybeSingle(),
   ]);
+  const period: BillingPeriod | null = periodRes.error ? null : isBillingPeriod(periodRes.data?.billing_period) ? periodRes.data.billing_period : "monthly";
+  const providerPeriod = periodRes.error ? null : isBillingPeriod(periodRes.data?.provider_billing_period) ? periodRes.data.provider_billing_period : null;
   const b = billingRes.error ? null : billingRes.data;
   const billing: BillingPanelProps["billing"] = billingRes.error
     ? null
@@ -55,7 +60,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
         provider: b?.provider ?? null,
         providerRef: b?.provider_ref ?? null,
         providerStatus: b?.provider_status ?? null,
-        providerPlanCode: b?.provider_plan_code ?? null,
+        providerPlanCode: b?.provider_plan_code ? `${b.provider_plan_code}${providerPeriod ? ` · ${billingPeriodLabel(providerPeriod)}` : ""}` : null,
         cancelAtPeriodEnd: Boolean(b?.cancel_at_period_end),
         lastPaymentAt: b?.last_payment_at ? formatDateTime(b.last_payment_at) : null,
         currentPeriodEnd: b?.current_period_end ? formatDateTime(b.current_period_end) : null,
@@ -85,6 +90,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
             <h1 className="text-[22px] font-semibold tracking-[-0.01em]">{store.name}</h1>
             <p className="mt-0.5 text-sm text-adm-fg-muted">
               {storeDisplayHost(store)} · creada el {formatDate(store.created_at)}
+              {sub && period && sub.status !== "trialing" && sub.plan_code !== "free" ? ` · pago ${billingPeriodLabel(period)}` : ""}
               {stats ? ` · ${formatNumber(stats.products)} productos · ${formatNumber(stats.orders)} pedidos` : ""}
             </p>
           </div>
@@ -117,6 +123,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
               storeStatus: store.status,
             }}
             mercadoPagoDebit={mercadoPagoDebitActive(b)}
+            period={period}
           />
         </div>
 

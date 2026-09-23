@@ -196,7 +196,7 @@ Regla: comparar sólo lo que podés sostener con una captura o un link. Precios 
 - **En contra:** con inflación, un precio congelado 12 meses se come tu margen. Mitigación: (a) el descuento anual no pasa del 2 × 12; (b) revisás el precio de lista cada trimestre y el anual se ajusta sólo al renovar; (c) si la inflación mensual sube mucho, cambiá a semestral con 1 mes bonificado.
 - **Cómo presentarlo:** debajo del precio mensual, una línea: "Pagando el año por transferencia: 12 meses por el precio de 10". Sin tachados gigantes, sin contador regresivo.
 - **Precio fundador para la beta** (decisión tuya): los 10 comercios de la beta mantienen el precio de lista del día que pagan durante 12 meses. Es real, es simple de cumplir a mano y no inventa escasez.
-- **Qué hace falta en el producto:** hoy `/planes` sólo muestra el precio mensual. Mostrar la opción anual es un cambio de copy en `PlanCards` (fuera de este kit); mientras tanto, se ofrece por WhatsApp.
+- **Implementado (esquema 10, migración `0019_plans_yearly.sql`):** con precio anual cargado en `/platform/planes`, `PlanCards` (landing, `/planes`, `/admin/plan`) muestra bajo el precio mensual "Pagando el año: 12 meses por el precio de 10 · $ X por mes", `/planes` explica el anual en un párrafo antes de la comparación y `/admin/plan` ofrece "Pagar el año (ahorrás N %)" con MercadoPago (débito cada 12 meses) o el pedido por WhatsApp con el período elegido. Detalle técnico en `docs/BILLING.md` › Plan anual. Falta decidir los precios anuales y cargarlos.
 
 ---
 

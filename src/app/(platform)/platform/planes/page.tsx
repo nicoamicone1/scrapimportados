@@ -20,6 +20,13 @@ export default async function PlatformPlansPage() {
   // plans.mp_plan_id llega con la migración 0015: sin ella, no se muestra el campo.
   const mp = await supabase.from("plans").select("code, mp_plan_id");
   const mpIds = mp.error ? null : new Map((mp.data ?? []).map((p) => [p.code, p.mp_plan_id ?? ""]));
+  // Pago anual (migración 0019): sin ella, no se muestran los campos.
+  const yr = await supabase.from("plans").select("code, price_yearly, mp_plan_id_yearly");
+  const yearly = yr.error
+    ? null
+    : new Map(
+        (yr.data ?? []).map((p) => [p.code, { price: p.price_yearly === null ? "" : String(Number(p.price_yearly)), mpPlanId: p.mp_plan_id_yearly ?? "" }]),
+      );
   const mpConfigured = Boolean(process.env.MP_ACCESS_TOKEN?.trim());
 
   return (
@@ -44,6 +51,11 @@ export default async function PlatformPlansPage() {
               ? "Cobro con MercadoPago activo: los planes con id de MercadoPago muestran «Pagar con MercadoPago» al dueño de cada tienda."
               : "Cobro con MercadoPago apagado (falta MP_ACCESS_TOKEN): los dueños sólo ven el pedido por WhatsApp."}
         </p>
+        <p className="mt-2 max-w-2xl text-sm text-adm-fg-muted">
+          {yearly === null
+            ? "Pago anual: falta aplicar la migración 0019."
+            : "Pago anual: con precio anual, la web muestra «Pagando el año: …» bajo el precio mensual y el dueño puede pagar el año (por WhatsApp y, con MercadoPago activo, también con MercadoPago). 12 meses por el precio de 10 = precio anual igual a 10 veces el mensual."}
+        </p>
         <div className="mt-6 space-y-4">
           {(data ?? []).map((p) => (
             <PlanEditor
@@ -55,6 +67,7 @@ export default async function PlatformPlansPage() {
                 isPublic: p.is_public,
                 plan: parsePlan({ ...p, status: "active" }),
                 mpPlanId: mpIds ? (mpIds.get(p.code) ?? "") : null,
+                yearly: yearly ? (yearly.get(p.code) ?? { price: "", mpPlanId: "" }) : null,
               }}
             />
           ))}
