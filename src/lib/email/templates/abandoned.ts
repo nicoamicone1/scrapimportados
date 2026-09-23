@@ -12,7 +12,8 @@ import type { StoreEmailInfo } from "./types";
  * sólo lleva contenido de la tienda (nombres y precios de sus productos, que
  * salen de la base) y el nombre de pila si parece un nombre (`greeting`). Sin
  * urgencia inventada ("¡últimas unidades!"), sin descuentos que la tienda no
- * ofreció y con la baja a un clic en el pie.
+ * ofreció y con la baja a un clic en el pie (y en `List-Unsubscribe`, ver
+ * abandoned-notices.ts).
  */
 
 export interface AbandonedItem {
@@ -29,9 +30,9 @@ export interface AbandonedEmailData {
   items: AbandonedItem[];
   currency: string;
   locale: string;
-  /** `/carrito?recuperar=<token>` absoluto. */
+  /** `/carrito/recuperar/<token>` absoluto (la ruta pasa el token a una cookie y redirige a `/carrito`). */
   recoverUrl: string;
-  /** `/carrito?baja=<token>` absoluto. */
+  /** `/carrito/recuperar/<token>?baja=1` absoluto (confirma la baja con un botón). */
   unsubscribeUrl: string;
 }
 

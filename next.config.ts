@@ -28,7 +28,11 @@ const APP_HEADERS = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" },
 ];
 
-/** Estado del pedido: la URL lleva el token de acceso, no se manda como Referer. */
+/**
+ * Estado del pedido y link del mail de carrito abandonado
+ * (`/carrito/recuperar/<token>`): la URL lleva un token de acceso, no se manda
+ * como Referer.
+ */
 const ORDER_HEADERS = [{ key: "Referrer-Policy", value: "no-referrer" }];
 
 /**
@@ -49,6 +53,8 @@ const nextConfig: NextConfig = {
       // Plataforma (`/s/<slug>/pedido/…`) y host de tienda (`/pedido/…`).
       { source: "/s/:store/pedido/:path*", headers: ORDER_HEADERS },
       { source: "/pedido/:path*", headers: ORDER_HEADERS },
+      { source: "/s/:store/carrito/recuperar/:path*", headers: ORDER_HEADERS },
+      { source: "/carrito/recuperar/:path*", headers: ORDER_HEADERS },
       { source: "/:image(icon|apple-icon)", headers: GENERATED_IMAGE_HEADERS },
       { source: "/:path*/:image(opengraph-image-[^/]+)", headers: GENERATED_IMAGE_HEADERS },
     ];

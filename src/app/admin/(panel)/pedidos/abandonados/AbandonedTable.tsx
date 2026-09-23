@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { ButtonLink } from "@/components/ui/Button";
 import { Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { formatDateTime, formatRelative } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -9,6 +10,7 @@ import type { AbandonedFilter, AbandonedRow, AbandonedStatus } from "./data";
 
 const STATUS: Record<AbandonedStatus, { label: string; tone: BadgeTone }> = {
   pending: { label: "Pendiente", tone: "amber" },
+  expired: { label: "Vencido", tone: "neutral" },
   reminded: { label: "Avisado", tone: "blue" },
   recovered: { label: "Recuperado", tone: "green" },
   unsubscribed: { label: "Baja", tone: "neutral" },
@@ -22,7 +24,7 @@ const EMPTY: Record<AbandonedFilter, { title: string; description: string }> = {
   },
   pendientes: {
     title: "No hay carritos esperando el aviso",
-    description: "El mail sale solo entre 3 y 27 horas después de que la persona deja el checkout.",
+    description: "El mail sale solo dentro del día en que la persona deja el checkout. Pasadas 48 horas sin aviso, el carrito queda vencido.",
   },
   avisados: { title: "Todavía no avisamos a nadie", description: "Acá quedan los carritos a los que ya les llegó el mail, con la fecha." },
   recuperados: {
@@ -46,8 +48,8 @@ function ItemsSummary({ items }: { items: AbandonedRow["items"] }) {
   const rest = items.length - first.length;
   return (
     <div className="min-w-0">
-      {first.map((i) => (
-        <div key={i.name} className="truncate">
+      {first.map((i, idx) => (
+        <div key={`${idx}-${i.name}`} className="truncate">
           <span className="tnum text-adm-fg-muted">{i.qty} ×</span> {i.name}
         </div>
       ))}
@@ -57,7 +59,17 @@ function ItemsSummary({ items }: { items: AbandonedRow["items"] }) {
 }
 
 /** Bandeja de carritos abandonados (DESIGN.md §7.5 y §7.7). Sólo lectura: sin acciones masivas. */
-export function AbandonedTable({ rows, filter, available }: { rows: AbandonedRow[]; filter: AbandonedFilter; available: boolean }) {
+export function AbandonedTable({
+  rows,
+  filter,
+  available,
+  currency,
+}: {
+  rows: AbandonedRow[];
+  filter: AbandonedFilter;
+  available: boolean;
+  currency: string;
+}) {
   const empty = EMPTY[filter];
   return (
     <Table>
@@ -78,7 +90,18 @@ export function AbandonedTable({ rows, filter, available }: { rows: AbandonedRow
             description="Falta aplicar una actualización de la base de datos (migración 0020). Cuando esté, prendé el aviso en Configuración › Pagos y checkout."
           />
         ) : rows.length === 0 ? (
-          <TableEmpty colSpan={5} title={empty.title} description={empty.description} />
+          <TableEmpty
+            colSpan={5}
+            title={empty.title}
+            description={empty.description}
+            action={
+              filter === "todos" ? (
+                <ButtonLink href="/admin/configuracion/pagos" size="sm">
+                  Ir a Pagos y checkout
+                </ButtonLink>
+              ) : undefined
+            }
+          />
         ) : (
           rows.map((r) => {
             const st = STATUS[r.status];
@@ -92,13 +115,22 @@ export function AbandonedTable({ rows, filter, available }: { rows: AbandonedRow
                   <ItemsSummary items={r.items} />
                 </TD>
                 <TD numeric className="whitespace-nowrap">
-                  {r.items.length ? formatMoney(r.subtotal) : "—"}
+                  {r.items.length ? formatMoney(r.subtotal, { currency }) : "—"}
                 </TD>
                 <TD className="whitespace-nowrap" muted>
                   <Time value={r.updatedAt} />
                 </TD>
                 <TD className="whitespace-nowrap">
-                  <Badge tone={st.tone} title={r.remindedAt ? `Mail enviado el ${formatDateTime(r.remindedAt)}` : undefined}>
+                  <Badge
+                    tone={st.tone}
+                    title={
+                      r.remindedAt
+                        ? `Mail enviado el ${formatDateTime(r.remindedAt)}`
+                        : r.status === "expired"
+                          ? "Pasaron más de 48 horas sin aviso: este carrito ya no se avisa."
+                          : undefined
+                    }
+                  >
                     {st.label}
                   </Badge>
                   {r.order ? (

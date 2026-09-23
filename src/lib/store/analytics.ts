@@ -45,12 +45,16 @@ const META_EVENTS: Record<TrackEventName, string | null> = {
 };
 
 /**
- * URL para analytics sin el token de `/pedido/<token>` (queda `…/pedido`):
- * el token da acceso al pedido (nombre, dirección, email) y no tiene que
- * llegar a Google ni a otros terceros. El resto de la URL no cambia.
+ * URL para analytics sin tokens: `/pedido/<token>` queda `…/pedido` (el token
+ * da acceso al pedido: nombre, dirección, email) y `/carrito/recuperar/<token>`
+ * queda `…/carrito/recuperar` (el token del mail de carrito abandonado repone
+ * el carrito y da de baja). No tienen que llegar a Google ni a otros terceros.
+ * El resto de la URL no cambia.
  */
+export const TOKEN_PATH_RE = /(\/pedido|\/carrito\/recuperar)\/[^/?#]+/;
+
 export function safePageLocation(href: string): string {
-  return href.replace(/(\/pedido)\/[^/?#]+/, "$1");
+  return href.replace(TOKEN_PATH_RE, "$1");
 }
 
 export function track(event: TrackEventName, payload: TrackPayload = {}): void {

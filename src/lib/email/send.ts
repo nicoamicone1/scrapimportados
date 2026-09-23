@@ -41,6 +41,8 @@ export interface EmailMessage {
    * misma clave no sale dos veces (reintentos, doble clic, cron repetido).
    */
   idempotencyKey?: string;
+  /** Encabezados extra del mail (ej. `List-Unsubscribe`). Se descartan saltos de línea. */
+  headers?: Record<string, string>;
 }
 
 export type SendResult = { ok: true; id: string | null } | { ok: false; error: string } | { skipped: true };
@@ -181,6 +183,12 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
     if (replyTo.length) body.reply_to = replyTo;
     if (message.tags?.length) {
       body.tags = message.tags.map((t) => ({ name: cleanTag(t.name), value: cleanTag(t.value) }));
+    }
+    if (message.headers) {
+      const extra = Object.entries(message.headers)
+        .filter(([name, value]) => /^[A-Za-z0-9-]{1,76}$/.test(name) && typeof value === "string" && value.trim())
+        .map(([name, value]) => [name, value.replace(/[\r\n]+/g, " ").trim().slice(0, 998)]);
+      if (extra.length) body.headers = Object.fromEntries(extra);
     }
 
     const headers: Record<string, string> = {

@@ -12,7 +12,10 @@ import type { Json } from "@/lib/supabase/database.types";
 export const ABANDONED_PER_PAGE = 50;
 
 export type AbandonedFilter = "todos" | "pendientes" | "avisados" | "recuperados" | "bajas";
-export type AbandonedStatus = "pending" | "reminded" | "recovered" | "unsubscribed";
+export type AbandonedStatus = "pending" | "expired" | "reminded" | "recovered" | "unsubscribed";
+
+/** Pasadas estas horas sin aviso, el carrito ya no se avisa (espejo de REMIND_WITHIN_HOURS del cron). */
+export const ABANDONED_EXPIRES_HOURS = 48;
 
 export interface AbandonedRow {
   id: string;
@@ -36,13 +39,28 @@ export interface AbandonedList {
   last30: { sessions: number; recovered: number };
 }
 
-/** Estado para la bandeja (la baja manda sobre el aviso; el pedido, sobre todo). */
-export function abandonedStatus(row: { recovered_order_id: string | null; unsubscribed_at: string | null; reminded_at: string | null }): AbandonedStatus {
+/**
+ * Estado para la bandeja (la baja manda sobre el aviso; el pedido, sobre
+ * todo). Sin aviso y más de 48 h sin tocar: vencido (ya no sale el mail).
+ */
+export function abandonedStatus(
+  row: { recovered_order_id: string | null; unsubscribed_at: string | null; reminded_at: string | null; updated_at: string },
+  now: number = Date.now(),
+): AbandonedStatus {
   if (row.recovered_order_id) return "recovered";
   if (row.unsubscribed_at) return "unsubscribed";
   if (row.reminded_at) return "reminded";
+  const updated = new Date(row.updated_at).getTime();
+  if (Number.isFinite(updated) && now - updated > ABANDONED_EXPIRES_HOURS * 3_600_000) return "expired";
   return "pending";
 }
+
+/**
+ * Filas que se muestran: con consentimiento, o con pedido o baja. Una sesión
+ * que la persona destildó después del aviso queda vacía en la base (para que
+ * nadie borre ese rastro) pero no aparece acá.
+ */
+const VISIBLE = "consent.is.true,recovered_order_id.not.is.null,unsubscribed_at.not.is.null";
 
 function itemsOf(value: Json): { name: string; qty: number }[] {
   if (!Array.isArray(value)) return [];
@@ -62,8 +80,12 @@ export async function listAbandoned(ctx: Pick<AdminContext, "supabase" | "store"
     .select("id, email, name, items, subtotal, created_at, updated_at, reminded_at, unsubscribed_at, recovered_order_id, orders(id, number)", {
       count: "exact",
     })
-    .eq("store_id", store.id);
-  if (filter === "pendientes") query = query.is("recovered_order_id", null).is("unsubscribed_at", null).is("reminded_at", null);
+    .eq("store_id", store.id)
+    .or(VISIBLE);
+  const expiresAt = new Date(Date.now() - ABANDONED_EXPIRES_HOURS * 3_600_000).toISOString();
+  if (filter === "pendientes") {
+    query = query.is("recovered_order_id", null).is("unsubscribed_at", null).is("reminded_at", null).gte("updated_at", expiresAt);
+  }
   else if (filter === "avisados") query = query.is("recovered_order_id", null).is("unsubscribed_at", null).not("reminded_at", "is", null);
   else if (filter === "recuperados") query = query.not("recovered_order_id", "is", null);
   else if (filter === "bajas") query = query.is("recovered_order_id", null).not("unsubscribed_at", "is", null);
@@ -72,7 +94,7 @@ export async function listAbandoned(ctx: Pick<AdminContext, "supabase" | "store"
   const head = { count: "exact" as const, head: true };
   const [list, sessions, recovered] = await Promise.all([
     query.order("updated_at", { ascending: false }).order("id").range(from, from + ABANDONED_PER_PAGE - 1),
-    supabase.from("checkout_sessions").select("id", head).eq("store_id", store.id).gte("created_at", since),
+    supabase.from("checkout_sessions").select("id", head).eq("store_id", store.id).or(VISIBLE).gte("created_at", since),
     supabase.from("checkout_sessions").select("id", head).eq("store_id", store.id).gte("created_at", since).not("recovered_order_id", "is", null),
   ]);
   if (list.error) {

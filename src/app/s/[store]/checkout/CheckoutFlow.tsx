@@ -20,11 +20,13 @@ import { trackOnce } from "@/lib/store/analytics";
 import { netMerchandiseTotal, toPricingItems } from "@/lib/store/cart-pricing";
 import {
   cartSignature,
-  checkoutSessionKey,
   CONSENT_HELP,
   CONSENT_LABEL,
-  isSessionToken,
+  readPendingDelete,
+  readSessionToken,
   SESSION_UPDATE_DEBOUNCE_MS,
+  writePendingDelete,
+  writeSessionToken,
 } from "@/lib/store/checkout-sessions";
 import { waLink } from "@/lib/store/whatsapp";
 
@@ -89,26 +91,8 @@ interface Address {
 const EMPTY_ADDRESS: Address = { street: "", number: "", floor: "", city: "", province: "", postal_code: "", notes: "" };
 const SAVED_KEY = "ecommy-checkout-v1";
 
-/** Token de la sesión de carrito abandonado guardada en este navegador (o null). */
-function readSessionToken(storeId: string): string | null {
-  if (typeof window === "undefined" || !storeId) return null;
-  try {
-    const raw = window.localStorage.getItem(checkoutSessionKey(storeId));
-    return isSessionToken(raw) ? raw : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeSessionToken(storeId: string, token: string | null): void {
-  if (!storeId) return;
-  try {
-    if (token) window.localStorage.setItem(checkoutSessionKey(storeId), token);
-    else window.localStorage.removeItem(checkoutSessionKey(storeId));
-  } catch {
-    // sin storage: la sesión se crea de nuevo en la próxima visita
-  }
-}
+/** Reintentos de borrar la sesión si la base no respondió (ms). */
+const DELETE_RETRY_MS = [2_000, 5_000, 15_000];
 
 function readSaved(): { customer?: Partial<Customer>; address?: Partial<Address> } {
   if (typeof window === "undefined") return {};
@@ -321,10 +305,14 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
   const [submitting, setSubmitting] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   // Carrito abandonado: token de la sesión (localStorage) y consentimiento.
-  // El tilde nace destildado; si ya hay una sesión guardada, es porque lo tildó antes.
-  const [initialToken] = useState(() => (remindersEnabled ? readSessionToken(storeId) : null));
+  // El tilde nace SIEMPRE destildado: el token guardado (de una visita anterior
+  // o del link del mail) sólo sirve para actualizar la sesión si lo vuelve a
+  // tildar, borrarla si lo deja destildado y marcarla recuperada al confirmar.
+  const [initialToken] = useState(() => readSessionToken(storeId));
   const sessionToken = useRef<string | null>(initialToken);
-  const [consent, setConsent] = useState(initialToken !== null);
+  const [consent, setConsent] = useState(false);
+  /** El tilde actual para los callbacks async (el estado se lee viejo ahí). */
+  const consentRef = useRef(false);
   const savedSignature = useRef<string>("");
   /** Token del pedido ya confirmado: una sesión que se crea tarde se marca recuperada igual. */
   const placedOrder = useRef<string | null>(null);
@@ -411,19 +399,50 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
     });
   };
 
-  /** Guarda (o borra, sin consentimiento) la sesión de carrito abandonado. Nunca bloquea ni muestra errores. */
-  const syncSession = (nextConsent: boolean) => {
-    if (!remindersEnabled || !storeId) return;
+  /**
+   * Borra la sesión guardada (destildó). Destildar tiene que borrar siempre:
+   * si la base no responde se conserva el token, queda marcado en este
+   * navegador y se reintenta (acá y en la próxima visita al checkout).
+   */
+  const deleteSession = (attempt = 0) => {
     const token = sessionToken.current;
-    if (!nextConsent && !token) return;
-    const signature = cartSignature(items);
-    savedSignature.current = signature;
+    if (!storeId) return;
+    if (!token) {
+      writePendingDelete(storeId, false);
+      return;
+    }
+    writePendingDelete(storeId, true);
+    const retry = () => {
+      const wait = DELETE_RETRY_MS[attempt];
+      if (wait === undefined) return;
+      window.setTimeout(() => {
+        if (!consentRef.current && sessionToken.current === token) deleteSession(attempt + 1);
+      }, wait);
+    };
+    void saveCheckoutSession({ token, items: [], consent: false })
+      .then((res) => {
+        if (!res.ok) return retry();
+        // Volvió a tildar mientras tanto: esa sesión la maneja el guardado.
+        if (consentRef.current || sessionToken.current !== token) return;
+        sessionToken.current = null;
+        savedSignature.current = "";
+        writeSessionToken(storeId, null);
+        writePendingDelete(storeId, false);
+      })
+      .catch(retry);
+  };
+
+  /** Guarda o actualiza la sesión (con el tilde marcado). Nunca bloquea ni muestra errores. */
+  const saveSession = () => {
+    if (!remindersEnabled || !storeId || !consentRef.current) return;
+    const token = sessionToken.current;
+    savedSignature.current = cartSignature(items);
     void saveCheckoutSession({
       token,
       email: customer.email,
       name: customer.name,
       items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
-      consent: nextConsent,
+      consent: true,
     })
       .then((res) => {
         const next = res.ok ? res.data.token : token;
@@ -435,24 +454,38 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
         if (sessionToken.current !== token) return;
         sessionToken.current = next;
         writeSessionToken(storeId, next);
+        // Destildó mientras se creaba: se borra lo que se acaba de guardar.
+        if (!consentRef.current && next) deleteSession();
       })
       .catch(() => undefined);
   };
 
   const onConsentChange = (next: boolean) => {
     setConsent(next);
+    consentRef.current = next;
+    if (next) {
+      writePendingDelete(storeId, false);
+      return;
+    }
     // Destildar borra enseguida lo que se hubiera guardado.
-    if (!next && sessionToken.current) syncSession(false);
+    if (sessionToken.current) deleteSession();
   };
+
+  // Un borrado que quedó pendiente en una visita anterior (la base no respondió): se reintenta.
+  useEffect(() => {
+    if (storeId && sessionToken.current && readPendingDelete(storeId)) deleteSession();
+    // Sólo al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
 
   // Cambió el carrito con una sesión guardada: se actualiza con debounce.
   const signature = cartSignature(items);
   useEffect(() => {
     if (!remindersEnabled || !consent || !sessionToken.current || !items.length || submitting) return;
     if (signature === savedSignature.current) return;
-    const timer = window.setTimeout(() => syncSession(true), SESSION_UPDATE_DEBOUNCE_MS);
+    const timer = window.setTimeout(saveSession, SESSION_UPDATE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-    // syncSession lee el estado actual; el efecto sólo depende del contenido del carrito.
+    // saveSession lee el estado actual; el efecto sólo depende del contenido del carrito.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, consent, remindersEnabled, submitting]);
 
@@ -499,6 +532,7 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
     if (recoveredToken) {
       sessionToken.current = null;
       writeSessionToken(storeId, null);
+      writePendingDelete(storeId, false);
       void markCheckoutRecovered({ token: recoveredToken, orderToken: res.data.token }).catch(() => undefined);
     }
     if (popup) {
@@ -590,7 +624,9 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
             onSubmit={(e) => {
               e.preventDefault();
               if (validateCustomer()) {
-                syncSession(consent);
+                // Lo que se ve es lo que vale: tildado guarda; destildado borra lo que hubiera.
+                if (consent) saveSession();
+                else if (sessionToken.current) deleteSession();
                 setStep(2);
               }
             }}
@@ -602,8 +638,9 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
               {(p) => <input {...p} type="email" className="input" autoComplete="email" inputMode="email" value={customer.email} onChange={set("email")} />}
             </Field>
             {remindersEnabled ? (
-              <div className="-mt-1 sm:col-span-2">
-                <label htmlFor={`${uid}-consent`} className="flex cursor-pointer items-start gap-2.5 text-sm">
+              <div className="-my-2 sm:col-span-2">
+                {/* Fila entera clickeable, al menos 44 px de alto (área táctil). */}
+                <label htmlFor={`${uid}-consent`} className="flex min-h-11 cursor-pointer items-start gap-2.5 py-3 text-sm">
                   <input
                     id={`${uid}-consent`}
                     type="checkbox"
@@ -614,7 +651,7 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
                   />
                   <span>{CONSENT_LABEL}</span>
                 </label>
-                <p id={`${uid}-consent-help`} className="field-help pl-[1.625rem]">
+                <p id={`${uid}-consent-help`} className="field-help -mt-2 pb-2 pl-[1.625rem]">
                   {CONSENT_HELP}
                 </p>
               </div>

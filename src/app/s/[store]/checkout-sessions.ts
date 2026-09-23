@@ -1,20 +1,21 @@
 "use server";
 
-import { createHash } from "node:crypto";
-
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { z } from "zod";
 
 import { fail, GENERIC_ERROR, ok, type ActionResult } from "@/lib/actions";
 import type { CartItem } from "@/lib/cart";
+import { checkoutIpHash, clientIp, recoverCookiePath } from "@/lib/store/checkout-reminders";
 import {
   isMissingSchemaError,
   isSessionToken,
   readSessionRpc,
   readUpsertRpc,
+  RECOVER_COOKIE,
   restoreCartItems,
   sessionInputSchema,
   sessionItemsPayload,
+  UNSUBSCRIBE_COOKIE,
 } from "@/lib/store/checkout-sessions";
 import { getFreshVariants } from "@/lib/store/products";
 import type { Json } from "@/lib/supabase/database.types";
@@ -30,28 +31,35 @@ import { getTenant } from "@/lib/tenant/resolve";
  * Todo degrada sin romper: sin la migración (o con la función apagada) guardar
  * no hace nada, restaurar responde "este link ya no sirve" y el checkout sigue
  * igual. Guardar y marcar nunca muestran errores al comprador (son accesorios
- * al pedido): devuelven `ok` con `token: null`.
+ * al pedido). Borrar (destildó) sí devuelve error, para que el checkout
+ * conserve el token y reintente: destildar tiene que borrar siempre.
  */
 
 const STORE_UNAVAILABLE = "Esta tienda no está disponible en este momento.";
 const LINK_EXPIRED = "Este link ya no sirve. Podés armar el carrito de nuevo desde la tienda.";
 
-/** sha256 de día + tienda + IP (primera de `x-forwarded-for`), truncado: sólo para el cupo por IP. */
-async function clientIpHash(storeId: string): Promise<string | undefined> {
+async function requestIpHash(storeId: string): Promise<string> {
   try {
-    const h = await headers();
-    const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim();
-    if (!ip) return undefined;
-    const day = new Date().toISOString().slice(0, 10);
-    return createHash("sha256").update(`checkout-session|${day}|${storeId}|${ip}`).digest("hex").slice(0, 32);
+    return checkoutIpHash(clientIp(await headers()), storeId);
   } catch {
-    return undefined;
+    return checkoutIpHash(null, storeId);
+  }
+}
+
+/** Borra la cookie del link del mail (ya se usó): reabrir `/carrito` no repite la acción. */
+async function clearCookie(name: string, basePath: string): Promise<void> {
+  try {
+    (await cookies()).delete({ name, path: recoverCookiePath(basePath) });
+  } catch {
+    // fuera de una action no se puede: vence sola a los 10 minutos
   }
 }
 
 /**
  * Guarda o actualiza la sesión de checkout. Con `consent: false` borra la que
- * hubiera (el comprador destildó el aviso). Devuelve el token vigente.
+ * hubiera (el comprador destildó el aviso; el email es opcional). Devuelve el
+ * token vigente; al borrar, un error de la base vuelve como `fail` para que
+ * el checkout reintente con el mismo token.
  */
 export async function saveCheckoutSession(input: unknown): Promise<ActionResult<{ token: string | null }>> {
   const parsed = sessionInputSchema.safeParse(input);
@@ -59,29 +67,31 @@ export async function saveCheckoutSession(input: unknown): Promise<ActionResult<
   const { token, email, name, items, consent, website } = parsed.data;
   // Honeypot: la misma respuesta que para una persona, sin guardar nada.
   if (website?.trim()) return ok({ token: null });
+  // Sin consentimiento y sin sesión previa: no hay nada que tocar en la base.
+  if (!consent && !token) return ok({ token: null });
   try {
     const store = (await getTenant()).store;
-    if (!store) return ok({ token: null });
-    // Sin consentimiento y sin sesión previa: no hay nada que tocar en la base.
-    if (!consent && !token) return ok({ token: null });
+    if (!store) return consent ? ok({ token: null }) : fail(STORE_UNAVAILABLE);
     const { data, error } = await createPublicClient().rpc("upsert_checkout_session", {
       p_store_id: store.id,
       p_token: token,
       p_email: email,
-      p_name: name,
-      p_items: sessionItemsPayload(items) as unknown as Json,
+      p_name: consent ? name : null,
+      p_items: (consent ? sessionItemsPayload(items) : []) as unknown as Json,
       p_consent: consent,
-      p_ip_hash: consent ? await clientIpHash(store.id) : undefined,
+      p_ip_hash: await requestIpHash(store.id),
     });
     if (error) {
       // P0001 = cupo o datos inválidos (mensaje para el comprador, pero no se muestra: es accesorio).
       if (error.code !== "P0001" && !isMissingSchemaError(error)) console.error("[carritos] guardar:", error.code, error.message);
-      return ok({ token: consent ? token : null });
+      // Sin la migración no hay nada que borrar.
+      if (!consent) return isMissingSchemaError(error) ? ok({ token: null }) : fail(GENERIC_ERROR);
+      return ok({ token });
     }
     return ok({ token: readUpsertRpc(data).token });
   } catch (err) {
     console.error("[carritos] guardar:", err instanceof Error ? err.message : err);
-    return ok({ token: null });
+    return consent ? ok({ token }) : fail(GENERIC_ERROR);
   }
 }
 
@@ -111,13 +121,18 @@ export interface RestoreResult {
   recovered: boolean;
 }
 
-/** Lee la sesión del link del mail y arma el carrito con precios y stock de hoy. */
+/**
+ * Lee la sesión del link del mail (el token llega por la cookie httpOnly que
+ * fija `/carrito/recuperar/<token>`) y arma el carrito con precios y stock de hoy.
+ */
 export async function restoreCheckoutSession(input: unknown): Promise<ActionResult<RestoreResult>> {
   const token = typeof input === "string" ? input.trim().toLowerCase() : "";
   if (!isSessionToken(token)) return fail(LINK_EXPIRED);
   try {
-    const store = (await getTenant()).store;
+    const tenant = await getTenant();
+    const store = tenant.store;
     if (!store) return fail(STORE_UNAVAILABLE);
+    await clearCookie(RECOVER_COOKIE, tenant.basePath);
     const { data, error } = await createPublicClient().rpc("get_checkout_session", { p_token: token });
     if (error) {
       if (!isMissingSchemaError(error)) console.error("[carritos] restaurar:", error.code, error.message);
@@ -135,20 +150,26 @@ export async function restoreCheckoutSession(input: unknown): Promise<ActionResu
   }
 }
 
-/** Baja de los avisos de carrito de esta tienda para el email de la sesión. */
+/** Baja de los avisos de carrito de esta tienda para el email de la sesión (sólo si el token es de esta tienda). */
 export async function unsubscribeCheckoutSession(input: unknown): Promise<ActionResult> {
   const token = typeof input === "string" ? input.trim().toLowerCase() : "";
   if (!isSessionToken(token)) return fail(LINK_EXPIRED);
   try {
-    const store = (await getTenant()).store;
+    const tenant = await getTenant();
+    const store = tenant.store;
     if (!store) return fail(STORE_UNAVAILABLE);
-    const { error } = await createPublicClient().rpc("checkout_session_unsubscribe", { p_token: token });
+    const db = createPublicClient();
+    const { data, error } = await db.rpc("checkout_session_unsubscribe", { p_token: token, p_store_id: store.id });
     if (error) {
       if (!isMissingSchemaError(error)) console.error("[carritos] baja:", error.code, error.message);
       return fail("No pudimos darte de baja. Probá de nuevo en un rato o respondé el mail.");
     }
-    // Un token que ya no existe (sesión purgada) tampoco recibe avisos: para el comprador es una baja.
-    return ok();
+    await clearCookie(UNSUBSCRIBE_COOKIE, tenant.basePath);
+    if (data && typeof data === "object" && !Array.isArray(data) && data.ok === true) return ok();
+    // `ok: false`: el token es de otra tienda (no se toca nada) o ya no existe
+    // (sesión purgada: tampoco recibe avisos, para el comprador es una baja).
+    const { data: other } = await db.rpc("get_checkout_session", { p_token: token });
+    return readSessionRpc(other) ? fail(LINK_EXPIRED) : ok();
   } catch (err) {
     console.error("[carritos] baja:", err instanceof Error ? err.message : err);
     return fail(GENERIC_ERROR);

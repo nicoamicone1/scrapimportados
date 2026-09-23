@@ -1,11 +1,15 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/supabase/server", () => ({ createPublicClient: () => ({}) }));
 
 import type { CartItem } from "@/lib/cart";
 
 import type { FreshVariant } from "./cart-validation";
+import { checkoutIpHash, IP_HASH_FALLBACK_SALT, recoverCookiePath } from "./checkout-reminders";
 import {
   cartSignature,
   CHECKOUT_SESSION_LIMITS,
@@ -15,6 +19,7 @@ import {
   mergeRestoredItems,
   readSessionRpc,
   readUpsertRpc,
+  recoverPath,
   restoreCartItems,
   sessionInputSchema,
   sessionItemsPayload,
@@ -46,6 +51,13 @@ describe("validación de la sesión", () => {
     const many = Array.from({ length: 101 }, () => ({ variantId: V1, qty: 1 }));
     expect(sessionInputSchema.safeParse({ ...base, items: many }).success).toBe(false);
     expect(sessionInputSchema.safeParse({ ...base, consent: "sí" }).success).toBe(false);
+    expect(sessionInputSchema.safeParse({ ...base, email: undefined }).success).toBe(false);
+  });
+
+  it("destildar (consent: false) no necesita email: alcanza con el token", () => {
+    const r = sessionInputSchema.parse({ token: TOKEN, items: [], consent: false });
+    expect(r).toMatchObject({ token: TOKEN, email: "", consent: false });
+    expect(sessionInputSchema.safeParse({ token: TOKEN, email: "lucia@", items: [], consent: false }).success).toBe(true);
   });
 
   it("el payload sólo lleva variante y cantidad, sin duplicados y con tope 999", () => {
@@ -72,6 +84,41 @@ describe("validación de la sesión", () => {
     expect(sql).toContain("pg_advisory_xact_lock(hashtext('checkout_sessions:'");
     // El token del link nunca es legible por el equipo ni por anon.
     expect(sql).not.toMatch(/grant select \([^)]*\btoken\b/);
+    // Cupos y "7 días" sobre el registro que el visitante no puede borrar; la baja, en su propia tabla.
+    expect(sql).toMatch(/v_email_day from public\.checkout_session_events/);
+    expect(sql).toMatch(/v_ip_day from public\.checkout_session_events/);
+    expect(sql).toMatch(/v_store_day from public\.checkout_session_events/);
+    expect(sql).toContain("insert into public.checkout_unsubscribes");
+    expect(sql).not.toMatch(/delete from public\.checkout_unsubscribes/);
+    expect(sql).toContain("revoke all on public.checkout_unsubscribes from anon");
+    expect(sql).toContain("revoke all on public.checkout_session_events from anon");
+    // Nunca se borra en duro una sesión avisada o dada de baja.
+    expect(sql).toMatch(/delete from public\.checkout_sessions\s+where id = p_id and recovered_order_id is null and reminded_at is null and unsubscribed_at is null/);
+    // El hash de IP es obligatorio.
+    expect(sql).toContain("if v_ip !~ '^[0-9a-f]{16,64}$' then");
+  });
+
+  it("links del mail: ruta que pasa el token a una cookie de /carrito", () => {
+    expect(recoverPath(TOKEN)).toBe(`/carrito/recuperar/${TOKEN}`);
+    expect(recoverPath(TOKEN, true)).toBe(`/carrito/recuperar/${TOKEN}?baja=1`);
+    expect(recoverCookiePath("")).toBe("/carrito");
+    expect(recoverCookiePath("/s/luna")).toBe("/s/luna/carrito");
+  });
+
+  it("hash del IP: HMAC con secreto, por día y tienda; sin secreto, sal fija", () => {
+    const day = new Date("2026-09-23T12:00:00Z");
+    const a = checkoutIpHash("190.2.3.4", STORE, day, "secreto");
+    expect(a).toMatch(/^[0-9a-f]{32}$/);
+    expect(checkoutIpHash("190.2.3.4", STORE, day, "secreto")).toBe(a);
+    expect(checkoutIpHash("190.2.3.4", STORE, day, "otro")).not.toBe(a);
+    expect(checkoutIpHash("190.2.3.4", STORE, new Date("2026-09-24T12:00:00Z"), "secreto")).not.toBe(a);
+    expect(checkoutIpHash("190.2.3.5", STORE, day, "secreto")).not.toBe(a);
+    const plain = checkoutIpHash("190.2.3.4", STORE, day, undefined);
+    expect(plain).toMatch(/^[0-9a-f]{32}$/);
+    expect(plain).not.toBe(a);
+    expect(IP_HASH_FALLBACK_SALT).toBeTruthy();
+    // Sin IP también hay hash (la RPC lo exige): comparten cupo.
+    expect(checkoutIpHash(null, STORE, day, "secreto")).toMatch(/^[0-9a-f]{32}$/);
   });
 });
 
@@ -85,11 +132,10 @@ describe("respuestas de las RPC", () => {
   it("get_checkout_session: tolerante con lo que no tiene forma", () => {
     const s = readSessionRpc({
       store_id: STORE,
-      name: "Lucía",
       recovered: false,
       items: [{ variant_id: V1, qty: 2 }, { variant_id: "x", qty: 1 }, { variant_id: V2, qty: 0 }, { variant_id: V3, qty: 5000 }],
     });
-    expect(s).toEqual({ storeId: STORE, name: "Lucía", recovered: false, items: [{ variantId: V1, qty: 2 }, { variantId: V3, qty: 999 }] });
+    expect(s).toEqual({ storeId: STORE, recovered: false, items: [{ variantId: V1, qty: 2 }, { variantId: V3, qty: 999 }] });
     expect(readSessionRpc(null)).toBeNull();
     expect(readSessionRpc({ store_id: "otra-cosa" })).toBeNull();
   });

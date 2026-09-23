@@ -2,11 +2,11 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import { isMissingSchemaError } from "@/lib/store/checkout-sessions";
+import { isMissingSchemaError, recoverPath } from "@/lib/store/checkout-sessions";
 import { waLink } from "@/lib/store/whatsapp";
 import type { Database, Json } from "@/lib/supabase/database.types";
 import { SUPABASE_URL } from "@/lib/supabase/env";
-import { storeUrl } from "@/lib/tenant/urls";
+import { platformOrigin, storeUrl } from "@/lib/tenant/urls";
 import { parseTheme } from "@/lib/theme";
 
 import { emailEnabled, isEmail, maskEmails, sendEmail, storeFrom, wasSent, warnEmailDisabled } from "./send";
@@ -19,25 +19,36 @@ import type { StoreEmailInfo } from "./templates/types";
  * `/api/cron/abandoned` cada 6 horas. Con sólo el diario, el aviso sale
  * entre 3 y 27 horas después de dejar el checkout; con el de 6 h, entre 3 y 9.
  *
+ * 0. Limpieza (`purge_checkout_sessions`): sesiones y eventos de más de 30
+ *    días. Corre SIEMPRE que haya `SUPABASE_SERVICE_ROLE_KEY`, aunque los
+ *    mails estén apagados (sin esa clave no se purga: ver docs/DEPLOY.md §4d).
  * 1. `abandoned_checkout_candidates()` (service_role) marca como recuperadas
- *    las sesiones cuyo email ya compró en la tienda y devuelve las demás
- *    sesiones en la ventana (3 a 48 h sin tocar), de tiendas activas con la
- *    función prendida y el plan que la incluye.
+ *    las sesiones cuyo email ya compró en la tienda (también las avisadas,
+ *    hasta 7 días después del aviso) y devuelve las demás sesiones en la
+ *    ventana (3 a 48 h sin tocar), de tiendas activas con la función prendida
+ *    y el plan que la incluye, sin las de emails dados de baja.
  * 2. `pickAbandonedNotices()` (puro, testeado) decide: con consentimiento, sin
  *    pedido, sin aviso, sin baja, en la ventana, un mail por sesión y uno por
  *    email y tienda en la corrida (el carrito más reciente), nada si ese
- *    email ya recibió un aviso de la tienda en los últimos 7 días, tope
+ *    email ya recibió un aviso de la tienda en los últimos 7 días, hasta
+ *    MAX_ABANDONED_PER_STORE por tienda (MAX_ABANDONED_PER_TRIAL_STORE si
+ *    está en prueba) repartidos por turnos entre tiendas, tope
  *    MAX_ABANDONED_PER_RUN.
  * 3. Los ítems se releen al mandar (`refreshAbandonedItems`): nombre y precio
  *    de hoy; lo que ya no se vende o no tiene stock no aparece. Sin ítems, no
  *    hay mail.
- * 4. Cada envío reclama la sesión con un update condicional de `reminded_at`
- *    (dos corridas a la vez no mandan dos mails) y, si Resend lo rechaza, la
- *    libera. Además `Idempotency-Key` = `abandoned_cart/<id>`.
+ * 4. Cada envío reclama la sesión con `claim_checkout_reminder` (fija
+ *    `reminded_at` si nadie la tomó, re-chequea baja y "7 días" con un lock por
+ *    email y anota el aviso en el registro) y, si Resend lo rechaza, la libera
+ *    (`release_checkout_reminder`). `Idempotency-Key` = `abandoned_cart/<id>`:
+ *    Resend la recuerda 24 h; un reintento después de eso no puede duplicar
+ *    el mail porque la sesión ya tiene `reminded_at` y no se vuelve a reclamar.
+ * 5. El mail lleva `List-Unsubscribe` (URL de baja en un clic + mailto) y
+ *    `List-Unsubscribe-Post: List-Unsubscribe=One-Click` (RFC 8058).
  *
  * Usa `SUPABASE_SERVICE_ROLE_KEY` SÓLO acá y SÓLO desde el cron (como
  * trial-notices.ts y activation-notices.ts). Sin esa clave, sin
- * `RESEND_API_KEY` o sin la migración, no hace nada.
+ * `RESEND_API_KEY` o sin la migración, no manda nada.
  */
 
 const HOUR_MS = 3_600_000;
@@ -47,6 +58,10 @@ export const REMIND_AFTER_HOURS = 3;
 export const REMIND_WITHIN_HOURS = 48;
 /** Tope de mails por corrida (el resto sale en la próxima, si sigue en la ventana). */
 export const MAX_ABANDONED_PER_RUN = 300;
+/** Tope por tienda y por corrida: una tienda no se lleva toda la corrida. */
+export const MAX_ABANDONED_PER_STORE = 50;
+/** Tope por tienda en prueba (`status = 'trialing'`): cuentas nuevas, menos historia. */
+export const MAX_ABANDONED_PER_TRIAL_STORE = 10;
 /** Candidatas que se piden a la base (antes de agrupar por email). */
 const CANDIDATE_LIMIT = 1000;
 /** Presupuesto de tiempo por defecto para mandar (Resend admite ~2 envíos por segundo). */
@@ -76,6 +91,8 @@ export interface AbandonedSessionRow {
   remindedAt: string | null;
   unsubscribedAt: string | null;
   storeActive: boolean;
+  /** La tienda está en los días de prueba. */
+  storeTrialing: boolean;
   /** Función prendida y plan que la incluye. */
   enabled: boolean;
   /** El mismo email recibió un aviso de esta tienda en los últimos 7 días. */
@@ -136,6 +153,7 @@ export function parseAbandonedCandidates(data: Json | unknown): AbandonedSession
       remindedAt: str(r.reminded_at),
       unsubscribedAt: str(r.unsubscribed_at),
       storeActive: r.store_active === true,
+      storeTrialing: r.store_trialing === true,
       enabled: r.enabled === true,
       recentlyReminded: r.recently_reminded === true,
     });
@@ -154,17 +172,24 @@ export function isAbandonedDue(s: AbandonedSessionRow, now: Date): boolean {
 
 /**
  * Qué sesiones avisar en esta corrida: las que están para avisar, una por
- * sesión y una por email y tienda (la del carrito más reciente), las más
- * viejas primero (son las que primero salen de la ventana), hasta `limit`.
+ * sesión y una por email y tienda (la del carrito más reciente), hasta
+ * `perStore` por tienda (`perTrialStore` si está en prueba), las más viejas
+ * primero dentro de cada tienda (son las que primero salen de la ventana) y
+ * repartidas por turnos entre tiendas (la más vieja de cada una, después la
+ * segunda…), hasta `limit`.
  */
 export function pickAbandonedNotices({
   sessions,
   now,
   limit = MAX_ABANDONED_PER_RUN,
+  perStore = MAX_ABANDONED_PER_STORE,
+  perTrialStore = MAX_ABANDONED_PER_TRIAL_STORE,
 }: {
   sessions: AbandonedSessionRow[];
   now: Date;
   limit?: number;
+  perStore?: number;
+  perTrialStore?: number;
 }): AbandonedSessionRow[] {
   const byRecipient = new Map<string, AbandonedSessionRow>();
   const seen = new Set<string>();
@@ -176,9 +201,28 @@ export function pickAbandonedNotices({
     const prev = byRecipient.get(key);
     if (!prev || time(s.updatedAt) > time(prev.updatedAt)) byRecipient.set(key, s);
   }
-  return [...byRecipient.values()]
-    .sort((a, b) => time(a.updatedAt) - time(b.updatedAt) || a.id.localeCompare(b.id))
-    .slice(0, Math.max(0, limit));
+  const oldestFirst = (a: AbandonedSessionRow, b: AbandonedSessionRow) => time(a.updatedAt) - time(b.updatedAt) || a.id.localeCompare(b.id);
+  const byStore = new Map<string, AbandonedSessionRow[]>();
+  for (const s of [...byRecipient.values()].sort(oldestFirst)) {
+    const list = byStore.get(s.storeId) ?? [];
+    list.push(s);
+    byStore.set(s.storeId, list);
+  }
+  // Cada tienda con su tope; las tiendas en el orden de su carrito más viejo.
+  const queues = [...byStore.values()].map((list) => list.slice(0, Math.max(0, list[0].storeTrialing ? perTrialStore : perStore)));
+  const out: AbandonedSessionRow[] = [];
+  const max = Math.max(0, limit);
+  for (let round = 0; out.length < max; round++) {
+    let any = false;
+    for (const q of queues) {
+      if (round >= q.length) continue;
+      any = true;
+      out.push(q[round]);
+      if (out.length >= max) break;
+    }
+    if (!any) break;
+  }
+  return out;
 }
 
 /** Estado actual de una variante para el mail. */
@@ -224,7 +268,7 @@ function serviceClient(): Admin | null {
   if (!key || !SUPABASE_URL) {
     if (!warnedNoServiceKey) {
       warnedNoServiceKey = true;
-      console.info("[email] SUPABASE_SERVICE_ROLE_KEY no está configurada: no se mandan los avisos de carrito abandonado.");
+      console.info("[email] SUPABASE_SERVICE_ROLE_KEY no está configurada: no se mandan los avisos de carrito abandonado ni se purgan las sesiones viejas.");
     }
     return null;
   }
@@ -335,6 +379,26 @@ async function loadVariants(db: Admin, ids: string[]): Promise<Map<string, MailV
 }
 
 /**
+ * Limpieza: sesiones y eventos de más de 30 días (la lista de bajas no se
+ * purga). Corre aunque los mails estén apagados; sin la clave de servicio,
+ * no. Nunca lanza. Devuelve cuántas sesiones borró (o null si no corrió).
+ */
+export async function purgeAbandonedSessions(db: Admin | null = serviceClient()): Promise<number | null> {
+  if (!db) return null;
+  try {
+    const { data, error } = await db.rpc("purge_checkout_sessions");
+    if (error) {
+      if (!isMissingSchemaError(error)) console.error("[email] carritos, limpieza:", error.message);
+      return null;
+    }
+    return typeof data === "number" ? data : 0;
+  } catch (err) {
+    console.error("[email] carritos, limpieza:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+/**
  * Junta los avisos de esta corrida. `null` = emails apagados, sin clave, sin
  * la migración o error de lectura (el cron sigue igual). Nunca lanza.
  */
@@ -346,10 +410,6 @@ export async function collectAbandonedNotices(now: Date = new Date()): Promise<A
   const db = serviceClient();
   if (!db) return null;
   try {
-    // Limpieza: sesiones de más de 30 días (las de baja, un año). Si falla, se sigue.
-    const purge = await db.rpc("purge_checkout_sessions");
-    if (purge.error && !isMissingSchemaError(purge.error)) console.error("[email] carritos, limpieza:", purge.error.message);
-
     const { data, error } = await db.rpc("abandoned_checkout_candidates", { p_limit: CANDIDATE_LIMIT });
     if (error) {
       if (isMissingSchemaError(error)) {
@@ -387,27 +447,41 @@ export async function collectAbandonedNotices(now: Date = new Date()): Promise<A
 // Envío
 // ---------------------------------------------------------------------------
 
-/** Reclama la sesión (update condicional): `false` si otra corrida ya la tomó o cambió de estado. */
+/**
+ * Reclama la sesión (`claim_checkout_reminder`): `false` si otra corrida ya
+ * la tomó, cambió de estado, el email se dio de baja o ya recibió un aviso de
+ * la tienda en los últimos 7 días.
+ */
 async function claim(db: Admin, id: string, at: string): Promise<boolean> {
-  const { data, error } = await db
-    .from("checkout_sessions")
-    .update({ reminded_at: at })
-    .eq("id", id)
-    .eq("consent", true)
-    .is("reminded_at", null)
-    .is("recovered_order_id", null)
-    .is("unsubscribed_at", null)
-    .select("id");
+  const { data, error } = await db.rpc("claim_checkout_reminder", { p_id: id, p_at: at });
   if (error) {
     console.error("[email] carritos, reclamar sesión:", error.message);
     return false;
   }
-  return (data ?? []).length > 0;
+  return data === true;
 }
 
 async function release(db: Admin, id: string, at: string): Promise<void> {
-  const { error } = await db.from("checkout_sessions").update({ reminded_at: null }).eq("id", id).eq("reminded_at", at);
+  const { error } = await db.rpc("release_checkout_reminder", { p_id: id, p_at: at });
   if (error) console.error("[email] carritos, liberar sesión:", error.message);
+}
+
+/** Casilla para el `mailto:` de `List-Unsubscribe`: `EMAIL_UNSUBSCRIBE_MAILTO` o, si falta, la de la tienda. */
+function unsubscribeMailbox(storeContact: string | null | undefined): string | null {
+  const env = process.env.EMAIL_UNSUBSCRIBE_MAILTO?.trim();
+  if (isEmail(env)) return env;
+  return storeContact && isEmail(storeContact) ? storeContact : null;
+}
+
+/** `List-Unsubscribe` (URL de baja en un clic y mailto) + `List-Unsubscribe-Post` (RFC 8058). */
+export function abandonedUnsubscribeHeaders(token: string, storeContact: string | null | undefined): Record<string, string> {
+  const url = `${platformOrigin()}/api/email/unsubscribe?token=${encodeURIComponent(token)}`;
+  const mailbox = unsubscribeMailbox(storeContact);
+  const mailto = mailbox ? `<mailto:${mailbox}?subject=${encodeURIComponent("Baja de avisos de carrito")}>` : null;
+  return {
+    "List-Unsubscribe": [`<${url}>`, mailto].filter(Boolean).join(", "),
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
 }
 
 /** Manda los avisos juntados por `collectAbandonedNotices`. Nunca lanza. */
@@ -435,8 +509,8 @@ export async function deliverAbandonedNotices(
           items: n.items,
           currency: n.info.currency,
           locale: n.info.locale,
-          recoverUrl: storeUrl(n.info.target, `/carrito?recuperar=${s.token}`),
-          unsubscribeUrl: storeUrl(n.info.target, `/carrito?baja=${s.token}`),
+          recoverUrl: storeUrl(n.info.target, recoverPath(s.token)),
+          unsubscribeUrl: storeUrl(n.info.target, recoverPath(s.token, true)),
         },
         n.info.store,
         n.info.legal,
@@ -450,6 +524,8 @@ export async function deliverAbandonedNotices(
           { name: "kind", value: "abandoned_cart" },
           { name: "store", value: n.info.slug },
         ],
+        headers: abandonedUnsubscribeHeaders(s.token, n.info.store.contactEmail),
+        // 24 h en Resend; después, `reminded_at` ya impide reclamar la sesión otra vez.
         idempotencyKey: `abandoned_cart/${s.id}`,
       });
       // Si Resend no lo aceptó, la sesión vuelve a quedar pendiente (la próxima corrida reintenta).
@@ -466,7 +542,11 @@ export async function deliverAbandonedNotices(
   return report;
 }
 
-/** Junta y manda en un paso (lo usan las dos rutas de cron). */
+/**
+ * Purga, junta y manda en un paso (lo usan las dos rutas de cron). La purga
+ * corre aunque no haya `RESEND_API_KEY`.
+ */
 export async function runAbandonedNotices(now: Date = new Date(), budgetMs?: number): Promise<AbandonedNoticeReport> {
+  await purgeAbandonedSessions();
   return deliverAbandonedNotices(await collectAbandonedNotices(now), now, budgetMs);
 }

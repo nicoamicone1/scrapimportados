@@ -3,16 +3,20 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { useStoreBase } from "@/components/store/StoreBase";
 import { useCart } from "@/lib/cart";
-import { mergeRestoredItems, RESTORE_SKIPPED_MESSAGE } from "@/lib/store/checkout-sessions";
+import { mergeRestoredItems, readPendingDelete, RESTORE_SKIPPED_MESSAGE, writeSessionToken } from "@/lib/store/checkout-sessions";
 
 import { restoreCheckoutSession, unsubscribeCheckoutSession } from "../checkout-sessions";
 
 /*
- * Links del mail de carrito abandonado (migración 0020):
- *   /carrito?recuperar=<token> → repone el carrito con precios y stock de hoy;
- *   /carrito?baja=<token>      → confirma la baja de los avisos (con un botón:
- *                                los antivirus de correo abren los links solos).
+ * Links del mail de carrito abandonado (migración 0020). La ruta
+ * `/carrito/recuperar/<token>` deja el token en una cookie httpOnly y
+ * redirige a `/carrito`; la página la lee en el server y monta:
+ *   CartRecovery    → repone el carrito con precios y stock de hoy;
+ *   CartUnsubscribe → confirma la baja (con un botón: los antivirus de
+ *                     correo abren los links solos).
+ * Ninguno lee la URL: el token nunca pasa por la query.
  */
 
 type Notice = { tone: "ok" | "error"; lines: string[] };
@@ -38,6 +42,7 @@ function NoticeBox({ notice }: { notice: Notice }) {
 /** Repone el carrito guardado (una vez por visita; abrir el link dos veces no duplica cantidades). */
 export function CartRecovery({ token }: { token: string }) {
   const { items, hydrated, add, applyPatches } = useCart();
+  const { storeId } = useStoreBase();
   const [notice, setNotice] = useState<Notice | null>(null);
   const started = useRef(false);
 
@@ -80,19 +85,17 @@ export function CartRecovery({ token }: { token: string }) {
           const { qty, ...item } = r;
           add(item, qty);
         }
-        // El token no queda en la barra (ni en el historial ni en un link compartido).
-        try {
-          window.history.replaceState(null, "", window.location.pathname);
-        } catch {
-          // sin History API: queda la URL tal cual (reabrirla no duplica cantidades)
-        }
+        // El token queda en este navegador para marcar la sesión recuperada al
+        // confirmar (o borrarla si destilda). El tilde del checkout sigue desmarcado.
+        // Si hay un borrado pendiente de otra sesión, ése manda.
+        if (restored.length && !readPendingDelete(storeId)) writeSessionToken(storeId, token);
         const lines = [restored.length ? "Repusimos tu carrito con los precios de hoy." : "No pudimos reponer tu carrito."];
         if (skipped) lines.push(RESTORE_SKIPPED_MESSAGE);
         if (reduced) lines.push("Ajustamos algunas cantidades al stock disponible.");
         setNotice({ tone: restored.length ? "ok" : "error", lines });
       })
       .catch(() => setNotice({ tone: "error", lines: ["No pudimos reponer tu carrito. Probá de nuevo en un momento."] }));
-  }, [hydrated, token, items, add, applyPatches]);
+  }, [hydrated, token, items, add, applyPatches, storeId]);
 
   if (!notice) {
     return hydrated ? (
@@ -116,7 +119,10 @@ export function CartUnsubscribe({ token, storeName }: { token: string; storeName
       <NoticeBox
         notice={{
           tone: "ok",
-          lines: [`Listo: ${storeName} no te va a volver a escribir por pedidos sin terminar.`, "Los mails de tus compras te siguen llegando."],
+          lines: [
+            `Listo: ${storeName} no te vuelve a escribir por este carrito ni por otros de esta tienda.`,
+            "Los mails de tus compras te siguen llegando.",
+          ],
         }}
       />
     );
@@ -126,7 +132,7 @@ export function CartUnsubscribe({ token, storeName }: { token: string; storeName
     <div className="mt-4 rounded-md border border-border-strong bg-bg p-4 text-sm">
       <p className="font-medium">¿Dejar de recibir avisos de pedidos sin terminar?</p>
       <p className="mt-1 text-fg-muted">
-        Vale para este email en {storeName}. Borramos también el carrito que habías dejado guardado.
+        No te volvemos a escribir por este carrito ni por otros de {storeName}. Borramos también el carrito que habías dejado guardado.
       </p>
       {error ? (
         <p className="mt-2 text-danger" role="alert">

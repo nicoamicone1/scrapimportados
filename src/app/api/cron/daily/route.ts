@@ -34,8 +34,9 @@ export const maxDuration = 300;
  * 0020): al comprador que tildó el aviso en el checkout y no confirmó, entre
  * 3 y 48 h después. Con sólo este cron diario el aviso sale entre 3 y 27 h
  * después; `/api/cron/abandoned` (cada 6 h, si el plan de Vercel lo permite)
- * lo acerca a 3–9 h. Las dos rutas pueden correr: cada sesión se reclama con
- * un update condicional y recibe un solo mail.
+ * lo acerca a 3–9 h. Las dos rutas pueden correr: cada sesión se reclama de
+ * forma atómica con `claim_checkout_reminder` y recibe un solo mail. La purga
+ * de sesiones a 30 días corre aunque no haya RESEND_API_KEY.
  */
 export async function GET(request: NextRequest) {
   if (!cronAuthorized(request.headers.get("authorization"))) {

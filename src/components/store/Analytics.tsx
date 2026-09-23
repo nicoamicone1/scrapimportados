@@ -1,19 +1,21 @@
 import Script from "next/script";
 
+import { TOKEN_PATH_RE } from "@/lib/store/analytics";
 import type { IntegrationSettings } from "@/lib/store/settings";
 
 import { PixelPageViews } from "./PixelPageViews";
 
 /** Mismo patrón que `safePageLocation` (lib/store/analytics), como literal para el snippet. */
-const PEDIDO_TOKEN_RE = String.raw`/(\/pedido)\/[^/?#]+/`;
+const PEDIDO_TOKEN_RE = String(TOKEN_PATH_RE);
 
 /**
  * GA4 / GTM / Meta Pixel por ID (P0-18) con `next/script`. Los IDs vienen
  * validados por formato (`parseIntegrations`), así que interpolarlos en el
  * snippet es seguro. Los eventos los manda `track()` de `lib/store/analytics`.
  *
- * `/pedido/<token>`: el token da acceso al pedido. Si la visita ENTRA por esa
- * página, GA4 se configura con `page_location` sin el token (sólo ahí: fijarlo
+ * `/pedido/<token>` y `/carrito/recuperar/<token>`: el token da acceso al
+ * pedido o al carrito guardado. Si la visita ENTRA por una de esas páginas,
+ * GA4 se configura con `page_location` sin el token (sólo ahí: fijarlo
  * siempre congelaría la URL de las navegaciones siguientes); los eventos de
  * `track()` (incluido `purchase`) lo mandan limpio siempre, y la ruta sale con
  * `Referrer-Policy: no-referrer` (next.config.ts). Meta Pixel manda la URL de

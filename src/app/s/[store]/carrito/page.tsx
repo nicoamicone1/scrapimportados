@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 import { ProductCard } from "@/components/store/ProductCard";
 import { requireStore } from "@/lib/store/context";
 import { getStoreDisplay } from "@/lib/store/display";
-import { isSessionToken } from "@/lib/store/checkout-sessions";
+import { isSessionToken, RECOVER_COOKIE, UNSUBSCRIBE_COOKIE } from "@/lib/store/checkout-sessions";
 import { listProducts } from "@/lib/store/products";
 
 import { CartRecovery, CartUnsubscribe } from "./CartRecovery";
@@ -11,13 +12,17 @@ import { CartView } from "./CartView";
 
 export const metadata: Metadata = { title: "Carrito", robots: { index: false, follow: false } };
 
-export default async function CartPage({ params, searchParams }: PageProps<"/s/[store]/carrito">) {
+export default async function CartPage({ params }: PageProps<"/s/[store]/carrito">) {
   const { store } = await requireStore(params);
-  // Links del mail de carrito abandonado (0020): reponer el carrito o darse de baja.
-  const sp = await searchParams;
-  const pick = (v: string | string[] | undefined) => (typeof v === "string" ? v.trim().toLowerCase() : "");
-  const recoverToken = isSessionToken(pick(sp.recuperar)) ? pick(sp.recuperar) : null;
-  const unsubscribeToken = isSessionToken(pick(sp.baja)) ? pick(sp.baja) : null;
+  // Links del mail de carrito abandonado (0020): `/carrito/recuperar/<token>`
+  // deja el token en una cookie httpOnly y redirige acá. Nunca se lee de la query.
+  const jar = await cookies();
+  const pick = (name: string) => {
+    const v = jar.get(name)?.value.trim().toLowerCase() ?? "";
+    return isSessionToken(v) ? v : null;
+  };
+  const recoverToken = pick(RECOVER_COOKIE);
+  const unsubscribeToken = pick(UNSUBSCRIBE_COOKIE);
   const display = await getStoreDisplay(store.id);
   const { card, settings } = display;
   const featured = (await listProducts(store.id, { featured: true, perPage: 4, outOfStock: "hide" })).items;

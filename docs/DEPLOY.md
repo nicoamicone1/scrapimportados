@@ -25,6 +25,8 @@ Estado actual de producción (spec §14.4):
 | `EMAIL_FROM` | `Ecommy <no-reply@ecommy.app>` (default si falta) | remitente; el dominio tiene que estar verificado en Resend. Las tiendas mandan como `"{Tienda} vía Ecommy" <misma dirección>` |
 | `PLATFORM_EMAIL` | casilla de soporte de Ecommy | recibe los pedidos de cambio de plan y es el reply-to de los mails de cuenta. Opcional |
 | `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usan el cron diario (avisos de "tu prueba termina" / "tu prueba terminó", de activación y de carrito abandonado; este último también `/api/cron/abandoned`) y el cobro con MercadoPago (webhook y sincronización: `billing_apply_subscription` sólo la ejecuta service_role). Sin ella esos avisos no salen y los pagos de MP no se aplican; todo lo demás sigue igual |
+| `HASH_SECRET` | secreto largo aleatorio (marcado *sensitive*), opcional | HMAC del IP para los cupos de carritos guardados; si falta se usa `CRON_SECRET` (ver §4d) |
+| `EMAIL_UNSUBSCRIBE_MAILTO` | casilla que atiende bajas, opcional | `mailto:` del encabezado `List-Unsubscribe` de los mails de carrito abandonado (ver §4d) |
 | `MP_ACCESS_TOKEN` | access token de **producción** de la cuenta de MercadoPago de Ecommy (marcado *sensitive*, nunca `NEXT_PUBLIC_`) | cobro automático de planes (docs/BILLING.md). Sin él `/admin/plan` sólo ofrece el pedido por WhatsApp y el webhook responde 503 |
 | `MP_WEBHOOK_SECRET` | clave secreta del webhook (MercadoPago → Tus integraciones → Webhooks) (marcado *sensitive*) | valida la firma `x-signature` de `/api/billing/mercadopago/webhook`. Sin ella el webhook responde 503 |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | `G-XXXXXXXXXX` | GA4 del sitio de Ecommy (landing, planes, registro, contacto). Opcional; sin él no se carga ningún script. Las tiendas tienen su propio GA4 en Configuración › SEO |
@@ -150,8 +152,8 @@ Diseño en `docs/ECOMMY-SPEC.md` §7 (punto 7). Para activarlo:
    Sin ella el checkout no muestra el tilde, `/admin/pedidos/abandonados` avisa que falta
    y el cron no manda nada.
 2. Los mails usan las mismas variables que los avisos de prueba: `RESEND_API_KEY` y
-   `SUPABASE_SERVICE_ROLE_KEY`. Sin alguna de las dos, los carritos se guardan pero quedan
-   "Pendiente".
+   `SUPABASE_SERVICE_ROLE_KEY`. **Sin alguna de las dos el checkout no ofrece el tilde**
+   (no se pide un consentimiento para un aviso que no va a salir).
 3. Cada tienda lo prende en **Configuración → Pagos y checkout → Avisar por mail los
    carritos abandonados** (Starter en adelante; flag `marketing.abandoned` en
    `/platform/planes`).
@@ -160,12 +162,40 @@ Diseño en `docs/ECOMMY-SPEC.md` §7 (punto 7). Para activarlo:
    `CRON_SECRET`) para acercarlo a 3–9 h, pero **no está programado en `vercel.json`**:
    los crons de más de una vez por día necesitan un plan Pro de Vercel y en Hobby el
    deploy falla. Con Pro, agregar `{ "path": "/api/cron/abandoned", "schedule": "0 */6 * * *" }`
-   a `crons`. Las dos rutas pueden correr juntas: cada sesión se reclama con un update
-   condicional y recibe un solo mail.
+   a `crons`. Las dos rutas pueden correr juntas: cada sesión se reclama con
+   `claim_checkout_reminder` y recibe un solo mail. Topes por corrida: 300 en total, 50
+   por tienda (10 si la tienda está en prueba), repartidos por turnos entre tiendas.
+5. Purga: el mismo cron borra sesiones y eventos de más de 30 días **aunque no haya
+   `RESEND_API_KEY`**. Necesita `SUPABASE_SERVICE_ROLE_KEY`: sin ella no se purga nada
+   (las sesiones quedan en la base hasta que se configure). La lista de bajas
+   (`checkout_unsubscribes`) no se purga nunca.
+
+Variables propias (opcionales):
+
+| Variable | Valor | Para qué |
+|---|---|---|
+| `HASH_SECRET` | secreto largo aleatorio (marcado *sensitive*) | clave del HMAC del IP para los cupos de carritos guardados (30 por IP y tienda por día). Si falta se usa `CRON_SECRET`; si faltan las dos, SHA-256 con la sal fija `ecommy-checkout-ip-v1` (`src/lib/store/checkout-reminders.ts`): funciona, pero el hash de un IP se puede recalcular probando IPs |
+| `EMAIL_UNSUBSCRIBE_MAILTO` | casilla de Ecommy que atiende bajas (ej. `bajas@…`) | el `mailto:` del encabezado `List-Unsubscribe`. Si falta se usa el email de contacto de la tienda (y si la tienda no tiene, el encabezado lleva sólo la URL). La baja real es la URL de un clic |
+
+Links del mail (no llevan el token en una URL que vea analytics):
+
+- `/carrito/recuperar/<token>` (host de la tienda o `/s/<slug>/…`): guarda el token en la
+  cookie httpOnly `ecommy_recover` (10 min, sólo `/carrito`) y redirige (303) a `/carrito`,
+  que repone el carrito. Con `?baja=1`, cookie `ecommy_unsub` y confirmación con botón.
+  Sale con `Referrer-Policy: no-referrer`.
+- Encabezados `List-Unsubscribe: <https://<plataforma>/api/email/unsubscribe?token=…>, <mailto:…>`
+  y `List-Unsubscribe-Post: List-Unsubscribe=One-Click`: el `POST` a esa URL (lo hace
+  Gmail/Apple Mail/Outlook) da de baja sin confirmación y responde 200; un `GET` redirige
+  a la confirmación de la tienda.
+- `Idempotency-Key: abandoned_cart/<id de sesión>`: Resend la recuerda 24 h; un reintento
+  posterior no puede duplicar el mail porque la sesión ya tiene `reminded_at`.
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" https://ecommy-app.vercel.app/api/cron/abandoned
 # → { "ok": true, "emails": { "abandoned_cart": 0 } }
+curl -i -X POST "https://ecommy-app.vercel.app/api/email/unsubscribe?token=$(printf 'a%.0s' {1..48})" \
+  -d 'List-Unsubscribe=One-Click'
+# → 200 (token inexistente: responde igual)
 ```
 
 El JSON del cron diario suma `emails.abandoned_cart`. Log: filtrar por `[email]` y

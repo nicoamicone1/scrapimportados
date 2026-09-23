@@ -11,10 +11,15 @@ import { stockLimit, type FreshVariant } from "./cart-validation";
  *
  * Flujo: al salir de "Tus datos" con el tilde "Avisame por mail si dejo el
  * pedido sin terminar" marcado, se guarda la sesión (`upsert_checkout_session`)
- * y el token queda en localStorage (`ecommy:checkout:<storeId>`) para
- * reusarla; cada cambio del carrito la actualiza (con debounce). Al confirmar
- * el pedido se marca como recuperada. El mail lleva `/carrito?recuperar=<token>`
- * (repone el carrito) y `/carrito?baja=<token>` (baja de los avisos).
+ * y el token queda en localStorage (`ecommy:checkout:<storeId>`). El tilde
+ * nace SIEMPRE desmarcado: el token guardado sólo sirve para actualizar la
+ * sesión si se vuelve a tildar, para borrarla si se destilda y para marcarla
+ * recuperada al confirmar el pedido.
+ *
+ * El mail lleva `/carrito/recuperar/<token>` (repone el carrito) y
+ * `/carrito/recuperar/<token>?baja=1` (baja). Esa ruta guarda el token en una
+ * cookie httpOnly de 10 minutos y redirige a `/carrito`: el token nunca queda
+ * en la URL que ven GA4, GTM o Meta Pixel.
  */
 
 /** Token de una sesión: 48 hex (lo genera la base). */
@@ -27,6 +32,78 @@ export function isSessionToken(value: unknown): value is string {
 /** Clave de localStorage del token de la sesión de checkout de una tienda. */
 export function checkoutSessionKey(storeId: string): string {
   return `ecommy:checkout:${storeId}`;
+}
+
+/** Marca "hay que borrar la sesión" (destildó y el borrado todavía no llegó a la base). */
+export function checkoutSessionDeleteKey(storeId: string): string {
+  return `ecommy:checkout:${storeId}:borrar`;
+}
+
+function storage(): Storage | null {
+  try {
+    return typeof window === "undefined" ? null : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** Token de la sesión guardado en este navegador (o null). */
+export function readSessionToken(storeId: string): string | null {
+  if (!storeId) return null;
+  try {
+    const raw = storage()?.getItem(checkoutSessionKey(storeId)) ?? null;
+    return isSessionToken(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Guarda (o borra, con null) el token de la sesión en este navegador. */
+export function writeSessionToken(storeId: string, token: string | null): void {
+  const s = storage();
+  if (!s || !storeId) return;
+  try {
+    if (token) s.setItem(checkoutSessionKey(storeId), token);
+    else s.removeItem(checkoutSessionKey(storeId));
+  } catch {
+    // sin storage: la sesión se crea de nuevo en la próxima visita
+  }
+}
+
+/** ¿Quedó pendiente borrar la sesión guardada? */
+export function readPendingDelete(storeId: string): boolean {
+  try {
+    return Boolean(storeId) && storage()?.getItem(checkoutSessionDeleteKey(storeId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writePendingDelete(storeId: string, pending: boolean): void {
+  const s = storage();
+  if (!s || !storeId) return;
+  try {
+    if (pending) s.setItem(checkoutSessionDeleteKey(storeId), "1");
+    else s.removeItem(checkoutSessionDeleteKey(storeId));
+  } catch {
+    // sin storage: se reintenta mientras la página siga abierta
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Links del mail (ruta `/carrito/recuperar/<token>` → cookie → `/carrito`)
+// ---------------------------------------------------------------------------
+
+/** Cookie httpOnly con el token para reponer el carrito. */
+export const RECOVER_COOKIE = "ecommy_recover";
+/** Cookie httpOnly con el token para confirmar la baja. */
+export const UNSUBSCRIBE_COOKIE = "ecommy_unsub";
+/** Vida de esas cookies (segundos): alcanza para cargar `/carrito`. */
+export const RECOVER_COOKIE_MAX_AGE = 600;
+
+/** Path (sin prefijo de tienda) del link del mail: reponer o, con `baja`, darse de baja. */
+export function recoverPath(token: string, unsubscribe = false): string {
+  return `/carrito/recuperar/${token}${unsubscribe ? "?baja=1" : ""}`;
 }
 
 /** Cupos de `upsert_checkout_session` al CREAR una sesión (espejo de 0020, para textos y tests). */
@@ -43,7 +120,7 @@ export const SESSION_UPDATE_DEBOUNCE_MS = 1500;
 
 /** Texto del tilde y de su ayuda (checkout). */
 export const CONSENT_LABEL = "Avisame por mail si dejo el pedido sin terminar";
-export const CONSENT_HELP = "Un solo aviso, sin ofertas inventadas. Podés darte de baja desde el mail.";
+export const CONSENT_HELP = "Te mandamos un solo mail con tu carrito. Te podés dar de baja desde ese mail.";
 
 /** Aviso al reponer un carrito con productos que ya no se venden o no tienen stock. */
 export const RESTORE_SKIPPED_MESSAGE = "Algunos productos ya no están disponibles.";
@@ -52,25 +129,43 @@ export const RESTORE_SKIPPED_MESSAGE = "Algunos productos ya no están disponibl
 // Entrada de la action (validación)
 // ---------------------------------------------------------------------------
 
-export const sessionInputSchema = z.object({
-  token: z
-    .string()
-    .nullish()
-    .transform((v) => (isSessionToken(v) ? v : null)),
-  email: z.string().trim().toLowerCase().max(254).email(),
-  name: z
-    .string()
-    .trim()
-    .max(120)
-    .nullish()
-    .transform((v) => v || null),
-  items: z
-    .array(z.object({ variantId: z.string().uuid(), qty: z.number().int().min(1).max(999) }))
-    .max(100),
-  consent: z.boolean(),
-  /** Honeypot: un bot que lo completa recibe "listo" sin guardar nada. */
-  website: z.string().max(200).optional(),
-});
+const emailSchema = z.string().email();
+
+/**
+ * Entrada de `saveCheckoutSession`. Con `consent: false` (destildó) el email
+ * es opcional: para borrar alcanza con el token.
+ */
+export const sessionInputSchema = z
+  .object({
+    token: z
+      .string()
+      .nullish()
+      .transform((v) => (isSessionToken(v) ? v : null)),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(254)
+      .nullish()
+      .transform((v) => v ?? ""),
+    name: z
+      .string()
+      .trim()
+      .max(120)
+      .nullish()
+      .transform((v) => v || null),
+    items: z
+      .array(z.object({ variantId: z.string().uuid(), qty: z.number().int().min(1).max(999) }))
+      .max(100),
+    consent: z.boolean(),
+    /** Honeypot: un bot que lo completa recibe "listo" sin guardar nada. */
+    website: z.string().max(200).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.consent && !emailSchema.safeParse(v.email).success) {
+      ctx.addIssue({ code: "custom", path: ["email"], message: "Revisá el email." });
+    }
+  });
 
 export type SessionInput = z.input<typeof sessionInputSchema>;
 
@@ -113,7 +208,6 @@ export interface SavedSessionItem {
 
 export interface SavedSession {
   storeId: string;
-  name: string | null;
   recovered: boolean;
   items: SavedSessionItem[];
 }
@@ -135,7 +229,6 @@ export function readSessionRpc(data: unknown): SavedSession | null {
   }
   return {
     storeId: r.store_id,
-    name: typeof r.name === "string" && r.name ? r.name : null,
     recovered: r.recovered === true,
     items,
   };

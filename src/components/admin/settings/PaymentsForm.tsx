@@ -319,7 +319,7 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
                 description={
                   <>
                     En «Tus datos» aparece «Avisame por mail si dejo el pedido sin terminar», destildado. A quien lo tilda y no
-                    confirma le llega un solo mail entre 3 y 27 horas después, con su carrito y un botón para terminarlo. Los ves en{" "}
+                    confirma le llega un solo mail dentro del día, con su carrito y un botón para terminarlo. Los ves en{" "}
                     <Link href="/admin/pedidos/abandonados" className="text-adm-accent underline-offset-2 hover:underline">
                       Carritos abandonados
                     </Link>

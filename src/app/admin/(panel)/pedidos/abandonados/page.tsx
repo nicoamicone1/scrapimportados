@@ -37,8 +37,8 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
   const { sessions, recovered } = list.last30;
   const description =
     list.available && sessions
-      ? `Últimos 30 días: ${formatNumber(sessions)} ${sessions === 1 ? "carrito guardado" : "carritos guardados"} · ${formatNumber(recovered)} ${recovered === 1 ? "recuperado" : "recuperados"}. Un solo mail por carrito, entre 3 y 27 horas después de que dejan el checkout.`
-      : "Quién dejó el checkout sin confirmar después de aceptar el aviso por mail. Un solo mail por carrito, entre 3 y 27 horas después de que dejan el checkout.";
+      ? `Últimos 30 días: ${formatNumber(sessions)} ${sessions === 1 ? "carrito guardado" : "carritos guardados"} · ${formatNumber(recovered)} ${recovered === 1 ? "recuperado" : "recuperados"}. Un solo mail por carrito, dentro del día en que dejan el checkout.`
+      : "Quién dejó el checkout sin confirmar después de aceptar el aviso por mail. Un solo mail por carrito, dentro del día en que dejan el checkout.";
 
   return (
     <>
@@ -69,7 +69,7 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
             Los mails están apagados en este entorno (falta la clave de envío): los carritos quedan pendientes hasta que se configure.
           </p>
         ) : null}
-        <AbandonedTable rows={list.items} filter={current} available={list.available} />
+        <AbandonedTable rows={list.items} filter={current} available={list.available} currency={settings.currency} />
         {list.available && list.total > ABANDONED_PER_PAGE ? <Pagination page={page} perPage={ABANDONED_PER_PAGE} total={list.total} /> : null}
       </PlanGate>
     </>

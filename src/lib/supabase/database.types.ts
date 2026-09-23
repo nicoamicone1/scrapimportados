@@ -189,13 +189,50 @@ export type Database = {
           },
         ]
       }
+      checkout_session_events: {
+        Row: {
+          created_at: string
+          email_lower: string
+          id: number
+          ip_hash: string | null
+          kind: string
+          session_id: string | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_lower: string
+          id?: never
+          ip_hash?: string | null
+          kind: string
+          session_id?: string | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          email_lower?: string
+          id?: never
+          ip_hash?: string | null
+          kind?: string
+          session_id?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_session_events_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkout_sessions: {
         Row: {
           consent: boolean
           created_at: string
           email: string
           id: string
-          ip_hash: string | null
           items: Json
           name: string | null
           recovered_order_id: string | null
@@ -211,7 +248,6 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
-          ip_hash?: string | null
           items?: Json
           name?: string | null
           recovered_order_id?: string | null
@@ -227,7 +263,6 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
-          ip_hash?: string | null
           items?: Json
           name?: string | null
           recovered_order_id?: string | null
@@ -248,6 +283,32 @@ export type Database = {
           },
           {
             foreignKeyName: "checkout_sessions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkout_unsubscribes: {
+        Row: {
+          created_at: string
+          email_lower: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_lower: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          email_lower?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_unsubscribes_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -2575,7 +2636,14 @@ export type Database = {
         Args: { p_store_id: string }
         Returns: boolean
       }
-      checkout_session_unsubscribe: { Args: { p_token: string }; Returns: Json }
+      checkout_session_unsubscribe: {
+        Args: { p_store_id?: string; p_token: string }
+        Returns: Json
+      }
+      claim_checkout_reminder: {
+        Args: { p_at?: string; p_id: string }
+        Returns: boolean
+      }
       create_order: { Args: { payload: Json }; Returns: Json }
       create_store: {
         Args: {
@@ -2674,6 +2742,10 @@ export type Database = {
         }[]
       }
       purge_checkout_sessions: { Args: never; Returns: number }
+      release_checkout_reminder: {
+        Args: { p_at: string; p_id: string }
+        Returns: undefined
+      }
       reorder_categories: {
         Args: { items: Json; p_store_id: string }
         Returns: number
@@ -2690,7 +2762,7 @@ export type Database = {
         Args: {
           p_consent: boolean
           p_email: string
-          p_ip_hash?: string
+          p_ip_hash: string
           p_items: Json
           p_name: string | null
           p_store_id: string

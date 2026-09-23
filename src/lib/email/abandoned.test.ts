@@ -2,12 +2,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
+/** Cliente service_role falso: registra las RPC que se llaman. */
+const serviceRpc = vi.hoisted(() => ({ calls: [] as string[] }));
+vi.mock("@/lib/supabase/env", () => ({ SUPABASE_URL: "https://proyecto.supabase.co", SUPABASE_ANON_KEY: "anon" }));
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: () => ({
+    rpc: async (name: string) => {
+      serviceRpc.calls.push(name);
+      return { data: name === "purge_checkout_sessions" ? 3 : [], error: null };
+    },
+  }),
+}));
+
 import { formatMoney } from "@/lib/money";
 
 import {
+  abandonedUnsubscribeHeaders,
   deliverAbandonedNotices,
+  runAbandonedNotices,
   isAbandonedDue,
   MAX_ABANDONED_PER_RUN,
+  MAX_ABANDONED_PER_STORE,
+  MAX_ABANDONED_PER_TRIAL_STORE,
   parseAbandonedCandidates,
   pickAbandonedNotices,
   refreshAbandonedItems,
@@ -40,6 +56,7 @@ function session(patch: Partial<AbandonedSessionRow> = {}): AbandonedSessionRow 
     remindedAt: null,
     unsubscribedAt: null,
     storeActive: true,
+    storeTrialing: false,
     enabled: true,
     recentlyReminded: false,
     ...patch,
@@ -88,13 +105,35 @@ describe("selección de avisos de carrito abandonado", () => {
   });
 
   it("respeta el tope por corrida y manda primero los más viejos", () => {
+    // Una sesión por tienda: el tope por tienda no interviene.
     const many = Array.from({ length: MAX_ABANDONED_PER_RUN + 20 }, (_, i) =>
-      session({ id: `s-${i}`, email: `c${i}@example.com`, updatedAt: ago(4 * HOUR + i * 60_000) }),
+      session({ id: `s-${i}`, storeId: `store-${i}`, email: `c${i}@example.com`, updatedAt: ago(4 * HOUR + i * 60_000) }),
     );
     const picked = pickAbandonedNotices({ sessions: many, now: NOW });
     expect(picked).toHaveLength(MAX_ABANDONED_PER_RUN);
     expect(picked[0].id).toBe(`s-${MAX_ABANDONED_PER_RUN + 19}`);
     expect(pickAbandonedNotices({ sessions: many, now: NOW, limit: 2 })).toHaveLength(2);
+  });
+
+  it("tope por tienda (menor si está en prueba) y turnos entre tiendas", () => {
+    const big = Array.from({ length: MAX_ABANDONED_PER_STORE + 30 }, (_, i) =>
+      session({ id: `big-${i}`, storeId: "grande", email: `g${i}@example.com`, updatedAt: ago(40 * HOUR - i * 60_000) }),
+    );
+    const trial = Array.from({ length: 30 }, (_, i) =>
+      session({ id: `trial-${i}`, storeId: "prueba", storeTrialing: true, email: `t${i}@example.com`, updatedAt: ago(10 * HOUR - i * 60_000) }),
+    );
+    const small = [session({ id: "small-0", storeId: "chica", email: "s@example.com", updatedAt: ago(4 * HOUR) })];
+    const picked = pickAbandonedNotices({ sessions: [...big, ...trial, ...small], now: NOW });
+    const count = (prefix: string) => picked.filter((s) => s.id.startsWith(prefix)).length;
+    expect(count("big-")).toBe(MAX_ABANDONED_PER_STORE);
+    expect(count("trial-")).toBe(MAX_ABANDONED_PER_TRIAL_STORE);
+    expect(count("small-")).toBe(1);
+    // Por turnos: la primera de cada tienda (la tienda con el carrito más viejo, primero).
+    expect(picked.slice(0, 3).map((s) => s.id)).toEqual(["big-0", "trial-0", "small-0"]);
+    // Con un tope chico, ninguna tienda se queda afuera por culpa de la grande.
+    expect(new Set(pickAbandonedNotices({ sessions: [...big, ...trial, ...small], now: NOW, limit: 3 }).map((s) => s.storeId))).toEqual(
+      new Set(["grande", "prueba", "chica"]),
+    );
   });
 
   it("lee el jsonb de la RPC y descarta lo que no tiene forma", () => {
@@ -113,6 +152,7 @@ describe("selección de avisos de carrito abandonado", () => {
         reminded_at: null,
         unsubscribed_at: null,
         store_active: true,
+        store_trialing: true,
         enabled: true,
         recently_reminded: false,
       },
@@ -121,6 +161,7 @@ describe("selección de avisos de carrito abandonado", () => {
     ]);
     expect(rows).toHaveLength(1);
     expect(rows[0].items).toEqual([{ variantId: "v-1", qty: 2, name: "Remera", price: 15500 }]);
+    expect(rows[0].storeTrialing).toBe(true);
     expect(isAbandonedDue(rows[0], NOW)).toBe(true);
     expect(parseAbandonedCandidates({ no: "array" })).toEqual([]);
   });
@@ -182,8 +223,8 @@ describe("plantilla «Dejaste tu pedido a mitad de camino»", () => {
     ],
     currency: "ARS",
     locale: "es-AR",
-    recoverUrl: `https://taller-luna.ecommy.app/carrito?recuperar=${TOKEN}`,
-    unsubscribeUrl: `https://taller-luna.ecommy.app/carrito?baja=${TOKEN}`,
+    recoverUrl: `https://taller-luna.ecommy.app/carrito/recuperar/${TOKEN}`,
+    unsubscribeUrl: `https://taller-luna.ecommy.app/carrito/recuperar/${TOKEN}?baja=1`,
   };
 
   it("lista ítems, total, botón para terminar y baja en el pie", () => {
@@ -196,9 +237,9 @@ describe("plantilla «Dejaste tu pedido a mitad de camino»", () => {
       expect(out).toContain(`2 × ${$(15500)}`);
       expect(out).toContain($(48500));
       expect(out).toContain("Terminar mi pedido");
-      expect(out).toContain(`/carrito?recuperar=${TOKEN}`);
+      expect(out).toContain(`/carrito/recuperar/${TOKEN}`);
       expect(out).toContain("No quiero recibir estos avisos");
-      expect(out).toContain(`/carrito?baja=${TOKEN}`);
+      expect(out).toContain(`/carrito/recuperar/${TOKEN}?baja=1`);
       expect(out).toContain("Taller Luna SRL · CUIT 30-71234567-8");
     }
   });
@@ -230,28 +271,18 @@ describe("plantilla «Dejaste tu pedido a mitad de camino»", () => {
   });
 });
 
-/** Base falsa: reclamar (update condicional + select) y liberar la sesión. */
+/** Base falsa: reclamar (`claim_checkout_reminder`) y liberar (`release_checkout_reminder`). */
 function fakeDb(claimable: boolean) {
   const state = { claims: 0, releases: 0 };
-  const chain = (kind: "claim" | "release") => {
-    const c = {
-      eq: () => c,
-      is: () => c,
-      select: async () => {
-        state.claims++;
-        return { data: claimable ? [{ id: "s-1" }] : [], error: null };
-      },
-      then: (resolve: (v: { error: null }) => void) => {
-        if (kind === "release") state.releases++;
-        resolve({ error: null });
-      },
-    };
-    return c;
-  };
   const db = {
-    from: () => ({
-      update: (patch: { reminded_at: string | null }) => chain(patch.reminded_at === null ? "release" : "claim"),
-    }),
+    rpc: async (name: string) => {
+      if (name === "claim_checkout_reminder") {
+        state.claims++;
+        return { data: claimable, error: null };
+      }
+      if (name === "release_checkout_reminder") state.releases++;
+      return { data: null, error: null };
+    },
   };
   return { state, db: db as unknown as AbandonedNoticePlan["db"] };
 }
@@ -292,8 +323,22 @@ describe("envío", () => {
     expect(body.to).toEqual(["lucia@example.com"]);
     expect(body.from).toContain("Taller Luna vía Ecommy");
     expect(body.reply_to).toEqual(["hola@tallerluna.com"]);
-    expect(body.html).toContain(`https://tallerluna.com.ar/carrito?recuperar=${TOKEN}`);
+    expect(body.html).toContain(`https://tallerluna.com.ar/carrito/recuperar/${TOKEN}`);
+    expect(body.html).toContain(`https://tallerluna.com.ar/carrito/recuperar/${TOKEN}?baja=1`);
+    expect(body.html).not.toContain("?recuperar=");
     expect((init.headers as Record<string, string>)["Idempotency-Key"]).toBe("abandoned_cart/s-1");
+    // Baja en un clic (RFC 8058): URL con POST y mailto.
+    expect(body.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+    expect(body.headers["List-Unsubscribe"]).toMatch(new RegExp(`^<https?://[^>]+/api/email/unsubscribe\\?token=${TOKEN}>, <mailto:hola@tallerluna\\.com\\?subject=`));
+  });
+
+  it("List-Unsubscribe: la casilla de la plataforma manda; sin casillas, sólo la URL", () => {
+    vi.stubEnv("EMAIL_UNSUBSCRIBE_MAILTO", "bajas@ecommy.app");
+    expect(abandonedUnsubscribeHeaders(TOKEN, "hola@tallerluna.com")["List-Unsubscribe"]).toContain("<mailto:bajas@ecommy.app?subject=");
+    vi.stubEnv("EMAIL_UNSUBSCRIBE_MAILTO", "");
+    const onlyUrl = abandonedUnsubscribeHeaders(TOKEN, null)["List-Unsubscribe"];
+    expect(onlyUrl).not.toContain("mailto:");
+    expect(onlyUrl).toContain(`/api/email/unsubscribe?token=${TOKEN}`);
   });
 
   it("si otra corrida ya la tomó, no manda", async () => {
@@ -309,6 +354,17 @@ describe("envío", () => {
     expect(await deliverAbandonedNotices({ db, notices: [notice] }, NOW)).toEqual({ abandoned_cart: 0 });
     expect(state.releases).toBe(1);
     error.mockRestore();
+  });
+
+  it("la purga de 30 días corre aunque los mails estén apagados (con la clave de servicio)", async () => {
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service");
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    serviceRpc.calls.length = 0;
+    expect(await runAbandonedNotices(NOW)).toEqual({ abandoned_cart: 0 });
+    expect(serviceRpc.calls).toEqual(["purge_checkout_sessions"]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    info.mockRestore();
   });
 
   it("sin plan (emails apagados o sin migración) no hace nada", async () => {
