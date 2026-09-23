@@ -5,10 +5,21 @@ import { useState } from "react";
 
 import { StoreLink } from "@/components/store/StoreLink";
 import { useCart } from "@/lib/cart";
+import type { PriceTier } from "@/lib/pricing";
 import { track } from "@/lib/store/analytics";
 
 export interface QuickAddProps {
-  product: { id: string; slug: string; name: string; image: string | null; categoryIds: string[]; brand: string | null; vatPercent?: number | null };
+  product: {
+    id: string;
+    slug: string;
+    name: string;
+    image: string | null;
+    categoryIds: string[];
+    brand: string | null;
+    vatPercent?: number | null;
+    /** Precios por cantidad del producto (el carrito los aplica al sumar unidades). */
+    priceTiers?: PriceTier[];
+  };
   /** Variante única (producto simple). */
   variant: {
     id: string;
@@ -62,6 +73,7 @@ export function QuickAdd({ product, variant, hasOptions, available, whatsappHref
         compareAtPrice: variant.compareAtPrice,
         categoryIds: product.categoryIds,
         vatPercent: product.vatPercent ?? null,
+        priceTiers: product.priceTiers ?? [],
         maxQty: variant.maxQty,
       },
       1,

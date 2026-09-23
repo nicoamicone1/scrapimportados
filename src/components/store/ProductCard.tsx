@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { StoreLink } from "@/components/store/StoreLink";
 import { cn } from "@/lib/cn";
+import { formatMoney } from "@/lib/money";
 import type { Promotion } from "@/lib/pricing";
 import { resolveVatPercent } from "@/lib/pricing";
 import { displayPrice, type ProductCardData } from "@/lib/store/products";
@@ -64,6 +65,8 @@ export function ProductCard({
   const alt = hover === "zoom" && product.secondImage ? product.secondImage : null;
   const href = `/producto/${product.slug}`;
   const single = product.variants.length === 1 ? product.variants[0] : null;
+  // Precio por cantidad: el primer tramo ("Desde 6 u. $ X"); la tabla completa está en la ficha.
+  const firstTier = product.available ? (price.tiers[1] ?? null) : null;
   const imageSizes = sizes ?? "(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
 
   return (
@@ -116,6 +119,7 @@ export function ProductCard({
             categoryIds: product.categoryIds,
             brand: product.brand,
             vatPercent: product.vatPercent,
+            priceTiers: product.priceTiers,
           }}
           variant={
             single
@@ -156,6 +160,11 @@ export function ProductCard({
           muted={!product.available}
           size="sm"
         />
+        {firstTier ? (
+          <p className="tnum text-xs text-fg-muted">
+            Desde {firstTier.minQty}&nbsp;u. {formatMoney(firstTier.price)}
+          </p>
+        ) : null}
         {!product.available ? <p className="text-xs text-fg-muted">Sin stock</p> : null}
       </div>
     </article>

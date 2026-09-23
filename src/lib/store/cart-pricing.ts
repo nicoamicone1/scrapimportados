@@ -1,9 +1,17 @@
-import { netPrice, resolveVatPercent, type CartItemInput, type CartLine } from "@/lib/pricing";
+import { netPrice, normalizePriceTiers, resolveVatPercent, type CartItemInput, type CartLine } from "@/lib/pricing";
 import { roundMoney } from "@/lib/money";
 
 /** Ítems del carrito (localStorage) → entrada del motor de precios. Puro. */
 export function toPricingItems(
-  items: { variantId: string; productId: string; categoryIds?: string[]; qty: number; unitPrice: number; compareAtPrice?: number | null }[],
+  items: {
+    variantId: string;
+    productId: string;
+    categoryIds?: string[];
+    qty: number;
+    unitPrice: number;
+    compareAtPrice?: number | null;
+    priceTiers?: unknown;
+  }[],
 ): CartItemInput[] {
   return items.map((i) => ({
     variantId: i.variantId,
@@ -12,6 +20,8 @@ export function toPricingItems(
     qty: i.qty,
     listPrice: i.unitPrice,
     compareAtPrice: i.compareAtPrice ?? null,
+    // localStorage: se normaliza (un valor viejo o manipulado queda sin tramos).
+    priceTiers: normalizePriceTiers(i.priceTiers ?? []),
   }));
 }
 

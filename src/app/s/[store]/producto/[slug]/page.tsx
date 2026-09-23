@@ -220,6 +220,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             options: product.options,
             variants: product.variants,
             images: product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt })),
+            priceTiers: product.priceTiers,
           }}
           promotions={promotions}
           initialVariantId={variantParam}

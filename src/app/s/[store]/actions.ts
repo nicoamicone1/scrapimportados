@@ -141,7 +141,15 @@ export async function applyCoupon(input: unknown): Promise<ActionResult<{ coupon
     const items = parsed.data.items
       .map((i) => ({ i, v: fresh.get(i.variantId) }))
       .filter((x) => x.v && x.v.active)
-      .map(({ i, v }) => ({ variantId: i.variantId, productId: v!.productId, categoryIds: v!.categoryIds, qty: i.qty, listPrice: v!.price }));
+      .map(({ i, v }) => ({
+        variantId: i.variantId,
+        productId: v!.productId,
+        categoryIds: v!.categoryIds,
+        qty: i.qty,
+        listPrice: v!.price,
+        // Precios por cantidad (0021): [] si la columna no existe (ver getFreshVariants).
+        priceTiers: v!.priceTiers,
+      }));
     if (!items.length) return fail("Tu carrito está vacío.");
     const base = computeCart({ items, promotions });
     const lines = base.lines.map((l) => ({ productId: l.productId, variantId: l.variantId, qty: l.qty, unitPrice: l.unitPrice }));
@@ -318,7 +326,9 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
     }
     const items = [...qtyByVariant].map(([variantId, qty]) => {
       const v = fresh.get(variantId)!;
-      return { variantId, productId: v.productId, categoryIds: v.categoryIds, qty, listPrice: v.price, compareAtPrice: v.compareAtPrice };
+      // priceTiers: precios por cantidad (0021). Sin la migración `getFreshVariants` los
+      // devuelve vacíos (la columna no existe → schema < 12): se manda el unitario de lista.
+      return { variantId, productId: v.productId, categoryIds: v.categoryIds, qty, listPrice: v.price, compareAtPrice: v.compareAtPrice, priceTiers: v.priceTiers };
     });
 
     // --- Cupón (validado en la DB)

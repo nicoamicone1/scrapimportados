@@ -65,10 +65,33 @@ export interface ShippingPricing {
   freeOver?: number | null;
 }
 
+/**
+ * Tramo de precio por cantidad (mayorista) del PRODUCTO: desde `minQty`
+ * unidades (sumando todas sus variantes) cada una sale `price`. Ver
+ * `tiers.ts`.
+ */
+export interface PriceTier {
+  minQty: number;
+  price: number;
+}
+
 /** Lo mínimo del producto que necesita el motor. */
 export interface PricingProduct {
   id: string;
   categoryIds: string[];
+  /** Precios por cantidad (migración 0021; ausente o [] = sin tramos). */
+  priceTiers?: readonly PriceTier[] | null;
+}
+
+/** Fila de la tabla "Precio por cantidad" de la ficha (1–5 · 6–11 · 12 o más). */
+export interface TierRow {
+  minQty: number;
+  /** null = "o más". */
+  maxQty: number | null;
+  /** Precio unitario del tramo antes de promos (en la primera fila, el de la variante). */
+  basePrice: number;
+  /** Precio unitario final del tramo (con las promos por unidad). */
+  price: number;
 }
 
 /** Lo mínimo de la variante que necesita el motor. */
@@ -114,6 +137,14 @@ export interface PriceResult {
   discountPercent: number;
   /** Promo por cantidad que se le puede aplicar en el carrito (no cambia `price`). */
   offer: QuantityOffer | null;
+  /**
+   * Tabla de precios por cantidad (desde la fila de 1 unidad), con las promos
+   * por unidad ya aplicadas. `[]` si el producto no tiene tramos que bajen
+   * el precio de esta variante.
+   */
+  tiers: TierRow[];
+  /** Tramo aplicado a la cantidad pedida (`applyPromotions(…, qty)`), o null. */
+  tier: PriceTier | null;
 }
 
 export interface CartItemInput {
@@ -124,6 +155,11 @@ export interface CartItemInput {
   /** Precio de lista de la variante. */
   listPrice: number;
   compareAtPrice?: number | null;
+  /**
+   * Precios por cantidad del producto (todas las líneas del mismo producto
+   * tienen los mismos; se toma el primero no vacío).
+   */
+  priceTiers?: readonly PriceTier[] | null;
 }
 
 /** Parte de una promo por cantidad que le tocó a una línea del carrito. */
@@ -154,11 +190,18 @@ export interface CartLine {
   qty: number;
   listPrice: number;
   /**
-   * Precio unitario real: lista o con promos POR UNIDAD (% y fijas). Las
-   * promos por cantidad no lo cambian: las unidades bonificadas se descuentan
-   * a nivel pedido (`offer.amount` → `CartTotals.bundleDiscount`).
+   * Precio unitario real: lista (o el del tramo por cantidad) con promos POR
+   * UNIDAD (% y fijas). Las promos por cantidad no lo cambian: las unidades
+   * bonificadas se descuentan a nivel pedido (`offer.amount` →
+   * `CartTotals.bundleDiscount`).
    */
   unitPrice: number;
+  /**
+   * Precio por cantidad que alcanzó el PRODUCTO (sumando sus variantes):
+   * "Precio mayorista desde 6 u.". `price` es el unitario del tramo antes de
+   * promos. null si no hay tramo o no baja el precio de esta variante.
+   */
+  tierApplied: PriceTier | null;
   promotion: AppliedPromotion | null;
   /** Promo por cantidad (3x2, 2.ª al 50 %) que bonificó unidades de esta línea. */
   offer: LineOffer | null;
@@ -168,8 +211,10 @@ export interface CartLine {
   lineTotal: number;
   /** lineTotal − offer.amount: lo que paga la línea con la promo por cantidad. */
   netTotal: number;
-  /** (listPrice - unitPrice) * qty: sólo promos por unidad. */
+  /** (listPrice - unitPrice) * qty: tramo por cantidad + promos por unidad. */
   promoDiscount: number;
+  /** (listPrice − precio del tramo) × qty: la parte de `promoDiscount` que es precio por cantidad. */
+  tierDiscount: number;
 }
 
 /** Línea del resumen: "Promo 3x2: −$ X". */
@@ -189,6 +234,12 @@ export interface CartTotals {
   lines: CartLine[];
   /** Σ listPrice × qty */
   subtotal: number;
+  /**
+   * Ahorro por precios por cantidad (mayorista): Σ tierDiscount de las
+   * líneas. Ya incluido en `promoTotal` (igual que en `create_order`, donde
+   * la línea guarda el unitario del tramo y `list_price` el de la variante).
+   */
+  tierDiscount: number;
   /**
    * Promos por unidad + por cantidad: Σ promoDiscount + bundleDiscount. Es lo
    * que `create_order` guarda en `orders.promo_total` (desde 0018 con el

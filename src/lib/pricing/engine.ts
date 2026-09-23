@@ -1,6 +1,7 @@
 import { roundMoney, roundPrice } from "@/lib/money";
 
 import { isQuantityType, quantityBadge, quantityHeadline, quantityLineNote } from "./labels";
+import { effectiveTier, normalizePriceTiers } from "./tiers";
 import type {
   AppliedOffer,
   AppliedPromotion,
@@ -12,12 +13,14 @@ import type {
   CouponStatus,
   LineOffer,
   PriceResult,
+  PriceTier,
   PricingProduct,
   PricingVariant,
   Promotion,
   QuantityOffer,
   QuantityPromotionType,
   Scope,
+  TierRow,
 } from "./types";
 
 /**
@@ -31,6 +34,16 @@ import type {
  *   desc. medio pago = round(mercadería × % / 100, 2)
  *   envío            = 0 si cupón free_shipping o mercadería ≥ free_over; si no, costo
  *   total            = mercadería − desc. medio pago + envío
+ *
+ * Precios por cantidad (mayorista, migración 0021; ver `tiers.ts`): van
+ * PRIMERO. Se suman las unidades de todas las variantes del producto en el
+ * carrito y el precio del tramo alcanzado reemplaza al de la variante (sin
+ * subirlo nunca) como base de TODO lo demás: promos por unidad, promos por
+ * cantidad (la línea que pierde su promo por unidad vuelve al precio del
+ * tramo, no al de lista), cupón y medio de pago. `listPrice` y `subtotal`
+ * siguen siendo los de la variante: el ahorro del tramo va en
+ * `promoDiscount`/`promoTotal` (desglosado en `tierDiscount`), igual que en
+ * `create_order`, que guarda `list_price` = variante y `unit_price` = tramo.
  *
  * Promociones POR UNIDAD (`percent`, `fixed`): se aplican AL LEER (nunca
  * reescriben `price`). Gana la de mayor `priority` (a igual prioridad, la que
@@ -205,31 +218,71 @@ function offerFor(unit: UnitPricing, product: PricingProduct, promotions: Promot
 }
 
 /**
+ * Tabla "Precio por cantidad" de una variante: fila de 1 unidad + una por
+ * tramo que baja su precio, cada una con las promos por unidad aplicadas.
+ */
+function tierRows(base: number, tiers: PriceTier[], product: PricingProduct, promotions: Promotion[], now: Date): TierRow[] {
+  const useful = tiers.filter((t) => t.price < base);
+  if (!useful.length) return [];
+  const rows: TierRow[] = [
+    { minQty: 1, maxQty: useful[0].minQty - 1, basePrice: base, price: priceWithUnitPromotions(base, product, promotions, now).price },
+  ];
+  useful.forEach((t, i) => {
+    const next = useful[i + 1];
+    const tierBase = roundMoney(t.price);
+    rows.push({
+      minQty: t.minQty,
+      maxQty: next ? next.minQty - 1 : null,
+      basePrice: tierBase,
+      price: priceWithUnitPromotions(tierBase, product, promotions, now).price,
+    });
+  });
+  return rows;
+}
+
+/**
  * Precio de una variante con promociones (para cards, ficha y carrito). Las
  * promos por cantidad no cambian el precio: vienen en `offer`.
+ *
+ * `qty` (default 1): unidades del producto. Si alcanza un precio por
+ * cantidad, `price` es el del tramo (con las promos por unidad encima),
+ * `tier` dice cuál y `compareAt` es el precio de la variante (el
+ * `compare_at_price` no se usa con tramos). `tiers` trae la tabla completa
+ * para la ficha y la card, sea cual sea `qty`.
  */
 export function applyPromotions(
   variant: PricingVariant,
   product: PricingProduct,
   promotions: Promotion[],
   now = new Date(),
+  qty = 1,
 ): PriceResult {
-  const unit = priceWithUnitPromotions(roundMoney(variant.price), product, promotions, now);
-  const { listPrice, price, applied } = unit;
+  const base = roundMoney(variant.price);
+  const tiers = normalizePriceTiers(product.priceTiers ?? []);
+  const tier = effectiveTier(tiers, Math.floor(qty), base);
+  const unit = priceWithUnitPromotions(tier ? roundMoney(tier.price) : base, product, promotions, now);
+  const { price, applied } = unit;
 
-  const compareAtFromVariant =
-    variant.compareAtPrice != null && variant.compareAtPrice > price ? roundMoney(variant.compareAtPrice) : null;
-  const compareAt = applied.length ? Math.max(listPrice, compareAtFromVariant ?? 0) : compareAtFromVariant;
+  let compareAt: number | null;
+  if (tier) {
+    compareAt = base > price ? base : null;
+  } else {
+    const compareAtFromVariant =
+      variant.compareAtPrice != null && variant.compareAtPrice > price ? roundMoney(variant.compareAtPrice) : null;
+    compareAt = applied.length ? Math.max(base, compareAtFromVariant ?? 0) : compareAtFromVariant;
+  }
   const discountPercent = compareAt && compareAt > 0 ? Math.round(((compareAt - price) / compareAt) * 100) : 0;
 
   return {
-    listPrice,
+    listPrice: base,
     price,
     compareAt,
     promotion: applied[0] ?? null,
     promotions: applied,
     discountPercent,
     offer: offerFor(unit, product, promotions, now),
+    tiers: tierRows(base, tiers, product, promotions, now),
+    tier,
   };
 }
 
@@ -241,6 +294,11 @@ interface WorkLine {
   item: CartItemInput;
   qty: number;
   product: PricingProduct;
+  /** Precio de lista de la variante. */
+  list: number;
+  /** Tramo por cantidad alcanzado por el producto (null: sin tramo). */
+  tier: PriceTier | null;
+  /** Promos por unidad sobre la base de la línea (tramo o lista): `unit.listPrice` es esa base. */
   unit: UnitPricing;
   /**
    * La promo por cantidad le ganó a la promo por unidad y bonificó unidades
@@ -416,26 +474,37 @@ function stripCategories(line: LineWithCategories): CartLine {
 export function computeCart(input: ComputeCartInput): CartTotals {
   const now = input.now ?? new Date();
   const promotions = input.promotions ?? [];
+  const items = input.items.filter((i) => i.qty > 0);
 
-  const work: WorkLine[] = input.items
-    .filter((i) => i.qty > 0)
-    .map((item) => {
-      const product = { id: item.productId, categoryIds: item.categoryIds };
-      return {
-        item,
-        qty: Math.floor(item.qty),
-        product,
-        unit: priceWithUnitPromotions(roundMoney(item.listPrice), product, promotions, now),
-        dropUnit: false,
-        claim: null,
-      };
-    });
+  // Precios por cantidad: unidades y tramos POR PRODUCTO (todas sus variantes suman).
+  const unitsByProduct = new Map<string, number>();
+  const tiersByProduct = new Map<string, PriceTier[]>();
+  for (const item of items) {
+    unitsByProduct.set(item.productId, (unitsByProduct.get(item.productId) ?? 0) + Math.floor(item.qty));
+    if (!tiersByProduct.get(item.productId)?.length) tiersByProduct.set(item.productId, normalizePriceTiers(item.priceTiers ?? []));
+  }
+
+  const work: WorkLine[] = items.map((item) => {
+    const product = { id: item.productId, categoryIds: item.categoryIds };
+    const list = roundMoney(item.listPrice);
+    const tier = effectiveTier(tiersByProduct.get(item.productId), unitsByProduct.get(item.productId) ?? 0, list);
+    return {
+      item,
+      qty: Math.floor(item.qty),
+      product,
+      list,
+      tier,
+      unit: priceWithUnitPromotions(tier ? roundMoney(tier.price) : list, product, promotions, now),
+      dropUnit: false,
+      claim: null,
+    };
+  });
 
   applyQuantityPromotions(work, promotions, now);
 
   const offers = new Map<string, AppliedOffer>();
   const lines: LineWithCategories[] = work.map((w) => {
-    const { item, qty, unit } = w;
+    const { item, qty, unit, list } = w;
     const unitPrice = w.dropUnit ? unit.listPrice : unit.price;
     const lineTotal = roundMoney(unitPrice * qty);
     let offer: LineOffer | null = null;
@@ -463,18 +532,21 @@ export function computeCart(input: ComputeCartInput): CartTotals {
       productId: item.productId,
       categoryIds: item.categoryIds,
       qty,
-      listPrice: unit.listPrice,
+      listPrice: list,
       unitPrice,
+      tierApplied: w.tier ? { minQty: w.tier.minQty, price: unit.listPrice } : null,
       promotion: w.dropUnit ? null : (unit.applied[0] ?? null),
       offer,
-      lineList: roundMoney(unit.listPrice * qty),
+      lineList: roundMoney(list * qty),
       lineTotal,
       netTotal: roundMoney(lineTotal - (offer?.amount ?? 0)),
-      promoDiscount: roundMoney(unit.listPrice * qty - lineTotal),
+      promoDiscount: roundMoney(list * qty - lineTotal),
+      tierDiscount: roundMoney((list - unit.listPrice) * qty),
     };
   });
 
   const subtotal = roundMoney(lines.reduce((acc, l) => acc + l.lineList, 0));
+  const tierDiscount = roundMoney(lines.reduce((acc, l) => acc + l.tierDiscount, 0));
   const bundleDiscount = roundMoney(lines.reduce((acc, l) => acc + (l.offer?.amount ?? 0), 0));
   const promoTotal = roundMoney(lines.reduce((acc, l) => acc + l.promoDiscount, 0) + bundleDiscount);
   const afterPromos = roundMoney(subtotal - promoTotal);
@@ -501,6 +573,7 @@ export function computeCart(input: ComputeCartInput): CartTotals {
   return {
     lines: lines.map(stripCategories),
     subtotal,
+    tierDiscount,
     promoTotal,
     bundleDiscount,
     offers: [...offers.values()].filter((o) => o.amount > 0),

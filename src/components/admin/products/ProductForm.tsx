@@ -31,13 +31,14 @@ import { formatDateTime, formatRelative } from "@/lib/dates";
 import type { CategoryNodeInput } from "@/lib/admin/category-tree";
 import type { AdminImage, AdminProductDetail } from "@/lib/admin/products";
 import { stripHtml } from "@/lib/html";
-import { PRODUCT_SOURCE_LABELS, PRODUCT_STATUS_LABELS, VAT_RATES, type ProductStatus } from "@/lib/schemas/product";
+import { PRODUCT_SOURCE_LABELS, PRODUCT_STATUS_LABELS, tierBasePrice, VAT_RATES, type ProductStatus } from "@/lib/schemas/product";
 
 import { saveProduct, setProductStatus } from "@/app/admin/(panel)/productos/actions";
 
 import { CategoryTreeSelect } from "./CategoryTreeSelect";
-import { emptyFormState, formStateFromProduct, snapshot, toPayload, type ProductFormState } from "./form-state";
+import { emptyFormState, formStateFromProduct, parseDecimal, snapshot, toPayload, type ProductFormState } from "./form-state";
 import { ImageManager } from "./ImageManager";
+import { PriceTiersEditor } from "./PriceTiersEditor";
 import { DeleteProductDialog, DuplicateProductDialog } from "./ProductDialogs";
 import { RichTextEditor } from "./RichTextEditor";
 import { RelatedEditor, SpecsEditor } from "./SpecsEditor";
@@ -238,6 +239,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
   const isActive = meta?.status === "active";
   const usedImages = new Set(state.variants.map((v) => v.image_id).filter((x): x is string => Boolean(x)));
   const title = state.name.trim() || (productId ? "Producto sin nombre" : "Nuevo producto");
+  const tierBase = tierBasePrice(state.variants.map((v) => ({ price: parseDecimal(v.price) ?? Number.NaN, is_active: v.is_active })));
 
   return (
     <div id="product-form">
@@ -324,7 +326,8 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
           <Button
             size="sm"
             onClick={() => {
-              setState(draft.state);
+              // Los borradores de antes de los precios por cantidad no traen `price_tiers`.
+              setState({ ...draft.state, price_tiers: draft.state.price_tiers ?? [] });
               setDraft(null);
               toast.success("Recuperamos tus cambios. Guardalos para no perderlos.");
             }}
@@ -414,6 +417,22 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                 onChange={(options, variants) => setState((s) => ({ ...s, options, variants }))}
                 stockNote={state.stock_note}
                 onStockNote={(v) => set("stock_note", v)}
+              />
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Precio por cantidad"
+              description="Precio mayorista por producto. La tienda lo aplica sola en el carrito; el cupón y el descuento por medio de pago van encima."
+            />
+            <CardBody>
+              <PriceTiersEditor
+                value={state.price_tiers ?? []}
+                onChange={(rows) => set("price_tiers", rows)}
+                basePrice={tierBase}
+                errors={errors}
+                sharedAcrossVariants={state.variants.length > 1}
               />
             </CardBody>
           </Card>

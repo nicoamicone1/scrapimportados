@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { MAX_SPECS } from "@/lib/admin/specs";
 import { MAX_OPTIONS, MAX_VARIANTS, optionKey } from "@/lib/admin/variant-matrix";
+import { formatMoney } from "@/lib/money";
+import { MAX_PRICE_TIERS, MAX_TIER_QTY } from "@/lib/pricing/tiers";
 
 /*
  * Schemas de productos (compartidos entre el form del admin y las actions).
@@ -96,6 +98,32 @@ export const variantSchema = z.object({
   is_active: z.boolean().default(true),
 });
 
+/** Tramo de precio por cantidad: "Desde `min_qty` unidades → $ `price` c/u". */
+export const priceTierSchema = z.object({
+  min_qty: z
+    .number({ invalid_type_error: "Ingresá un número entero.", required_error: "Ingresá desde cuántas unidades." })
+    .int("Tiene que ser un número entero.")
+    .min(2, "Tiene que ser 2 o más.")
+    .max(MAX_TIER_QTY, `Hasta ${MAX_TIER_QTY} unidades.`),
+  price: z
+    .number({ invalid_type_error: "Ingresá un número.", required_error: "Ingresá el precio." })
+    .finite("Ingresá un número.")
+    .gt(0, "Tiene que ser mayor a 0.")
+    .max(9_999_999_999, "Es demasiado grande."),
+});
+
+/**
+ * Precio base contra el que se validan los tramos: el más bajo de las
+ * variantes activas (o de todas, si ninguna está activa). Así el tramo baja
+ * el precio de TODAS las variantes y la tabla de la ficha es una sola.
+ */
+export function tierBasePrice(variants: { price: number; is_active?: boolean }[]): number | null {
+  const valid = variants.filter((v) => Number.isFinite(v.price) && v.price > 0);
+  const active = valid.filter((v) => v.is_active !== false);
+  const pool = active.length ? active : valid;
+  return pool.length ? Math.min(...pool.map((v) => v.price)) : null;
+}
+
 export const specSchema = z.object({
   label: trimmed(80).min(1, "Completá la etiqueta."),
   value: trimmed(500).min(1, "Completá el valor."),
@@ -126,6 +154,8 @@ export const productSchema = z
     category_ids: z.array(z.string().uuid()).max(50).default([]),
     specs: z.array(specSchema).max(MAX_SPECS, `Hasta ${MAX_SPECS} filas.`).default([]),
     related_ids: z.array(z.string().uuid()).max(MAX_RELATED, `Hasta ${MAX_RELATED} productos.`).default([]),
+    /** Precios por cantidad (mayorista). Ordenados por cantidad; se guardan sólo con la migración 0021. */
+    price_tiers: z.array(priceTierSchema).max(MAX_PRICE_TIERS, `Hasta ${MAX_PRICE_TIERS} tramos.`).default([]),
     seo: seoSchema.default({ title: "", description: "" }),
     /** Nota para los movimientos de stock que genere este guardado. */
     stock_note: optionalText(200),
@@ -173,6 +203,19 @@ export const productSchema = z
     if (data.options.length === 0 && data.variants.length !== 1) {
       ctx.addIssue({ code: "custom", path: ["variants"], message: "Un producto sin opciones tiene una sola variante." });
     }
+    // Precios por cantidad: cantidades crecientes, precios decrecientes y menores al precio base.
+    const base = tierBasePrice(data.variants);
+    data.price_tiers.forEach((t, i) => {
+      const prev = data.price_tiers[i - 1];
+      if (prev && t.min_qty <= prev.min_qty) {
+        ctx.addIssue({ code: "custom", path: ["price_tiers", i, "min_qty"], message: `Tiene que ser más que el tramo anterior (${prev.min_qty}).` });
+      }
+      if (base !== null && t.price >= base) {
+        ctx.addIssue({ code: "custom", path: ["price_tiers", i, "price"], message: `Tiene que ser menor al precio base (${formatMoney(base)}).` });
+      } else if (prev && t.price >= prev.price) {
+        ctx.addIssue({ code: "custom", path: ["price_tiers", i, "price"], message: `Tiene que ser menor al del tramo anterior (${formatMoney(prev.price)}).` });
+      }
+    });
     if (data.id && data.related_ids.includes(data.id)) {
       ctx.addIssue({ code: "custom", path: ["related_ids"], message: "No puede relacionarse consigo mismo." });
     }

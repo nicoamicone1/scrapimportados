@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import type { Coupon } from "@/lib/pricing";
+import type { Coupon, PriceTier } from "@/lib/pricing";
 
 /**
  * Carrito del storefront (client, localStorage). Ítems POR VARIANTE.
@@ -46,6 +46,12 @@ export interface CartItem {
   compareAtPrice?: number | null;
   /** Alícuota de IVA del producto (null = default de la tienda), para el precio sin impuestos. */
   vatPercent?: number | null;
+  /**
+   * Precios por cantidad del PRODUCTO (se suman las unidades de todas sus
+   * variantes). Se revalidan contra la DB al abrir el carrito/checkout y el
+   * server recalcula igual al confirmar.
+   */
+  priceTiers?: PriceTier[];
 }
 
 /** Parche de validación contra la DB (`qty: 0` = quitar). */
@@ -61,6 +67,7 @@ export interface CartItemPatch {
   slug?: string;
   categoryIds?: string[];
   vatPercent?: number | null;
+  priceTiers?: PriceTier[];
 }
 
 export type AddableItem = Omit<CartItem, "qty">;
@@ -317,6 +324,7 @@ export function CartProvider({
           slug: p.slug || item.slug,
           categoryIds: p.categoryIds ?? item.categoryIds,
           vatPercent: p.vatPercent !== undefined ? p.vatPercent : item.vatPercent,
+          priceTiers: p.priceTiers !== undefined ? p.priceTiers : item.priceTiers,
         };
       })
       .filter((i) => i.qty > 0);

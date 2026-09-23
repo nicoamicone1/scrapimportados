@@ -3,7 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { tagFor } from "@/lib/cache-tags";
-import { applyPromotions, type PriceResult, type Promotion } from "@/lib/pricing";
+import { applyPromotions, normalizePriceTiers, type PriceResult, type PriceTier, type Promotion } from "@/lib/pricing";
 import { slugify } from "@/lib/slug";
 import type { Json } from "@/lib/supabase/database.types";
 import { createClient, createPublicClient } from "@/lib/supabase/server";
@@ -88,6 +88,8 @@ export interface ProductCardData {
   vatPercent: number | null;
   /** Tiene opciones (Talle, Color…) → la compra rápida lleva a la ficha. */
   hasOptions: boolean;
+  /** Precios por cantidad (migración 0021; [] sin tramos o sin la migración). */
+  priceTiers: PriceTier[];
 }
 
 export interface ProductSpec {
@@ -224,6 +226,8 @@ interface CardRow {
   created_at: string;
   vat_percent: number | null;
   options: Json;
+  /** Ausente sin la migración 0021. */
+  price_tiers?: Json;
   product_images: { id: string; url: string; alt: string | null; position: number }[];
   product_variants: VariantRow[];
   product_categories: { category_id: string }[];
@@ -253,16 +257,50 @@ function toCard(row: CardRow): ProductCardData {
     createdAt: row.created_at,
     vatPercent: row.vat_percent === null ? null : Number(row.vat_percent),
     hasOptions: variants.length > 1 || parseOptions(row.options).length > 0,
+    priceTiers: normalizePriceTiers(row.price_tiers ?? []),
   };
 }
 
-const CARD_SELECT = `id, slug, name, brand, featured, tags, created_at, vat_percent, options,
+const cardSelect = (tiers: boolean) => `id, slug, name, brand, featured, tags, created_at, vat_percent, options,${tiers ? " price_tiers," : ""}
   product_images(id, url, alt, position),
   product_variants(${VARIANT_COLUMNS}),
   product_categories(category_id)`;
 
-const DETAIL_SELECT = `${CARD_SELECT}, status, updated_at, description_html, short_description, seo, specs, related_ids,
+const detailSelect = (tiers: boolean) => `${cardSelect(tiers)}, status, updated_at, description_html, short_description, seo, specs, related_ids,
   categories(id, name, slug, parent_id)`;
+
+// ---------------------------------------------------------------------------
+// Precios por cantidad (0021) sin romper si la migración no está aplicada
+// ---------------------------------------------------------------------------
+
+/**
+ * ¿Existe `products.price_tiers`? Las queries públicas listan columnas (no
+ * `*`), así que pedir una que no existe rompe la lectura: se prueba con la
+ * columna y, si la base contesta "no existe", se repite sin ella (el
+ * producto queda sin tramos: el motor cobra el precio de siempre). Un "sí"
+ * queda en memoria (la columna no se borra); un "no" se vuelve a probar al
+ * minuto.
+ */
+let tiersColumn: { ok: boolean; at: number } | null = null;
+
+function isMissingTiersColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return (error.code === "42703" || error.code === "PGRST204" || error.code === "PGRST200") && /price_tiers/.test(error.message ?? "");
+}
+
+async function withTiersColumn<T extends { error: { code?: string; message?: string } | null }>(
+  run: (tiers: boolean) => PromiseLike<T>,
+): Promise<T> {
+  const tryTiers = !tiersColumn || tiersColumn.ok || Date.now() - tiersColumn.at > 60_000;
+  if (!tryTiers) return run(false);
+  const res = await run(true);
+  if (isMissingTiersColumn(res.error)) {
+    tiersColumn = { ok: false, at: Date.now() };
+    return run(false);
+  }
+  if (!res.error) tiersColumn = { ok: true, at: Date.now() };
+  return res;
+}
 
 // ---------------------------------------------------------------------------
 // Índice del catálogo
@@ -329,9 +367,11 @@ export function getProductCards(storeId: string, ids: string[]): Promise<Product
   return unstable_cache(
     async (): Promise<ProductCardData[]> => {
       const supabase = createPublicClient();
-      const { data, error } = await supabase.from("products").select(CARD_SELECT).eq("store_id", storeId).in("id", ids).eq("status", "active");
+      const { data, error } = await withTiersColumn((tiers) =>
+        supabase.from("products").select(cardSelect(tiers)).eq("store_id", storeId).in("id", ids).eq("status", "active"),
+      );
       if (error) throw new Error(`No se pudieron leer los productos: ${error.message}`);
-      const byId = new Map((data ?? []).map((row) => [row.id, toCard(row as CardRow)]));
+      const byId = new Map(((data ?? []) as unknown as CardRow[]).map((row) => [row.id, toCard(row)]));
       return ids.map((id) => byId.get(id)).filter((p): p is ProductCardData => !!p && p.variants.length > 0);
     },
     ["store-product-cards-v2", storeId, ids.join(",")],
@@ -701,13 +741,9 @@ export function getProduct(storeId: string, slug: string): Promise<ProductDetail
   return unstable_cache(
     async (): Promise<ProductDetail | null> => {
       const supabase = createPublicClient();
-      const { data, error } = await supabase
-        .from("products")
-        .select(DETAIL_SELECT)
-        .eq("store_id", storeId)
-        .eq("slug", slug)
-        .eq("status", "active")
-        .maybeSingle();
+      const { data, error } = await withTiersColumn((tiers) =>
+        supabase.from("products").select(detailSelect(tiers)).eq("store_id", storeId).eq("slug", slug).eq("status", "active").maybeSingle(),
+      );
       if (error) throw new Error(`No se pudo leer el producto ${slug}: ${error.message}`);
       return data ? toDetail(data as unknown as DetailRow) : null;
     },
@@ -722,12 +758,9 @@ export function getProduct(storeId: string, slug: string): Promise<ProductDetail
  */
 export async function getProductPreview(storeId: string, slug: string): Promise<ProductDetail | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select(DETAIL_SELECT)
-    .eq("store_id", storeId)
-    .eq("slug", slug)
-    .maybeSingle();
+  const { data, error } = await withTiersColumn((tiers) =>
+    supabase.from("products").select(detailSelect(tiers)).eq("store_id", storeId).eq("slug", slug).maybeSingle(),
+  );
   if (error) {
     console.error(`[preview] ${slug}: ${error.message}`);
     return null;
@@ -788,6 +821,8 @@ interface FreshRow {
     vat_percent: number | null;
     product_images: { id: string; url: string; position: number }[];
     product_categories: { category_id: string }[];
+    /** Ausente sin la migración 0021. */
+    price_tiers?: Json;
   } | null;
 }
 
@@ -797,13 +832,15 @@ export async function getFreshVariants(storeId: string, variantIds: string[]): P
   const out = new Map<string, FreshVariant>();
   if (!ids.length) return out;
   const supabase = createPublicClient();
-  const { data, error } = await supabase
-    .from("product_variants")
-    .select(
-      "id, title, sku, price, compare_at_price, stock, track_inventory, allow_backorder, is_active, image_id, products(id, slug, name, status, vat_percent, product_images(id, url, position), product_categories(category_id))",
-    )
-    .eq("store_id", storeId)
-    .in("id", ids);
+  const { data, error } = await withTiersColumn((tiers) =>
+    supabase
+      .from("product_variants")
+      .select(
+        `id, title, sku, price, compare_at_price, stock, track_inventory, allow_backorder, is_active, image_id, products(id, slug, name, status, vat_percent,${tiers ? " price_tiers," : ""} product_images(id, url, position), product_categories(category_id))`,
+      )
+      .eq("store_id", storeId)
+      .in("id", ids),
+  );
   if (error) throw new Error(`No se pudieron leer las variantes: ${error.message}`);
   for (const row of (data ?? []) as unknown as FreshRow[]) {
     const p = row.products;
@@ -821,6 +858,7 @@ export async function getFreshVariants(storeId: string, variantIds: string[]): P
       compareAtPrice: row.compare_at_price === null ? null : Number(row.compare_at_price),
       categoryIds: p.product_categories.map((c) => c.category_id),
       vatPercent: p.vat_percent === null ? null : Number(p.vat_percent),
+      priceTiers: normalizePriceTiers(p.price_tiers ?? []),
       stock: row.stock,
       trackInventory: row.track_inventory,
       allowBackorder: row.allow_backorder,
@@ -846,7 +884,7 @@ export function displayPrice(product: ProductCardData, promotions: Promotion[], 
   const cheapest = candidates.reduce((min, v) => (v.price < min.price ? v : min), candidates[0]);
   const result = applyPromotions(
     { id: cheapest.id, price: cheapest.price, compareAtPrice: cheapest.compareAtPrice },
-    { id: product.id, categoryIds: product.categoryIds },
+    { id: product.id, categoryIds: product.categoryIds, priceTiers: product.priceTiers },
     promotions,
     now,
   );

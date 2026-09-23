@@ -9,13 +9,14 @@ import { catalogDb } from "@/lib/admin/catalog-db";
 import { afterStockIncrease } from "@/lib/admin/inventory-alerts";
 import { MEDIA_BUCKET, removeMediaIfUnused, revalidateProducts, storagePathFromUrl, upsertRedirect } from "@/lib/admin/catalog-server";
 import { getAdminProduct, searchTerm, type AdminImage, type AdminProductDetail, type ProductSummary } from "@/lib/admin/products";
+import { getSchemaStatus } from "@/lib/admin/settings";
 import { cleanSpecs, type SpecRow } from "@/lib/admin/specs";
 import { optionKey, type OptionValues } from "@/lib/admin/variant-matrix";
 import { logAudit, shallowDiff } from "@/lib/audit";
 import { requireAdmin, type AdminContext } from "@/lib/auth";
 import { sanitizeHtml } from "@/lib/html";
 import { isStoreMediaPath, mediaPath } from "@/lib/media";
-import { limitOf } from "@/lib/plans";
+import { hasFeature, limitOf, upgradeMessage } from "@/lib/plans";
 import { assertProductImages, assertUsage } from "@/lib/plans/server";
 import {
   addImagesSchema,
@@ -26,6 +27,8 @@ import {
   type BulkProductAction,
   type ProductData,
 } from "@/lib/schemas/product";
+import { normalizePriceTiers, PRICE_TIERS_SCHEMA_VERSION, supportsPriceTiers } from "@/lib/pricing/tiers";
+import { roundMoney } from "@/lib/money";
 import { slugify, uniqueSlug } from "@/lib/slug";
 import type { Json, TablesInsert, TablesUpdate } from "@/lib/supabase/database.types";
 
@@ -64,6 +67,13 @@ function toJson<T>(value: T): Json {
   return JSON.parse(JSON.stringify(value)) as Json;
 }
 
+/** Mensaje cuando se quieren guardar tramos sin la migración 0021. */
+const PRICE_TIERS_MIGRATION_MESSAGE =
+  "Para guardar precios por cantidad falta la actualización 0021 de la base de datos. Pedile a quien administra Ecommy que la aplique, o sacá los tramos para guardar el resto.";
+
+const sameTiers = (a: { min_qty: number; price: number }[], b: { min_qty: number; price: number }[]) =>
+  a.length === b.length && a.every((t, i) => t.min_qty === b[i].min_qty && t.price === b[i].price);
+
 // ---------------------------------------------------------------------------
 // Guardar (crear / editar)
 // ---------------------------------------------------------------------------
@@ -77,6 +87,25 @@ export async function saveProduct(input: unknown): Promise<ActionResult<{ produc
     if (!parsed.success) return zodFail(parsed.error);
     const data: ProductData = parsed.data;
     const isNew = !data.id;
+
+    // Precios por cantidad (0021). Sin la migración la columna no existe: con
+    // tramos se avisa; sin tramos se guarda el resto como siempre.
+    const tiers = data.price_tiers.map((t) => ({ min_qty: t.min_qty, price: roundMoney(t.price) }));
+    const tiersSupported = supportsPriceTiers((await getSchemaStatus()).current);
+    if (tiers.length && !tiersSupported) {
+      return fail(PRICE_TIERS_MIGRATION_MESSAGE, { price_tiers: [`Falta la actualización 0021 (versión ${PRICE_TIERS_SCHEMA_VERSION} de la base).`] });
+    }
+    // Plan: agregar o cambiar tramos necesita `pricing.tiers`; conservar los que ya tenía o quitarlos, no.
+    if (tiers.length && !hasFeature(ctx.plan, "pricing.tiers")) {
+      let stored: { min_qty: number; price: number }[] = [];
+      if (data.id) {
+        const { data: cur } = await supabase.from("products").select("price_tiers").eq("store_id", storeId).eq("id", data.id).maybeSingle();
+        stored = normalizePriceTiers(cur?.price_tiers ?? []).map((t) => ({ min_qty: t.minQty, price: t.price }));
+      }
+      if (!sameTiers(stored, tiers)) {
+        return fail(upgradeMessage("pricing.tiers"), { price_tiers: [upgradeMessage("pricing.tiers")] });
+      }
+    }
 
     // Producto actual (si existe).
     let before: { id: string; slug: string; status: string; published_at: string | null; name: string } | null = null;
@@ -141,6 +170,7 @@ export async function saveProduct(input: unknown): Promise<ActionResult<{ produc
         [...new Set(data.related_ids)].filter((id) => id !== data.id),
       ),
       published_at: data.status === "active" ? (before?.published_at ?? now) : (before?.published_at ?? null),
+      ...(tiersSupported ? { price_tiers: toJson(tiers) } : {}),
     } satisfies TablesUpdate<"products">;
 
     let productId: string;
@@ -493,6 +523,8 @@ export async function duplicateProduct(id: string, options: { images: boolean } 
         specs: src.specs,
         related_ids: src.related_ids,
         vat_percent: src.vat_percent,
+        // Precios por cantidad (sólo si la columna existe: migración 0021).
+        ...(Array.isArray(src.price_tiers) && src.price_tiers.length ? { price_tiers: src.price_tiers } : {}),
         metadata: { duplicated_from: src.id },
       })
       .select("id")

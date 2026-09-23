@@ -1,6 +1,20 @@
 export * from "./types";
 export { applyPromotions, computeCart, isCouponActive, isPromotionEligible } from "./engine";
 export {
+  effectiveTier,
+  MAX_PRICE_TIERS,
+  MAX_PRICE_TIERS_DB,
+  MAX_TIER_QTY,
+  normalizePriceTiers,
+  PRICE_TIERS_SCHEMA_VERSION,
+  priceTiersToRows,
+  supportsPriceTiers,
+  tierFor,
+  tierPriceFor,
+  tierRangeLabel,
+  tierSavingsPercent,
+} from "./tiers";
+export {
   isQuantityType,
   ordinalUnit,
   PROMOTION_TYPE_LABELS,

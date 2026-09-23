@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireAdmin } from "@/lib/auth";
+import { normalizePriceTiers, type PriceTier } from "@/lib/pricing";
 import type { Json } from "@/lib/supabase/database.types";
 
 import { catalogDb, type AdminProductRow } from "./catalog-db";
@@ -236,6 +237,8 @@ export interface AdminProductDetail {
   specs: SpecRow[];
   related: ProductSummary[];
   category_ids: string[];
+  /** Precios por cantidad (migración 0021; [] sin tramos o sin la migración). */
+  price_tiers: PriceTier[];
   variants: AdminVariant[];
   images: AdminImage[];
   created_at: string;
@@ -357,6 +360,7 @@ export async function getAdminProduct(id: string): Promise<AdminProductDetail | 
     specs: parseSpecsJson(p.specs),
     related,
     category_ids: (p.product_categories ?? []).sort((a, b) => a.position - b.position).map((c) => c.category_id),
+    price_tiers: normalizePriceTiers(p.price_tiers ?? []),
     variants,
     images,
     created_at: p.created_at,

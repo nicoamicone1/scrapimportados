@@ -1,3 +1,5 @@
+import type { PriceTier } from "@/lib/pricing";
+
 /**
  * Validación del carrito (localStorage) contra datos frescos de la DB.
  * Puro: lo usan la server action del checkout y el carrito (client).
@@ -24,6 +26,8 @@ export interface FreshVariant {
   compareAtPrice: number | null;
   categoryIds: string[];
   vatPercent: number | null;
+  /** Precios por cantidad del producto (0021; [] sin tramos o sin la migración). */
+  priceTiers?: PriceTier[];
   stock: number;
   trackInventory: boolean;
   allowBackorder: boolean;
@@ -50,6 +54,8 @@ export interface CartPatch {
   slug: string;
   categoryIds: string[];
   vatPercent?: number | null;
+  /** Precios por cantidad actuales del producto (ausente en los que se quitan). */
+  priceTiers?: PriceTier[];
 }
 
 /** Tope de unidades por stock (`null` = sin tope). */
@@ -121,6 +127,7 @@ export function validateCart(items: CartLineInput[], fresh: Map<string, FreshVar
       slug: v.slug,
       categoryIds: v.categoryIds,
       vatPercent: v.vatPercent,
+      priceTiers: v.priceTiers ?? [],
     });
   }
   return { patches, issues };

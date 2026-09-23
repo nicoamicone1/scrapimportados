@@ -6,7 +6,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
-import { applyPromotions, priceWithDiscount, type Promotion } from "@/lib/pricing";
+import { applyPromotions, priceWithDiscount, tierRangeLabel, type PriceTier, type Promotion, type TierRow } from "@/lib/pricing";
 import { track } from "@/lib/store/analytics";
 import type { ProductOption, StoreVariant } from "@/lib/store/products";
 
@@ -26,6 +26,8 @@ export interface ProductViewProps {
     options: ProductOption[];
     variants: StoreVariant[];
     images: GalleryImage[];
+    /** Precios por cantidad (se suman todas las variantes del producto). */
+    priceTiers?: PriceTier[];
   };
   promotions: Promotion[];
   initialVariantId: string | null;
@@ -102,14 +104,21 @@ export function ProductView({
 
   const missing = options.find((o) => !selected[o.name]);
 
-  const priced = (v: StoreVariant) =>
-    applyPromotions({ id: v.id, price: v.price, compareAtPrice: v.compareAtPrice }, { id: product.id, categoryIds: product.categoryIds }, promotions);
+  const priced = (v: StoreVariant, units = 1) =>
+    applyPromotions(
+      { id: v.id, price: v.price, compareAtPrice: v.compareAtPrice },
+      { id: product.id, categoryIds: product.categoryIds, priceTiers: product.priceTiers },
+      promotions,
+      undefined,
+      units,
+    );
 
-  // Precio mostrado: el de la variante elegida o el mínimo disponible ("Desde").
+  // Precio mostrado: el de la variante elegida (con el precio por cantidad de
+  // las unidades elegidas) o el mínimo disponible ("Desde").
   const shown = (() => {
-    if (variant) return { ...priced(variant), from: false };
+    if (variant) return { ...priced(variant, qty), from: false };
     const pool = variants.filter((v) => v.available);
-    const list = (pool.length ? pool : variants).map(priced);
+    const list = (pool.length ? pool : variants).map((v) => priced(v));
     const min = list.reduce((a, b) => (b.price < a.price ? b : a), list[0]);
     return { ...min, from: list.some((p) => p.price !== min.price) };
   })();
@@ -160,6 +169,7 @@ export function ProductView({
         compareAtPrice: variant.compareAtPrice,
         categoryIds: product.categoryIds,
         vatPercent: product.vatPercent,
+        priceTiers: product.priceTiers ?? [],
         maxQty,
       },
       qty,
@@ -234,6 +244,9 @@ export function ProductView({
               ))}
             </ul>
           ) : null}
+          {shown.tiers.length && !soldOut ? (
+            <TierTable rows={shown.tiers} qty={variant ? qty : 0} sharedAcrossVariants={variants.length > 1} />
+          ) : null}
 
           <div className="mt-6 space-y-5 border-t border-border pt-6">
             {options.map((option) => (
@@ -296,6 +309,45 @@ export function ProductView({
           {children}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Precio por cantidad" bajo el precio (DESIGN.md §2.4): tabla chica con los
+ * tokens del tema, sin card ni sombra. La fila de la cantidad elegida va en
+ * `--fg` y semibold; el resto en `--fg-muted`.
+ */
+function TierTable({ rows, qty, sharedAcrossVariants }: { rows: TierRow[]; qty: number; sharedAcrossVariants: boolean }) {
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-medium">Precio por cantidad</p>
+      <table className="tnum mt-1.5 w-full max-w-72 text-sm">
+        <caption className="sr-only">Precio por unidad según cuántas unidades llevás</caption>
+        <thead className="sr-only">
+          <tr>
+            <th scope="col">Unidades</th>
+            <th scope="col">Precio por unidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const active = qty >= r.minQty && (r.maxQty === null || qty <= r.maxQty);
+            return (
+              <tr key={r.minQty} className="border-t border-border first:border-t-0">
+                <th scope="row" className={cn("py-1.5 pr-4 text-left font-normal", active ? "text-fg" : "text-fg-muted")}>
+                  {tierRangeLabel(r.minQty, r.maxQty)} u.
+                  {active ? <span className="sr-only"> (tu cantidad)</span> : null}
+                </th>
+                <td className={cn("py-1.5 text-right", active ? "font-semibold text-fg" : "text-fg-muted")}>
+                  {formatMoney(r.price)} <span className="font-normal text-fg-muted">c/u</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {sharedAcrossVariants ? <p className="mt-1 text-xs text-fg-muted">Suman todas las opciones de este producto.</p> : null}
     </div>
   );
 }

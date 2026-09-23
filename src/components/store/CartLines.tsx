@@ -39,6 +39,8 @@ export function CartLines({
         const unit = line?.unitPrice ?? item.unitPrice;
         const onSale = line ? unit < line.listPrice : false;
         const bundled = offer?.amount ?? 0;
+        // Precio por cantidad: el unitario ya es el del tramo (sumando todas las variantes del producto).
+        const tier = line?.tierApplied ?? null;
         return (
           <li key={item.variantId} className="flex gap-3 py-4 sm:gap-4">
             <StoreLink
@@ -62,6 +64,7 @@ export function CartLines({
                     {onSale && line ? <s className="ml-1.5 text-fg-muted">{formatMoney(line.listPrice)}</s> : null}
                     <span className="text-fg-muted"> c/u</span>
                   </p>
+                  {tier ? <p className="mt-0.5 text-xs text-fg-muted">Precio mayorista desde {tier.minQty}&nbsp;u.</p> : null}
                   {offer ? (
                     <p className={cn("mt-0.5 text-xs", offer.units > 0 ? "text-accent" : "text-fg-muted")}>
                       {offer.units > 0 ? `${offer.label}: ${offer.note}` : offer.note}
@@ -95,15 +98,23 @@ export function CartLines({
 }
 
 /**
- * Filas de descuento del resumen (drawer, carrito, checkout): "Promociones"
- * (por unidad) y una por cada promo por cantidad ("Promo 3x2 −$ X"), que van
- * a nivel pedido (`bundleDiscount`, ya incluido en `promoTotal`).
+ * Filas de descuento del resumen (drawer, carrito, checkout): "Precio por
+ * cantidad" (tramos mayoristas), "Promociones" (por unidad) y una por cada
+ * promo por cantidad ("Promo 3x2 −$ X"), que van a nivel pedido
+ * (`bundleDiscount`). Las tres ya están incluidas en `promoTotal`.
  */
-export function PromoSummaryRows({ totals }: { totals: Pick<CartTotals, "promoTotal" | "offers"> }) {
+export function PromoSummaryRows({ totals }: { totals: Pick<CartTotals, "promoTotal" | "offers"> & Partial<Pick<CartTotals, "tierDiscount">> }) {
   const offersTotal = totals.offers.reduce((acc, o) => acc + o.amount, 0);
-  const unitPromos = Math.max(Math.round((totals.promoTotal - offersTotal) * 100) / 100, 0);
+  const tierDiscount = Math.max(totals.tierDiscount ?? 0, 0);
+  const unitPromos = Math.max(Math.round((totals.promoTotal - offersTotal - tierDiscount) * 100) / 100, 0);
   return (
     <>
+      {tierDiscount > 0 ? (
+        <div className="flex justify-between">
+          <dt className="text-fg-muted">Precio por cantidad</dt>
+          <dd className="text-accent">−{formatMoney(tierDiscount)}</dd>
+        </div>
+      ) : null}
       {unitPromos > 0 ? (
         <div className="flex justify-between">
           <dt className="text-fg-muted">Promociones</dt>

@@ -36,6 +36,13 @@ export interface FormVariant {
   is_active: boolean;
 }
 
+/** Tramo de precio por cantidad (texto de los inputs; se parsea al guardar). */
+export interface FormTier {
+  key: string;
+  min_qty: string;
+  price: string;
+}
+
 export interface FormSpec {
   key: string;
   label: string;
@@ -59,6 +66,8 @@ export interface ProductFormState {
   related: ProductSummary[];
   seo: { title: string; description: string };
   stock_note: string;
+  /** Precios por cantidad. Opcional: los borradores locales de antes no lo tienen. */
+  price_tiers?: FormTier[];
 }
 
 let counter = 0;
@@ -106,6 +115,7 @@ export function emptyFormState(): ProductFormState {
     related: [],
     seo: { title: "", description: "" },
     stock_note: "",
+    price_tiers: [],
   };
 }
 
@@ -145,6 +155,7 @@ export function formStateFromProduct(p: AdminProductDetail): ProductFormState {
     related: p.related,
     seo: p.seo,
     stock_note: "",
+    price_tiers: (p.price_tiers ?? []).map((t) => ({ key: newKey("t"), min_qty: String(t.minQty), price: num(t.price) })),
   };
 }
 
@@ -203,6 +214,9 @@ export function toPayload(state: ProductFormState, id: string | null): ProductIn
     category_ids: state.category_ids,
     specs: state.specs.map((s) => ({ label: s.label, value: s.value })).filter((s) => s.label.trim() || s.value.trim()),
     related_ids: state.related.map((r) => r.id),
+    price_tiers: (state.price_tiers ?? [])
+      .filter((t) => t.min_qty.trim() || t.price.trim())
+      .map((t) => ({ min_qty: parseInteger(t.min_qty) ?? Number.NaN, price: parseDecimal(t.price) ?? Number.NaN })),
     seo: state.seo,
     stock_note: state.stock_note,
   };
@@ -217,5 +231,6 @@ export function snapshot(state: ProductFormState): string {
     specs: state.specs.map((s) => ({ label: s.label, value: s.value })),
     related: state.related.map((r) => r.id),
     stock_note: "",
+    price_tiers: (state.price_tiers ?? []).map((t) => ({ min_qty: t.min_qty, price: t.price })),
   });
 }
