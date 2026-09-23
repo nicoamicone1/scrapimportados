@@ -64,8 +64,15 @@ export function RegisterForm({ next, initialEmail }: { next?: string; initialEma
           <label className="flex items-start gap-2 text-[13px]">
             <Checkbox name="terms" required className="mt-0.5" />
             <span>
-              Acepto los <Link href="/planes#comparar" className="text-adm-accent hover:underline">términos del servicio</Link> y la política de
-              privacidad.
+              Acepto los{" "}
+              <Link href="/terminos" target="_blank" className="text-adm-accent hover:underline">
+                términos del servicio
+              </Link>{" "}
+              y la{" "}
+              <Link href="/privacidad" target="_blank" className="text-adm-accent hover:underline">
+                política de privacidad
+              </Link>
+              .
             </span>
           </label>
           {fieldError(state, "terms") ? <p className="mt-1 text-xs text-adm-danger">{fieldError(state, "terms")?.[0]}</p> : null}

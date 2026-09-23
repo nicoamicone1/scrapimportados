@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { Toaster } from "@/components/ui/Toaster";
+import { APP_NAME } from "@/lib/version";
 
 import "../admin/admin.css";
 
@@ -10,6 +11,11 @@ export const metadata: Metadata = {
   title: { default: "Ecommy · Tu tienda online con tu marca", template: "%s · Ecommy" },
   description:
     "Creá tu tienda online en minutos: catálogo con variantes, precios masivos, envíos por zona y cobro por transferencia o WhatsApp. 14 días de Pro gratis.",
+  // La imagen sale de `opengraph-image.tsx` (en esta carpeta, no en la raíz:
+  // un `openGraph` definido acá reemplaza entero al de la raíz, imagen
+  // incluida). Twitter/X toma la misma imagen.
+  openGraph: { siteName: APP_NAME, locale: "es_AR", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 /**
