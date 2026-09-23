@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Un run por rama y evento: un push nuevo cancela el anterior de la misma rama.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Tipos, lint y tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tipos de rutas (next typegen)
+        run: npx next typegen
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest
+        run: npm test
+
+  build-e2e:
+    name: Build y smoke E2E
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Sin secretos: env ficticia. Las páginas públicas se renderizan igual
+    # (la landing sin la sección de planes) y el storefront no se prueba.
+    env:
+      NEXT_DIST_DIR: .next
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:9
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy
+      NEXT_PUBLIC_SITE_URL: http://localhost:3111
+      NEXT_PUBLIC_ROOT_DOMAIN: localhost:3111
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache de Next.js
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Build
+        run: npx next build
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke E2E (next start -p 3111)
+        run: npm run e2e:ci
+
+      - name: Subir reporte de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

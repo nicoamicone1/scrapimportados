@@ -114,12 +114,43 @@ SEED_EMAIL=… SEED_PASSWORD=… npm run seed -- --skip-images  # usa las URLs d
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest (precios, tema, bloques, tenant, planes…) |
+| `npm run e2e` | Smoke E2E del sitio público con Playwright (ver "CI y E2E") |
 | `npm run seed` | Importa `data/products.json` a una tienda (`SEED_STORE`) |
 | `npm run create-admin` | Alta de un usuario con `signUp` (la tienda se crea en `/app/nueva`) |
 | `npx tsx scripts/move-media-to-store.mts <slug>` | Mueve objetos sueltos del bucket a `<store_id>/…` |
 | `npm run scrape` | Scraper del catálogo DAZ → `data/products.json` + `public/img` |
 
 Antes de entregar: `npx tsc --noEmit`, `npm run lint` y `npm test` sin errores.
+
+## CI y E2E
+
+`.github/workflows/ci.yml` corre en cada push y en cada pull request, sin secretos:
+
+- **check**: `npm ci`, `npx next typegen`, `npx tsc --noEmit`, `npm run lint`, `npm test`.
+- **build-e2e** (si pasa `check`): `next build` con env ficticia (Supabase en
+  `http://127.0.0.1:9`, sitio en `localhost:3111`), instala Chromium y corre
+  `npm run e2e:ci`. Si falla, el reporte HTML de Playwright queda como artifact
+  `playwright-report` del run.
+
+Los smoke tests (`e2e/public-site.spec.ts`) recorren landing, planes, contacto, legales,
+ayuda, guías y cuatro artículos en desktop (1366×900) y mobile (390×844): status 200, un
+solo `h1` y un `main`, title, description y `og:image`, sin scroll horizontal, sin errores
+de consola (salvo la allowlist del archivo), `img` con `alt` y botones con nombre. Además:
+links internos del header y el pie, `robots.txt`, `sitemap.xml` (cada `<loc>` responde 200),
+`/icon`, `/apple-icon` y el buscador de `/ayuda`. Sin base, la landing no muestra los planes
+y el storefront (`/s/<slug>`) da 404, así que no se prueba.
+
+Local, contra un build (Playwright levanta `next start -p 3111`, o reutiliza el server
+que ya esté en ese puerto; `E2E_PORT` lo cambia):
+
+```bash
+export NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9 NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy \
+  NEXT_PUBLIC_SITE_URL=http://localhost:3111 NEXT_PUBLIC_ROOT_DOMAIN=localhost:3111 \
+  NEXT_DIST_DIR=.next-e2e
+npx next build
+npx playwright install chromium   # o PW_CHROMIUM=/ruta/a/chromium si ya hay uno instalado
+npm run e2e                       # reporte: npx playwright show-report
+```
 
 ## Deploy
 

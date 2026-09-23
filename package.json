@@ -11,6 +11,8 @@
     "scrape:data": "node scripts/scrape.mjs",
     "scrape:images": "node scripts/download-images.mjs",
     "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:ci": "playwright test --forbid-only",
     "seed": "tsx scripts/seed-from-json.mts",
     "create-admin": "tsx scripts/create-admin.mts"
   },
@@ -48,6 +50,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.4",
     "@types/papaparse": "^5.5.2",
