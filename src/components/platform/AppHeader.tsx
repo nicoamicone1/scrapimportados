@@ -6,8 +6,16 @@ import { APP_NAME } from "@/lib/version";
 
 import { BrandMark } from "./PlatformChrome";
 
-/** Header de las pantallas con sesión fuera del panel (/app, /platform). */
-export function AppHeader({ email, isPlatformAdmin, section }: { email: string; isPlatformAdmin: boolean; section: "app" | "platform" }) {
+/** Header de las pantallas con sesión fuera del panel (/app, /platform). "Plataforma" y "Redes" sólo para superadmins. */
+export function AppHeader({
+  email,
+  isPlatformAdmin,
+  section,
+}: {
+  email: string;
+  isPlatformAdmin: boolean;
+  section: "app" | "platform" | "redes";
+}) {
   const link = (href: string, label: string, active: boolean) => (
     <Link
       href={href}
@@ -27,6 +35,7 @@ export function AppHeader({ email, isPlatformAdmin, section }: { email: string; 
         <nav aria-label="Cuenta" className="flex items-center gap-5 text-[13px]">
           {link("/app", "Mis tiendas", section === "app")}
           {isPlatformAdmin ? link("/platform", "Plataforma", section === "platform") : null}
+          {isPlatformAdmin ? link("/platform/redes", "Redes", section === "redes") : null}
           {link("/planes", "Planes", false)}
         </nav>
         <div className="ml-auto flex items-center gap-3">

@@ -1,5 +1,7 @@
 # Ecommy: kit de redes y mensajes
 
+**Las piezas visuales se generan en `/platform/redes`** (sólo superadmin): cada post, reel y secuencia de historias de §2 y §3 tiene sus placas en PNG listas para descargar (1080 × 1080 para el feed y los carruseles; 1080 × 1920 para historias y portadas de reel) y el texto para copiar. El copy vive como datos en `src/content/redes/` y las plantillas en `src/app/_brand/social-templates.tsx`: si cambiás un texto acá, cambialo también allá (y al revés). Las placas verde-tinta con un rectángulo crema son para pegar una captura real; las que dependen de una grabación o de tu audiencia ("[tiempo real]", "[resultado]") salen con una banda "Completar antes de publicar" hasta que escribís el dato en la galería.
+
 > Copy listo para pegar. Antes de publicar, revisá la hoja de datos de [`MARKETING.md`](MARKETING.md) §0: si un plan o una función cambió, cambiá el texto.
 > Códigos usados en [`LAUNCH-PLAN.md`](LAUNCH-PLAN.md): `P01`…`P15` posts y reels, `H01`…`H10` historias, `W1`…`W5` WhatsApp, `M1`…`M3` mails.
 > Reglas: cero cifras inventadas, cero reseñas o testimonios que no existan, cero capturas de tiendas de clientes sin permiso escrito. Los precios de los planes no se escriben en posts: se manda a `ecommy.app/planes`.
