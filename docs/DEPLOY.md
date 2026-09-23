@@ -7,8 +7,8 @@ Estado actual de producción (spec §14.4):
 | Proyecto Vercel | `scrapimportados` (team `nicoamicone1s-projects`) |
 | Repo | GitHub `nicoamicone1/scrapimportados`, branch de producción `main` |
 | Node | 24 |
-| Dominio | `https://ecommy-app.vercel.app` (`ecommy.vercel.app` está tomado) |
-| Modo de tiendas | **fallback**: `https://ecommy-app.vercel.app/s/<slug>/` (los `*.vercel.app` no admiten subdominios wildcard) |
+| Dominio | `https://www.ecommy.app` (canónico; `ecommy.app` redirige 308 a `www`). `https://ecommy-app.vercel.app` sigue activo como respaldo |
+| Modo de tiendas | **subdominio**: `https://<slug>.ecommy.app/` (comodín `*.ecommy.app` verificado en Vercel). En `ecommy-app.vercel.app` sigue el fallback `/s/<slug>/` |
 | Supabase | proyecto `asudscbvsrmulbpozjmq` |
 
 ## 1. Variables de entorno (Vercel → Settings → Environment Variables)
@@ -17,8 +17,8 @@ Estado actual de producción (spec §14.4):
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://asudscbvsrmulbpozjmq.supabase.co` | |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | clave publishable | |
-| `NEXT_PUBLIC_ROOT_DOMAIN` | `ecommy-app.vercel.app` | dominio raíz; decide el modo de las tiendas |
-| `NEXT_PUBLIC_SITE_URL` | `https://ecommy-app.vercel.app` | links de Auth, metadata, URLs absolutas en modo fallback |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | `ecommy.app` | dominio raíz; `www.ecommy.app` y `ecommy.app` son la plataforma, `<slug>.ecommy.app` las tiendas |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.ecommy.app` | links de Auth, metadata, URLs absolutas de la plataforma |
 | `PLATFORM_WHATSAPP` | `549…` (E.164 sin +) | "Quiero este plan" abre este WhatsApp |
 | `CRON_SECRET` | secreto largo aleatorio (marcado *sensitive*) | Vercel Cron lo manda como `Authorization: Bearer …` |
 
@@ -43,12 +43,12 @@ Las variables `NEXT_PUBLIC_*` se incrustan en el build: si las cambiás, **redep
 
 Authentication → URL Configuration:
 
-- **Site URL**: `https://ecommy-app.vercel.app`
+- **Site URL**: `https://www.ecommy.app`
 - **Redirect URLs** (agregar todas):
-  - `https://ecommy-app.vercel.app/auth/callback`
-  - `https://ecommy-app.vercel.app/auth/callback?next=*`
+  - `https://www.ecommy.app/auth/callback`
+  - `https://www.ecommy.app/auth/callback?next=*`
+  - `https://ecommy-app.vercel.app/auth/callback` (respaldo)
   - `http://localhost:3000/auth/callback` (desarrollo)
-  - con dominio propio: `https://ecommy.app/auth/callback`
 - Si "Confirm email" está activo, el registro muestra "Revisá tu correo" y el link
   vuelve a `/auth/callback?next=/app/nueva`. Recomendado: SMTP propio (el de Supabase
   tiene límite bajo de envíos) y "Leaked password protection" activado.
