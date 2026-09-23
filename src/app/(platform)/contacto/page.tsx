@@ -38,7 +38,7 @@ export default async function ContactoPage() {
   const whatsappDisplay = whatsapp ? `+${(whatsappNumber ?? "").replace(/\D/g, "")}` : null;
 
   const proProducts = plans.find((p) => p.code === "pro")?.limits.products ?? null;
-  const faq = platformFaq({ storeAddress: exampleStoreAddress() });
+  const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans });
 
   return (
     <PlatformPage signedIn={Boolean(user)}>

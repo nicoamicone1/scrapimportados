@@ -2,6 +2,30 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.2.0 — 2026-09-23 · Listos para el primer MVP público
+
+### Agregado
+
+- Sitio de Ecommy renovado: cómo funciona en tres pasos, muestras de los diez estilos por rubro, qué plan incluye cada función (calculado desde los planes publicados), ejemplo de un pedido sin comisión, preguntas frecuentes y contacto.
+- Términos del servicio y política de privacidad (Ley 25.326) con índice y fecha de actualización, enlazados desde el pie y desde el registro; página de contacto con mail, WhatsApp y el plan Business a medida.
+- Ícono de Ecommy en la pestaña y en la pantalla de inicio del celular, e imagen propia al compartir los links de Ecommy en WhatsApp y redes.
+- Emails automáticos (cuando la plataforma tiene configurado el envío): al comprador cuando hace el pedido, se confirma el pago, se despacha o se cancela; al vendedor cuando entra un pedido o una solicitud de arrepentimiento; al dueño de la cuenta al crear la tienda y cuando la prueba de Pro está por terminar o terminó.
+- Nueva sección Marketing › Compartir: tu link con «Copiar», el QR de tu tienda para descargar e imprimir, y mensajes listos para pegar en la bio de Instagram, para responder por WhatsApp y para historias, armados con tu descuento por transferencia y tu envío gratis si los tenés. También el link o el QR de un producto o categoría.
+- Una franja arriba del panel te avisa cuántos días de prueba te quedan y, el último día, a qué hora termina. En Free, un recordatorio de los límites del plan que se puede cerrar por 7 días.
+- En Configuración › Tienda, el email de contacto aclara que ahí llegan los avisos de pedidos y arrepentimientos.
+- Documentación de marketing y lanzamiento (`docs/MARKETING.md`, `docs/LAUNCH-PLAN.md`, `docs/LAUNCH-CHECKLIST.md`, `docs/SOCIAL-KIT.md`).
+
+### Cambiado
+
+- El paso «Compartí el link de tu tienda» de los primeros pasos lleva a la nueva sección Compartir; copiar cualquier link desde ahí lo marca como hecho.
+- Las preguntas frecuentes de Planes son las mismas que las de la página de inicio, y «Hablemos» del plan Business lleva a Contacto.
+
+### Corregido
+
+- Los links de términos y privacidad del registro llevaban a Planes.
+- En hosts de tienda con subdominio o dominio propio, el ícono de la pestaña ya no da 404 cuando la tienda no cargó un favicon propio.
+- La página de inicio de Ecommy ya no tiene scroll horizontal en celulares.
+
 ## v0.1.2 — 2026-09-23 · Diez estilos de tienda y selector nuevo
 
 ### Agregado

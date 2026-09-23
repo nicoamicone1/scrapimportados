@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function PlanesPage() {
   const [{ user }, plans] = await Promise.all([getSession(), plansOrEmpty("planes")]);
   const start = user ? "/app/nueva" : "/registro";
-  const faq = pickFaq(platformFaq({ storeAddress: exampleStoreAddress() }), [
+  const faq = pickFaq(platformFaq({ storeAddress: exampleStoreAddress(), plans }), [
     "prueba",
     "cambio-plan",
     "comision",

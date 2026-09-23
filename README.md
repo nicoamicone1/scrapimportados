@@ -6,10 +6,13 @@ personalizable, panel de administración (`/admin`) y checkout sin pasarela
 (transferencia con descuento o coordinación por WhatsApp; el pedido siempre queda
 registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y límites.
 
-Versión actual: **0.1.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
+Versión actual: **0.2.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
-cobro de planes (v0.2): [`docs/BILLING.md`](docs/BILLING.md).
+cobro de planes (próxima versión): [`docs/BILLING.md`](docs/BILLING.md) ·
+lanzamiento: [`docs/MARKETING.md`](docs/MARKETING.md), [`docs/LAUNCH-PLAN.md`](docs/LAUNCH-PLAN.md),
+[`docs/LAUNCH-CHECKLIST.md`](docs/LAUNCH-CHECKLIST.md) (todo lo que requiere acción del dueño) y
+[`docs/SOCIAL-KIT.md`](docs/SOCIAL-KIT.md).
 
 ## Stack
 
@@ -114,11 +117,14 @@ src/
                             refresco de sesión y redirect optimista a /login
   app/
     layout.tsx              html/body mínimo
-    (platform)/             landing, /planes, /login, /registro, /auth/*, /app (mis tiendas,
-                            alta), /invitacion/<token>, /platform (superadmin)
+    (platform)/             landing, /planes, /contacto, /terminos, /privacidad, /login,
+                            /registro, /auth/*, /app (mis tiendas, alta), /invitacion/<token>,
+                            /platform (superadmin); opengraph-image de la plataforma
+    icon.tsx, apple-icon.tsx ícono raíz (src/app/_brand/glyph.tsx)
     s/[store]/              storefront de una tienda (tema, header, footer, carrito)
-    admin/(panel)/          panel de la tienda activa (sidebar + topbar + ⌘K)
-    api/cron/daily          barrido diario (trials, reservas impagas)
+    admin/(panel)/          panel de la tienda activa (sidebar + topbar + ⌘K); /admin/compartir
+                            (link, QR y mensajes listos)
+    api/cron/daily          barrido diario (trials, reservas impagas) + avisos de fin de prueba
   components/
     ui/ admin/ store/ blocks/ platform/
   lib/
@@ -127,8 +133,9 @@ src/
     cache-tags.ts           tagFor(base, storeId)
     media.ts                mediaPath(storeId, …)
     auth.ts                 requireAdmin() → { store, membership, plan, … }
+    email/                  emails transaccionales (Resend por REST, plantillas, disparadores)
     store/ admin/ pricing/ theme/ blocks/ …
 supabase/migrations/        SQL
 scripts/                    scraper, seed, create-admin, move-media-to-store
-docs/                       spec, diseño, deploy, billing, changelog, acceso dev
+docs/                       spec, diseño, deploy, billing, changelog, acceso dev, marketing y lanzamiento
 ```
