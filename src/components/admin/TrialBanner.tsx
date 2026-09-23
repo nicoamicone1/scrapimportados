@@ -29,7 +29,9 @@ export function TrialBanner({ state }: { state: Exclude<TrialBannerState, { kind
 
   if (state.kind === "free") {
     const dismiss = () => {
-      document.cookie = `${FREE_BANNER_COOKIE}=1; path=/admin; max-age=${FREE_BANNER_DISMISS_DAYS * 86_400}; samesite=lax`;
+      // `secure` sólo en https (en localhost por http el navegador descartaría la cookie).
+      const secure = location.protocol === "https:" ? "; secure" : "";
+      document.cookie = `${FREE_BANNER_COOKIE}=1; path=/admin; max-age=${FREE_BANNER_DISMISS_DAYS * 86_400}; samesite=lax${secure}`;
       setHidden(true);
     };
     return (

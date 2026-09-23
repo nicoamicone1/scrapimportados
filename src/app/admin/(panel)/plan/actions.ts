@@ -13,10 +13,16 @@ import { storeDisplayHost } from "@/lib/tenant/urls";
  * "Quiero este plan": registra el pedido en auditoría y devuelve el link de
  * WhatsApp de la plataforma con el mensaje armado. El cobro automático
  * (MercadoPago) queda para v0.2 (docs/BILLING.md).
+ *
+ * Sólo dueño o administrador: el staff no decide el plan (y cada pedido manda
+ * un mail a la casilla de la plataforma).
  */
 export async function requestUpgrade(input: { plan: string }): Promise<ActionResult<{ url: string | null }>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    if (ctx.membership.role !== "owner" && ctx.membership.role !== "admin") {
+      return fail("Sólo el dueño o un administrador de la tienda puede pedir un cambio de plan.");
+    }
     const parsed = z.object({ plan: z.enum(PLAN_CODES) }).safeParse(input);
     if (!parsed.success) return fail("Plan inválido.");
     const plan = parsed.data.plan as PlanCode;
@@ -34,6 +40,7 @@ export async function requestUpgrade(input: { plan: string }): Promise<ActionRes
       store: ctx.store,
       currentPlan: ctx.plan.name,
       currentTrial: ctx.plan.status === "trialing",
+      requestedPlanCode: plan,
       requestedPlan: PLAN_NAMES[plan],
       requestedBy: ctx.user.email,
     });

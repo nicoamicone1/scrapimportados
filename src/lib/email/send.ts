@@ -92,6 +92,15 @@ export function storeFrom(storeName: string): string {
   return name ? `"${name} vía Ecommy" <${address}>` : platformFrom();
 }
 
+/**
+ * Enmascara direcciones de email para los logs: `lucia@example.com` →
+ * `l***@example.com`. Los mensajes de error de Resend suelen citar el
+ * destinatario (dato personal del comprador) y los logs los ve todo el equipo.
+ */
+export function maskEmails(text: string): string {
+  return text.replace(/([^\s@<>"'(),;:[\]]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, (_, local: string, domain: string) => `${local.slice(0, 1)}***@${domain}`);
+}
+
 /** Resend sólo acepta [A-Za-z0-9_-] en nombre y valor de los tags. */
 function cleanTag(value: string): string {
   return value.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 256);
@@ -212,12 +221,14 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
         console.info(`[email] ${label} ya enviado (Idempotency-Key repetida): no se reenvía.`);
         return { ok: true, id: null };
       }
-      const error = data?.message || data?.name || `HTTP ${res.status}`;
-      console.error(`[email] Resend rechazó ${label}: HTTP ${res.status} ${raw.replace(/\s+/g, " ").slice(0, 300)}`);
+      // Sólo `name` y `message` del error (sin el cuerpo crudo) y sin emails completos.
+      const error = maskEmails(data?.message || data?.name || `HTTP ${res.status}`);
+      const detail = data ? [data.name, data.message].filter(Boolean).join(": ") : raw ? "respuesta no JSON" : "sin cuerpo";
+      console.error(`[email] Resend rechazó ${label}: HTTP ${res.status} ${maskEmails(detail).replace(/\s+/g, " ").slice(0, 300)}`);
       return { ok: false, error };
     }
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
+    const error = maskEmails(err instanceof Error ? err.message : String(err));
     console.error(`[email] No se pudo enviar ${label}: ${error}`);
     return { ok: false, error };
   }

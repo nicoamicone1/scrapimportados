@@ -106,6 +106,15 @@ Avisos de activación (cron diario, `src/lib/email/activation-notices.ts`, con `
 El vendedor recibe los avisos en **Configuración → Tienda → Email de contacto**: si está
 vacío, no le llega nada (el comprador igual recibe los suyos).
 
+Cupos contra spam (el checkout y el arrepentimiento son públicos): aplicar
+`supabase/migrations/0014_order_notify_quota.sql`. Con ella, "Recibimos tu pedido" no sale
+si ese email ya hizo 3 pedidos en la última hora, si la tienda tuvo 30 en 10 minutos o si
+una tienda sin ningún pedido pagado pasó los 50 en el día (el pedido se crea igual y el
+vendedor recibe su aviso); el aviso de arrepentimiento al vendedor se corta a 20 por hora
+por tienda (la solicitud se registra igual). Sin la migración la app manda todo como
+antes. Además, en **Vercel → Firewall** crear una regla de rate limit para los POST con
+header `next-action` en `/s/*` y en los hosts de tienda (~10 por minuto por IP; ver §5).
+
 ## 5. Checklist post-deploy
 
 - [ ] `https://ecommy-app.vercel.app/` muestra la landing con planes.
@@ -116,6 +125,14 @@ vacío, no le llega nada (el comprador igual recibe los suyos).
 - [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401.
 - [ ] Con `RESEND_API_KEY`: un pedido en `/s/demo/` manda "Recibimos tu pedido" al comprador
       y "Nuevo pedido" al email de contacto de la tienda.
+- [ ] Migración `0014_order_notify_quota.sql` aplicada (cupos de mails del checkout y del
+      arrepentimiento; `expire_trials()` ya no borra `trial_ends_at`).
+- [ ] Vercel → Firewall → Custom Rule "Rate limit server actions de tienda": si `Method`
+      es `POST`, existe el header `next-action` y (el path empieza con `/s/` o el host es
+      `*.ecommy.app` distinto de `www`, o un dominio propio) → Rate Limit fixed window,
+      10 pedidos por 60 s por IP, acción Deny (429).
+- [ ] `curl -sI https://www.ecommy.app/admin` trae `X-Frame-Options: DENY` y
+      `curl -sI https://<tienda>.ecommy.app/pedido/x` trae `Referrer-Policy: no-referrer`.
 
 ## 6. Pasar a dominio propio (subdominio por tienda)
 

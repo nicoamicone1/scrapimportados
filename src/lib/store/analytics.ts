@@ -44,15 +44,25 @@ const META_EVENTS: Record<TrackEventName, string | null> = {
   view_item_list: null,
 };
 
+/**
+ * URL para analytics sin el token de `/pedido/<token>` (queda `…/pedido`):
+ * el token da acceso al pedido (nombre, dirección, email) y no tiene que
+ * llegar a Google ni a otros terceros. El resto de la URL no cambia.
+ */
+export function safePageLocation(href: string): string {
+  return href.replace(/(\/pedido)\/[^/?#]+/, "$1");
+}
+
 export function track(event: TrackEventName, payload: TrackPayload = {}): void {
   if (typeof window === "undefined") return;
   const w = window as unknown as TrackWindow;
   const data = { currency: "ARS", ...payload };
   try {
-    if (w.__ecommyGa4 && typeof w.gtag === "function") w.gtag("event", event, data);
+    const pageLocation = safePageLocation(window.location.href);
+    if (w.__ecommyGa4 && typeof w.gtag === "function") w.gtag("event", event, { ...data, page_location: pageLocation });
     if (w.__ecommyGtm && Array.isArray(w.dataLayer)) {
       w.dataLayer.push({ ecommerce: null });
-      w.dataLayer.push({ event, ecommerce: data });
+      w.dataLayer.push({ event, page_location: pageLocation, ecommerce: data });
     }
     const meta = META_EVENTS[event];
     if (meta && typeof w.fbq === "function") {

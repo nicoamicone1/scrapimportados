@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import { NextResponse, type NextRequest } from "next/server";
 
 import { collectActivationNotices, deliverActivationNotices } from "@/lib/email/activation-notices";
@@ -9,6 +11,17 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
+ * `Authorization: Bearer $CRON_SECRET` en tiempo constante: se comparan los
+ * SHA-256 (mismo largo siempre), así la respuesta no revela cuántos
+ * caracteres del secreto coinciden.
+ */
+function authorized(header: string | null, secret: string | undefined): boolean {
+  if (!secret || header === null) return false;
+  const digest = (value: string) => createHash("sha256").update(value, "utf8").digest();
+  return timingSafeEqual(digest(header), digest(`Bearer ${secret}`));
+}
+
+/**
  * Barrido diario (Vercel Cron, ver vercel.json): vence trials (→ Free) y
  * cancela pedidos impagos vencidos de TODAS las tiendas, devolviendo stock.
  * Protegido con `Authorization: Bearer $CRON_SECRET` (Vercel lo manda solo).
@@ -16,8 +29,9 @@ export const maxDuration = 300;
  * aplica reglas que ya correspondían (no recibe parámetros).
  *
  * Emails de fin de prueba (src/lib/email/trial-notices.ts): se juntan ANTES
- * del mantenimiento (que borra `trial_ends_at` de las vencidas) y se mandan
- * después. Sin RESEND_API_KEY / SUPABASE_SERVICE_ROLE_KEY no hacen nada.
+ * del mantenimiento (sin la migración 0014 borra `trial_ends_at` de las
+ * vencidas) y se mandan después. Sin RESEND_API_KEY / SUPABASE_SERVICE_ROLE_KEY
+ * no hacen nada.
  *
  * Avisos de activación (src/lib/email/activation-notices.ts): día 2 sin
  * productos y día 7 sin compartir ni pedidos. Se juntan después del
@@ -25,8 +39,7 @@ export const maxDuration = 300;
  * mismas dos variables.
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!authorized(request.headers.get("authorization"), process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const trialNotices = await collectTrialNotices();

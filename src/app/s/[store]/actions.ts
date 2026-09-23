@@ -386,10 +386,13 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
       console.error("[create_order]", error);
       return fail(GENERIC_ERROR);
     }
-    const result = (created ?? {}) as { number?: number; public_token?: string };
+    const result = (created ?? {}) as { number?: number; public_token?: string; notify_customer?: boolean };
     if (!result.public_token || !result.number) return fail(GENERIC_ERROR);
     // "Recibimos tu pedido" (comprador) + "Nuevo pedido" (vendedor), después de responder.
-    notifyOrderCreated({ store, settings, token: result.public_token });
+    // `notify_customer: false` = cupo de mails al comprador agotado (migración 0014):
+    // el pedido queda igual y el vendedor se entera. Sin la migración viene
+    // `undefined` y se manda como siempre.
+    notifyOrderCreated({ store, settings, token: result.public_token, notifyCustomer: result.notify_customer !== false });
 
     let whatsappUrl: string | null = null;
     if (method.type === "whatsapp" && settings.whatsapp_phone) {
@@ -481,17 +484,21 @@ export async function submitWithdrawal(_prev: WithdrawalState, formData: FormDat
       console.error("[arrepentimiento]", error);
       return { status: "error", error: GENERIC_ERROR, values };
     }
-    const r = (data ?? {}) as { code?: string; order_found?: boolean };
+    const r = (data ?? {}) as { code?: string; order_found?: boolean; notify_seller?: boolean };
     if (!r.code) return { status: "error", error: GENERIC_ERROR, values };
-    notifyWithdrawal({
-      store,
-      code: r.code,
-      name: parsed.data.name,
-      contact: parsed.data.contact,
-      orderNumber: parsed.data.orderNumber.replace(/\D/g, "") || null,
-      orderFound: Boolean(r.order_found),
-      reason: parsed.data.reason || null,
-    });
+    // La solicitud queda registrada siempre (requisito legal). El mail al vendedor
+    // tiene cupo por tienda (`notify_seller`, migración 0014; sin ella, `undefined`).
+    if (r.notify_seller !== false) {
+      notifyWithdrawal({
+        store,
+        code: r.code,
+        name: parsed.data.name,
+        contact: parsed.data.contact,
+        orderNumber: parsed.data.orderNumber.replace(/\D/g, "") || null,
+        orderFound: Boolean(r.order_found),
+        reason: parsed.data.reason || null,
+      });
+    }
     return { status: "ok", code: r.code, orderFound: Boolean(r.order_found) };
   } catch (err) {
     console.error(err);

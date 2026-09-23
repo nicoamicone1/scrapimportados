@@ -4,10 +4,20 @@ import type { IntegrationSettings } from "@/lib/store/settings";
 
 import { PixelPageViews } from "./PixelPageViews";
 
+/** Mismo patrón que `safePageLocation` (lib/store/analytics), como literal para el snippet. */
+const PEDIDO_TOKEN_RE = String.raw`/(\/pedido)\/[^/?#]+/`;
+
 /**
  * GA4 / GTM / Meta Pixel por ID (P0-18) con `next/script`. Los IDs vienen
  * validados por formato (`parseIntegrations`), así que interpolarlos en el
  * snippet es seguro. Los eventos los manda `track()` de `lib/store/analytics`.
+ *
+ * `/pedido/<token>`: el token da acceso al pedido. Si la visita ENTRA por esa
+ * página, GA4 se configura con `page_location` sin el token (sólo ahí: fijarlo
+ * siempre congelaría la URL de las navegaciones siguientes); los eventos de
+ * `track()` (incluido `purchase`) lo mandan limpio siempre, y la ruta sale con
+ * `Referrer-Policy: no-referrer` (next.config.ts). Meta Pixel manda la URL de
+ * la página por su cuenta y no se puede cambiar desde acá.
  */
 export function StoreAnalytics({ integrations }: { integrations: IntegrationSettings }) {
   const { ga4_id: ga4, gtm_id: gtm, meta_pixel_id: pixel } = integrations;
@@ -18,7 +28,7 @@ export function StoreAnalytics({ integrations }: { integrations: IntegrationSett
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${ga4}`} strategy="afterInteractive" />
           <Script id="ecommy-ga4" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;window.__ecommyGa4=true;gtag('js',new Date());gtag('config','${ga4}');`}
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;window.__ecommyGa4=true;gtag('js',new Date());(function(){var l=location.href,s=l.replace(${PEDIDO_TOKEN_RE},'$1');gtag('config','${ga4}',s!==l?{page_location:s}:{});})();`}
           </Script>
         </>
       ) : null}

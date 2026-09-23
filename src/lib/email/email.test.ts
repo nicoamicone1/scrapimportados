@@ -109,7 +109,8 @@ describe("plantillas del comprador", () => {
     expect(mail.html).not.toContain("<script>");
     expect(mail.html).not.toContain("<img src=x");
     expect(mail.html).not.toContain("<b>Luna</b>");
-    expect(mail.html).toContain("&lt;script&gt;");
+    expect(mail.html).toContain("&lt;img src=x");
+    expect(mail.text).toContain("Hola. Gracias por comprar en");
     expect(mail.html).toContain("Taller &lt;b&gt;Luna&lt;/b&gt; &amp; &quot;Cía&quot;");
   });
 
@@ -244,10 +245,11 @@ describe("vista previa (EMAIL_PREVIEW_DIR)", () => {
 describe("plantillas del vendedor y la plataforma", () => {
   it("Nuevo pedido con link al admin, cliente y método", () => {
     const mail = newOrderSellerEmail(order(), { name: "Taller Luna", contactEmail: "hola@tallerluna.com", platformUrl: "https://www.ecommy.app" });
-    expect(mail.subject).toMatch(/^Nuevo pedido #1043 · \$\s?353\.100 · Lucía/);
+    // El nombre de ejemplo trae HTML: no parece un nombre, no va al asunto.
+    expect(mail.subject).toMatch(/^Nuevo pedido #1043 · \$\s?353\.100$/);
     expect(mail.html).toContain("https://www.ecommy.app/admin/pedidos/0b6c5a3e-1111-4c2b-9a51-6f1b2c3d4e5f");
     expect(mail.text).toContain("Pago: Transferencia");
-    expect(mail.text).toContain("Nota del cliente: Tocar timbre 2B");
+    expect(mail.text).toContain("Nota escrita por el comprador: Tocar timbre 2B");
     expect(mail.text).toContain("es el email de contacto de Taller Luna");
   });
 

@@ -10,7 +10,7 @@ import { buildOrderMessage, buildReceiptMessage, waLink } from "@/lib/store/what
 import { platformOrigin, storeUrl, type StoreUrlTarget } from "@/lib/tenant/urls";
 import { parseTheme } from "@/lib/theme";
 
-import { emailEnabled, isEmail, platformFrom, sendEmail, storeFrom, warnEmailDisabled, type EmailTag } from "./send";
+import { emailEnabled, isEmail, maskEmails, platformFrom, sendEmail, storeFrom, warnEmailDisabled, type EmailTag } from "./send";
 import {
   newOrderSellerEmail,
   orderCancelledEmail,
@@ -51,7 +51,7 @@ function schedule(label: string, task: () => Promise<unknown>): void {
     try {
       await task();
     } catch (err) {
-      console.error(`[email] ${label}:`, err instanceof Error ? err.message : err);
+      console.error(`[email] ${label}:`, maskEmails(err instanceof Error ? err.message : String(err)));
     }
   };
   try {
@@ -195,8 +195,15 @@ function buyerStoreInfo(o: PublicOrder, target: StoreTarget, brand: BrandSetting
 // Pedido nuevo (storefront): "Recibimos tu pedido" + "Nuevo pedido"
 // ---------------------------------------------------------------------------
 
-export function notifyOrderCreated(input: { store: StoreTarget; settings: StoreSettings; token: string }): void {
+/**
+ * `notifyCustomer: false` (cupo de `create_order`, migración 0014) → sólo el
+ * aviso al vendedor: el checkout es público y el mail al comprador va a una
+ * dirección que tipea cualquiera. Sin la migración el RPC no manda el campo y
+ * el caller pasa `true` (comportamiento anterior).
+ */
+export function notifyOrderCreated(input: { store: StoreTarget; settings: StoreSettings; token: string; notifyCustomer?: boolean }): void {
   const { store, settings, token } = input;
+  const notifyCustomer = input.notifyCustomer !== false;
   schedule("pedido nuevo", async () => {
     const order = await getOrderByToken(store.id, token);
     if (!order) return;
@@ -206,7 +213,7 @@ export function notifyOrderCreated(input: { store: StoreTarget; settings: StoreS
     const sellerTo = info.contactEmail;
 
     await Promise.all([
-      isEmail(order.customer.email)
+      notifyCustomer && isEmail(order.customer.email)
         ? sendEmail({
             to: order.customer.email,
             from: storeFrom(info.name),
@@ -393,6 +400,8 @@ export function notifyPlanRequest(input: {
   store: StoreTarget & { name: string; slug: string };
   currentPlan: string;
   currentTrial: boolean;
+  /** Código del plan pedido (para la clave de idempotencia). */
+  requestedPlanCode: string;
   requestedPlan: string;
   requestedBy: string | null | undefined;
 }): void {
@@ -400,6 +409,8 @@ export function notifyPlanRequest(input: {
   if (!to) return;
   const { store } = input;
   const requestedAt = new Date().toISOString();
+  // Un aviso por tienda, plan y día (UTC): repetir el clic no llena la casilla.
+  const idempotencyKey = `plan-request/${store.id}/${input.requestedPlanCode}/${requestedAt.slice(0, 10)}`;
   schedule("pedido de plan", async () => {
     await sendEmail({
       to,
@@ -417,6 +428,7 @@ export function notifyPlanRequest(input: {
         platformUrl: platformOrigin(),
       }),
       tags: tags("plan_request", store),
+      idempotencyKey,
     });
   });
 }

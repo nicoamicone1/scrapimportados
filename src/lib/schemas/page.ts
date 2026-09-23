@@ -27,7 +27,14 @@ export const RESERVED_PAGE_SLUGS = [
   "robots",
   "robots-txt",
   "feeds",
+  // Rutas de metadata de Next (íconos e imagen para compartir).
+  "icon",
+  "apple-icon",
+  "opengraph-image",
 ] as const;
+
+/** Prefijos reservados: Next sirve `opengraph-image-<hash>` y variantes. */
+export const RESERVED_PAGE_SLUG_PREFIXES = ["opengraph-image"] as const;
 
 export const PAGE_TYPES = ["home", "landing", "legal", "custom"] as const;
 export type PageType = (typeof PAGE_TYPES)[number];
@@ -53,7 +60,12 @@ export function pageSlugError(slug: string, { isHome = false }: { isHome?: boole
   if (!slug) return "Poné un slug.";
   if (slug.length > 80) return "Hasta 80 caracteres.";
   if (!SLUG_RE.test(slug)) return "Sólo minúsculas, números y guiones (sin acentos ni espacios).";
-  if ((RESERVED_PAGE_SLUGS as readonly string[]).includes(slug)) return `«${slug}» lo usa la tienda. Elegí otro.`;
+  if (
+    (RESERVED_PAGE_SLUGS as readonly string[]).includes(slug) ||
+    RESERVED_PAGE_SLUG_PREFIXES.some((prefix) => slug.startsWith(`${prefix}-`))
+  ) {
+    return `«${slug}» lo usa la tienda. Elegí otro.`;
+  }
   return null;
 }
 

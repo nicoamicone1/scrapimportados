@@ -15,6 +15,13 @@ import type { OrderEmailData, StoreEmailInfo } from "./types";
  * Mails al COMPRADOR. Los firma la tienda ("{Tienda} vía Ecommy") y el
  * reply-to es el email de contacto de la tienda. Nunca muestran notas
  * internas ni el motivo de cancelación escrito a mano por el vendedor.
+ *
+ * El checkout es público: quien lo usa elige la dirección de destino. Para que
+ * "Recibimos tu pedido" no sirva de vehículo de spam, el mail no repite la
+ * nota del pedido y el saludo sólo usa el nombre si parece un nombre
+ * (`greeting`). Los textos del vendedor (instrucciones de pago) van como
+ * texto plano: los únicos links son el de la tienda, el del pedido y el de
+ * WhatsApp armado con el teléfono de la tienda.
  */
 
 function paragraphs(text: string, muted = false): Block[] {
@@ -136,7 +143,6 @@ export function orderReceivedEmail(order: OrderEmailData, store: StoreEmailInfo)
       itemsBlock(order),
       totalsBlock(order),
       ...deliveryBlocks(order),
-      order.notes && { t: "p", content: ["Tu nota: ", order.notes], muted: true },
     ],
     footer: buyerFooter(store),
   });

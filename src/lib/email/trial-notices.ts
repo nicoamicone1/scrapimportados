@@ -27,6 +27,13 @@ import { trialEndedEmail, trialEndingEmail } from "./templates";
 const DAY_MS = 86_400_000;
 /** "Tu prueba termina en N días": se avisa cuando faltan 3 días o menos. */
 export const TRIAL_ENDING_WINDOW_DAYS = 3;
+/**
+ * "Tu prueba terminó": pruebas vencidas en los últimos 7 días. Se juntan por
+ * FECHA y no por `status = 'trialing'`: el mantenimiento (que cualquiera puede
+ * disparar) las pasa a Free antes del cron y, desde la migración 0014, deja
+ * `trial_ends_at` puesto. La marca de `onboarding.notices` evita repetir.
+ */
+export const TRIAL_ENDED_LOOKBACK_DAYS = 7;
 
 type Kind = "trial_ending" | "trial_ended";
 type Admin = SupabaseClient<Database>;
@@ -88,9 +95,34 @@ export function withNotice(onboarding: Json, kind: Kind, trialEndsAt: string): J
   return { ...current, notices: { ...asRecord(current.notices), [kind]: trialEndsAt } } as Json;
 }
 
+/** Fila de `subscriptions` que mira el cron. */
+export interface TrialSubscription {
+  store_id: string;
+  trial_ends_at: string | null;
+  status: string;
+  plan_code: string;
+}
+
 /**
- * Junta los avisos a mandar. Hay que llamarla ANTES de `run_daily_maintenance()`,
- * que borra `trial_ends_at` de las pruebas vencidas. `null` = emails apagados.
+ * ¿Qué aviso le corresponde a esta suscripción? (puro, testeable)
+ * - "termina": en prueba (`trialing`) y vence dentro de los próximos 3 días;
+ * - "terminó": venció en los últimos 7 días y sigue en prueba o ya pasó a
+ *   Free (si el superadmin le puso un plan pago, no se avisa).
+ */
+export function trialNoticeKind(sub: TrialSubscription, now: Date): Kind | null {
+  if (!sub.trial_ends_at) return null;
+  const end = new Date(sub.trial_ends_at).getTime();
+  if (Number.isNaN(end)) return null;
+  const t = now.getTime();
+  if (end > t) return sub.status === "trialing" && end <= t + TRIAL_ENDING_WINDOW_DAYS * DAY_MS ? "trial_ending" : null;
+  if (end <= t - TRIAL_ENDED_LOOKBACK_DAYS * DAY_MS) return null;
+  return sub.status === "trialing" || sub.plan_code === "free" ? "trial_ended" : null;
+}
+
+/**
+ * Junta los avisos a mandar. Se llama antes de `run_daily_maintenance()`:
+ * con la base previa a 0014, el mantenimiento borra `trial_ends_at` de las
+ * pruebas vencidas. `null` = emails apagados.
  */
 export async function collectTrialNotices(now: Date = new Date()): Promise<TrialNoticePlan | null> {
   if (!emailEnabled()) {
@@ -101,14 +133,19 @@ export async function collectTrialNotices(now: Date = new Date()): Promise<Trial
   if (!db) return null;
   try {
     const horizon = new Date(now.getTime() + TRIAL_ENDING_WINDOW_DAYS * DAY_MS).toISOString();
-    const { data: subs, error } = await db
+    const since = new Date(now.getTime() - TRIAL_ENDED_LOOKBACK_DAYS * DAY_MS).toISOString();
+    const { data: rows, error } = await db
       .from("subscriptions")
-      .select("store_id, trial_ends_at")
-      .eq("status", "trialing")
+      .select("store_id, trial_ends_at, status, plan_code")
       .not("trial_ends_at", "is", null)
+      .gt("trial_ends_at", since)
       .lte("trial_ends_at", horizon);
     if (error) throw new Error(error.message);
-    if (!subs?.length) return { db, ending: [], ended: [] };
+    const subs = (rows ?? []).flatMap((sub) => {
+      const kind = trialNoticeKind(sub, now);
+      return kind ? [{ ...sub, kind }] : [];
+    });
+    if (!subs.length) return { db, ending: [], ended: [] };
 
     const { data: stores, error: storesError } = await db
       .from("stores")
@@ -134,7 +171,7 @@ export async function collectTrialNotices(now: Date = new Date()): Promise<Trial
       // y no sigue un cambio de email); profiles queda de respaldo.
       const ownerEmail = store?.owner_id ? [emailById.get(store.owner_id), owner?.email].find(isEmail) : undefined;
       if (!store || !ownerEmail || !sub.trial_ends_at) continue;
-      const kind: Kind = new Date(sub.trial_ends_at).getTime() <= now.getTime() ? "trial_ended" : "trial_ending";
+      const kind = sub.kind;
       if (alreadyNotified(store.onboarding, kind, sub.trial_ends_at)) continue;
       const notice: Notice = {
         kind,

@@ -23,9 +23,35 @@ export function firstName(name: string | null | undefined): string {
   return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
 
+/**
+ * Un nombre de pila "de verdad": sólo letras, apóstrofo y guion, hasta 30.
+ * El checkout es público y el nombre lo tipea cualquiera: con esto el saludo
+ * no puede llevar links, dominios ni frases ("Hola, verificá-tu-cuenta.com.").
+ */
+const PLAIN_FIRST_NAME = /^[\p{L}'’-]{1,30}$/u;
+
+/** "Hola, Lucía." o "Hola." si el primer nombre no parece un nombre. */
 export function greeting(name: string | null | undefined): string {
-  const first = firstName(name);
-  return first ? `Hola, ${first}.` : "Hola.";
+  const first = firstName(name).normalize("NFC");
+  return PLAIN_FIRST_NAME.test(first) ? `Hola, ${first}.` : "Hola.";
+}
+
+/**
+ * Nombre del cliente para asuntos y preheaders de mails de la PLATAFORMA
+ * (el vendedor los recibe firmados por Ecommy): sólo si son letras, espacios,
+ * apóstrofos y guiones, recortado a 40 caracteres. Si no (links, dominios,
+ * símbolos), `null` y el mail usa un texto neutro.
+ */
+export function plainPersonName(name: string | null | undefined, max = 40): string | null {
+  const clean = (name ?? "").replace(/\s+/g, " ").trim();
+  if (!clean || !/^[\p{L}\p{M}'’ -]+$/u.test(clean)) return null;
+  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
+}
+
+/** Texto libre de un tercero para un mail: sin saltos repetidos y recortado a `max`. */
+export function clipText(text: string | null | undefined, max = 300): string {
+  const clean = (text ?? "").replace(/\s+/g, " ").trim();
+  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
 }
 
 /** Zona horaria IANA válida (una inválida hace tirar a `Intl` y el mail no saldría). */
