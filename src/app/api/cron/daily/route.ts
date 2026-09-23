@@ -1,7 +1,7 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-
 import { NextResponse, type NextRequest } from "next/server";
 
+import { cronAuthorized } from "@/lib/cron-auth";
+import { runAbandonedNotices } from "@/lib/email/abandoned-notices";
 import { collectActivationNotices, deliverActivationNotices } from "@/lib/email/activation-notices";
 import { collectTrialNotices, deliverTrialNotices } from "@/lib/email/trial-notices";
 import { createPublicClient } from "@/lib/supabase/server";
@@ -9,17 +9,6 @@ import { createPublicClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 /** Los envíos se espacian (~2 por segundo en Resend): margen para una tanda grande. */
 export const maxDuration = 300;
-
-/**
- * `Authorization: Bearer $CRON_SECRET` en tiempo constante: se comparan los
- * SHA-256 (mismo largo siempre), así la respuesta no revela cuántos
- * caracteres del secreto coinciden.
- */
-function authorized(header: string | null, secret: string | undefined): boolean {
-  if (!secret || header === null) return false;
-  const digest = (value: string) => createHash("sha256").update(value, "utf8").digest();
-  return timingSafeEqual(digest(header), digest(`Bearer ${secret}`));
-}
 
 /**
  * Barrido diario (Vercel Cron, ver vercel.json): vence trials (→ Free) y
@@ -40,9 +29,16 @@ function authorized(header: string | null, secret: string | undefined): boolean 
  * productos y día 7 sin compartir ni pedidos. Se juntan después del
  * mantenimiento (así ven el estado de la prueba ya actualizado), con las
  * mismas dos variables.
+ *
+ * Avisos de carrito abandonado (src/lib/email/abandoned-notices.ts, migración
+ * 0020): al comprador que tildó el aviso en el checkout y no confirmó, entre
+ * 3 y 48 h después. Con sólo este cron diario el aviso sale entre 3 y 27 h
+ * después; `/api/cron/abandoned` (cada 6 h, si el plan de Vercel lo permite)
+ * lo acerca a 3–9 h. Las dos rutas pueden correr: cada sesión se reclama con
+ * un update condicional y recibe un solo mail.
  */
 export async function GET(request: NextRequest) {
-  if (!authorized(request.headers.get("authorization"), process.env.CRON_SECRET)) {
+  if (!cronAuthorized(request.headers.get("authorization"))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const trialNotices = await collectTrialNotices();
@@ -56,6 +52,7 @@ export async function GET(request: NextRequest) {
   const now = new Date();
   const trialReport = await deliverTrialNotices(trialNotices, now, notifiedToday);
   const activationReport = await deliverActivationNotices(await collectActivationNotices(now), now, notifiedToday);
-  const emails = { ...trialReport, ...activationReport };
+  const abandonedReport = await runAbandonedNotices(now, 60_000);
+  const emails = { ...trialReport, ...activationReport, ...abandonedReport };
   return NextResponse.json({ ok: true, result: data, emails });
 }

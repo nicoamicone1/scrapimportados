@@ -158,6 +158,8 @@ export async function savePaymentsSettings(input: unknown): Promise<ActionResult
 
     const row = await readSettings(ctx);
     const checkout = obj(row.checkout);
+    // Prender el aviso de carritos abandonados es de Starter en adelante (apagarlo, siempre).
+    if (v.abandoned_reminders && checkout.abandoned_reminders !== true) assertFeature(ctx, "marketing.abandoned");
     const whatsappMethod = v.methods.find((m) => m.type === "whatsapp");
     const nextCheckout: Obj = {
       ...checkout,
@@ -175,6 +177,7 @@ export async function savePaymentsSettings(input: unknown): Promise<ActionResult
       },
       require_phone: v.require_phone,
       order_notes_enabled: v.order_notes_enabled,
+      abandoned_reminders: v.abandoned_reminders,
       min_order_total: v.min_order_total,
       reservation_hours: v.reservation_hours,
     };

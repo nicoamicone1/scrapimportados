@@ -31,6 +31,7 @@ export default async function PagosSettingsPage() {
     whatsapp_template: s.checkout.whatsapp.message_template || DEFAULT_ORDER_TEMPLATE,
     require_phone: s.checkout.require_phone,
     order_notes_enabled: s.checkout.order_notes_enabled,
+    abandoned_reminders: s.checkout.abandoned_reminders,
     min_order_total: String(s.checkout.min_order_total),
     reservation_hours: String(s.checkout.reservation_hours),
     inventory_policy: s.inventory_policy === "on_paid" ? "on_paid" : "on_order",

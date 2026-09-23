@@ -267,6 +267,8 @@ export const paymentsSettingsSchema = z.object({
     .max(1000, "Hasta 1000 caracteres (WhatsApp corta los mensajes largos)."),
   require_phone: z.boolean(),
   order_notes_enabled: z.boolean(),
+  /** Aviso por mail de carritos abandonados (plan `marketing.abandoned`). */
+  abandoned_reminders: z.boolean().optional().default(false),
   min_order_total: num().pipe(z.number().min(0, "No puede ser negativo.")),
   reservation_hours: num().pipe(
     z.number().int("Usá horas enteras.").min(0, "No puede ser negativo.").max(720, "Hasta 720 horas (30 días)."),

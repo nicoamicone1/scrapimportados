@@ -3,14 +3,21 @@ import type { Metadata } from "next";
 import { ProductCard } from "@/components/store/ProductCard";
 import { requireStore } from "@/lib/store/context";
 import { getStoreDisplay } from "@/lib/store/display";
+import { isSessionToken } from "@/lib/store/checkout-sessions";
 import { listProducts } from "@/lib/store/products";
 
+import { CartRecovery, CartUnsubscribe } from "./CartRecovery";
 import { CartView } from "./CartView";
 
 export const metadata: Metadata = { title: "Carrito", robots: { index: false, follow: false } };
 
-export default async function CartPage({ params }: PageProps<"/s/[store]/carrito">) {
+export default async function CartPage({ params, searchParams }: PageProps<"/s/[store]/carrito">) {
   const { store } = await requireStore(params);
+  // Links del mail de carrito abandonado (0020): reponer el carrito o darse de baja.
+  const sp = await searchParams;
+  const pick = (v: string | string[] | undefined) => (typeof v === "string" ? v.trim().toLowerCase() : "");
+  const recoverToken = isSessionToken(pick(sp.recuperar)) ? pick(sp.recuperar) : null;
+  const unsubscribeToken = isSessionToken(pick(sp.baja)) ? pick(sp.baja) : null;
   const display = await getStoreDisplay(store.id);
   const { card, settings } = display;
   const featured = (await listProducts(store.id, { featured: true, perPage: 4, outOfStock: "hide" })).items;
@@ -21,6 +28,8 @@ export default async function CartPage({ params }: PageProps<"/s/[store]/carrito
   return (
     <div className="store-container py-[var(--space-section-sm)]">
       <h1 className="h-page">Tu carrito</h1>
+      {unsubscribeToken ? <CartUnsubscribe token={unsubscribeToken} storeName={settings.name} /> : null}
+      {recoverToken && !unsubscribeToken ? <CartRecovery token={recoverToken} /> : null}
       <CartView
         promotions={display.promotions}
         freeShippingThreshold={display.freeShippingThreshold}

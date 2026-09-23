@@ -6,6 +6,7 @@ import { useMemo } from "react";
 
 import { savePaymentsSettings } from "@/app/admin/(panel)/configuracion/actions";
 import { useOptionalAdminStore } from "@/components/admin/AdminStoreContext";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { Badge } from "@/components/ui/Badge";
 import { Card, FormSection } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
@@ -306,6 +307,27 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
               label="Permitir notas en el pedido"
               description="Un campo opcional para aclaraciones (horario de entrega, regalo, etc.)."
             />
+            <PlanGate
+              feature="marketing.abandoned"
+              mode="preview"
+              description="Un mail con el carrito a quien dejó el checkout a mitad de camino y aceptó el aviso."
+            >
+              <Switch
+                checked={Boolean(v.abandoned_reminders)}
+                onCheckedChange={(on) => set("abandoned_reminders", on)}
+                label="Avisar por mail los carritos abandonados"
+                description={
+                  <>
+                    En «Tus datos» aparece «Avisame por mail si dejo el pedido sin terminar», destildado. A quien lo tilda y no
+                    confirma le llega un solo mail entre 3 y 27 horas después, con su carrito y un botón para terminarlo. Los ves en{" "}
+                    <Link href="/admin/pedidos/abandonados" className="text-adm-accent underline-offset-2 hover:underline">
+                      Carritos abandonados
+                    </Link>
+                    .
+                  </>
+                }
+              />
+            </PlanGate>
             <Field label="Compra mínima" hint="0 = sin mínimo. Se valida en el carrito y al confirmar el pedido." error={error("min_order_total")}>
               <Input
                 type="number"

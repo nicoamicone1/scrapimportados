@@ -8,7 +8,7 @@ import { useEffect, useId, useRef, useState, useTransition, type ReactNode } fro
 import { PromoSummaryRows } from "@/components/store/CartLines";
 import { CouponForm } from "@/components/store/CouponForm";
 import { FreeShippingBar } from "@/components/store/FreeShippingBar";
-import { useStorePath } from "@/components/store/StoreBase";
+import { useStoreBase, useStorePath } from "@/components/store/StoreBase";
 import { StoreLink } from "@/components/store/StoreLink";
 import { useCartSync } from "@/components/store/useCartSync";
 import { useCart } from "@/lib/cart";
@@ -18,9 +18,18 @@ import { computeCart, type CartTotals, type Promotion } from "@/lib/pricing";
 import { PROVINCE_OPTIONS } from "@/lib/shipping/provinces";
 import { trackOnce } from "@/lib/store/analytics";
 import { netMerchandiseTotal, toPricingItems } from "@/lib/store/cart-pricing";
+import {
+  cartSignature,
+  checkoutSessionKey,
+  CONSENT_HELP,
+  CONSENT_LABEL,
+  isSessionToken,
+  SESSION_UPDATE_DEBOUNCE_MS,
+} from "@/lib/store/checkout-sessions";
 import { waLink } from "@/lib/store/whatsapp";
 
 import { createOrder, quoteShippingAction, type ShippingQuoteResult } from "../actions";
+import { markCheckoutRecovered, saveCheckoutSession } from "../checkout-sessions";
 import { Notices } from "../carrito/CartView";
 
 interface Method {
@@ -54,6 +63,8 @@ export interface CheckoutFlowProps {
   currency: string;
   /** Precio sin impuestos nacionales (null = no se muestra). */
   net: { defaultVat: number; label: string } | null;
+  /** Ofrece "Avisame por mail si dejo el pedido sin terminar" (carritos abandonados, 0020). */
+  remindersEnabled?: boolean;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -77,6 +88,27 @@ interface Address {
 
 const EMPTY_ADDRESS: Address = { street: "", number: "", floor: "", city: "", province: "", postal_code: "", notes: "" };
 const SAVED_KEY = "ecommy-checkout-v1";
+
+/** Token de la sesión de carrito abandonado guardada en este navegador (o null). */
+function readSessionToken(storeId: string): string | null {
+  if (typeof window === "undefined" || !storeId) return null;
+  try {
+    const raw = window.localStorage.getItem(checkoutSessionKey(storeId));
+    return isSessionToken(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionToken(storeId: string, token: string | null): void {
+  if (!storeId) return;
+  try {
+    if (token) window.localStorage.setItem(checkoutSessionKey(storeId), token);
+    else window.localStorage.removeItem(checkoutSessionKey(storeId));
+  } catch {
+    // sin storage: la sesión se crea de nuevo en la próxima visita
+  }
+}
 
 function readSaved(): { customer?: Partial<Customer>; address?: Partial<Address> } {
   if (typeof window === "undefined") return {};
@@ -267,6 +299,8 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
   const uid = useId();
   const { items, hydrated, coupon, clear } = useCart();
   const { messages, checked } = useCartSync();
+  const { storeId } = useStoreBase();
+  const remindersEnabled = Boolean(props.remindersEnabled);
 
   const [step, setStep] = useState<Step>(1);
   // Datos guardados de una compra anterior en este navegador (sólo contacto y dirección).
@@ -286,6 +320,14 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
   const [quoting, startQuote] = useTransition();
   const [submitting, setSubmitting] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  // Carrito abandonado: token de la sesión (localStorage) y consentimiento.
+  // El tilde nace destildado; si ya hay una sesión guardada, es porque lo tildó antes.
+  const [initialToken] = useState(() => (remindersEnabled ? readSessionToken(storeId) : null));
+  const sessionToken = useRef<string | null>(initialToken);
+  const [consent, setConsent] = useState(initialToken !== null);
+  const savedSignature = useRef<string>("");
+  /** Token del pedido ya confirmado: una sesión que se crea tarde se marca recuperada igual. */
+  const placedOrder = useRef<string | null>(null);
 
   const cartTotals = computeCart({ items: toPricingItems(items), promotions, coupon });
 
@@ -369,6 +411,51 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
     });
   };
 
+  /** Guarda (o borra, sin consentimiento) la sesión de carrito abandonado. Nunca bloquea ni muestra errores. */
+  const syncSession = (nextConsent: boolean) => {
+    if (!remindersEnabled || !storeId) return;
+    const token = sessionToken.current;
+    if (!nextConsent && !token) return;
+    const signature = cartSignature(items);
+    savedSignature.current = signature;
+    void saveCheckoutSession({
+      token,
+      email: customer.email,
+      name: customer.name,
+      items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
+      consent: nextConsent,
+    })
+      .then((res) => {
+        const next = res.ok ? res.data.token : token;
+        // Se confirmó el pedido mientras tanto: la sesión nueva queda recuperada y no se guarda.
+        if (placedOrder.current) {
+          if (next && next !== token) void markCheckoutRecovered({ token: next, orderToken: placedOrder.current }).catch(() => undefined);
+          return;
+        }
+        if (sessionToken.current !== token) return;
+        sessionToken.current = next;
+        writeSessionToken(storeId, next);
+      })
+      .catch(() => undefined);
+  };
+
+  const onConsentChange = (next: boolean) => {
+    setConsent(next);
+    // Destildar borra enseguida lo que se hubiera guardado.
+    if (!next && sessionToken.current) syncSession(false);
+  };
+
+  // Cambió el carrito con una sesión guardada: se actualiza con debounce.
+  const signature = cartSignature(items);
+  useEffect(() => {
+    if (!remindersEnabled || !consent || !sessionToken.current || !items.length || submitting) return;
+    if (signature === savedSignature.current) return;
+    const timer = window.setTimeout(() => syncSession(true), SESSION_UPDATE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+    // syncSession lee el estado actual; el efecto sólo depende del contenido del carrito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature, consent, remindersEnabled, submitting]);
+
   const persistContact = () => {
     try {
       window.localStorage.setItem(SAVED_KEY, JSON.stringify({ customer, address: { ...address, notes: "" } }));
@@ -407,6 +494,13 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
       return;
     }
     persistContact();
+    placedOrder.current = res.data.token;
+    const recoveredToken = sessionToken.current;
+    if (recoveredToken) {
+      sessionToken.current = null;
+      writeSessionToken(storeId, null);
+      void markCheckoutRecovered({ token: recoveredToken, orderToken: res.data.token }).catch(() => undefined);
+    }
     if (popup) {
       if (res.data.whatsappUrl) popup.location.href = res.data.whatsappUrl;
       else popup.close();
@@ -495,7 +589,10 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
             className="grid gap-4 sm:grid-cols-2"
             onSubmit={(e) => {
               e.preventDefault();
-              if (validateCustomer()) setStep(2);
+              if (validateCustomer()) {
+                syncSession(consent);
+                setStep(2);
+              }
             }}
           >
             <Field id={`${uid}-name`} label="Nombre y apellido" error={errors.name} className="sm:col-span-2">
@@ -504,6 +601,24 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
             <Field id={`${uid}-email`} label="Email" error={errors.email} help="Te sirve para identificar tu pedido." className="sm:col-span-2">
               {(p) => <input {...p} type="email" className="input" autoComplete="email" inputMode="email" value={customer.email} onChange={set("email")} />}
             </Field>
+            {remindersEnabled ? (
+              <div className="-mt-1 sm:col-span-2">
+                <label htmlFor={`${uid}-consent`} className="flex cursor-pointer items-start gap-2.5 text-sm">
+                  <input
+                    id={`${uid}-consent`}
+                    type="checkbox"
+                    className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]"
+                    checked={consent}
+                    onChange={(e) => onConsentChange(e.target.checked)}
+                    aria-describedby={`${uid}-consent-help`}
+                  />
+                  <span>{CONSENT_LABEL}</span>
+                </label>
+                <p id={`${uid}-consent-help`} className="field-help pl-[1.625rem]">
+                  {CONSENT_HELP}
+                </p>
+              </div>
+            ) : null}
             <Field id={`${uid}-phone`} label={props.requirePhone ? "Teléfono (WhatsApp)" : "Teléfono (opcional)"} error={errors.phone} help="Con código de área, ej. 11 5555 1234.">
               {(p) => <input {...p} type="tel" className="input" autoComplete="tel" inputMode="tel" value={customer.phone} onChange={set("phone")} />}
             </Field>

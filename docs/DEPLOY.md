@@ -24,7 +24,7 @@ Estado actual de producción (spec §14.4):
 | `RESEND_API_KEY` | `re_…` (marcado *sensitive*) | emails transaccionales (ver §4b). Sin ella no se manda ningún email y la app funciona igual |
 | `EMAIL_FROM` | `Ecommy <no-reply@ecommy.app>` (default si falta) | remitente; el dominio tiene que estar verificado en Resend. Las tiendas mandan como `"{Tienda} vía Ecommy" <misma dirección>` |
 | `PLATFORM_EMAIL` | casilla de soporte de Ecommy | recibe los pedidos de cambio de plan y es el reply-to de los mails de cuenta. Opcional |
-| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usan el cron diario (avisos de "tu prueba termina" / "tu prueba terminó" y de activación) y el cobro con MercadoPago (webhook y sincronización: `billing_apply_subscription` sólo la ejecuta service_role). Sin ella esos avisos no salen y los pagos de MP no se aplican; todo lo demás sigue igual |
+| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usan el cron diario (avisos de "tu prueba termina" / "tu prueba terminó", de activación y de carrito abandonado; este último también `/api/cron/abandoned`) y el cobro con MercadoPago (webhook y sincronización: `billing_apply_subscription` sólo la ejecuta service_role). Sin ella esos avisos no salen y los pagos de MP no se aplican; todo lo demás sigue igual |
 | `MP_ACCESS_TOKEN` | access token de **producción** de la cuenta de MercadoPago de Ecommy (marcado *sensitive*, nunca `NEXT_PUBLIC_`) | cobro automático de planes (docs/BILLING.md). Sin él `/admin/plan` sólo ofrece el pedido por WhatsApp y el webhook responde 503 |
 | `MP_WEBHOOK_SECRET` | clave secreta del webhook (MercadoPago → Tus integraciones → Webhooks) (marcado *sensitive*) | valida la firma `x-signature` de `/api/billing/mercadopago/webhook`. Sin ella el webhook responde 503 |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | `G-XXXXXXXXXX` | GA4 del sitio de Ecommy (landing, planes, registro, contacto). Opcional; sin él no se carga ningún script. Las tiendas tienen su propio GA4 en Configuración › SEO |
@@ -142,6 +142,35 @@ Probar el webhook sin firma (tiene que dar 401):
 curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
 ```
 
+## 4d. Carritos abandonados
+
+Diseño en `docs/ECOMMY-SPEC.md` §7 (punto 7). Para activarlo:
+
+1. Aplicar `supabase/migrations/0020_abandoned_checkouts.sql` (esquema 11; necesita 0015).
+   Sin ella el checkout no muestra el tilde, `/admin/pedidos/abandonados` avisa que falta
+   y el cron no manda nada.
+2. Los mails usan las mismas variables que los avisos de prueba: `RESEND_API_KEY` y
+   `SUPABASE_SERVICE_ROLE_KEY`. Sin alguna de las dos, los carritos se guardan pero quedan
+   "Pendiente".
+3. Cada tienda lo prende en **Configuración → Pagos y checkout → Avisar por mail los
+   carritos abandonados** (Starter en adelante; flag `marketing.abandoned` en
+   `/platform/planes`).
+4. Cron: `/api/cron/daily` ya los manda una vez por día (09:00 UTC): el aviso sale entre
+   3 y 27 h después de dejar el checkout. Existe además `GET /api/cron/abandoned` (mismo
+   `CRON_SECRET`) para acercarlo a 3–9 h, pero **no está programado en `vercel.json`**:
+   los crons de más de una vez por día necesitan un plan Pro de Vercel y en Hobby el
+   deploy falla. Con Pro, agregar `{ "path": "/api/cron/abandoned", "schedule": "0 */6 * * *" }`
+   a `crons`. Las dos rutas pueden correr juntas: cada sesión se reclama con un update
+   condicional y recibe un solo mail.
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://ecommy-app.vercel.app/api/cron/abandoned
+# → { "ok": true, "emails": { "abandoned_cart": 0 } }
+```
+
+El JSON del cron diario suma `emails.abandoned_cart`. Log: filtrar por `[email]` y
+`[carritos]`. En Resend los mails llevan el tag `kind=abandoned_cart`.
+
 ## 5. Checklist post-deploy
 
 - [ ] `https://ecommy-app.vercel.app/` muestra la landing con planes.
@@ -166,8 +195,19 @@ curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
       `bundle_discount` sólo si es ≥ 9; sin la migración sigue con el precio promedio por línea.
       Verificación: un pedido con 3x2 en `/s/demo/` muestra "Promociones por cantidad" en
       `/pedido/<token>`, en el detalle del panel, en el remito y en el mail.
+- [ ] Migración `0021_price_tiers.sql` aplicada, DESPUÉS de 0018 (si falta 0018 frena con un
+      error claro; esquema 12). Precios por cantidad (mayorista) por producto:
+      `products.price_tiers` (`[{min_qty, price}]`, check `private.valid_price_tiers`),
+      `private.tier_price()` y `create_order` con el piso por línea calculado sobre el precio
+      del tramo (sumando las unidades de todas las variantes del producto en el pedido).
+      Sin ella la columna no existe: la tienda cobra el precio de siempre y el panel avisa
+      "falta la actualización 0021" si se cargan tramos. Plan: flag `pricing.tiers`
+      (Starter en adelante por defecto; no hace falta migrar `plans.features`).
+      Verificación: en un producto de `/s/demo/`, cargar "Desde 6 unidades → $ X" en el panel;
+      la ficha muestra la tabla "Precio por cantidad", la card "Desde 6 u. $ X", y un pedido
+      de 6 unidades queda con el unitario del tramo en `/pedido/<token>` y en el remito.
 - [ ] `/platform` (superadmin) lista las tiendas.
-- [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401.
+- [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401 (también `/api/cron/abandoned`).
 - [ ] Con `RESEND_API_KEY`: un pedido en `/s/demo/` manda "Recibimos tu pedido" al comprador
       y "Nuevo pedido" al email de contacto de la tienda.
 - [ ] Vercel → Firewall → Custom Rule "Rate limit server actions de tienda": si `Method`
@@ -196,6 +236,13 @@ curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
    `custom_domain` (memoriza 60 s). Gate de plan: `domain.custom` (Pro).
 
 ## 7. Rollback
+
+Antes de hacer rollback del código a una versión sin precios por cantidad (anterior a la
+0021), vaciá los tramos de los productos que los usen (`update products set price_tiers =
+'[]'`): con 0021 aplicada esa versión manda el precio de lista, que `create_order` acepta
+(cobra sin el tramo), pero si además hay un 3x2 o una "N.ª unidad" activos sobre esos
+productos, el descuento que declara supera el recalculado sobre el tramo y el pedido se
+rechaza ("Las promociones cambiaron…").
 
 Antes de hacer rollback del código a una versión sin promos por cantidad (anterior a la
 0017: "Llevá X, pagá Y" y "N.ª unidad al Z %"), pausá esas promos en `/admin/promociones`.

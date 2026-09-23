@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { checkoutRemindersEnabled } from "@/lib/store/checkout-reminders";
 import { requireStore } from "@/lib/store/context";
 import { getStoreDisplay } from "@/lib/store/display";
 import { fetchPaymentMethodsFresh } from "@/lib/store/payment-methods";
@@ -22,6 +23,8 @@ export default async function CheckoutPage({ params }: PageProps<"/s/[store]/che
     fetchPickupLocationsFresh(store.id),
   ]);
   const { settings, zones } = display;
+  // Carritos abandonados (0020): el tilde de aviso sólo si la tienda lo prendió y su plan lo incluye.
+  const remindersEnabled = await checkoutRemindersEnabled(store.id, settings.checkout.abandoned_reminders);
   const terms = settings.policies.terms_md ? `/politicas/${findPolicy("terms")!.slug}` : null;
 
   return (
@@ -48,6 +51,7 @@ export default async function CheckoutPage({ params }: PageProps<"/s/[store]/che
         termsHref={terms}
         currency={settings.currency}
         net={settings.tax.show_net_price ? { defaultVat: settings.tax.default_vat_percent, label: settings.tax.label } : null}
+        remindersEnabled={remindersEnabled}
       />
     </div>
   );

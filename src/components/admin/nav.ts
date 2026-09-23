@@ -17,6 +17,7 @@ import {
   Settings,
   Share2,
   ShieldCheck,
+  ShoppingCart,
   Tag,
   Ticket,
   Truck,
@@ -66,6 +67,7 @@ export const NAV: NavGroup[] = [
       { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true, keywords: ["inicio", "resumen", "ventas"] },
       // B: pedidos (listado, detalle, pedido manual)
       { label: "Pedidos", href: "/admin/pedidos", icon: Receipt, keywords: ["ventas", "órdenes", "ordenes"] },
+      { label: "Carritos abandonados", href: "/admin/pedidos/abandonados", icon: ShoppingCart, keywords: ["abandonados", "checkout", "recuperar", "carrito", "sin terminar"] },
       // B: clientes
       { label: "Clientes", href: "/admin/clientes", icon: UsersRound, keywords: ["compradores"] },
     ],

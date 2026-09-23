@@ -189,6 +189,72 @@ export type Database = {
           },
         ]
       }
+      checkout_sessions: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string
+          id: string
+          ip_hash: string | null
+          items: Json
+          name: string | null
+          recovered_order_id: string | null
+          reminded_at: string | null
+          store_id: string
+          subtotal: number
+          token: string
+          unsubscribed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          consent: boolean
+          created_at?: string
+          email: string
+          id?: string
+          ip_hash?: string | null
+          items?: Json
+          name?: string | null
+          recovered_order_id?: string | null
+          reminded_at?: string | null
+          store_id: string
+          subtotal?: number
+          token: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          ip_hash?: string | null
+          items?: Json
+          name?: string | null
+          recovered_order_id?: string | null
+          reminded_at?: string | null
+          store_id?: string
+          subtotal?: number
+          token?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_sessions_recovered_order_id_fkey"
+            columns: ["recovered_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_redemptions: {
         Row: {
           coupon_id: string
@@ -1183,9 +1249,11 @@ export type Database = {
           is_public: boolean
           limits: Json
           mp_plan_id: string | null
+          mp_plan_id_yearly: string | null
           name: string
           position: number
           price_monthly: number | null
+          price_yearly: number | null
           updated_at: string
         }
         Insert: {
@@ -1197,9 +1265,11 @@ export type Database = {
           is_public?: boolean
           limits?: Json
           mp_plan_id?: string | null
+          mp_plan_id_yearly?: string | null
           name: string
           position?: number
           price_monthly?: number | null
+          price_yearly?: number | null
           updated_at?: string
         }
         Update: {
@@ -1211,9 +1281,11 @@ export type Database = {
           is_public?: boolean
           limits?: Json
           mp_plan_id?: string | null
+          mp_plan_id_yearly?: string | null
           name?: string
           position?: number
           price_monthly?: number | null
+          price_yearly?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -1565,6 +1637,7 @@ export type Database = {
           metadata: Json
           name: string
           options: Json
+          price_tiers: Json
           published_at: string | null
           related_ids: string[]
           seo: Json
@@ -1589,6 +1662,7 @@ export type Database = {
           metadata?: Json
           name: string
           options?: Json
+          price_tiers?: Json
           published_at?: string | null
           related_ids?: string[]
           seo?: Json
@@ -1613,6 +1687,7 @@ export type Database = {
           metadata?: Json
           name?: string
           options?: Json
+          price_tiers?: Json
           published_at?: string | null
           related_ids?: string[]
           seo?: Json
@@ -2117,6 +2192,7 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          billing_period: string
           created_at: string
           current_period_end: string | null
           cancel_at_period_end: boolean
@@ -2126,6 +2202,7 @@ export type Database = {
           notes: string | null
           plan_code: string
           provider: string | null
+          provider_billing_period: string | null
           provider_plan_code: string | null
           provider_ref: string | null
           provider_status: string | null
@@ -2135,6 +2212,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_period?: string
           created_at?: string
           current_period_end?: string | null
           cancel_at_period_end?: boolean
@@ -2144,6 +2222,7 @@ export type Database = {
           notes?: string | null
           plan_code: string
           provider?: string | null
+          provider_billing_period?: string | null
           provider_plan_code?: string | null
           provider_ref?: string | null
           provider_status?: string | null
@@ -2153,6 +2232,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_period?: string
           created_at?: string
           current_period_end?: string | null
           cancel_at_period_end?: boolean
@@ -2162,6 +2242,7 @@ export type Database = {
           notes?: string | null
           plan_code?: string
           provider?: string | null
+          provider_billing_period?: string | null
           provider_plan_code?: string | null
           provider_ref?: string | null
           provider_status?: string | null
@@ -2400,6 +2481,10 @@ export type Database = {
       }
     }
     Functions: {
+      abandoned_checkout_candidates: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
       accept_store_invite: { Args: { p_token: string }; Returns: string }
       adjust_stock: {
         Args: {
@@ -2461,6 +2546,7 @@ export type Database = {
       billing_apply_subscription: {
         Args: {
           p_adopt?: boolean
+          p_billing_period?: string
           p_cancel_at_period_end?: boolean
           p_last_payment_at?: string | null
           p_period_end: string | null
@@ -2475,11 +2561,21 @@ export type Database = {
       }
       billing_expire_subscriptions: { Args: never; Returns: number }
       billing_start_checkout: {
-        Args: { p_plan_code: string; p_provider_ref: string; p_store_id: string }
+        Args: {
+          p_billing_period?: string
+          p_plan_code: string
+          p_provider_ref: string
+          p_store_id: string
+        }
         Returns: undefined
       }
       can_manage_media: { Args: { p_name: string }; Returns: boolean }
       check_store_slug: { Args: { p_slug: string }; Returns: boolean }
+      checkout_reminders_enabled: {
+        Args: { p_store_id: string }
+        Returns: boolean
+      }
+      checkout_session_unsubscribe: { Args: { p_token: string }; Returns: Json }
       create_order: { Args: { payload: Json }; Returns: Json }
       create_store: {
         Args: {
@@ -2505,6 +2601,7 @@ export type Database = {
       current_plan: { Args: { p_store_id: string }; Returns: Json }
       expire_trials: { Args: never; Returns: number }
       expire_unpaid_orders: { Args: { p_store_id: string }; Returns: number }
+      get_checkout_session: { Args: { p_token: string }; Returns: Json }
       get_order_by_token: { Args: { p_token: string }; Returns: Json }
       get_schema_version: { Args: never; Returns: number }
       get_store_invite: { Args: { p_token: string }; Returns: Json }
@@ -2521,9 +2618,14 @@ export type Database = {
       is_store_admin: { Args: { p_store_id: string }; Returns: boolean }
       is_store_member: { Args: { p_store_id: string }; Returns: boolean }
       is_store_owner: { Args: { p_store_id: string }; Returns: boolean }
+      mark_checkout_recovered: {
+        Args: { p_order_token: string; p_token: string }
+        Returns: Json
+      }
       platform_list_stores: {
         Args: never
         Returns: {
+          billing_period: string
           created_at: string
           id: string
           name: string
@@ -2539,6 +2641,7 @@ export type Database = {
       }
       platform_set_plan: {
         Args: {
+          p_billing_period?: string
           p_plan_code: string
           p_status: string
           p_store_id: string
@@ -2570,6 +2673,7 @@ export type Database = {
           variant_title: string
         }[]
       }
+      purge_checkout_sessions: { Args: never; Returns: number }
       reorder_categories: {
         Args: { items: Json; p_store_id: string }
         Returns: number
@@ -2582,6 +2686,18 @@ export type Database = {
         Returns: Json
       }
       update_my_profile: { Args: { p_name: string }; Returns: undefined }
+      upsert_checkout_session: {
+        Args: {
+          p_consent: boolean
+          p_email: string
+          p_ip_hash?: string
+          p_items: Json
+          p_name: string | null
+          p_store_id: string
+          p_token: string | null
+        }
+        Returns: Json
+      }
       validate_coupon: {
         Args: {
           p_code: string

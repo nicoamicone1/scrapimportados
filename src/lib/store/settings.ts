@@ -28,6 +28,8 @@ export interface CheckoutSettings {
   min_order_total: number;
   /** Horas de reserva de stock de un pedido impago (0 = nunca vence). */
   reservation_hours: number;
+  /** Aviso por mail de carritos abandonados (migración 0020, plan `marketing.abandoned`). */
+  abandoned_reminders: boolean;
 }
 
 /** Precio sin impuestos nacionales (spec §13 · P0-15). */
@@ -134,6 +136,7 @@ export function parseCheckout(value: Json): CheckoutSettings {
     order_notes_enabled: asBool(c.order_notes_enabled, true),
     min_order_total: asNumber(c.min_order_total, 0),
     reservation_hours: asNumber(c.reservation_hours, 48),
+    abandoned_reminders: asBool(c.abandoned_reminders, false),
   };
 }
 
