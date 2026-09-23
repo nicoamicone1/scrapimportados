@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { fail, GENERIC_ERROR, ok, zodFail, type ActionResult } from "@/lib/actions";
+import { notifyOrderCreated, notifyWithdrawal } from "@/lib/email/notify";
 import { formatMoney } from "@/lib/money";
 import { computeCart, type Coupon, type CartTotals } from "@/lib/pricing";
 import { normalizeProvince, provinceName, quoteShipping } from "@/lib/shipping";
@@ -387,6 +388,8 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
     }
     const result = (created ?? {}) as { number?: number; public_token?: string };
     if (!result.public_token || !result.number) return fail(GENERIC_ERROR);
+    // "Recibimos tu pedido" (comprador) + "Nuevo pedido" (vendedor), después de responder.
+    notifyOrderCreated({ store, settings, token: result.public_token });
 
     let whatsappUrl: string | null = null;
     if (method.type === "whatsapp" && settings.whatsapp_phone) {
@@ -480,6 +483,15 @@ export async function submitWithdrawal(_prev: WithdrawalState, formData: FormDat
     }
     const r = (data ?? {}) as { code?: string; order_found?: boolean };
     if (!r.code) return { status: "error", error: GENERIC_ERROR, values };
+    notifyWithdrawal({
+      store,
+      code: r.code,
+      name: parsed.data.name,
+      contact: parsed.data.contact,
+      orderNumber: parsed.data.orderNumber.replace(/\D/g, "") || null,
+      orderFound: Boolean(r.order_found),
+      reason: parsed.data.reason || null,
+    });
     return { status: "ok", code: r.code, orderFound: Boolean(r.order_found) };
   } catch (err) {
     console.error(err);

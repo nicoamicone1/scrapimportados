@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { ADMIN_STORE_COOKIE, ADMIN_STORE_COOKIE_OPTIONS, getSession } from "@/lib/auth";
+import { notifyStoreCreated } from "@/lib/email/notify";
 import { setActiveStore } from "@/lib/tenant/actions";
 import { createStoreSchema, type CreateStoreInput } from "@/lib/tenant/create-store";
 import { STORE_SLUG_MESSAGES } from "@/lib/tenant/slug";
@@ -67,6 +68,7 @@ export async function createStore(input: CreateStoreInput): Promise<ActionResult
       summary: `Creó la tienda ${v.name} (${v.slug})`,
     });
     if (auditError) console.error("[audit]", auditError.message);
+    notifyStoreCreated({ supabase, storeId, slug: v.slug, name: v.name, ownerId: user.id, ownerEmail: user.email });
     return ok({ storeId, slug: v.slug });
   });
 }

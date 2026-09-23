@@ -16,6 +16,7 @@ import {
   sanitizeSearch,
 } from "@/lib/admin/order-utils";
 import { getStoreInfo } from "@/lib/admin/orders";
+import { notifyOrderEvent, notifyPaymentChange, notifyStatusChange } from "@/lib/email/notify";
 import { formatDateTime } from "@/lib/dates";
 import { isStoreMediaPath, mediaPathFromUrl } from "@/lib/media";
 import { formatMoney } from "@/lib/money";
@@ -83,6 +84,7 @@ export async function changeOrderStatus(input: unknown): Promise<ActionResult<{ 
         : {}),
     });
     if (!res.ok) return fail(res.error);
+    notifyStatusChange(ctx.store, order, v.status);
 
     await logAudit(ctx, {
       action: "order.status",
@@ -124,6 +126,7 @@ export async function bulkChangeOrderStatus(
       }
       updated++;
       if (res.data.stockDelta) stockChanged = true;
+      notifyStatusChange(ctx.store, order, status);
     }
 
     if (updated) {
@@ -155,6 +158,10 @@ export async function updateOrderTracking(input: unknown): Promise<ActionResult>
       .eq("id", order.id)
       .eq("store_id", ctx.store.id);
     if (error) return fail("No se pudo guardar el seguimiento.");
+    // Pedido ya despachado que recibe (o cambia) su número: se lo mandamos al comprador.
+    if (order.status === "shipped" && v.trackingNumber && v.trackingNumber !== order.tracking_number) {
+      notifyOrderEvent(ctx.store, order, "tracking");
+    }
 
     const parts = ["Actualizamos el seguimiento del envío."];
     if (v.carrier) parts.push(`Transporte: ${v.carrier}.`);
@@ -200,6 +207,7 @@ export async function recordPayment(input: unknown): Promise<ActionResult<{ paym
     const amountLabel = formatMoney(v.amount, { currency: order.currency });
     const res = await recordOrderPayment(ctx, order, v, { inventoryPolicy: store.inventoryPolicy, amountLabel });
     if (!res.ok) return fail(res.error);
+    notifyPaymentChange(ctx.store, order, res.data.paymentStatus);
 
     await logAudit(ctx, {
       action: "order.payment",
@@ -244,6 +252,7 @@ export async function markOrdersPaid(input: unknown): Promise<ActionResult<{ upd
       if (!res.ok) continue;
       if (res.data.stockDelta) stockChanged = true;
       updated++;
+      notifyPaymentChange(ctx.store, order, res.data.paymentStatus);
     }
 
     if (updated) {
@@ -817,6 +826,7 @@ export async function resolveWithdrawal(input: unknown): Promise<ActionResult<{ 
         const res = await applyStatusChange(ctx, order, "cancelled", { reason: "arrepentimiento" });
         if (!res.ok) return fail(res.error);
         cancelled = true;
+        notifyStatusChange(ctx.store, order, "cancelled");
         if (res.data.stockDelta) revalidateTag(tagFor("products", ctx.store.id), "max");
       }
     }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { fail, ok, runAction, type ActionResult } from "@/lib/actions";
 import { logAudit } from "@/lib/audit";
 import { requireAdmin } from "@/lib/auth";
+import { notifyPlanRequest } from "@/lib/email/notify";
 import { PLAN_CODES, PLAN_NAMES, type PlanCode } from "@/lib/plans";
 import { storeDisplayHost } from "@/lib/tenant/urls";
 
@@ -27,6 +28,14 @@ export async function requestUpgrade(input: { plan: string }): Promise<ActionRes
       entityId: ctx.store.id,
       summary: `Pidió pasar de ${ctx.plan.name} a ${PLAN_NAMES[plan]}`,
       diff: { plan: [ctx.plan.code, plan] },
+    });
+    // Aviso interno a la plataforma (si hay PLATFORM_EMAIL), además del WhatsApp.
+    notifyPlanRequest({
+      store: ctx.store,
+      currentPlan: ctx.plan.name,
+      currentTrial: ctx.plan.status === "trialing",
+      requestedPlan: PLAN_NAMES[plan],
+      requestedBy: ctx.user.email,
     });
 
     const phone = (process.env.PLATFORM_WHATSAPP ?? "").replace(/\D/g, "");
