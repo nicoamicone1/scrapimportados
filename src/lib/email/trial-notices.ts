@@ -187,7 +187,16 @@ async function markNotice(db: Admin, n: Notice): Promise<void> {
  * Manda los avisos juntados por `collectTrialNotices` (los de "terminó" sólo
  * si el mantenimiento corrió bien) y marca cada tienda. Nunca lanza.
  */
-export async function deliverTrialNotices(plan: TrialNoticePlan | null, now: Date = new Date()): Promise<TrialNoticeReport> {
+/**
+ * Manda los avisos de prueba y marca cada tienda. `sent`, si se pasa, recibe
+ * los `store_id` a los que les salió algo: el cron se lo pasa a los avisos
+ * de activación para que una dueña no reciba dos mails el mismo día.
+ */
+export async function deliverTrialNotices(
+  plan: TrialNoticePlan | null,
+  now: Date = new Date(),
+  sent?: Set<string>,
+): Promise<TrialNoticeReport> {
   const report: TrialNoticeReport = { trial_ending: 0, trial_ended: 0 };
   if (!plan) return report;
   const platformUrl = platformOrigin();
@@ -225,6 +234,7 @@ export async function deliverTrialNotices(plan: TrialNoticePlan | null, now: Dat
       // Sólo se marca si Resend lo aceptó: si falló, mañana se reintenta.
       if (!wasSent(result)) continue;
       report[n.kind]++;
+      sent?.add(n.storeId);
       await markNotice(plan.db, n);
     } catch (err) {
       console.error(`[email] ${n.kind} ${n.slug}:`, err instanceof Error ? err.message : err);

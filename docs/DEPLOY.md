@@ -24,7 +24,7 @@ Estado actual de producción (spec §14.4):
 | `RESEND_API_KEY` | `re_…` (marcado *sensitive*) | emails transaccionales (ver §4b). Sin ella no se manda ningún email y la app funciona igual |
 | `EMAIL_FROM` | `Ecommy <no-reply@ecommy.app>` (default si falta) | remitente; el dominio tiene que estar verificado en Resend. Las tiendas mandan como `"{Tienda} vía Ecommy" <misma dirección>` |
 | `PLATFORM_EMAIL` | casilla de soporte de Ecommy | recibe los pedidos de cambio de plan y es el reply-to de los mails de cuenta. Opcional |
-| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usa SÓLO el cron diario para los avisos de "tu prueba termina" / "tu prueba terminó". Sin ella esos avisos no salen; el cron y todo lo demás siguen igual |
+| `SUPABASE_SERVICE_ROLE_KEY` | clave `service_role` de Supabase (marcada *sensitive*, **nunca** `NEXT_PUBLIC_`) | la usa SÓLO el cron diario para los avisos de "tu prueba termina" / "tu prueba terminó" y los de activación (día 2 y día 7). Sin ella esos avisos no salen; el cron y todo lo demás siguen igual |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | `G-XXXXXXXXXX` | GA4 del sitio de Ecommy (landing, planes, registro, contacto). Opcional; sin él no se carga ningún script. Las tiendas tienen su propio GA4 en Configuración › SEO |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | token de Search Console | sólo el valor `content` del meta que da Google, sin el meta entero. Opcional |
 
@@ -82,6 +82,8 @@ vendedor en el email de contacto de la tienda (pedido nuevo, arrepentimiento), a
 (bienvenida, prueba por terminar, prueba terminada) y a `PLATFORM_EMAIL` (pedido de
 plan). Se mandan después de responder (`after()`), nunca bloquean un pedido y usan
 `Idempotency-Key` para no duplicarse. Código: `src/lib/email/`.
+
+Avisos de activación (cron diario, `src/lib/email/activation-notices.ts`, con `SUPABASE_SERVICE_ROLE_KEY`): al dueño, una sola vez cada uno y sólo si la tienda está activa, "falta el primer producto" (día 2 a 30 sin productos) y "ahora, que la vean" (día 7 a 30 con productos activos, sin `onboarding.shared` ni pedidos); quedan marcados en `stores.onboarding.notices` y el JSON del cron los cuenta en `emails.activation_no_products` / `emails.activation_share`.
 
 1. Crear la cuenta en [resend.com](https://resend.com) y una API key con permiso
    *Sending access*.

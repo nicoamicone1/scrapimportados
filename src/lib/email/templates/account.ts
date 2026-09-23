@@ -1,7 +1,7 @@
 import { formatDate } from "@/lib/dates";
-import { PLAN_DEFAULTS } from "@/lib/plans/features";
+import { featureMinPlan, PLAN_DEFAULTS, PLAN_NAMES } from "@/lib/plans/features";
 
-import { renderEmail, type EmailContent } from "../layout";
+import { renderEmail, type EmailContent, type Inline } from "../layout";
 import { accountFooter, platformBrand, plural } from "./shared";
 
 /*
@@ -142,6 +142,132 @@ export function trialEndedEmail(d: TrialEndedEmailData): EmailContent {
       { t: "list", items: freePlanRestrictions() },
       { t: "p", content: "Si elegís un plan, se desbloquea todo tal como lo dejaste." },
       { t: "button", href: `${d.platformUrl}/admin/plan`, label: "Ver los planes" },
+    ],
+    footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Activación (cron diario, src/lib/email/activation-notices.ts)
+// ---------------------------------------------------------------------------
+
+/** "desde Starter" según `PLAN_DEFAULTS` (la misma fuente que los candados del panel). */
+function fromPlan(key: Parameters<typeof featureMinPlan>[0]): string {
+  return PLAN_NAMES[featureMinPlan(key)];
+}
+
+export interface NoProductsEmailData extends AccountEmailBase {
+  /** Días desde que se creó la tienda (entero, ≥ 2). */
+  daysSinceCreated: number;
+  /** Días que le quedan a la prueba de Pro (0 = no está en prueba). */
+  trialDaysLeft?: number;
+}
+
+/** Día 2 sin productos: dos caminos concretos para cargar el primero. */
+export function noProductsEmail(d: NoProductsEmailData): EmailContent {
+  const host = d.storeUrl.replace(/^https?:\/\//, "");
+  const days = Math.max(1, Math.round(d.daysSinceCreated));
+  const trial = Math.max(0, Math.round(d.trialDaysLeft ?? 0));
+  const csvPlan = fromPlan("catalog.import_csv");
+  const webPlan = fromPlan("catalog.import_web");
+  const heading = "Tu tienda está creada. Falta lo más importante: el primer producto.";
+  const importNote: Inline[] = [` Planilla, desde el plan ${csvPlan}; otra web, desde ${webPlan}.`];
+  if (trial > 0) {
+    importNote.push(" ", { b: `Durante tu prueba de Pro (te ${trial === 1 ? "queda 1 día" : `quedan ${trial} días`}) tenés las dos.` });
+  }
+  return renderEmail({
+    subject: `${d.storeName}: falta cargar el primer producto`,
+    preheader: `Sin productos, quien entra a ${host} no puede pedir nada. Dos formas de cargar el primero.`,
+    brand: platformBrand(d.platformUrl),
+    blocks: [
+      { t: "heading", text: heading },
+      {
+        t: "p",
+        content: [
+          hello(d.ownerName),
+          ` Creaste ${d.storeName} hace ${plural(days, "día", "días")} y todavía no tiene productos: quien entra a `,
+          { href: d.storeUrl, label: host },
+          " ve la tienda vacía y no puede hacer un pedido.",
+        ],
+      },
+      { t: "section", title: "Dos caminos" },
+      {
+        t: "list",
+        ordered: true,
+        items: [
+          [
+            { href: `${d.platformUrl}/admin/productos/nuevo`, label: "Cargar uno a mano" },
+            ": nombre, precio, una foto y stock. Con uno solo ya podés ver cómo queda en la tienda.",
+          ],
+          [
+            { href: `${d.platformUrl}/admin/importar`, label: "Importar el catálogo" },
+            ": desde una planilla CSV o desde la web donde ya vendés.",
+            ...importNote,
+          ],
+        ],
+      },
+      { t: "button", href: `${d.platformUrl}/admin/productos/nuevo`, label: "Cargar el primer producto" },
+      d.supportEmail && {
+        t: "p",
+        content: "Si preferís que lo hagamos juntos, respondé este mail y coordinamos.",
+        muted: true,
+      },
+    ],
+    footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
+  });
+}
+
+export interface ShareStoreEmailData extends AccountEmailBase {
+  /** Productos activos (publicados) de la tienda. */
+  activeProducts: number;
+  /** Fin de la prueba de Pro, si sigue en prueba. */
+  trialEndsAt?: string | null;
+  trialDaysLeft?: number;
+}
+
+/** Día 7 con productos, sin compartir ni pedidos: que el link llegue a los clientes. */
+export function shareStoreEmail(d: ShareStoreEmailData): EmailContent {
+  const host = d.storeUrl.replace(/^https?:\/\//, "");
+  const products = Math.max(1, Math.round(d.activeProducts));
+  const trial = Math.max(0, Math.round(d.trialDaysLeft ?? 0));
+  const heading = "Tu tienda ya tiene productos. Ahora, que la vean.";
+  return renderEmail({
+    subject: heading,
+    preheader: `${plural(products, "producto activo", "productos activos")} en ${host}. Falta que el link llegue a tus clientes.`,
+    brand: platformBrand(d.platformUrl),
+    blocks: [
+      { t: "heading", text: heading },
+      {
+        t: "p",
+        content: [
+          hello(d.ownerName),
+          ` ${d.storeName} tiene `,
+          { b: plural(products, "producto activo", "productos activos") },
+          " y todavía no recibió pedidos. Lo que falta es que el link llegue a quien ya te compra.",
+        ],
+      },
+      { t: "p", content: ["Dirección de tu tienda: ", { href: d.storeUrl, label: host }] },
+      { t: "section", title: "Dónde compartirla" },
+      {
+        t: "list",
+        items: [
+          "Por WhatsApp, a tus clientes y en tu estado, con un mensaje ya escrito.",
+          "En la bio de Instagram y en una historia con el link.",
+          "En el local: el código QR impreso en el mostrador, las bolsas o las etiquetas.",
+          "Cuando te pregunten por algo puntual, el link directo a ese producto.",
+        ],
+      },
+      { t: "button", href: `${d.platformUrl}/admin/compartir`, label: "Ver link, QR y mensajes" },
+      trial > 0 &&
+        d.trialEndsAt && {
+          t: "p",
+          content: [
+            `Tu prueba de Pro sigue hasta el `,
+            { b: formatDate(d.trialEndsAt) },
+            ` (${trial === 1 ? "queda 1 día" : `quedan ${trial} días`}): buen momento para recibir los primeros pedidos con todo habilitado.`,
+          ],
+          muted: true,
+        },
     ],
     footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
   });
