@@ -2,6 +2,20 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.5.0 — 2026-09-23 · Plan anual, carritos abandonados y precios por cantidad
+
+### Agregado
+
+- Pago anual en Starter y Pro: 12 meses por el precio de 10. Las tarjetas de planes muestran «Pagando el año: … · $ X por mes»; en Plan podés pagar el año con MercadoPago o pedirlo por WhatsApp, y quien ya tiene un plan mensual puede pasarse al anual. La plataforma carga el precio y el plan anual de MercadoPago por plan.
+- Recuperación de carritos abandonados (Starter en adelante, se activa en Configuración › Pagos y checkout): en el checkout aparece «Avisame por mail si dejo el pedido sin terminar», destildado. A quien lo tilda y no confirma le llega un solo mail con su carrito y «Terminar mi pedido», que lo vuelve a armar con los precios de hoy; desde el mismo mail se puede dar de baja. Pedidos › Carritos abandonados muestra quién dejó el checkout y en qué estado está.
+- Precios por cantidad por producto (desde Starter): «desde 6 unidades $ X, desde 12 $ Y», hasta 4 tramos con el ahorro en %. Se suman todas las variantes del producto y las promociones, el cupón y el descuento por medio de pago se aplican encima. En la ficha el precio cambia con la cantidad y hay una tabla «Precio por cantidad»; la card dice «Desde 6 u. $ X»; el carrito y el checkout muestran la fila «Precio por cantidad».
+
+### Cambiado
+
+- La pantalla Plan y los mails de cobro indican si el plan es mensual o anual. Las preguntas frecuentes explican el pago anual y ya no dicen que MercadoPago «llega en la próxima versión».
+- Duplicar un producto copia también sus precios por cantidad.
+- Requiere aplicar las migraciones 0019 a 0021 (en orden): plan anual, carritos abandonados y precios por cantidad.
+
 ## v0.4.1 — 2026-09-23 · Kit de redes, CI y una landing más rápida
 
 ### Agregado

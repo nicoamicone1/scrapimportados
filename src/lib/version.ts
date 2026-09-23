@@ -6,14 +6,14 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.4.1";
+export const APP_VERSION = "0.5.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
  * con `app_meta.schema_version` (Configuración muestra un aviso si la base
  * está atrasada). Subila junto con la migración que la actualiza.
  */
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 12;
 
 export interface ChangelogEntry {
   version: string;
@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.5.0",
+    date: "2026-09-23",
+    title: "Plan anual, carritos abandonados y precios por cantidad",
+    sections: {
+      added: [
+        "Pago anual en Starter y Pro: 12 meses por el precio de 10. Las tarjetas de planes muestran «Pagando el año: … · $ X por mes»; en Plan podés pagar el año con MercadoPago o pedirlo por WhatsApp, y quien ya tiene un plan mensual puede pasarse al anual. La plataforma carga el precio y el plan anual de MercadoPago por plan.",
+        "Recuperación de carritos abandonados (Starter en adelante, se activa en Configuración › Pagos y checkout): en el checkout aparece «Avisame por mail si dejo el pedido sin terminar», destildado. A quien lo tilda y no confirma le llega un solo mail con su carrito y «Terminar mi pedido», que lo vuelve a armar con los precios de hoy; desde el mismo mail se puede dar de baja. Pedidos › Carritos abandonados muestra quién dejó el checkout y en qué estado está.",
+        "Precios por cantidad por producto (desde Starter): «desde 6 unidades $ X, desde 12 $ Y», hasta 4 tramos con el ahorro en %. Se suman todas las variantes del producto y las promociones, el cupón y el descuento por medio de pago se aplican encima. En la ficha el precio cambia con la cantidad y hay una tabla «Precio por cantidad»; la card dice «Desde 6 u. $ X»; el carrito y el checkout muestran la fila «Precio por cantidad».",
+      ],
+      changed: [
+        "La pantalla Plan y los mails de cobro indican si el plan es mensual o anual. Las preguntas frecuentes explican el pago anual y ya no dicen que MercadoPago «llega en la próxima versión».",
+        "Duplicar un producto copia también sus precios por cantidad.",
+        "Requiere aplicar las migraciones 0019 a 0021 (en orden): plan anual, carritos abandonados y precios por cantidad.",
+      ],
+      fixed: [],
+    },
+  },
   {
     version: "0.4.1",
     date: "2026-09-23",

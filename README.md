@@ -6,7 +6,7 @@ personalizable, panel de administración (`/admin`) y checkout sin pasarela
 (transferencia con descuento o coordinación por WhatsApp; el pedido siempre queda
 registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y límites.
 
-Versión actual: **0.4.1** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
+Versión actual: **0.5.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
 cobro de planes con MercadoPago: [`docs/BILLING.md`](docs/BILLING.md) ·
@@ -78,8 +78,10 @@ aplicarla, Configuración muestra "base de datos desactualizada" y los mails sal
 `0015_billing.sql` (esquema 6) cobro de planes con MercadoPago, `0016_stock_alerts.sql` (7)
 avisos de stock, `0017_promotions_bxgy.sql` (8) promociones por cantidad y
 `0018_order_bundle_discount.sql` (9) descuento por cantidad a nivel pedido con recálculo en
-`create_order`. Se aplican en ese orden; el código tolera que falten (cada función se
-oculta o degrada) y `SCHEMA_VERSION` en `src/lib/version.ts` indica la esperada.
+`create_order`; `0019_plans_yearly.sql` (10) plan anual, `0020_abandoned_checkouts.sql` (11)
+carritos abandonados y `0021_price_tiers.sql` (12) precios por cantidad. Se aplican en ese
+orden; el código tolera que falten (cada función se oculta o degrada) y `SCHEMA_VERSION` en
+`src/lib/version.ts` indica la esperada.
 `0015_billing.sql` (esquema 6) agrega el cobro con MercadoPago (`plans.mp_plan_id`,
 `billing_events`, columnas de `subscriptions`, `billing_apply_subscription` sólo para
 service role); sin ella `/admin/plan` sigue sólo con WhatsApp.
