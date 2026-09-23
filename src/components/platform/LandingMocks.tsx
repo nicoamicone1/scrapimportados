@@ -49,7 +49,7 @@ export function CatalogMock() {
               <td className="py-1.5 pl-3">
                 <span className="block size-6 rounded-[3px] bg-adm-surface-2" />
               </td>
-              <td className="px-2 py-1.5">
+              <td className="w-full max-w-0 px-2 py-1.5">
                 <div className="truncate font-medium">{p.name}</div>
                 <div className="text-[11px] text-adm-fg-muted">{p.sku}</div>
               </td>

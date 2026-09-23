@@ -21,6 +21,7 @@ import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site"
 import { presetSpecimens, SPECIMEN_BUTTON, specimenFontsHref } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSession } from "@/lib/auth";
+import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { listPublicPlans, type PublicPlan } from "@/lib/plans/catalog";
 import { platformOrigin, storeHref } from "@/lib/tenant/urls";
@@ -328,7 +329,7 @@ export default async function LandingPage() {
           <div className="mt-12 space-y-14 md:space-y-16">
             {FEATURES.map((f, i) => (
               <div key={f.title} className="grid items-center gap-6 md:grid-cols-2 md:gap-12">
-                <div className={i % 2 ? "md:order-2" : undefined}>
+                <div className={cn("min-w-0", i % 2 && "md:order-2")}>
                   <h3 className="flex items-center gap-2.5 text-[18px] font-semibold tracking-[-0.01em]">
                     <span className="text-adm-accent">{f.icon}</span>
                     {f.title}
@@ -336,7 +337,7 @@ export default async function LandingPage() {
                   <p className="mt-2 max-w-[48ch] text-[14px] leading-relaxed text-adm-fg-muted">{f.text}</p>
                   <p className="mt-3 text-[12px] text-adm-fg-muted">{f.plans}</p>
                 </div>
-                <div className={i % 2 ? "md:order-1" : undefined}>{f.mock}</div>
+                <div className={cn("min-w-0", i % 2 && "md:order-1")}>{f.mock}</div>
               </div>
             ))}
           </div>
