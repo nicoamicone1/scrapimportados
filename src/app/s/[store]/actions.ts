@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/money";
 import { computeCart, type Coupon, type CartTotals } from "@/lib/pricing";
 import { normalizeProvince, provinceName, quoteShipping } from "@/lib/shipping";
 import { describeIssue, validateCart, type CartPatch } from "@/lib/store/cart-validation";
+import { orderLinesPayload, supportsOrderBundle } from "@/lib/store/order-bundle";
 import { deliveryText, getOrderByToken } from "@/lib/store/orders";
 import { fetchPaymentMethodsFresh } from "@/lib/store/payment-methods";
 import { getFreshVariants } from "@/lib/store/products";
@@ -217,6 +218,29 @@ export async function quoteShippingAction(input: unknown): Promise<ActionResult<
 // Crear el pedido
 // ---------------------------------------------------------------------------
 
+/**
+ * ¿`create_order` acepta `bundle_discount` (migración 0018)? Se lee con
+ * `get_schema_version()` (anon no puede leer `app_meta`). Sin la migración la
+ * RPC no existe → false: se manda el payload viejo (precio promedio por
+ * línea), porque la `create_order` de 0014 ignoraría `bundle_discount` y
+ * cobraría las unidades bonificadas. Un "sí" queda en memoria (la versión
+ * sólo sube, con `greatest`); un "no" se vuelve a preguntar al minuto.
+ */
+let orderBundleCheck: { ok: boolean; at: number } | null = null;
+
+async function orderLevelBundleSupported(): Promise<boolean> {
+  if (orderBundleCheck && (orderBundleCheck.ok || Date.now() - orderBundleCheck.at < 60_000)) return orderBundleCheck.ok;
+  let ok = false;
+  try {
+    const { data, error } = await createPublicClient().rpc("get_schema_version");
+    ok = !error && supportsOrderBundle(data);
+  } catch {
+    ok = false;
+  }
+  orderBundleCheck = { ok, at: Date.now() };
+  return ok;
+}
+
 const orderSchema = z
   .object({
     customer: z.object({
@@ -263,11 +287,12 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
   try {
     const store = await currentStore();
     if (!store) return fail(STORE_UNAVAILABLE);
-    const [settings, methods, promotions, fresh] = await Promise.all([
+    const [settings, methods, promotions, fresh, orderLevelBundle] = await Promise.all([
       fetchSettingsFresh(store.id),
       fetchPaymentMethodsFresh(store.id),
       fetchActivePromotionsFresh(store.id),
       getFreshVariants(store.id, data.items.map((i) => i.variantId)),
+      orderLevelBundleSupported(),
     ]);
 
     if (settings.checkout.require_phone && !data.customer.phone) {
@@ -340,6 +365,10 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
     }
 
     // --- Payload según el contrato de public.create_order(payload)
+    // Promos por cantidad: con 0018, precio real por línea + `bundle_discount`
+    // (lo recalcula y acota la base con la misma regla del motor); sin 0018,
+    // precio promedio por línea (ver src/lib/store/order-bundle.ts).
+    const linesPayload = orderLinesPayload(totals, orderLevelBundle);
     const provinceCode = data.address ? normalizeProvince(data.address.province) : null;
     const payload = {
       // create_order deriva la tienda de las variantes y valida que coincida con ésta.
@@ -353,7 +382,7 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
       fulfillment: data.fulfillment,
       payment_method_code: method.code,
       items: totals.lines.map((l) => ({ variant_id: l.variantId, qty: l.qty })),
-      lines: totals.lines.map((l) => ({ variant_id: l.variantId, unit_price: l.unitPrice })),
+      ...linesPayload,
       coupon_code: coupon?.code ?? null,
       totals: { coupon_discount: totals.couponDiscount, total: totals.total },
       shipping_zone_id: zone?.id ?? null,

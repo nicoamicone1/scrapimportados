@@ -349,7 +349,7 @@ export async function previewPromotion(input: unknown, currentId: unknown): Prom
         example = {
           qty: exampleQty,
           before: line?.lineList ?? price * exampleQty,
-          after: line?.lineTotal ?? price * exampleQty,
+          after: line?.netTotal ?? price * exampleQty,
           applies,
           blockedBy: applies ? null : line?.offer && line.offer.id !== DRAFT_ID ? line.offer.name : (line?.promotion?.name ?? null),
         };

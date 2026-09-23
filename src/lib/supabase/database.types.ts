@@ -819,6 +819,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          bundle_discount: number
           cancel_reason: string | null
           cancelled_at: string | null
           coupon_code: string | null
@@ -861,6 +862,7 @@ export type Database = {
           whatsapp_sent_at: string | null
         }
         Insert: {
+          bundle_discount?: number
           cancel_reason?: string | null
           cancelled_at?: string | null
           coupon_code?: string | null
@@ -903,6 +905,7 @@ export type Database = {
           whatsapp_sent_at?: string | null
         }
         Update: {
+          bundle_discount?: number
           cancel_reason?: string | null
           cancelled_at?: string | null
           coupon_code?: string | null
@@ -2457,6 +2460,7 @@ export type Database = {
       }
       billing_apply_subscription: {
         Args: {
+          p_adopt?: boolean
           p_cancel_at_period_end?: boolean
           p_last_payment_at?: string | null
           p_period_end: string | null
@@ -2490,6 +2494,7 @@ export type Database = {
       create_stock_alert: {
         Args: {
           p_email: string
+          p_ip_hash?: string
           p_product_id?: string
           p_store_id: string
           p_variant_id: string | null
@@ -2501,6 +2506,7 @@ export type Database = {
       expire_trials: { Args: never; Returns: number }
       expire_unpaid_orders: { Args: { p_store_id: string }; Returns: number }
       get_order_by_token: { Args: { p_token: string }; Returns: Json }
+      get_schema_version: { Args: never; Returns: number }
       get_store_invite: { Args: { p_token: string }; Returns: Json }
       hit_redirect: {
         Args: { p_from_path: string; p_store_id: string }

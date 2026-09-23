@@ -24,7 +24,8 @@ import type {
  * Motor de precios PURO (spec §6). Mismas reglas que `create_order` en SQL:
  *
  *   subtotal         = Σ lista × qty
- *   promoTotal       = Σ (lista − precio con promo) × qty
+ *   promos por cantidad (bundleDiscount) = Σ lo que bonifica cada 3x2 / N.ª unidad
+ *   promoTotal       = Σ (lista − precio con promo por unidad) × qty + bundleDiscount
  *   cupón            = % o fijo sobre las líneas elegibles (ya con promo)
  *   mercadería       = subtotal − promoTotal − cupón
  *   desc. medio pago = round(mercadería × % / 100, 2)
@@ -41,9 +42,16 @@ import type {
  * y ANTES del cupón y del medio de pago.
  *   - Grupo: todas las unidades del alcance cuentan juntas aunque sean
  *     productos distintos ("llevá 3 de la categoría").
- *   - Las unidades se ordenan por precio de mayor a menor y se bonifican las
- *     más baratas: bxgy → floor(n / X) × (X − Y) unidades gratis;
- *     nth → floor(n / N) unidades con Z % (precio redondeado con `roundPrice`).
+ *   - Grupos: las unidades se ordenan por precio de mayor a menor (a igual
+ *     precio, en el orden del carrito) y se parten en grupos de X (bxgy) o de
+ *     N (nth) consecutivos. En CADA grupo completo se bonifican las más
+ *     baratas: bxgy → las X − Y últimas del grupo, gratis; nth → la última
+ *     del grupo, con Z % (precio redondeado con `roundPrice`). Las unidades
+ *     que no completan un grupo (las más baratas) se pagan enteras.
+ *     Así la regla es monótona: sumar un producto nunca sube el total en más
+ *     que su precio (con "las más baratas de TODO el carrito", 3 × $ 100 +
+ *     1 × $ 50 con 3x2 costaba $ 300 y sin el de $ 50, $ 200). Con precios
+ *     iguales da lo mismo que antes.
  *   - Una unidad participa de UNA sola promo por cantidad (entre varias, gana
  *     la de mayor prioridad y, a igual prioridad, la que más ahorra).
  *   - Con una promo por unidad en la misma línea: si las dos son acumulables,
@@ -51,14 +59,19 @@ import type {
  *     no lo es, es la misma regla que entre promos por unidad: gana la de
  *     mayor prioridad y, a igual prioridad, la que más descuenta en ESTE
  *     carrito (se comparan las dos opciones y queda la de menor total). La que
- *     pierde no se aplica a esa línea.
+ *     pierde no se aplica a esa línea. Una línea que sólo SUMA unidades para
+ *     el grupo (no le toca ninguna bonificada) conserva su promo por unidad.
  *   - Una promo por cantidad que no bonifica ninguna unidad (ej. 2 unidades
  *     con un 3x2) no se aplica y no le saca nada a nadie.
- *   - El precio unitario de una línea con promo por cantidad es el promedio
- *     de la línea redondeado HACIA ABAJO al centavo (`create_order` recibe un
- *     precio por línea y nunca se cobra más de lo que promete la promo):
- *     3 × $ 100 con 3x2 → $ 66,66 c/u = $ 199,98. Con 4, 6, 2 × $ 100… el
- *     promedio es exacto y no hay centavos.
+ *   - El descuento por cantidad va A NIVEL PEDIDO (`bundleDiscount`, detalle
+ *     en `offers`): la línea conserva su precio unitario real (lista o con
+ *     promo por unidad) y las unidades bonificadas se restan una sola vez en
+ *     el total. Como cada unidad bonificada vale un precio ya redondeado
+ *     (`roundPrice`: al peso en ARS), el descuento es suma de enteros y el
+ *     total no deja centavos: 3 × $ 100 con 3x2 → $ 200.
+ *     `create_order` lo recibe como `bundle_discount` (migración 0018). Sin
+ *     esa migración, `src/lib/store/order-bundle.ts` arma el payload viejo
+ *     (precio promedio por línea, redondeado hacia abajo al centavo).
  */
 
 function inWindow(startsAt: string | null | undefined, endsAt: string | null | undefined, now: Date): boolean {
@@ -229,7 +242,10 @@ interface WorkLine {
   qty: number;
   product: PricingProduct;
   unit: UnitPricing;
-  /** La promo por cantidad le ganó a la promo por unidad: la línea va a precio de lista. */
+  /**
+   * La promo por cantidad le ganó a la promo por unidad y bonificó unidades
+   * de esta línea: la línea va a precio de lista.
+   */
   dropUnit: boolean;
   claim: { promo: Promotion; units: number; discount: number } | null;
 }
@@ -245,23 +261,29 @@ interface Bundle {
   byLine: Map<WorkLine, { units: number; discount: number }>;
 }
 
-/** Bonifica las unidades más baratas del grupo (ver cabecera). */
+/**
+ * Bonifica, en cada grupo de X (o N) unidades ordenadas de mayor a menor
+ * precio, las más baratas del grupo (ver cabecera). `create_order` repite
+ * esta misma regla en SQL (private.compute_bundle_discount, migración 0018).
+ */
 function bundleDiscount(promo: Promotion, members: Member[]): Bundle {
   const units: { line: WorkLine; base: number; order: number }[] = [];
   members.forEach((m, i) => {
     for (let k = 0; k < m.line.qty; k++) units.push({ line: m.line, base: m.base, order: i });
   });
-  // Mayor a menor precio; a igual precio, orden del carrito (se bonifican las últimas).
+  // Mayor a menor precio; a igual precio, orden de los miembros (se bonifican las últimas).
   units.sort((a, b) => b.base - a.base || a.order - b.order);
-  const n = units.length;
-  let count = 0;
-  if (promo.type === "bxgy") count = Math.floor(n / (promo.buy as number)) * ((promo.buy as number) - (promo.pay as number));
-  else if (promo.type === "nth_unit_percent") count = Math.floor(n / (promo.nth as number));
+  const size = promo.type === "bxgy" ? (promo.buy as number) : (promo.nth as number);
+  const full = Math.floor(units.length / size) * size;
+  // Posición dentro del grupo desde la que se bonifica: bxgy → Y (las X − Y últimas); nth → N − 1 (la última).
+  const from = promo.type === "bxgy" ? (promo.pay as number) : size - 1;
 
   const byLine = new Map<WorkLine, { units: number; discount: number }>();
   for (const m of members) byLine.set(m.line, { units: 0, discount: 0 });
   let total = 0;
-  for (const u of units.slice(n - count)) {
+  for (let k = 0; k < full; k++) {
+    if (k % size < from) continue;
+    const u = units[k];
     const discount =
       promo.type === "bxgy" ? u.base : roundMoney(u.base - roundPrice((u.base * (100 - Math.min(promo.value, 100))) / 100));
     if (discount <= 0) continue;
@@ -281,8 +303,16 @@ interface Evaluation {
   gain: number;
 }
 
-const lostUnitDiscount = (lines: WorkLine[]) =>
-  roundMoney(lines.reduce((acc, l) => acc + (l.unit.listPrice - l.unit.price) * l.qty, 0));
+/**
+ * Promo por unidad que se pierde al entrar al grupo: sólo en las líneas que
+ * reciben alguna unidad bonificada (las que sólo suman unidades la conservan).
+ */
+const lostUnitDiscount = (members: Member[], bundle: Bundle) =>
+  roundMoney(
+    members
+      .filter((m) => m.drop && (bundle.byLine.get(m.line)?.units ?? 0) > 0)
+      .reduce((acc, m) => acc + (m.line.unit.listPrice - m.line.unit.price) * m.line.qty, 0),
+  );
 
 function evaluateQuantityPromotion(promo: Promotion, lines: WorkLine[], now: Date): Evaluation | null {
   const keep: WorkLine[] = [];
@@ -303,11 +333,11 @@ function evaluateQuantityPromotion(promo: Promotion, lines: WorkLine[], now: Dat
 
   const membersA = build(join);
   const bundleA = bundleDiscount(promo, membersA);
-  let best: Evaluation = { promo, members: membersA, bundle: bundleA, gain: roundMoney(bundleA.total - lostUnitDiscount(join)) };
+  let best: Evaluation = { promo, members: membersA, bundle: bundleA, gain: roundMoney(bundleA.total - lostUnitDiscount(membersA, bundleA)) };
   if (tie.length) {
     const membersB = build([...join, ...tie]);
     const bundleB = bundleDiscount(promo, membersB);
-    const gainB = roundMoney(bundleB.total - lostUnitDiscount([...join, ...tie]));
+    const gainB = roundMoney(bundleB.total - lostUnitDiscount(membersB, bundleB));
     // A igual prioridad gana la que más descuenta; empate → se queda la promo por unidad.
     if (gainB > best.gain) best = { promo, members: membersB, bundle: bundleB, gain: gainB };
   }
@@ -332,16 +362,12 @@ function applyQuantityPromotions(lines: WorkLine[], promotions: Promotion[], now
     for (const m of best.members) {
       const share = best.bundle.byLine.get(m.line) ?? { units: 0, discount: 0 };
       m.line.claim = { promo: best.promo, units: share.units, discount: share.discount };
-      m.line.dropUnit = m.drop;
+      // Sin unidades bonificadas la línea sólo suma para el grupo: conserva su promo por unidad.
+      m.line.dropUnit = m.drop && share.units > 0;
     }
     const chosen = best.promo;
     pending = pending.filter((p) => p !== chosen);
   }
-}
-
-/** Hacia abajo al centavo (el cliente nunca paga más de lo que promete la promo). */
-function floorCents(value: number): number {
-  return Math.floor(Math.round(value * 1e6) / 1e4) / 100;
 }
 
 /** ¿El cupón está vigente? (las validaciones por uso las hace el server). */
@@ -358,10 +384,11 @@ function applyCoupon(coupon: Coupon, lines: LineWithCategories[], afterPromos: n
   if (coupon.minSubtotal != null && afterPromos < coupon.minSubtotal) {
     return { applied: false, code: coupon.code, reason: "No alcanzás la compra mínima del cupón" };
   }
+  // Sobre lo que paga cada línea después de TODAS las promos (incluida la por cantidad).
   const eligibleSubtotal = roundMoney(
     lines
       .filter((l) => matchesScope(coupon.scope, coupon, { id: l.productId, categoryIds: l.categoryIds }))
-      .reduce((acc, l) => acc + l.lineTotal, 0),
+      .reduce((acc, l) => acc + l.netTotal, 0),
   );
   if (coupon.type === "free_shipping") {
     return { applied: true, code: coupon.code, discount: 0, freeShipping: true, eligibleSubtotal };
@@ -409,17 +436,13 @@ export function computeCart(input: ComputeCartInput): CartTotals {
   const offers = new Map<string, AppliedOffer>();
   const lines: LineWithCategories[] = work.map((w) => {
     const { item, qty, unit } = w;
-    const base = w.dropUnit ? unit.listPrice : unit.price;
-    let unitPrice = base;
-    let lineTotal = roundMoney(base * qty);
+    const unitPrice = w.dropUnit ? unit.listPrice : unit.price;
+    const lineTotal = roundMoney(unitPrice * qty);
     let offer: LineOffer | null = null;
     if (w.claim) {
       const promo = w.claim.promo;
-      if (w.claim.discount > 0) {
-        unitPrice = floorCents((base * qty - w.claim.discount) / qty);
-        lineTotal = roundMoney(unitPrice * qty);
-      }
-      const amount = roundMoney(base * qty - lineTotal);
+      // Suma de precios unitarios ya redondeados: entero con precios enteros.
+      const amount = roundMoney(Math.min(Math.max(w.claim.discount, 0), lineTotal));
       const label = `Promo ${quantityBadge(promo)}`;
       offer = {
         id: promo.id,
@@ -428,7 +451,7 @@ export function computeCart(input: ComputeCartInput): CartTotals {
         label,
         note: w.claim.units > 0 ? quantityLineNote(promo, w.claim.units) : `Suma para la ${label}`,
         units: w.claim.units,
-        baseUnitPrice: base,
+        baseUnitPrice: unitPrice,
         amount,
       };
       const agg = offers.get(promo.id) ?? { id: promo.id, name: promo.name, type: quantityType(promo), label, amount: 0 };
@@ -446,12 +469,14 @@ export function computeCart(input: ComputeCartInput): CartTotals {
       offer,
       lineList: roundMoney(unit.listPrice * qty),
       lineTotal,
+      netTotal: roundMoney(lineTotal - (offer?.amount ?? 0)),
       promoDiscount: roundMoney(unit.listPrice * qty - lineTotal),
     };
   });
 
   const subtotal = roundMoney(lines.reduce((acc, l) => acc + l.lineList, 0));
-  const promoTotal = roundMoney(lines.reduce((acc, l) => acc + l.promoDiscount, 0));
+  const bundleDiscount = roundMoney(lines.reduce((acc, l) => acc + (l.offer?.amount ?? 0), 0));
+  const promoTotal = roundMoney(lines.reduce((acc, l) => acc + l.promoDiscount, 0) + bundleDiscount);
   const afterPromos = roundMoney(subtotal - promoTotal);
 
   const coupon = input.coupon && lines.length ? applyCoupon(input.coupon, lines, afterPromos, now) : null;
@@ -477,6 +502,7 @@ export function computeCart(input: ComputeCartInput): CartTotals {
     lines: lines.map(stripCategories),
     subtotal,
     promoTotal,
+    bundleDiscount,
     offers: [...offers.values()].filter((o) => o.amount > 0),
     couponDiscount,
     coupon,

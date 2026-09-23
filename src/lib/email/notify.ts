@@ -117,6 +117,7 @@ function toEmailOrder(o: PublicOrder, statusUrl: string): OrderEmailData {
     items: o.items.map((i) => ({ name: i.name, variantTitle: i.variantTitle, qty: i.qty, unitPrice: i.unitPrice, total: i.total })),
     subtotal: o.subtotal,
     promoTotal: o.promoTotal,
+    bundleDiscount: o.bundleDiscount,
     couponCode: o.couponCode,
     couponDiscount: o.couponDiscount,
     paymentDiscount: o.paymentDiscount,

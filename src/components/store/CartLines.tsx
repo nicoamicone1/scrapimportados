@@ -33,10 +33,12 @@ export function CartLines({
       {items.map((item) => {
         const line = byVariant.get(item.variantId);
         const offer = line?.offer ?? null;
-        // Con 3x2 / 2.ª al 50 % se muestra el precio por unidad ANTES de esa promo
-        // (el promedio de la línea no dice nada) y la nota de qué se bonificó.
-        const unit = offer ? offer.baseUnitPrice : (line?.unitPrice ?? item.unitPrice);
+        // Precio real por unidad (lista o con promo por unidad). Con 3x2 / 2.ª al
+        // 50 % la nota dice qué se bonificó y el importe de la línea es lo que
+        // paga con esa promo (el de antes, tachado).
+        const unit = line?.unitPrice ?? item.unitPrice;
         const onSale = line ? unit < line.listPrice : false;
+        const bundled = offer?.amount ?? 0;
         return (
           <li key={item.variantId} className="flex gap-3 py-4 sm:gap-4">
             <StoreLink
@@ -66,7 +68,12 @@ export function CartLines({
                     </p>
                   ) : null}
                 </div>
-                <p className="tnum shrink-0 text-sm font-semibold">{formatMoney(line?.lineTotal ?? unit * item.qty)}</p>
+                <p className="tnum shrink-0 text-right text-sm font-semibold">
+                  {bundled > 0 && line ? (
+                    <s className="mr-1.5 text-xs font-normal text-fg-muted">{formatMoney(line.lineTotal)}</s>
+                  ) : null}
+                  {formatMoney(line?.netTotal ?? unit * item.qty)}
+                </p>
               </div>
               <div className="mt-1 flex items-center justify-between gap-3">
                 <QtyStepper value={item.qty} max={item.maxQty} label={item.name} onChange={(q) => onQty(item.variantId, q)} />
@@ -88,8 +95,9 @@ export function CartLines({
 }
 
 /**
- * Filas de descuento del resumen (drawer, carrito): "Promociones" (por unidad)
- * y una por cada promo por cantidad ("Promo 3x2 −$ X").
+ * Filas de descuento del resumen (drawer, carrito, checkout): "Promociones"
+ * (por unidad) y una por cada promo por cantidad ("Promo 3x2 −$ X"), que van
+ * a nivel pedido (`bundleDiscount`, ya incluido en `promoTotal`).
  */
 export function PromoSummaryRows({ totals }: { totals: Pick<CartTotals, "promoTotal" | "offers"> }) {
   const offersTotal = totals.offers.reduce((acc, o) => acc + o.amount, 0);

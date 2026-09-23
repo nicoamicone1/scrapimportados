@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { BUNDLE_DISCOUNT_LABEL, splitPromotions } from "@/lib/store/order-bundle";
 import { hasFeature } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Remitos" };
@@ -104,9 +105,12 @@ interface SheetProps {
 
 function totalsOf(p: PrintableOrder) {
   const o = p.order;
+  // `promo_total` incluye las promos por cantidad; desde 0018 vienen aparte en `bundle_discount`.
+  const promos = splitPromotions(Number(o.promo_total), o.bundle_discount);
   return {
     subtotal: Number(o.subtotal),
-    promo: Number(o.promo_total),
+    promo: promos.unit,
+    bundle: promos.bundle,
     coupon: Number(o.coupon_discount),
     payment: Number(o.payment_discount),
     extra: otherDiscount({
@@ -240,6 +244,7 @@ function SheetA4({ p, store, url, qr, methodName }: SheetProps) {
         <dl className="tnum w-[70mm] shrink-0 space-y-0.5">
           <Row label="Subtotal" value={money(t.subtotal)} />
           {t.promo > 0 ? <Row label="Promociones" value={`− ${money(t.promo)}`} /> : null}
+          {t.bundle > 0 ? <Row label={BUNDLE_DISCOUNT_LABEL} value={`− ${money(t.bundle)}`} /> : null}
           {t.coupon > 0 ? <Row label={`Cupón ${o.coupon_code ?? ""}`} value={`− ${money(t.coupon)}`} /> : null}
           {t.payment > 0 ? <Row label="Descuento por pago" value={`− ${money(t.payment)}`} /> : null}
           {t.extra > 0 ? <Row label="Descuento" value={`− ${money(t.extra)}`} /> : null}
@@ -311,8 +316,8 @@ function Ticket({ p, store, url, qr, methodName }: SheetProps) {
       </ul>
       <dl className="tnum space-y-0.5 border-b border-dashed border-black py-2">
         <Row label="Subtotal" value={money(t.subtotal)} />
-        {t.promo + t.coupon + t.payment + t.extra > 0 ? (
-          <Row label="Descuentos" value={`− ${money(t.promo + t.coupon + t.payment + t.extra)}`} />
+        {t.promo + t.bundle + t.coupon + t.payment + t.extra > 0 ? (
+          <Row label="Descuentos" value={`− ${money(t.promo + t.bundle + t.coupon + t.payment + t.extra)}`} />
         ) : null}
         <Row label={o.fulfillment === "pickup" ? "Retiro" : "Envío"} value={t.shipping > 0 ? money(t.shipping) : "Sin cargo"} />
         <div className="flex justify-between text-sm font-semibold">

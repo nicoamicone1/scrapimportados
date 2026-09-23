@@ -510,11 +510,12 @@ function filterBase(items: CatalogIndexItem[], filters: ProductFilters): Catalog
   if (filters.featured) out = out.filter((p) => p.featured);
   if (filters.onSale) {
     const promos = filters.promotions ?? [];
-    out = out.filter(
-      (p) =>
-        p.hasCompareAt ||
-        applyPromotions({ id: p.id, price: p.minPrice }, { id: p.id, categoryIds: p.categoryIds }, promos).promotion,
-    );
+    // "Ofertas": precio tachado, promo por unidad o promo por cantidad (3x2, 2.ª al 50 %).
+    out = out.filter((p) => {
+      if (p.hasCompareAt) return true;
+      const priced = applyPromotions({ id: p.id, price: p.minPrice }, { id: p.id, categoryIds: p.categoryIds }, promos);
+      return Boolean(priced.promotion || priced.offer);
+    });
   }
   return out;
 }

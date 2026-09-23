@@ -1,5 +1,6 @@
 import { DEFAULT_TIMEZONE, formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { BUNDLE_DISCOUNT_LABEL, splitPromotions } from "@/lib/store/order-bundle";
 
 import { brandColors, PLATFORM_ACCENT, PLATFORM_ACCENT_TEXT, type Block, type Brand, type Inline } from "../layout";
 import type { OrderEmailData, StoreEmailInfo } from "./types";
@@ -95,7 +96,10 @@ export function itemsBlock(order: OrderEmailData): Block {
 export function totalsBlock(order: OrderEmailData): Block {
   const money = moneyOf(order);
   const rows: { label: string; value: string; strong?: boolean }[] = [{ label: "Subtotal", value: money(order.subtotal) }];
-  if (order.promoTotal > 0) rows.push({ label: "Promociones", value: `−${money(order.promoTotal)}` });
+  // Promos por unidad y, aparte, las por cantidad (3x2) a nivel pedido (migración 0018).
+  const promos = splitPromotions(order.promoTotal, order.bundleDiscount);
+  if (promos.unit > 0) rows.push({ label: "Promociones", value: `−${money(promos.unit)}` });
+  if (promos.bundle > 0) rows.push({ label: BUNDLE_DISCOUNT_LABEL, value: `−${money(promos.bundle)}` });
   if (order.couponDiscount > 0) {
     rows.push({ label: order.couponCode ? `Cupón ${order.couponCode}` : "Cupón", value: `−${money(order.couponDiscount)}` });
   }

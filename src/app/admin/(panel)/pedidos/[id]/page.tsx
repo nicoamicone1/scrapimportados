@@ -38,6 +38,7 @@ import {
 import { whatsAppTemplateFor } from "@/lib/admin/whatsapp";
 import { formatDateTime } from "@/lib/dates";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/money";
+import { BUNDLE_DISCOUNT_LABEL, splitPromotions } from "@/lib/store/order-bundle";
 import { storeHref } from "@/lib/tenant/urls";
 
 import { saveInternalNotesFor } from "../actions";
@@ -84,6 +85,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
     shipping_cost: Number(order.shipping_cost),
     total: Number(order.total),
   });
+  // `promo_total` incluye las promos por cantidad; desde 0018 vienen aparte en `bundle_discount`.
+  const promos = splitPromotions(Number(order.promo_total), order.bundle_discount);
   const itemsCount = items.reduce((s, i) => s + i.qty, 0);
   const phone = customer.phone ?? customerRecord?.phone ?? null;
 
@@ -194,7 +197,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
             </div>
             <dl className="tnum ml-auto max-w-sm space-y-1.5 px-4 py-3 text-[13px]">
               <TotalRow label="Subtotal" value={money(Number(order.subtotal))} />
-              {Number(order.promo_total) > 0 ? <TotalRow label="Promociones" value={`− ${money(Number(order.promo_total))}`} /> : null}
+              {promos.unit > 0 ? <TotalRow label="Promociones" value={`− ${money(promos.unit)}`} /> : null}
+              {promos.bundle > 0 ? <TotalRow label={BUNDLE_DISCOUNT_LABEL} value={`− ${money(promos.bundle)}`} /> : null}
               {Number(order.coupon_discount) > 0 ? (
                 <TotalRow label={`Cupón ${order.coupon_code ?? ""}`} value={`− ${money(Number(order.coupon_discount))}`} />
               ) : null}

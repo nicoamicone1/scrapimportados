@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 
+import { PromoSummaryRows } from "@/components/store/CartLines";
 import { CouponForm } from "@/components/store/CouponForm";
 import { FreeShippingBar } from "@/components/store/FreeShippingBar";
 import { useStorePath } from "@/components/store/StoreBase";
@@ -204,9 +205,15 @@ function Summary({
               <div className="min-w-0 flex-1 text-sm">
                 <p className="line-clamp-2">{item.name}</p>
                 {item.variantTitle ? <p className="text-xs text-fg-muted">{item.variantTitle}</p> : null}
+                {line?.offer && line.offer.units > 0 ? (
+                  <p className="mt-0.5 text-xs text-accent">
+                    {line.offer.label}: {line.offer.note}
+                  </p>
+                ) : null}
                 {err ? <p className="mt-0.5 text-xs text-danger">{err}</p> : null}
               </div>
-              <p className="tnum shrink-0 text-sm">{formatMoney(line?.lineTotal ?? item.unitPrice * item.qty)}</p>
+              {/* Lo que paga la línea con la promo por cantidad (el descuento también figura abajo, en su fila). */}
+              <p className="tnum shrink-0 text-sm">{formatMoney(line?.netTotal ?? item.unitPrice * item.qty)}</p>
             </li>
           );
         })}
@@ -216,12 +223,7 @@ function Summary({
           <dt className="text-fg-muted">Subtotal</dt>
           <dd>{formatMoney(totals.subtotal)}</dd>
         </div>
-        {totals.promoTotal > 0 ? (
-          <div className="flex justify-between">
-            <dt className="text-fg-muted">Promociones</dt>
-            <dd className="text-accent">−{formatMoney(totals.promoTotal)}</dd>
-          </div>
-        ) : null}
+        <PromoSummaryRows totals={totals} />
         {totals.coupon?.applied ? (
           <div className="flex justify-between">
             <dt className="text-fg-muted">Cupón {totals.coupon.code}</dt>

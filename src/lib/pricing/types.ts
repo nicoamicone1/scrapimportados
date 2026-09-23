@@ -137,9 +137,14 @@ export interface LineOffer {
   note: string;
   /** Unidades de esta línea bonificadas (gratis o con el %). */
   units: number;
-  /** Precio unitario antes de la promo por cantidad (lista o con promo por unidad). */
+  /** Precio unitario antes de la promo por cantidad (= `CartLine.unitPrice`). */
   baseUnitPrice: number;
-  /** Descuento de la promo por cantidad en esta línea. */
+  /**
+   * Descuento de la promo por cantidad en esta línea: suma de precios
+   * unitarios (bxgy) o de `unitPrice − roundPrice(unitPrice × (1 − Z %))`
+   * (N.ª unidad). Con precios enteros es entero. NO está en `lineTotal`: va
+   * a nivel pedido (`CartTotals.bundleDiscount`).
+   */
   amount: number;
 }
 
@@ -149,9 +154,9 @@ export interface CartLine {
   qty: number;
   listPrice: number;
   /**
-   * Precio unitario final. Con una promo por cantidad es el PROMEDIO de la
-   * línea, redondeado hacia abajo al centavo (así `create_order` recibe un
-   * `unit_price` por línea y el total coincide con lo que se mostró).
+   * Precio unitario real: lista o con promos POR UNIDAD (% y fijas). Las
+   * promos por cantidad no lo cambian: las unidades bonificadas se descuentan
+   * a nivel pedido (`offer.amount` → `CartTotals.bundleDiscount`).
    */
   unitPrice: number;
   promotion: AppliedPromotion | null;
@@ -159,9 +164,11 @@ export interface CartLine {
   offer: LineOffer | null;
   /** listPrice * qty */
   lineList: number;
-  /** unitPrice * qty */
+  /** unitPrice * qty (sin la promo por cantidad). */
   lineTotal: number;
-  /** (listPrice - unitPrice) * qty */
+  /** lineTotal − offer.amount: lo que paga la línea con la promo por cantidad. */
+  netTotal: number;
+  /** (listPrice - unitPrice) * qty: sólo promos por unidad. */
   promoDiscount: number;
 }
 
@@ -182,9 +189,19 @@ export interface CartTotals {
   lines: CartLine[];
   /** Σ listPrice × qty */
   subtotal: number;
-  /** Σ (listPrice − unitPrice) × qty (promos por unidad + por cantidad). */
+  /**
+   * Promos por unidad + por cantidad: Σ promoDiscount + bundleDiscount. Es lo
+   * que `create_order` guarda en `orders.promo_total` (desde 0018 con el
+   * desglose en `orders.bundle_discount`).
+   */
   promoTotal: number;
-  /** Promos por cantidad aplicadas (ya incluidas en `promoTotal`). */
+  /**
+   * Descuento de las promos por cantidad (3x2, 2.ª al 50 %) a nivel pedido:
+   * Σ offer.amount de las líneas (ya incluido en `promoTotal`). Con precios
+   * enteros es entero: el total no deja centavos.
+   */
+  bundleDiscount: number;
+  /** Detalle de `bundleDiscount` por promo (una fila "Promo 3x2 −$ X" cada una). */
   offers: AppliedOffer[];
   couponDiscount: number;
   coupon: CouponStatus | null;

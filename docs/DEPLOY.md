@@ -158,6 +158,14 @@ curl -i -X POST https://www.ecommy.app/api/billing/mercadopago/webhook -d '{}'
       de la ficha responde "No pudimos anotarte" y `/admin/inventario/avisos` lo avisa).
 - [ ] Migración `0017_promotions_bxgy.sql` aplicada (promos "Llevá X, pagá Y" y "N.ª unidad al Z %";
       sin ella el panel no deja guardarlas y el resto de las promos sigue igual).
+- [ ] Migración `0018_order_bundle_discount.sql` aplicada, DESPUÉS de 0017 (si falta 0017 frena
+      con un error claro). El descuento de las promos por cantidad pasa a nivel pedido
+      (`orders.bundle_discount`, ya incluido en `promo_total`): 3 × $ 100 con 3x2 → $ 200, no
+      $ 199,98. `create_order` recalcula en SQL con la misma regla del motor y rechaza un
+      descuento mayor; deroga el trigger de 0017. Suma `get_schema_version()`: la app manda
+      `bundle_discount` sólo si es ≥ 9; sin la migración sigue con el precio promedio por línea.
+      Verificación: un pedido con 3x2 en `/s/demo/` muestra "Promociones por cantidad" en
+      `/pedido/<token>`, en el detalle del panel, en el remito y en el mail.
 - [ ] `/platform` (superadmin) lista las tiendas.
 - [ ] `curl` al cron con el secreto devuelve `{ ok: true }` y sin él, 401.
 - [ ] Con `RESEND_API_KEY`: un pedido en `/s/demo/` manda "Recibimos tu pedido" al comprador

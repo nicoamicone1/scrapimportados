@@ -10,6 +10,7 @@ import { formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireStore } from "@/lib/store/context";
 import { markdownToHtml } from "@/lib/store/markdown";
+import { BUNDLE_DISCOUNT_LABEL, splitPromotions } from "@/lib/store/order-bundle";
 import { deliveryText, getOrderByToken, type PublicOrder } from "@/lib/store/orders";
 import { absoluteUrl } from "@/lib/store/seo";
 import { buildOrderMessage, buildReceiptMessage, waLink } from "@/lib/store/whatsapp";
@@ -75,6 +76,8 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
   const isNew = sp.nuevo === "1";
   const tz = order.store.timezone;
   const money = (v: number) => formatMoney(v, { currency: order.currency, locale: order.store.locale });
+  // Promos por unidad y, aparte, las por cantidad (3x2) a nivel pedido (0018).
+  const promos = splitPromotions(order.promoTotal, order.bundleDiscount);
   const url = absoluteUrl(store, `/pedido/${order.token}`);
   const status = STATUS[order.status];
   const payment = PAYMENT[order.paymentStatus];
@@ -288,10 +291,16 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
               <dt className="text-fg-muted">Subtotal</dt>
               <dd>{money(order.subtotal)}</dd>
             </div>
-            {order.promoTotal > 0 ? (
+            {promos.unit > 0 ? (
               <div className="flex justify-between">
                 <dt className="text-fg-muted">Promociones</dt>
-                <dd>−{money(order.promoTotal)}</dd>
+                <dd>−{money(promos.unit)}</dd>
+              </div>
+            ) : null}
+            {promos.bundle > 0 ? (
+              <div className="flex justify-between">
+                <dt className="text-fg-muted">{BUNDLE_DISCOUNT_LABEL}</dt>
+                <dd>−{money(promos.bundle)}</dd>
               </div>
             ) : null}
             {order.couponDiscount > 0 ? (

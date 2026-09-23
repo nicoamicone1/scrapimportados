@@ -52,7 +52,14 @@ export interface PublicOrder {
   shippingCost: number;
   shippingAddress: PublicShippingAddress | null;
   subtotal: number;
+  /** Todas las promos (por unidad + por cantidad). */
   promoTotal: number;
+  /**
+   * Parte de `promoTotal` que es de promos por cantidad (3x2, 2.ª al 50 %),
+   * a nivel pedido (migración 0018; 0 si todavía no se aplicó). Opcional
+   * para los armados a mano (tests); `parsePublicOrder` siempre lo completa.
+   */
+  bundleDiscount?: number;
   couponCode: string | null;
   couponDiscount: number;
   discountTotal: number;
@@ -123,6 +130,7 @@ export function parsePublicOrder(raw: Json, token: string): PublicOrder | null {
       : null,
     subtotal: asNumber(o.subtotal),
     promoTotal: asNumber(o.promo_total),
+    bundleDiscount: asNumber(o.bundle_discount),
     couponCode: nullable(o.coupon_code),
     couponDiscount: asNumber(o.coupon_discount),
     discountTotal: asNumber(o.discount_total),

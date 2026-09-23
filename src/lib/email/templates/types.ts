@@ -36,7 +36,10 @@ export interface OrderEmailData {
   customer: { name: string; email: string; phone: string };
   items: OrderEmailItem[];
   subtotal: number;
+  /** Todas las promos (por unidad + por cantidad). */
   promoTotal: number;
+  /** Parte de `promoTotal` de promos por cantidad (3x2), a nivel pedido. Sin 0018: 0 / ausente. */
+  bundleDiscount?: number;
   couponCode: string | null;
   couponDiscount: number;
   paymentDiscount: number;
