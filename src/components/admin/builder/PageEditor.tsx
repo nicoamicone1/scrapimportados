@@ -160,7 +160,8 @@ export function PageEditor({
   }, [page.id]);
 
   // ------------------------------------------------------------ Bloques
-  const updateBlock = (next: Block) => setBlocks((bs) => bs.map((b) => (b.id === next.id ? next : b)));
+  // Callbacks estables: la lista de bloques y el preview están memoizados.
+  const updateBlock = useCallback((next: Block) => setBlocks((bs) => bs.map((b) => (b.id === next.id ? next : b))), []);
 
   const addBlock = (type: BlockType) => {
     const block = createBlock(type);
@@ -188,8 +189,11 @@ export function PageEditor({
     if (selectedId === id) setSelectedId(null);
   };
 
-  const toggleHidden = (id: string) =>
-    setBlocks((bs) => bs.map((b) => (b.id === id ? ({ ...b, style: { ...b.style, hidden: b.style.hidden ? undefined : true } } as Block) : b)));
+  const toggleHidden = useCallback(
+    (id: string) =>
+      setBlocks((bs) => bs.map((b) => (b.id === id ? ({ ...b, style: { ...b.style, hidden: b.style.hidden ? undefined : true } } as Block) : b))),
+    [],
+  );
 
   // ------------------------------------------------------------ Guardar
   const save = useCallback(
@@ -411,7 +415,7 @@ export function PageEditor({
                   onReorder={setBlocks}
                   onToggleHidden={toggleHidden}
                   onDuplicate={duplicateBlock}
-                  onDelete={(id) => setConfirmDelete(id)}
+                  onDelete={setConfirmDelete}
                 />
               ) : (
                 <p className="px-2 py-3 text-[13px] text-adm-fg-muted">Todavía no hay bloques. Empezá por una portada o un carrusel de productos.</p>

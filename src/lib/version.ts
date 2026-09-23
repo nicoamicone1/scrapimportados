@@ -6,7 +6,7 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.1.0";
+export const APP_VERSION = "0.1.1";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
@@ -28,6 +28,21 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.1.1",
+    date: "2026-09-23",
+    title: "Editor de páginas más fluido",
+    sections: {
+      added: [],
+      changed: [
+        "La vista previa del editor de páginas sólo actualiza los bloques que cambiaste; volver a un valor anterior o alternar entre computadora y celular es instantáneo.",
+      ],
+      fixed: [
+        "Editar un bloque ya no hace parpadear todo el editor de páginas con la pantalla de carga ni lleva la vista previa arriba de todo.",
+        "El checkout de las tiendas volvió a funcionar para los visitantes.",
+      ],
+    },
+  },
   {
     version: "0.1.0",
     date: "2026-09-22",

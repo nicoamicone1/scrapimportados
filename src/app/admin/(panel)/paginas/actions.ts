@@ -290,8 +290,12 @@ export interface PreviewResult {
   invalid: { id: string; message: string }[];
 }
 
-/** Renderiza los bloques (sin guardar) con los componentes reales de la tienda. */
-export async function previewBlocks(input: unknown, device: PreviewDevice): Promise<ActionResult<PreviewResult>> {
+/**
+ * Renderiza los bloques (sin guardar) con los componentes reales de la tienda.
+ * `only`: ids a renderizar (los que cambiaron); los demás viajan de contexto.
+ * `invalid` siempre cubre toda la lista.
+ */
+export async function previewBlocks(input: unknown, device: PreviewDevice, only?: unknown): Promise<ActionResult<PreviewResult>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
     if (!Array.isArray(input)) return fail("Bloques inválidos.");
@@ -306,7 +310,8 @@ export async function previewBlocks(input: unknown, device: PreviewDevice): Prom
         invalid.push({ id, message: `${issue.path.join(".")}: ${issue.message}` });
       }
     }
-    const nodes = await renderBlockPreviews(ctx.store.id, valid, device === "mobile" ? "mobile" : "desktop");
+    const ids = Array.isArray(only) ? new Set(only.filter((x): x is string => typeof x === "string").slice(0, 80)) : undefined;
+    const nodes = await renderBlockPreviews(ctx.store.id, valid, device === "mobile" ? "mobile" : "desktop", ids);
     return ok({ nodes, invalid });
   });
 }
