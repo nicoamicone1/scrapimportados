@@ -5,7 +5,6 @@ import { HelpSearch } from "@/components/platform/HelpSearch";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { HELP_ARTICLES, helpBySection, helpSectionTitle } from "@/content/ayuda";
 import type { HelpSearchItem } from "@/content/search";
-import { getSession } from "@/lib/auth";
 import { APP_NAME } from "@/lib/version";
 
 const TITLE = "Centro de ayuda";
@@ -18,10 +17,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/ayuda" },
   openGraph: { siteName: APP_NAME, locale: "es_AR", type: "website", title: `${TITLE} · ${APP_NAME}`, description: DESCRIPTION, url: "/ayuda" },
 };
-export const dynamic = "force-dynamic";
-
-export default async function AyudaPage() {
-  const { user } = await getSession();
+/*
+ * Estática: no lee la sesión (el header muestra "Ingresar"; con sesión, /login
+ * lleva directo a /app). Se sirve desde la CDN sin pasar por Supabase.
+ */
+export default function AyudaPage() {
   const sections = helpBySection();
   const [start, ...rest] = sections;
   const items: HelpSearchItem[] = HELP_ARTICLES.map((a) => ({
@@ -33,7 +33,7 @@ export default async function AyudaPage() {
   }));
 
   return (
-    <PlatformPage signedIn={Boolean(user)}>
+    <PlatformPage signedIn={false}>
       <section className="border-b border-adm-border bg-adm-surface">
         <div className="mx-auto max-w-6xl px-4 pt-12 pb-10 sm:px-6 md:pt-14">
           <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Centro de ayuda</p>

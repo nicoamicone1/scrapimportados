@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/money";
 import type { PlanInfo } from "@/lib/plans";
 import { themeVars } from "@/lib/theme";
 
-import { presetMinPlan, SPECIMEN_BUTTON, type Specimen } from "./specimens";
+import { type PresetKey, presetMinPlan, SPECIMEN_BUTTON, type Specimen } from "./specimens";
 
 /** "Incluido en Free" / "Desde Starter" (o nada si no hay planes cargados). */
 export function specimenPlanLabel(plans: readonly Pick<PlanInfo, "features" | "name">[], specimen: Specimen): string | null {
@@ -21,15 +21,19 @@ const heading = "[font-family:var(--font-heading)] [font-weight:var(--heading-we
  * del preset (`themeVars`), igual que la miniatura del selector de
  * Apariencia: fondo, tipografías, peso y caja de títulos, acento de promo,
  * forma y estilo del botón. No son íconos ni colores aproximados.
- * La hoja de fuentes la carga la página (`specimenFontsHref`).
+ * Fuentes: `fontSheets` trae una hoja por preset (`specimenFontSheets`) y
+ * cada renglón la pide con `data-font-sheet` cuando se acerca al viewport
+ * (`LazyFontSheets`, montado por la página): no bloquean el primer render.
  */
 export function PresetSpecimens({
   specimens,
   plans,
+  fontSheets,
   className,
 }: {
   specimens: readonly Specimen[];
   plans: readonly Pick<PlanInfo, "features" | "name">[];
+  fontSheets?: Partial<Record<PresetKey, string>>;
   className?: string;
 }) {
   return (
@@ -40,6 +44,7 @@ export function PresetSpecimens({
         return (
           <li
             key={s.kind}
+            data-font-sheet={fontSheets?.[s.presetId]}
             style={themeVars(s.theme) as CSSProperties}
             className="flex min-w-0 flex-col bg-bg px-4 py-5 text-fg [font-family:var(--font-body)] [font-weight:var(--body-weight)] sm:px-6 sm:py-6"
           >

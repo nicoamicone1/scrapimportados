@@ -31,6 +31,16 @@ const APP_HEADERS = [
 /** Estado del pedido: la URL lleva el token de acceso, no se manda como Referer. */
 const ORDER_HEADERS = [{ key: "Referrer-Policy", value: "no-referrer" }];
 
+/**
+ * Íconos e imágenes para compartir generados (`icon.tsx`, `apple-icon.tsx`,
+ * `opengraph-image.tsx`): Next los sirve con `max-age=0, must-revalidate` y
+ * cada visita los vuelve a pedir. El HTML los enlaza con `?<hash>` del
+ * contenido (si cambian, cambia la URL), así que un día de caché más una
+ * semana de `stale-while-revalidate` es seguro. `/icon` es el mismo en todos
+ * los hosts: el favicon propio de una tienda tiene su URL (`s/[store]/layout.tsx`).
+ */
+const GENERATED_IMAGE_HEADERS = [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }];
+
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -39,6 +49,8 @@ const nextConfig: NextConfig = {
       // Plataforma (`/s/<slug>/pedido/…`) y host de tienda (`/pedido/…`).
       { source: "/s/:store/pedido/:path*", headers: ORDER_HEADERS },
       { source: "/pedido/:path*", headers: ORDER_HEADERS },
+      { source: "/:image(icon|apple-icon)", headers: GENERATED_IMAGE_HEADERS },
+      { source: "/:path*/:image(opengraph-image-[^/]+)", headers: GENERATED_IMAGE_HEADERS },
     ];
   },
   // Cada agente/entorno puede usar su propio build dir (ej. NEXT_DIST_DIR=.next-f).

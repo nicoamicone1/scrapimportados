@@ -37,7 +37,7 @@ import { BRAND_AMBER, BRAND_CREAM, BRAND_FG, BRAND_INK, BRAND_MUTED, BRAND_PINE,
  * que el recorte 3:4 de la portada de un reel en la grilla no lo corte.
  */
 
-const FONT_FAMILY = "Geist";
+export const FONT_FAMILY = "Geist";
 const FONT_PATH = join(process.cwd(), "node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf");
 
 let fontsPromise: Promise<{ name: string; data: ArrayBuffer; weight: 400; style: "normal" }[] | undefined> | null = null;

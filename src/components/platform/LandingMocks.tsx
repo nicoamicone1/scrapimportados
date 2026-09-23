@@ -190,12 +190,17 @@ export const STOREFRONT_MOCK_TEXTS = [
  * Mock de una tienda con el preset "mercado", dibujado con las variables
  * reales del preset (`themeVars`): fondo crema, Fraunces en títulos, portada
  * en banda `--secondary`, botón pill y cards con borde fino. `address` es la
- * dirección de ejemplo del entorno (`exampleStoreAddress`).
+ * dirección de ejemplo del entorno (`exampleStoreAddress`). `fontSheet`: hoja de
+ * Google Fonts del preset, que pide `LazyFontSheets` sin bloquear el render.
  */
-export function StorefrontMock({ address, className }: { address: string; className?: string }) {
+export function StorefrontMock({ address, fontSheet, className }: { address: string; fontSheet?: string; className?: string }) {
   const vars = themeVars(PRESETS.mercado) as CSSProperties;
   return (
-    <div className={cn("overflow-hidden rounded-adm border border-adm-border shadow-adm-card", className)} aria-hidden>
+    <div
+      className={cn("overflow-hidden rounded-adm border border-adm-border shadow-adm-card", className)}
+      data-font-sheet={fontSheet}
+      aria-hidden
+    >
       <div className="flex h-7 items-center gap-1.5 border-b border-adm-border bg-adm-surface-2 px-2.5">
         <span className="size-2 rounded-full bg-adm-border" />
         <span className="size-2 rounded-full bg-adm-border" />

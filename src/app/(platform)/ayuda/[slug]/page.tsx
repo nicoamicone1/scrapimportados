@@ -6,12 +6,20 @@ import { notFound } from "next/navigation";
 import { ArticleDoc } from "@/components/platform/ArticleDoc";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
-import { getHelpArticle, helpSectionTitle, relatedHelp } from "@/content/ayuda";
+import { getHelpArticle, HELP_ARTICLES, helpSectionTitle, relatedHelp } from "@/content/ayuda";
 import { extractHeadings } from "@/content/text";
-import { getSession } from "@/lib/auth";
 import { APP_NAME } from "@/lib/version";
 
-export const dynamic = "force-dynamic";
+/*
+ * Estática: no lee la sesión (el header muestra "Ingresar"; con sesión, /login
+ * lleva directo a /app). Se sirve desde la CDN sin pasar por Supabase. Se
+ * generan todas en el build; un slug que no existe da 404.
+ */
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return HELP_ARTICLES.map((a) => ({ slug: a.slug }));
+}
 
 export async function generateMetadata({ params }: PageProps<"/ayuda/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -39,12 +47,11 @@ export default async function AyudaArticlePage({ params }: PageProps<"/ayuda/[sl
   const article = getHelpArticle(slug);
   if (!article) notFound();
 
-  const { user } = await getSession();
   const section = helpSectionTitle(article.section);
   const related = relatedHelp(article);
 
   return (
-    <PlatformPage signedIn={Boolean(user)}>
+    <PlatformPage signedIn={false}>
       <ArticleDoc
         breadcrumb={[
           { href: "/ayuda", label: "Ayuda" },

@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/money";
 import type { PlanInfo } from "@/lib/plans";
 import { isPresetAllowed } from "@/lib/schemas/appearance";
 import { STORE_KINDS, type StoreKind } from "@/lib/tenant/kinds";
@@ -11,6 +12,8 @@ import { googleHref, PRESET_LIST, PRESETS, type Theme } from "@/lib/theme";
  */
 
 export type SpecimenKind = Exclude<StoreKind, "otro">;
+
+export type PresetKey = keyof typeof PRESETS;
 
 interface SampleProduct {
   name: string;
@@ -41,7 +44,7 @@ export interface Specimen {
   label: string;
   /** "Ropa, joyería, marroquinería". */
   hint: string;
-  presetId: keyof typeof PRESETS;
+  presetId: PresetKey;
   presetName: string;
   mood: string;
   theme: Theme;
@@ -71,7 +74,7 @@ export function presetSpecimens(): Specimen[] {
  * Primer plan (en el orden público) que permite usar el preset, o `null` si
  * no hay planes cargados. Usa la misma regla que el guardado del tema.
  */
-export function presetMinPlan<P extends Pick<PlanInfo, "features">>(plans: readonly P[], presetId: keyof typeof PRESETS): P | null {
+export function presetMinPlan<P extends Pick<PlanInfo, "features">>(plans: readonly P[], presetId: PresetKey): P | null {
   return plans.find((p) => isPresetAllowed(p, presetId)) ?? null;
 }
 
@@ -83,9 +86,10 @@ export function glyphSubset(texts: readonly string[]): string {
 }
 
 /**
- * Una sola hoja de Google Fonts para todas las muestras, recortada con
- * `text=` a los glifos que se usan: en vez de ~20 familias completas baja
- * un archivo de pocos KB por familia.
+ * Hoja de Google Fonts de uno o más temas, recortada con `text=` a los
+ * glifos que se usan: en vez de familias completas baja un archivo de pocos
+ * KB por familia. Google responde cada `@font-face` con su `unicode-range`,
+ * así que dos hojas con la misma familia se suman sin pisarse.
  */
 export function specimenFontsHref(themes: readonly Theme[], texts: readonly string[]): string | null {
   const href = googleHref(
@@ -96,4 +100,36 @@ export function specimenFontsHref(themes: readonly Theme[], texts: readonly stri
   );
   const text = glyphSubset(texts);
   return href && text ? `${href}&text=${encodeURIComponent(text)}` : href;
+}
+
+/** Textos que una muestra dibuja con las fuentes de su preset (`planLabel`: el de `specimenPlanLabel`). */
+export function specimenTexts(s: Specimen, planLabel: string | null): string[] {
+  return [
+    s.label,
+    s.hint,
+    s.presetName,
+    s.product.name,
+    formatMoney(s.product.price),
+    formatMoney(s.product.compareAt),
+    SPECIMEN_BUTTON,
+    ...(planLabel ? [` · ${planLabel}`] : []),
+  ];
+}
+
+/**
+ * Una hoja de fuentes por preset (sus 2 familias), con los textos de todos
+ * los lugares de la landing que lo usan (la muestra y, para `mercado`, el
+ * mock del hero). Así la página no pide las 20 familias de golpe: cada hoja
+ * la inyecta `LazyFontSheets` cuando su elemento se acerca al viewport
+ * (docs/DESIGN.md §8.19, excepción de la landing).
+ */
+export function specimenFontSheets(uses: readonly { presetId: PresetKey; texts: readonly string[] }[]): Partial<Record<PresetKey, string>> {
+  const texts = new Map<PresetKey, string[]>();
+  for (const u of uses) texts.set(u.presetId, [...(texts.get(u.presetId) ?? []), ...u.texts]);
+  const out: Partial<Record<PresetKey, string>> = {};
+  for (const [id, t] of texts) {
+    const href = specimenFontsHref([PRESETS[id]], t);
+    if (href) out[id] = href;
+  }
+  return out;
 }

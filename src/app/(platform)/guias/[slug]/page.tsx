@@ -8,11 +8,19 @@ import { formatLegalDate } from "@/components/platform/site";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getGuide, GUIDES } from "@/content/guias";
 import { extractHeadings } from "@/content/text";
-import { getSession } from "@/lib/auth";
 import { platformOrigin } from "@/lib/tenant/urls";
 import { APP_NAME } from "@/lib/version";
 
-export const dynamic = "force-dynamic";
+/*
+ * Estática: no lee la sesión (el header muestra "Ingresar"; con sesión, /login
+ * lleva directo a /app). Se sirve desde la CDN sin pasar por Supabase. Se
+ * generan todas en el build; un slug que no existe da 404.
+ */
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return GUIDES.map((g) => ({ slug: g.slug }));
+}
 
 export async function generateMetadata({ params }: PageProps<"/guias/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -41,7 +49,6 @@ export default async function GuiaPage({ params }: PageProps<"/guias/[slug]">) {
   const guide = getGuide(slug);
   if (!guide) notFound();
 
-  const { user } = await getSession();
   const origin = platformOrigin();
   const others = GUIDES.filter((g) => g.slug !== guide.slug);
   const organization = { "@type": "Organization", "@id": `${origin}/#organization`, name: APP_NAME, url: `${origin}/` };
@@ -59,7 +66,7 @@ export default async function GuiaPage({ params }: PageProps<"/guias/[slug]">) {
   };
 
   return (
-    <PlatformPage signedIn={Boolean(user)}>
+    <PlatformPage signedIn={false}>
       <JsonLd data={jsonLd} />
       <ArticleDoc
         variant="guide"
@@ -88,7 +95,7 @@ export default async function GuiaPage({ params }: PageProps<"/guias/[slug]">) {
               <p className="mt-2 max-w-[56ch] text-[15px] leading-relaxed text-adm-fg-muted">{guide.cta.text}</p>
               <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <Link
-                  href={user ? "/app/nueva" : "/registro"}
+                  href="/registro"
                   className="inline-flex h-10 items-center rounded-adm bg-adm-accent px-4 text-sm font-medium text-adm-accent-fg transition-colors hover:bg-adm-accent-hover"
                 >
                   Crear tu tienda gratis

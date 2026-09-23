@@ -4,7 +4,6 @@ import Link from "next/link";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
 import { GUIDES } from "@/content/guias";
-import { getSession } from "@/lib/auth";
 import { APP_NAME } from "@/lib/version";
 
 const TITLE = "Guías para vender online en Argentina";
@@ -17,7 +16,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/guias" },
   openGraph: { siteName: APP_NAME, locale: "es_AR", type: "website", title: `${TITLE} · ${APP_NAME}`, description: DESCRIPTION, url: "/guias" },
 };
-export const dynamic = "force-dynamic";
+/*
+ * Estática: no lee la sesión (el header muestra "Ingresar"; con sesión, /login
+ * lleva directo a /app). Se sirve desde la CDN sin pasar por Supabase.
+ */
 
 function Dateline({ iso, minutes }: { iso: string; minutes: number }) {
   return (
@@ -27,12 +29,11 @@ function Dateline({ iso, minutes }: { iso: string; minutes: number }) {
   );
 }
 
-export default async function GuiasPage() {
-  const { user } = await getSession();
+export default function GuiasPage() {
   const [featured, ...rest] = GUIDES;
 
   return (
-    <PlatformPage signedIn={Boolean(user)}>
+    <PlatformPage signedIn={false}>
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
         <header className="max-w-[62ch]">
           <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Guías</p>

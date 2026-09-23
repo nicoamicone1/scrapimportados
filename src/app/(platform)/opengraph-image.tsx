@@ -4,6 +4,7 @@ import { PLATFORM_EMAIL } from "@/components/platform/site";
 import { APP_NAME } from "@/lib/version";
 
 import { BRAND_BORDER, BRAND_CREAM, BRAND_FG, BRAND_MUTED, BRAND_PINE, BrandTile } from "../_brand/glyph";
+import { FONT_FAMILY, loadSocialFonts } from "../_brand/social-templates";
 
 /*
  * Imagen para compartir del sitio de la plataforma (landing, planes,
@@ -20,7 +21,10 @@ export const contentType = "image/png";
 
 const DOMAIN = PLATFORM_EMAIL.split("@")[1] ?? "ecommy.app";
 
-export default function OpengraphImage() {
+export default async function OpengraphImage() {
+  // Misma fuente que el kit de redes, sin kerning: Satori mide sin GPOS y
+  // dibuja con GPOS, y deja espacios de más entre palabras.
+  const fonts = await loadSocialFonts();
   return new ImageResponse(
     <div
       style={{
@@ -28,6 +32,7 @@ export default function OpengraphImage() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        fontFamily: FONT_FAMILY,
         background: BRAND_CREAM,
         color: BRAND_FG,
         padding: "64px 72px 56px",
@@ -61,6 +66,6 @@ export default function OpengraphImage() {
         <div style={{ color: BRAND_MUTED }}>Tiendas online para pymes argentinas</div>
       </div>
     </div>,
-    { ...size },
+    { ...size, fonts },
   );
 }

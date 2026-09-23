@@ -2,9 +2,9 @@ import { ArrowRight, Landmark, Layers, MapPinned, Tags } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { preconnect } from "react-dom";
 
 import { FaqList } from "@/components/platform/FaqList";
+import { LazyFontSheets } from "@/components/platform/LazyFontSheets";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
 import {
   CatalogMock,
@@ -19,14 +19,13 @@ import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { PresetSpecimens, specimenPlanLabel } from "@/components/platform/PresetSpecimens";
 import { landingPlanLines, type PlanLike } from "@/components/platform/plan-notes";
 import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site";
-import { presetSpecimens, SPECIMEN_BUTTON, specimenFontsHref } from "@/components/platform/specimens";
+import { presetSpecimens, specimenFontSheets, specimenTexts } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSession } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { listPublicPlans, type PublicPlan } from "@/lib/plans/catalog";
 import { platformOrigin, storeHref } from "@/lib/tenant/urls";
-import { PRESETS } from "@/lib/theme";
 import { APP_NAME } from "@/lib/version";
 
 const TITLE = "Ecommy · Tu tienda online, sin comisión por venta";
@@ -174,17 +173,14 @@ export default async function LandingPage() {
   const specimens = presetSpecimens();
   const planLabels = specimens.map((s) => specimenPlanLabel(plans, s));
   const freeNames = specimens.filter((_, i) => planLabels[i]?.startsWith("Incluido")).map((s) => s.presetName);
-  const fontsHref = specimenFontsHref(
-    [...specimens.map((s) => s.theme), PRESETS.mercado],
-    [
-      ...specimens.flatMap((s) => [s.label, s.hint, s.presetName, s.product.name, formatMoney(s.product.price), formatMoney(s.product.compareAt)]),
-      ...planLabels.flatMap((l) => (l ? [` · ${l}`] : [])),
-      SPECIMEN_BUTTON,
-      ...STOREFRONT_MOCK_TEXTS,
-    ],
-  );
-  preconnect("https://fonts.googleapis.com");
-  preconnect("https://fonts.gstatic.com", { crossOrigin: "anonymous" });
+  // Fuentes de los presets (docs/DESIGN.md §8.19, excepción de la landing):
+  // una hoja por preset, que `LazyFontSheets` inyecta cuando su elemento se
+  // acerca al viewport. Ninguna bloquea el render (el LCP es el h1, en la
+  // fuente del sistema); la del hero (Mercado) se precarga con prioridad baja.
+  const fontSheets = specimenFontSheets([
+    { presetId: "mercado", texts: STOREFRONT_MOCK_TEXTS },
+    ...specimens.map((s, i) => ({ presetId: s.presetId, texts: specimenTexts(s, planLabels[i]) })),
+  ]);
 
   const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans });
   const landingFaq = pickFaq(faq, ["comision", "tarjeta", "prueba", "mudanza", "datos", "facturacion"]);
@@ -231,7 +227,12 @@ export default async function LandingPage() {
   return (
     <PlatformPage signedIn={signedIn}>
       <JsonLd data={jsonLd} />
-      {fontsHref ? <link rel="stylesheet" href={fontsHref} precedence="default" /> : null}
+      {/* `<link>` en JSX (React los sube al <head> del HTML); `preconnect()` de
+          react-dom en un Server Component sólo llega en el payload RSC, al hidratar. */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {fontSheets.mercado ? <link rel="preload" as="style" href={fontSheets.mercado} fetchPriority="low" /> : null}
+      <LazyFontSheets />
 
       {/* Hero ----------------------------------------------------------- */}
       <section className="border-b border-adm-border bg-adm-surface">
@@ -275,7 +276,11 @@ export default async function LandingPage() {
               </div>
             </dl>
           </div>
-          <StorefrontMock address={exampleStoreAddress("taller-luna")} className="w-full max-w-[540px] justify-self-center lg:justify-self-end" />
+          <StorefrontMock
+            address={exampleStoreAddress("taller-luna")}
+            fontSheet={fontSheets.mercado}
+            className="w-full max-w-[540px] justify-self-center lg:justify-self-end"
+          />
         </div>
       </section>
 
@@ -326,7 +331,7 @@ export default async function LandingPage() {
               {freeNames.length ? ` Free incluye ${listNames(freeNames)}; en la prueba de 14 días usás los ${specimens.length}.` : null}
             </p>
           </div>
-          <PresetSpecimens className="mt-10" specimens={specimens} plans={plans} />
+          <PresetSpecimens className="mt-10" specimens={specimens} plans={plans} fontSheets={fontSheets} />
           <p className="mt-5 text-[13px] text-adm-fg-muted">
             ¿Tu rubro no está? Arrancás con Nórdico, el más neutro, y ajustás colores y tipografías desde el panel.{" "}
             <Link href={demo} className="font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
