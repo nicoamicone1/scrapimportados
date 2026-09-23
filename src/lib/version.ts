@@ -6,7 +6,7 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.1.1";
+export const APP_VERSION = "0.1.2";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.1.2",
+    date: "2026-09-23",
+    title: "Diez estilos de tienda y selector nuevo",
+    sections: {
+      added: [
+        "Cinco estilos nuevos: Botica (farmacia y perfumería), Recreo (librería y juguetería), Lapacho (muebles e iluminación), Galpón (mayoristas) y Bodega (vinos y gourmet). Cada uno tiene su rubro en el alta de tienda.",
+        "Selector de estilos con miniatura fiel de cada tema, modo para ver y comparar los diez con la vista previa real, probar antes de aplicar y filtros por rubro, fondo claro u oscuro y plan.",
+      ],
+      changed: [
+        "Los cinco estilos existentes se revisaron: Neón deja el lima sobre negro por grafito con un solo ámbar, Mercado pierde las sombras y el botón tintado, y en Nórdico y Editorial la oferta y el error ya no usan dos rojos casi iguales.",
+        "Los bordes de inputs y controles tienen más contraste en todos los estilos.",
+      ],
+      fixed: [
+        "En la ficha de producto desde una computadora, la foto principal ya no ocupa más alto que la pantalla: entra completa, con las miniaturas al lado.",
+        "La fuente Libre Caslon Text ya carga siempre (se pedían pesos que no existen).",
+      ],
+    },
+  },
   {
     version: "0.1.1",
     date: "2026-09-23",

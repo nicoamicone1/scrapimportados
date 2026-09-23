@@ -1,6 +1,6 @@
 {
   "name": "ecommy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "scrape": "node scripts/scrape.mjs && node scripts/download-images.mjs",
