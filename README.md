@@ -121,6 +121,8 @@ SEED_EMAIL=… SEED_PASSWORD=… npm run seed -- --skip-images  # usa las URLs d
 | `npm run create-admin` | Alta de un usuario con `signUp` (la tienda se crea en `/app/nueva`) |
 | `npx tsx scripts/move-media-to-store.mts <slug>` | Mueve objetos sueltos del bucket a `<store_id>/…` |
 | `npm run scrape` | Scraper del catálogo DAZ → `data/products.json` + `public/img` |
+| `node scripts/scrape-tiendanube.mjs --url=… --out=data/clients/<cliente>.json` | Scraper de una tienda Tiendanube (productos, variantes, fotos, categorías, logo) para armar la demo de un cliente |
+| `npx tsx scripts/seed-tiendanube.mts` | Importa ese JSON a una tienda (`SEED_STORE`, `SEED_FILE`); ver [`docs/DEV-ACCESS.md`](docs/DEV-ACCESS.md) › Demos de clientes |
 
 Antes de entregar: `npx tsc --noEmit`, `npm run lint` y `npm test` sin errores.
 

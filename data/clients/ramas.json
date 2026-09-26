@@ -1,0 +1,4927 @@
+{
+  "scrapedAt": "2026-09-26T06:55:56.906Z",
+  "source": "https://ramas3.mitiendanube.com",
+  "platform": "tiendanube",
+  "currency": "ARS",
+  "count": 95,
+  "store": {
+    "name": "RAMA´S",
+    "url": "https://ramas3.mitiendanube.com",
+    "logo": "https://dcdn-us.mitiendanube.com/stores/004/320/461/themes/common/logo-1321667622-1708955832-9bbc88d41a8b856f4d0774b0325714681708955832.png",
+    "description": "Comprá productos de RAMA´S por internet. Tenemos pikas, mates y más. Hacé tu pedido y pagalo online.",
+    "social": [
+      "https://instagram.com/ramastore.tuc"
+    ],
+    "whatsapp": "543812104181",
+    "footer": "Categorias Pikas Mates Figuras Llaveros Gaming Anime Medios de pago Medios de envío Contacto 543812104181 +54 9 3812104181 [email protected] Yerba Buena - Zona Portal de Tucuman Copyright RAMA´S - 20429386900 - 2026. Todos los derechos reservados. Defensa de las y los consumidores. Para reclamos ingresá acá. / Botón de arrepentimiento Visita nuestro sitio web"
+  },
+  "categories": [
+    {
+      "id": 1,
+      "name": "Anime",
+      "slug": "anime",
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "name": "Argento",
+      "slug": "argento",
+      "parent": 0
+    },
+    {
+      "id": 3,
+      "name": "Brainrot",
+      "slug": "brainrot",
+      "parent": 0
+    },
+    {
+      "id": 4,
+      "name": "Cine/Tv",
+      "slug": "cine-tv",
+      "parent": 0
+    },
+    {
+      "id": 5,
+      "name": "Disney",
+      "slug": "disney",
+      "parent": 4
+    },
+    {
+      "id": 6,
+      "name": "Harry Potter",
+      "slug": "harry-potter",
+      "parent": 4
+    },
+    {
+      "id": 7,
+      "name": "Los Simpsons",
+      "slug": "los-simpsons",
+      "parent": 4
+    },
+    {
+      "id": 8,
+      "name": "MARVEL/DC",
+      "slug": "marvel-dc",
+      "parent": 4
+    },
+    {
+      "id": 9,
+      "name": "Star Wars",
+      "slug": "star-wars",
+      "parent": 4
+    },
+    {
+      "id": 10,
+      "name": "Figuras de colección",
+      "slug": "figuras-de-coleccion",
+      "parent": 0
+    },
+    {
+      "id": 11,
+      "name": "Funkos",
+      "slug": "figuras",
+      "parent": 0
+    },
+    {
+      "id": 12,
+      "name": "Gaming",
+      "slug": "gaming",
+      "parent": 0
+    },
+    {
+      "id": 13,
+      "name": "Soporte Auriculares",
+      "slug": "soporte-auriculares",
+      "parent": 12
+    },
+    {
+      "id": 14,
+      "name": "Iluminación",
+      "slug": "iluminacion",
+      "parent": 0
+    },
+    {
+      "id": 15,
+      "name": "Juegos",
+      "slug": "juegos",
+      "parent": 0
+    },
+    {
+      "id": 16,
+      "name": "Juguetes",
+      "slug": "juguetes",
+      "parent": 0
+    },
+    {
+      "id": 17,
+      "name": "Articulados",
+      "slug": "articulados",
+      "parent": 16
+    },
+    {
+      "id": 18,
+      "name": "Brainrot",
+      "slug": "brainrot1",
+      "parent": 16
+    },
+    {
+      "id": 19,
+      "name": "Llaveros",
+      "slug": "llaveros",
+      "parent": 0
+    },
+    {
+      "id": 20,
+      "name": "Mates",
+      "slug": "mates",
+      "parent": 0
+    },
+    {
+      "id": 21,
+      "name": "Pikas",
+      "slug": "pikas",
+      "parent": 0
+    },
+    {
+      "id": 22,
+      "name": "Pokèmon",
+      "slug": "pokemon",
+      "parent": 0
+    },
+    {
+      "id": 23,
+      "name": "Pokebolas",
+      "slug": "pokebolas",
+      "parent": 22
+    }
+  ],
+  "products": [
+    {
+      "id": 326129287,
+      "sku": "",
+      "name": "Ajedrez Enrrollable",
+      "slug": "ajedrez-enrrollable-1a2wy",
+      "permalink": "https://ramas3.mitiendanube.com/productos/ajedrez-enrrollable-1a2wy/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/14ba5fde-3302-43d6-9b08-798103690dee-2280409ceb1f48479c17714613923700-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/4749ff59-e92f-41d5-b481-b9ebf74385be-72b8c4e56a8aba144517714614755417-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 15,
+          "name": "Juegos",
+          "slug": "juegos"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Ajedrez Minimalista Portátil – 20 cm Guardable ♟️✨ Ajedrez de bolsillo ultra compacto y elegante. Tablero plegable de 20 cm de ancho que se cierra perfectamente como una cajita, ¡nada se mueve ni se pierde! Diseño minimalista en tonos marrón chocolate y beige arena Piezas geométricas abstractas…",
+      "descriptionHtml": "<p><strong>Ajedrez Minimalista Portátil – 20 cm Guardable</strong> ♟️✨</p> <p>Ajedrez de bolsillo ultra compacto y elegante. Tablero plegable de <strong>20 cm de ancho</strong> que se cierra perfectamente como una cajita, ¡nada se mueve ni se pierde!</p> <ul> <li>Diseño minimalista en tonos marrón chocolate y beige arena</li> <li>Piezas geométricas abstractas, sin ornamentos innecesarios</li> <li>Tablero modular que encaja como puzzle al guardar</li> <li>Ideal para viajes, oficina, playa, café o partidas rápidas</li> <li>Material: PLA resistente y ligero&nbsp;</li> <li>Tamaño cerrado: 20 × 10 × 4 cm aprox. (cabe en cualquier mochila o bolsillo grande)</li> </ul> <p>“El ajedrez clásico… pero ahora cabe en tu mano.”</p> <p>Perfecto para regalos a amantes del ajedrez, nómadas digitales o jugadores casuales.</p>",
+      "weightKg": 0.3,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 25500
+        },
+        "web": {
+          "base": null,
+          "final": 30000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1449760101,
+          "sku": null,
+          "price": 30000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/14ba5fde-3302-43d6-9b08-798103690dee-2280409ceb1f48479c17714613923700-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 326128485,
+      "sku": "",
+      "name": "Ajedrez Minimalista de Viaje",
+      "slug": "ajedrez-minimalista-de-viaje-1g6m6",
+      "permalink": "https://ramas3.mitiendanube.com/productos/ajedrez-minimalista-de-viaje-1g6m6/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/image-3-404a0afd52fef3fa8d17714612138748-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/1c24a69e-0b20-410d-93ca-3ae6393160ba-084bb1b4e62222c2b117714612140124-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 15,
+          "name": "Juegos",
+          "slug": "juegos"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Ajedrez Minimalista – Edición Portátil ♟️✨ Diseño ultra minimalista y elegante en tonos verde salvia y beige natural. Tablero de 17 cm de ancho × 17 cm de largo → perfecto para llevar en el bolsillo, mochila o bolso. Piezas geométricas abstractas, sin detalles innecesarios: Torres → bloques altos…",
+      "descriptionHtml": "<p><strong>Ajedrez Minimalista – Edición Portátil</strong> ♟️✨</p> <p>Diseño ultra minimalista y elegante en tonos <strong>verde salvia y beige natural</strong>. Tablero de 17 cm de ancho × 17 cm de largo → perfecto para llevar en el bolsillo, mochila o bolso.</p> <p>Piezas geométricas abstractas, sin detalles innecesarios:</p> <ul> <li>Torres → bloques altos</li> <li>Caballos → formas angulares</li> <li>Alfiles → piezas inclinadas</li> <li>Rey y Reina → siluetas icónicas pero simplificadas</li> </ul> <p>Ideal para:</p> <ul> <li>Viajes 🚗✈️</li> <li>Oficina 🖥️</li> <li>Cafeterías ☕</li> <li>Partidas rápidas en cualquier lugar</li> </ul> <p>Material: PLA resistente (impresión 3D de alta calidad) Peso muy ligero ≈ 180-220 g Cierra perfectamente para que nada se mueva durante el transporte</p> <p><strong>“Menos es más… hasta en el ajedrez.”</strong></p> <p>¿Lo querés en otro color o con alguna variación? 😊</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 17850
+        },
+        "web": {
+          "base": null,
+          "final": 21000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1449754399,
+          "sku": null,
+          "price": 21000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/image-3-404a0afd52fef3fa8d17714612138748-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235017668,
+      "sku": "",
+      "name": "Busto de Deadpool",
+      "slug": "busto-de-deadpool",
+      "permalink": "https://ramas3.mitiendanube.com/productos/busto-de-deadpool/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-4-cc6b82edc775a749b617302333987454-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "Figura de Deadpool con mucho detalle!",
+      "descriptionHtml": "<p>Figura de Deadpool con mucho detalle!</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1032307804,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-4-cc6b82edc775a749b617302333987454-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235018534,
+      "sku": "",
+      "name": "Busto Gohan",
+      "slug": "busto-gohan",
+      "permalink": "https://ramas3.mitiendanube.com/productos/busto-gohan/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-0dc58f853eae02efe117284454213084-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "Busto de Gohan impreso en 3D con mucho detalle!",
+      "descriptionHtml": "<p>Busto de Gohan impreso en 3D con mucho detalle!</p>",
+      "weightKg": 0.1,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 29750
+        },
+        "web": {
+          "base": null,
+          "final": 35000
+        }
+      },
+      "options": [
+        "Tamaño"
+      ],
+      "variants": [
+        {
+          "id": 1032311295,
+          "sku": null,
+          "price": 35000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "15 cm"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-0dc58f853eae02efe117284454213084-1024-1024.webp"
+        },
+        {
+          "id": 1032311299,
+          "sku": null,
+          "price": 42000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "20 cm"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-0dc58f853eae02efe117284454213084-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235018943,
+      "sku": "",
+      "name": "Busto Goku",
+      "slug": "busto-goku",
+      "permalink": "https://ramas3.mitiendanube.com/productos/busto-goku/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-3-37e30d6f357c6da35817284454574762-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-2-ca0c6a27cc3120f21717284454526465-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Busto de Goku impreso en 3D!",
+      "descriptionHtml": "<p>Busto de Goku impreso en 3D!</p>",
+      "weightKg": 0.123,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 29750
+        },
+        "web": {
+          "base": null,
+          "final": 35000
+        }
+      },
+      "options": [
+        "Tamaño"
+      ],
+      "variants": [
+        {
+          "id": 1032313281,
+          "sku": null,
+          "price": 35000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "15 cm"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-3-37e30d6f357c6da35817284454574762-1024-1024.webp"
+        },
+        {
+          "id": 1032313285,
+          "sku": null,
+          "price": 42000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "20 cm"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-3-37e30d6f357c6da35817284454574762-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235019310,
+      "sku": "",
+      "name": "Caja de Hongo Mario Bros",
+      "slug": "caja-de-hongo-mario-bros",
+      "permalink": "https://ramas3.mitiendanube.com/productos/caja-de-hongo-mario-bros/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-9-4ba9f2d86dfcbd71ba17309447562912-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Cajita de Honguito de Mario Bros! Pedila de tu color favorito",
+      "descriptionHtml": "<p>Cajita de Honguito de Mario Bros! Pedila de tu color favorito</p>",
+      "weightKg": 0.12,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 15300
+        },
+        "web": {
+          "base": null,
+          "final": 18000
+        }
+      },
+      "options": [
+        "Color"
+      ],
+      "variants": [
+        {
+          "id": 1032315113,
+          "sku": null,
+          "price": 18000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "Rojo"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-9-4ba9f2d86dfcbd71ba17309447562912-1024-1024.webp"
+        },
+        {
+          "id": 1032315116,
+          "sku": null,
+          "price": 18000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "Verde"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-9-4ba9f2d86dfcbd71ba17309447562912-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235930590,
+      "sku": "",
+      "name": "Castillo de Hogwarts",
+      "slug": "castillo-de-hogwarts",
+      "permalink": "https://ramas3.mitiendanube.com/productos/castillo-de-hogwarts/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-27-f9110fea61732c1b1117302329687944-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Castillo de Hogwarts Descubre el Castillo de Hogwarts, una impresionante pieza impresa en 3D que captura la esencia mágica del mundo de Harry Potter. Con unas dimensiones de 20x20 cm de base y 10 cm de altura, este modelo de un solo color está lleno de detalles sorprendentes que lo hacen destacar…",
+      "descriptionHtml": "<p><strong>Castillo de Hogwarts</strong></p> <p>Descubre el <strong>Castillo de Hogwarts</strong>, una impresionante pieza impresa en 3D que captura la esencia mágica del mundo de Harry Potter. Con unas dimensiones de <strong>20x20 cm de base y 10 cm de altura</strong>, este modelo de un solo color está lleno de <strong>detalles sorprendentes</strong> que lo hacen destacar en cualquier colección.</p> <p>Ideal para <strong>fanáticos</strong> y como regalo especial, el Castillo de Hogwarts es una adición encantadora que no querrás perderte. ¡Hazlo tuyo y lleva la magia a tu hogar!</p>",
+      "weightKg": 0.215,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035141587,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-27-f9110fea61732c1b1117302329687944-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 211684779,
+      "sku": "",
+      "name": "Catillo de Hogwarts Ornamentado",
+      "slug": "catillo-de-hogwarts-ornamentado",
+      "permalink": "https://ramas3.mitiendanube.com/productos/catillo-de-hogwarts-ornamentado/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-12-96f21cdeb5a4ea0feb17275536730079-1024-1024.webp"
+      ],
+      "categories": [],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Castillo de Hogwarts de 10 cm de alto!",
+      "descriptionHtml": "<p>Castillo de Hogwarts de 10 cm de alto!&nbsp;</p>",
+      "weightKg": 0.216,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 25500
+        },
+        "web": {
+          "base": null,
+          "final": 30000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 904239181,
+          "sku": null,
+          "price": 30000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-12-96f21cdeb5a4ea0feb17275536730079-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276613249,
+      "sku": "",
+      "name": "Chop",
+      "slug": "chop",
+      "permalink": "https://ramas3.mitiendanube.com/productos/chop/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-4-7e5070a301f885f3ab17888301293999-1024-1024.webp"
+      ],
+      "categories": [],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "¡Presentamos el Chop impreso en 3D de 500 ml! Este no es un chop cualquiera; es un compañero ideal para tus mejores brindis. Con un diseño único que hará que tus amigos se pregunten si es un objeto de arte o simplemente un recipiente para cervezas. Capacidad perfecta de 500 ml para que nunca te…",
+      "descriptionHtml": "<p>¡Presentamos el <strong>Chop impreso en 3D de 500 ml</strong>! Este no es un chop cualquiera; es un compañero ideal para tus mejores brindis. Con un diseño único que hará que tus amigos se pregunten si es un objeto de arte o simplemente un recipiente para cervezas.</p> <p><strong>Capacidad perfecta</strong> de 500 ml para que nunca te falte tu bebida favorita. No solo es funcional, ¡también es un tema de conversación! Haz que tus fiestas sean inolvidables con este chop que seguramente robará miradas. ¡Atrévete a ser el alma de la fiesta!</p>",
+      "weightKg": 0.2,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236193248,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-4-7e5070a301f885f3ab17888301293999-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315988462,
+      "sku": "",
+      "name": "Cuadro Halcón Milenario",
+      "slug": "cuadro-halcon-milenario-35c0o",
+      "permalink": "https://ramas3.mitiendanube.com/productos/cuadro-halcon-milenario-35c0o/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-99e6704cbc482df13b17894143348342-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Cuadro decorativo del Halcón Milenario 🚀Impreso en 3D, 17 cm de lado, ideal para decorar paredes, escritorios o estanterías con un estilo sci-fi icónico 🖼️Diseño detallado y llamativo, perfecto para fans del universo galáctico y la decoración geek ✨",
+      "descriptionHtml": "<p>Cuadro decorativo del <strong>Halcón Milenario</strong> 🚀<br>Impreso en 3D, <strong>17 cm de lado</strong>, ideal para decorar paredes, escritorios o estanterías con un estilo sci-fi icónico 🖼️<br>Diseño detallado y llamativo, perfecto para fans del universo galáctico y la decoración geek ✨</p>",
+      "weightKg": 0.17,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400022095,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": 17000,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-99e6704cbc482df13b17894143348342-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315988146,
+      "sku": "",
+      "name": "Cuadro R2D2",
+      "slug": "cuadro-r2d2-cfya5",
+      "permalink": "https://ramas3.mitiendanube.com/productos/cuadro-r2d2-cfya5/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-17-748c17b90729c384ce17674082709331-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-18-db080d9cc05e898ad417674082734465-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Cuadro decorativo de R2-D2 🤖Impreso en 3D, 17 cm de lado, ideal para decorar paredes, escritorios o estanterías con un toque sci-fi 🖼️Diseño limpio y llamativo, perfecto para fans de la saga y la decoración geek ✨",
+      "descriptionHtml": "<p>Cuadro decorativo de <strong>R2-D2</strong> 🤖<br>Impreso en 3D, <strong>17 cm de lado</strong>, ideal para decorar paredes, escritorios o estanterías con un toque sci-fi 🖼️<br>Diseño limpio y llamativo, perfecto para fans de la saga y la decoración geek ✨</p>",
+      "weightKg": 0.15,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 17850
+        },
+        "web": {
+          "base": null,
+          "final": 21000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400020847,
+          "sku": null,
+          "price": 21000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-17-748c17b90729c384ce17674082709331-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315989459,
+      "sku": "",
+      "name": "Destructor Imperial",
+      "slug": "destructor-imperial-p8050",
+      "permalink": "https://ramas3.mitiendanube.com/productos/destructor-imperial-p8050/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-22-427dd6c8d310bf636617674090494915-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-21-b462428858ac115dcc17674090608876-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Figura decorativa del Destructor Imperial 🚀Impreso en 3D, 32 cm de largo, una nave icónica del Imperio Galáctico que impone presencia en cualquier colección ⚔️Ideal para fans de Star Wars, perfecta para exhibir en estanterías o escritorios y recrear batallas épicas de la saga ✨",
+      "descriptionHtml": "<p>Figura decorativa del <strong>Destructor Imperial</strong> 🚀<br>Impreso en 3D, <strong>32 cm de largo</strong>, una nave icónica del Imperio Galáctico que impone presencia en cualquier colección ⚔️<br>Ideal para fans de <strong>Star Wars</strong>, perfecta para exhibir en estanterías o escritorios y recrear batallas épicas de la saga ✨</p>",
+      "weightKg": 0.35,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 38250
+        },
+        "web": {
+          "base": null,
+          "final": 45000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400025493,
+          "sku": null,
+          "price": 45000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-22-427dd6c8d310bf636617674090494915-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235015509,
+      "sku": "",
+      "name": "Diorama de Batman",
+      "slug": "diorama-de-batman",
+      "permalink": "https://ramas3.mitiendanube.com/productos/diorama-de-batman/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-4-8fc369f40dccda9db317284453847436-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-5-652cbe7f81f63c48c817284453860723-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "Figura de Batman de 40 cm de alto pintada con acrílicos con mucho detalle!",
+      "descriptionHtml": "<p>Figura de Batman de 40 cm de alto pintada con acrílicos con mucho detalle!</p>",
+      "weightKg": 0.5,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 76500
+        },
+        "web": {
+          "base": null,
+          "final": 90000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1032300005,
+          "sku": null,
+          "price": 90000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-4-8fc369f40dccda9db317284453847436-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 326127665,
+      "sku": "",
+      "name": "Equilibrio Pokemon",
+      "slug": "equilibrio-pokemon-85pdv",
+      "permalink": "https://ramas3.mitiendanube.com/productos/equilibrio-pokemon-85pdv/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/image-2-2c17a022e3ddfc4cf117714607958790-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 15,
+          "name": "Juegos",
+          "slug": "juegos"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "¡Juego de Equilibrio Pokémon! 🎮🔥🐉 Incluye: 🟡 7 Pikachu ⚡ 🐾 7 Eevee 🟤 🔵 7 Squirtle 🐢 🟠 7 Charmander 🔥 🟢 7 Bulbasaur 🌱 Base hexagonal giratoria 🔄🟢 Reglas súper fáciles: 👉 Apila las figuritas una a una en la base. 😱 ¡El que la haga CAER pierde! 🏆💥 ¡Diversión infinita para fans! 🎉👨‍👩‍👧‍👦",
+      "descriptionHtml": "<p><strong>¡Juego de Equilibrio Pokémon!</strong> 🎮🔥🐉</p> <p><strong>Incluye:</strong> 🟡 <strong>7 Pikachu</strong> ⚡ 🐾 <strong>7 Eevee</strong> 🟤 🔵 <strong>7 Squirtle</strong> 🐢 🟠 <strong>7 Charmander</strong> 🔥 🟢 <strong>7 Bulbasaur</strong> 🌱</p> <ul> <li><strong>Base hexagonal giratoria</strong> 🔄🟢</li> </ul> <p><strong>Reglas súper fáciles:</strong> 👉 Apila las figuritas una a una en la base. 😱 <strong>¡El que la haga CAER pierde!</strong> 🏆💥</p> <p>¡Diversión infinita para fans! 🎉👨‍👩‍👧‍👦</p>",
+      "weightKg": 0.5,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 47600
+        },
+        "web": {
+          "base": null,
+          "final": 56000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1449748415,
+          "sku": null,
+          "price": 56000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/image-2-2c17a022e3ddfc4cf117714607958790-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235021890,
+      "sku": "",
+      "name": "Figura de Aang",
+      "slug": "figura-de-aang",
+      "permalink": "https://ramas3.mitiendanube.com/productos/figura-de-aang/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-26-62b7b6f0813e6e2c5e17302331005108-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Figura del avatar de 20 cm de alto!",
+      "descriptionHtml": "<p>Figura del avatar de 20 cm de alto!</p>",
+      "weightKg": 0.075,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 34000
+        },
+        "web": {
+          "base": null,
+          "final": 40000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1032321621,
+          "sku": null,
+          "price": 40000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-26-62b7b6f0813e6e2c5e17302331005108-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235782700,
+      "sku": "",
+      "name": "Funko de Batman",
+      "slug": "funko-de-batman",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-de-batman/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-7-0a434169e5da4a9f9f17284456892473-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo funko de Batman impreso en 3D de 12 cm de alto!",
+      "descriptionHtml": "<p>Muñeco estilo funko de Batman impreso en 3D de 12 cm de alto!</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1034439773,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-7-0a434169e5da4a9f9f17284456892473-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235929668,
+      "sku": "",
+      "name": "Funko de Harry Potter",
+      "slug": "funko-de-harry-potter",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-de-harry-potter/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-9-eaaaa805c586263fe317284455331482-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo Funko de Harry Potter Impreso en 3D!",
+      "descriptionHtml": "<p>Muñeco estilo Funko de Harry Potter Impreso en 3D!</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035137864,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-9-eaaaa805c586263fe317284455331482-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235783145,
+      "sku": "",
+      "name": "Funko de Messi",
+      "slug": "funko-de-messi",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-de-messi/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-22-3f62f8890ab1ed382617284456625366-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Argento",
+          "slug": "argento"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo funko de Messi impreso en 3D de 12 cm de alto!",
+      "descriptionHtml": "<p>Muñeco estilo funko de Messi impreso en 3D de 12 cm de alto!</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1034442848,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-22-3f62f8890ab1ed382617284456625366-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235784224,
+      "sku": "",
+      "name": "Funko Deadpool",
+      "slug": "funko-deadpool",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-deadpool/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-38-7791e7010ffccb8d8717302330658458-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo funko de Deadpool impreso en 3D de 12 cm de alto!",
+      "descriptionHtml": "<p>Muñeco estilo funko de Deadpool impreso en 3D de 12 cm de alto!</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1034450196,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-38-7791e7010ffccb8d8717302330658458-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235929213,
+      "sku": "",
+      "name": "Funko del Dibu",
+      "slug": "funko-del-dibu",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-del-dibu/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-19-5ecc3e4a0907e39e2e17284456285160-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Argento",
+          "slug": "argento"
+        },
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo Funko de Dibu Martinez Impreso en 3D!",
+      "descriptionHtml": "<p>Muñeco estilo Funko de Dibu Martinez Impreso en 3D!</p>",
+      "weightKg": 0.085,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 27200
+        },
+        "web": {
+          "base": null,
+          "final": 32000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035136126,
+          "sku": null,
+          "price": 32000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-19-5ecc3e4a0907e39e2e17284456285160-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235929743,
+      "sku": "",
+      "name": "Funko Dumbledore",
+      "slug": "funko-dumbledore",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-dumbledore/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-8-7c172308ef38f235ec17284455101083-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo Funko de Dumbledore impreso en 3D!",
+      "descriptionHtml": "<p>Muñeco estilo Funko de Dumbledore impreso en 3D!</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035138373,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-8-7c172308ef38f235ec17284455101083-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 202371807,
+      "sku": "",
+      "name": "Funko Freddie Mercury",
+      "slug": "funko-freddie-mercury",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-freddie-mercury/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/sin-titulo-2-9-339ed3704170df91be17351688202632-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "",
+      "descriptionHtml": "",
+      "weightKg": 0.075,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 842221279,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/sin-titulo-2-9-339ed3704170df91be17351688202632-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235929835,
+      "sku": "",
+      "name": "Funko Voldemort",
+      "slug": "funko-voldemort",
+      "permalink": "https://ramas3.mitiendanube.com/productos/funko-voldemort/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-10-a4cdb2ca737fd5975217284456036905-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco estilo Funko de Voldemort Impreso en 3D!",
+      "descriptionHtml": "<p>Muñeco estilo Funko de Voldemort Impreso en 3D!</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 21250
+        },
+        "web": {
+          "base": null,
+          "final": 25000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035138733,
+          "sku": null,
+          "price": 25000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-10-a4cdb2ca737fd5975217284456036905-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235930142,
+      "sku": "",
+      "name": "Gengar Venomizado",
+      "slug": "gengar-venomizado",
+      "permalink": "https://ramas3.mitiendanube.com/productos/gengar-venomizado/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-88f3e8245a0990269317892432607735-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 11,
+          "name": "Funkos",
+          "slug": "figuras"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Gengar Venomizado Conoce al Gengar Venomizado, un muñeco único que fusiona el carisma del famoso Pokémon con el simbionte Venom, impreso en 3D. Ideal como regalo o para tu colección, su diseño vibrante y detallado lo convierten en una pieza imprescindible. ¡No dejes pasar la oportunidad de tenerlo!",
+      "descriptionHtml": "<h1>Gengar Venomizado</h1> <p>Conoce al <strong>Gengar Venomizado</strong>, un muñeco único que fusiona el carisma del famoso Pokémon con el simbionte <strong>Venom</strong>, impreso en 3D.</p> <p>Ideal como regalo o para tu colección, su <strong>diseño vibrante</strong> y detallado lo convierten en una pieza imprescindible. ¡No dejes pasar la oportunidad de tenerlo!</p>",
+      "weightKg": 0.075,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 15300
+        },
+        "web": {
+          "base": null,
+          "final": 18000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035139940,
+          "sku": null,
+          "price": 18000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-88f3e8245a0990269317892432607735-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 208921101,
+      "sku": "",
+      "name": "Halcón Milenario",
+      "slug": "halcon-milenario",
+      "permalink": "https://ramas3.mitiendanube.com/productos/halcon-milenario/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-24-99f06cb914bb484b8e17275536012922-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "Halcon milenario de 20 cm de largo!",
+      "descriptionHtml": "<p>Halcon milenario de 20 cm de largo!</p>",
+      "weightKg": 0.14,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 17850
+        },
+        "web": {
+          "base": null,
+          "final": 21000
+        }
+      },
+      "options": [
+        "Tamaño"
+      ],
+      "variants": [
+        {
+          "id": 1051624633,
+          "sku": null,
+          "price": 21000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [
+            "20 cm"
+          ],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-24-99f06cb914bb484b8e17275536012922-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 367083735,
+      "sku": "",
+      "name": "Itachi Uchiha",
+      "slug": "itachi-uchiha-13bmd",
+      "permalink": "https://ramas3.mitiendanube.com/productos/itachi-uchiha-13bmd/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-1-fcb935e230786f395617892438280912-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-2-5ddb600302bd64a87417892438276420-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-3-922d29fd67c843d67517892438280061-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 10,
+          "name": "Figuras de colección",
+          "slug": "figuras-de-coleccion"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "",
+      "descriptionHtml": "",
+      "weightKg": 0.5,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 69700
+        },
+        "web": {
+          "base": null,
+          "final": 82000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1595702464,
+          "sku": null,
+          "price": 82000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-1-fcb935e230786f395617892438280912-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 326126041,
+      "sku": "",
+      "name": "Juego 4 en linea",
+      "slug": "juego-4-en-linea-b5w8w",
+      "permalink": "https://ramas3.mitiendanube.com/productos/juego-4-en-linea-b5w8w/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-5-de43aefed66a8ea0bd17888302108159-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2fcd36cc-6600-4ac5-b497-0a7ea2d17af0-0b01d85897afa5903917714602494543-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 15,
+          "name": "Juegos",
+          "slug": "juegos"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Conecta 4 en espiral 🔥 – Edición compacta 16 cm de ancho 🚀 Tablero azul vibrante + fichas helicoidales rojas y blancas 🌀❤️🤍 Bandeja gris para guardar todo ordenadito 🗄️ ¡Rápido, adictivo y portátil! Perfecto para niños y adultos 🎉👨‍👩‍👧‍👦 Otras opciones ultra cortas (ideal para títulos o cards): 🌀…",
+      "descriptionHtml": "<p>Conecta 4 en espiral 🔥 – Edición compacta 16 cm de ancho 🚀 Tablero azul vibrante + fichas helicoidales rojas y blancas 🌀❤️🤍 Bandeja gris para guardar todo ordenadito 🗄️ ¡Rápido, adictivo y portátil! Perfecto para niños y adultos 🎉👨‍👩‍👧‍👦</p> <p><strong>Otras opciones ultra cortas (ideal para títulos o cards):</strong> 🌀 Conecta 4 Espiral – 16 cm – ¡Pura diversión! 🎲🔥 🔴🤍 Mini Conecta 4 helicoidal 16 cm + bandeja 😍 🎯 Juego vertical espiral compacto – 16 cm de pura adrenalina! ⚡</p>",
+      "weightKg": 0.3,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 34000
+        },
+        "web": {
+          "base": null,
+          "final": 40000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1449738406,
+          "sku": null,
+          "price": 40000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-5-de43aefed66a8ea0bd17888302108159-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 326126584,
+      "sku": "",
+      "name": "Juego de Elasticos",
+      "slug": "juego-de-elasticos-1319c",
+      "permalink": "https://ramas3.mitiendanube.com/productos/juego-de-elasticos-1319c/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-6-9ab822cc4cfabc399b17888302692834-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 15,
+          "name": "Juegos",
+          "slug": "juegos"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "🧲 ¡Turno a turno! En cada turno, estira una goma elástica 🔴 a través de cuatro clavijas 📍📍📍📍. ✅ ¡Triángulo completado! Siempre que ** formes un triángulo △**, reclámalo con tu pieza 🎯 (amarilla 🟡, azul 🔵 o roja 🔴). 🏁 ¡Fin del juego! Termina cuando no queden gomas 🧲 o todos los triángulos estén…",
+      "descriptionHtml": "<p>🧲 <strong>¡Turno a turno!</strong> En cada turno, <strong>estira una goma elástica 🔴</strong> a través de <strong>cuatro clavijas 📍📍📍📍</strong>.</p> <p>✅ <strong>¡Triángulo completado!</strong> Siempre que ** formes un triángulo △**, <strong>reclámalo con tu pieza 🎯</strong> (amarilla 🟡, azul 🔵 o roja 🔴).</p> <p>🏁 <strong>¡Fin del juego!</strong> Termina cuando <strong>no queden gomas 🧲</strong> o <strong>todos los triángulos estén reclamados</strong>!</p> <p>🏆 <strong>¡Gana quien tenga MÁS triángulos!</strong> 🎉</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 27200
+        },
+        "web": {
+          "base": null,
+          "final": 32000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1449741375,
+          "sku": null,
+          "price": 32000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-6-9ab822cc4cfabc399b17888302692834-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315985555,
+      "sku": "",
+      "name": "Lámpara de Minecraft",
+      "slug": "lampara-de-minecraft-hmrul",
+      "permalink": "https://ramas3.mitiendanube.com/productos/lampara-de-minecraft-hmrul/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-16-caf39c4be6a810219b17674048987636-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 14,
+          "name": "Iluminación",
+          "slug": "iluminacion"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Lámpara estilo Minecraft 🔥🧱Impresa en 3D, con cable y enchufe, ideal para iluminar y decorar escritorios, habitaciones o setups gamer 🖥️Diseño pixelado y luz cálida que le da un toque gamer único a cualquier espacio 🎮✨",
+      "descriptionHtml": "<p>Lámpara estilo Minecraft 🔥🧱<br>Impresa en 3D, con <strong>cable y enchufe</strong>, ideal para iluminar y decorar escritorios, habitaciones o setups gamer 🖥️<br>Diseño pixelado y luz cálida que le da un toque gamer único a cualquier espacio 🎮✨</p>",
+      "weightKg": 0.5,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 35700
+        },
+        "web": {
+          "base": null,
+          "final": 42000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400003048,
+          "sku": null,
+          "price": 42000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-16-caf39c4be6a810219b17674048987636-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315989850,
+      "sku": "",
+      "name": "Lapicero C3PO",
+      "slug": "lapicero-c3po-xap1d",
+      "permalink": "https://ramas3.mitiendanube.com/productos/lapicero-c3po-xap1d/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-2-a3f869bff0e1209b8717888299934291-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-3-051936cc5aaa19266617888300334483-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Lapicero inspirado en C-3PO 🤖✏️Impreso en 3D, ideal para organizar lápices, fibrones o útiles y sumar un toque de Star Wars a tu escritorio 🖥️Decorativo, funcional y perfecto para fans de la saga galáctica ✨",
+      "descriptionHtml": "<p>Lapicero inspirado en <strong>C-3PO</strong> 🤖✏️<br>Impreso en 3D, ideal para organizar lápices, fibrones o útiles y sumar un toque de <strong>Star Wars</strong> a tu escritorio 🖥️<br>Decorativo, funcional y perfecto para fans de la saga galáctica ✨</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 10200
+        },
+        "web": {
+          "base": null,
+          "final": 12000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400027403,
+          "sku": null,
+          "price": 12000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-2-a3f869bff0e1209b8717888299934291-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 202372438,
+      "sku": "",
+      "name": "Mate Spiderman",
+      "slug": "mate-spiderman",
+      "permalink": "https://ramas3.mitiendanube.com/productos/mate-spiderman/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-1-6b013a2058a42b9dfa17275534329811-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 20,
+          "name": "Mates",
+          "slug": "mates"
+        }
+      ],
+      "featured": true,
+      "inStock": true,
+      "shortDescription": "",
+      "descriptionHtml": "",
+      "weightKg": 0.072,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 17000
+        },
+        "web": {
+          "base": null,
+          "final": 20000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 842224890,
+          "sku": null,
+          "price": 20000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-1-6b013a2058a42b9dfa17275534329811-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276624555,
+      "sku": "",
+      "name": "Muñeco Ballerina Capuchina",
+      "slug": "muneco-ballerina-capuchina",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-ballerina-capuchina/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-24_8267cabb17184-7fa10a06c6ae1433f917501142052745-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-24_c595e56359bfa8-6c4c0cc3c2829dfee517501142209870-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Su diseño detallado y sus movimientos hacen que sea ideal para jugar o coleccionar. Además, está hecho con materiales resistentes para acompañarte por mucho tiempo.",
+      "descriptionHtml": "<p>Su diseño detallado y sus movimientos hacen que sea ideal para jugar o coleccionar. Además, está hecho con materiales resistentes para acompañarte por mucho tiempo.</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 8160
+        },
+        "web": {
+          "base": null,
+          "final": 9600
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236237127,
+          "sku": null,
+          "price": 9600,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-24_8267cabb17184-7fa10a06c6ae1433f917501142052745-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276632160,
+      "sku": "",
+      "name": "Muñeco Brr Brr Patapim",
+      "slug": "muneco-brr-brr-patapim",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-brr-brr-patapim/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-15_565085c3068268-67b5d248b01b903ef817501177145982-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Este juguete articulado del personaje Brainrot es todo lo que necesitás para llevar la diversión a otro nivel.",
+      "descriptionHtml": "<p>Este juguete articulado del personaje Brainrot es todo lo que necesitás para llevar la diversión a otro nivel.</p>",
+      "weightKg": 0.14,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 13260
+        },
+        "web": {
+          "base": null,
+          "final": 15600
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236272078,
+          "sku": null,
+          "price": 15600,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-15_565085c3068268-67b5d248b01b903ef817501177145982-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276631469,
+      "sku": "",
+      "name": "Muñeco Burbaloni Luliloli",
+      "slug": "muneco-burbaloni-luliloli",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-burbaloni-luliloli/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-10_515d14c3067d08-fbb69ac2d7bc1df35417501174231001-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-10_24074d3bcfccd-5d99edcf6beb87b11b17501174310502-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Conocé el juguete articulado del personaje Brainrot: Burbaloni Luliloli. Un muñeco con detalle y movimiento para que puedas jugar, armar tus propias historias o simplemente tenerlo en tu colección.",
+      "descriptionHtml": "<p>Conocé el juguete articulado del personaje Brainrot:&nbsp;<em>Burbaloni Luliloli</em>. Un muñeco con detalle y movimiento para que puedas jugar, armar tus propias historias o simplemente tenerlo en tu colección.</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 9180
+        },
+        "web": {
+          "base": null,
+          "final": 10800
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236269088,
+          "sku": null,
+          "price": 10800,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-10_515d14c3067d08-fbb69ac2d7bc1df35417501174231001-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276634122,
+      "sku": "",
+      "name": "Muñeco Capuchino Asesino",
+      "slug": "muneco-capuchino-asesino",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-capuchino-asesino/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-25_6463b47d1f545-80630138edee54800f17501181230037-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Este juguete articulado es divertido, con movimientos geniales y un toque de humor oscuro que lo hace único. Perfecto para fanáticos que quieren algo diferente y con onda.",
+      "descriptionHtml": "<p>Este&nbsp;<em>juguete articulado </em>es divertido, con movimientos geniales y un toque de humor oscuro que lo hace único. Perfecto para fanáticos que quieren algo diferente y con onda.</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 9180
+        },
+        "web": {
+          "base": null,
+          "final": 10800
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236276046,
+          "sku": null,
+          "price": 10800,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-25_6463b47d1f545-80630138edee54800f17501181230037-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276626188,
+      "sku": "",
+      "name": "Muñeco Chimpanzini Bananini",
+      "slug": "muneco-chimpanzini-bananini",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-chimpanzini-bananini/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-28_bf9f8255fffe6-5d8667363be87a905717501149014418-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Un juguete articulable que te va a encantar. Con un diseño súper divertido y lleno de detalles, este personaje de Brainrot es ideal para darle vida a tus momentos de juego.",
+      "descriptionHtml": "<p>Un juguete articulable que te va a encantar. Con un diseño súper divertido y lleno de detalles, este personaje de Brainrot es ideal para darle vida a tus momentos de juego.</p>",
+      "weightKg": 0.13,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12240
+        },
+        "web": {
+          "base": null,
+          "final": 14400
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236245205,
+          "sku": null,
+          "price": 14400,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-28_bf9f8255fffe6-5d8667363be87a905717501149014418-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276621583,
+      "sku": "",
+      "name": "Muñeco Cocodrilo Bombardiro",
+      "slug": "muneco-cocodrilo-bombardiro",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-cocodrilo-bombardiro/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-14_4ac1bd5bcc38a-c84f1106bae112296717501123645454-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Muñeco articulado del personaje Brainrot, Cocodrilo Bombardiro. Perfecto para coleccionistas o para divertirte moviéndolo y armando tus propias historias.",
+      "descriptionHtml": "<p>Muñeco articulado del personaje Brainrot, Cocodrilo Bombardiro. Perfecto para coleccionistas o para divertirte moviéndolo y armando tus propias historias.</p>",
+      "weightKg": 0.07,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 6630
+        },
+        "web": {
+          "base": null,
+          "final": 7800
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236223780,
+          "sku": null,
+          "price": 7800,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-14_4ac1bd5bcc38a-c84f1106bae112296717501123645454-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276634433,
+      "sku": "",
+      "name": "Muñeco Lirili Larila",
+      "slug": "muneco-lirili-larila",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-lirili-larila/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-20_2a5d59d59c21d8-dd98c605acc4a7d81d17501183282440-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Este juguete articulado es: divertido, con movimientos geniales y un toque de humor oscuro que lo hace único. Perfecto para fanáticos que quieren algo diferente y con onda.",
+      "descriptionHtml": "<p>Este<em>&nbsp;</em>juguete articulado<em> </em>es: divertido, con movimientos geniales y un toque de humor oscuro que lo hace único. Perfecto para fanáticos que quieren algo diferente y con onda.</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 8160
+        },
+        "web": {
+          "base": null,
+          "final": 9600
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236277317,
+          "sku": null,
+          "price": 9600,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-20_2a5d59d59c21d8-dd98c605acc4a7d81d17501183282440-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276620858,
+      "sku": "",
+      "name": "Muñeco Tralalero Tralara",
+      "slug": "muneco-tralalero-tralara",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-tralalero-tralara/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-04-12_5547b4a9c6724-5717de0d4dff22941117501117345384-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "¡Conoce al Muñeco Articulado de Tralalero Tralara! Súper divertido y con articulaciones para ponerlo como quieras.",
+      "descriptionHtml": "<p>¡Conoce al&nbsp;<strong>Muñeco Articulado de Tralalero Tralara</strong>! Súper divertido y con articulaciones para ponerlo como quieras.</p>",
+      "weightKg": 0.06,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 6120
+        },
+        "web": {
+          "base": null,
+          "final": 7200
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236220601,
+          "sku": null,
+          "price": 7200,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-04-12_5547b4a9c6724-5717de0d4dff22941117501117345384-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276628717,
+      "sku": "",
+      "name": "Muñeco Tung Tung Tung mamado",
+      "slug": "muneco-tung-tung-tung-mamado",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-tung-tung-tung-mamado/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-05_4f09bda7864db-39bb26dd7dc2a18d8417501164706412-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Un muñeco articulado con movimientos que permiten darle vida y actitud. Ideal para quienes buscan un toque único y potente en su colección. ¡Sumalo y disfrutá de su fuerza y personalidad!",
+      "descriptionHtml": "<p>Un muñeco articulado con movimientos que permiten darle vida y actitud. Ideal para quienes buscan un toque único y potente en su colección. ¡Sumalo y disfrutá de su fuerza y personalidad!</p>",
+      "weightKg": 0.2,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 17340
+        },
+        "web": {
+          "base": null,
+          "final": 20400
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236256753,
+          "sku": null,
+          "price": 20400,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-05_4f09bda7864db-39bb26dd7dc2a18d8417501164706412-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276623393,
+      "sku": "",
+      "name": "Muñeco Tung tung tung sahur",
+      "slug": "muneco-tung-tung-tung-sahur",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-tung-tung-tung-sahur/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-10_9a544f93ee199-80d7335a92ff10161617501134179078-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Su diseño divertido y articulaciones lo hacen ideal para jugar o exhibir. Permite distintas poses, otorgándole vida y personalidad.",
+      "descriptionHtml": "<p>Su diseño divertido y articulaciones lo hacen ideal para jugar o exhibir. Permite distintas poses, otorgándole vida y personalidad.</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 6630
+        },
+        "web": {
+          "base": null,
+          "final": 7800
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236231894,
+          "sku": null,
+          "price": 7800,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-10_9a544f93ee199-80d7335a92ff10161617501134179078-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276630989,
+      "sku": "",
+      "name": "Muñeco Udin Din Din Dun",
+      "slug": "muneco-udin-din-din-dun",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-udin-din-din-dun/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-11_059f4e8ea90fb8-9d53df53ffc09008c517501171363855-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Juguete articulable de brainrot que combina diversión y diseño. Sus articulaciones flexibles permiten darle vida a este personaje, ideal para jugar o para lucir como parte de tu colección.",
+      "descriptionHtml": "<p>Juguete articulable de&nbsp;<em>brainrot</em>&nbsp;que combina diversión y diseño. Sus articulaciones flexibles permiten darle vida a este personaje, ideal para jugar o para lucir como parte de tu colección.</p>",
+      "weightKg": 0.14,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 13260
+        },
+        "web": {
+          "base": null,
+          "final": 15600
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236266785,
+          "sku": null,
+          "price": 15600,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-06-11_059f4e8ea90fb8-9d53df53ffc09008c517501171363855-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 276627721,
+      "sku": "",
+      "name": "Muñeco Vaca Saturno Saturnita",
+      "slug": "muneco-vaca-saturno-saturnita",
+      "permalink": "https://ramas3.mitiendanube.com/productos/muneco-vaca-saturno-saturnita/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-29_c7b63acaa46f3-8141dcdaf8f8327ede17501156523344-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-29_a7ff060efb95b8-4772730b989471d6f617501157254902-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Brainrot",
+          "slug": "brainrot"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Un muñeco con un diseño súper flexible para que lo pongas como quieras. Ideal para sumar a tu colección o para jugar sin límites.",
+      "descriptionHtml": "<p>&nbsp;Un muñeco con un diseño súper flexible para que lo pongas como quieras. Ideal para sumar a tu colección o para jugar sin límites.&nbsp;</p>",
+      "weightKg": 0.15,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 13260
+        },
+        "web": {
+          "base": null,
+          "final": 15600
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1236250968,
+          "sku": null,
+          "price": 15600,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/2025-05-29_c7b63acaa46f3-8141dcdaf8f8327ede17501156523344-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303768677,
+      "sku": "",
+      "name": "Pokebola Blastoise",
+      "slug": "pokebola-blastoise-7iun1",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-blastoise-7iun1/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-23-41_23e79b65-5e2e33a8fa51adf6cd17617068785878-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7 cm de díametro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7 cm de díametro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351818329,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-23-41_23e79b65-5e2e33a8fa51adf6cd17617068785878-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303768980,
+      "sku": "",
+      "name": "Pokebola Charizard",
+      "slug": "pokebola-charizard-vwj05",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-charizard-vwj05/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-26-45_d0f3893d-b65bdefd51e891216f17617069216703-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7 cm de díametro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7 cm de díametro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351819188,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-26-45_d0f3893d-b65bdefd51e891216f17617069216703-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303759554,
+      "sku": "",
+      "name": "Pokebola de Abra",
+      "slug": "pokebola-de-abra-g9v7j",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-abra-g9v7j/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-06-06_1c48c504-803f6bb7ea324ad50d17617041057495-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351757510,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-06-06_1c48c504-803f6bb7ea324ad50d17617041057495-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303760610,
+      "sku": "",
+      "name": "Pokebola de Alakazam",
+      "slug": "pokebola-de-alakazam-is2yo",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-alakazam-is2yo/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-07-25_f7d8beb9-294bdb213c80e0d86017617043646584-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351764085,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-07-25_f7d8beb9-294bdb213c80e0d86017617043646584-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303756923,
+      "sku": "",
+      "name": "Pokebola de Arbok",
+      "slug": "pokebola-de-arbok-4341y",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-arbok-4341y/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-00-46_e0acb7ea-e7e0a61ae2b9879b2917617035751275-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351738205,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-00-46_e0acb7ea-e7e0a61ae2b9879b2917617035751275-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303758787,
+      "sku": "",
+      "name": "Pokebola de Arcanine",
+      "slug": "pokebola-de-arcanine-8zauz",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-arcanine-8zauz/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-05-39_79ac784a-5e40c3eb70f74f938f17617040380481-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351752569,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-05-39_79ac784a-5e40c3eb70f74f938f17617040380481-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303755366,
+      "sku": "",
+      "name": "Pokebola de Butterfree",
+      "slug": "pokebola-de-butterfree-azlnk",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-butterfree-azlnk/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-22-59-20_0cc9602d-40ea732ab321460c5917617031837674-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351726144,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-22-59-20_0cc9602d-40ea732ab321460c5917617031837674-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303756604,
+      "sku": "",
+      "name": "Pokebola de Caterpie",
+      "slug": "pokebola-de-caterpie-7ljqh",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-caterpie-7ljqh/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-22-55-58_4b9b6392-68778576e1ad98b89917617034958186-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351735652,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-22-55-58_4b9b6392-68778576e1ad98b89917617034958186-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303762639,
+      "sku": "",
+      "name": "Pokebola de Dragonite",
+      "slug": "pokebola-de-dragonite-jd7qu",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-dragonite-jd7qu/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-11-25_69410537-30248a02fb90c8f5e417617048386695-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351780247,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-11-25_69410537-30248a02fb90c8f5e417617048386695-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303762453,
+      "sku": "",
+      "name": "Pokebola de Dratini",
+      "slug": "pokebola-de-dratini-o0jno",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-dratini-o0jno/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-10-50_4167d745-1004f5f9a28784a11517617047834233-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351778682,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-10-50_4167d745-1004f5f9a28784a11517617047834233-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303762861,
+      "sku": "",
+      "name": "Pokebola de Espeon",
+      "slug": "pokebola-de-espeon-hulb5",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-espeon-hulb5/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-12-03_346a7352-29c16a3682d019cdf417617049001320-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351782001,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-12-03_346a7352-29c16a3682d019cdf417617049001320-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303755692,
+      "sku": "",
+      "name": "Pokebola de Fearow",
+      "slug": "pokebola-de-fearow-milq1",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-fearow-milq1/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-00-10_a99b5e25-b8bc36cd3c4c9c24a117617032653439-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351728506,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-00-10_a99b5e25-b8bc36cd3c4c9c24a117617032653439-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303760993,
+      "sku": "",
+      "name": "Pokebola de Gastly",
+      "slug": "pokebola-de-gastly-wiu6q",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-gastly-wiu6q/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-08-08_b4a3830a-526eee004e4734da5c17617044277077-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351766911,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-08-08_b4a3830a-526eee004e4734da5c17617044277077-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303762048,
+      "sku": "",
+      "name": "Pokebola de Gengar",
+      "slug": "pokebola-de-gengar-wppse",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-gengar-wppse/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-09-40_5c37ef12-332b5cf7ef9a562ae317617046492013-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351775522,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-09-40_5c37ef12-332b5cf7ef9a562ae317617046492013-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303763547,
+      "sku": "",
+      "name": "Pokebola de Groudon",
+      "slug": "pokebola-de-groudon-bay65",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-groudon-bay65/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-18-20_346740a5-77d442061b23c1652017617050670678-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351787608,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-18-20_346740a5-77d442061b23c1652017617050670678-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303761593,
+      "sku": "",
+      "name": "Pokebola de Haunter",
+      "slug": "pokebola-de-haunter-1cr7l",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-haunter-1cr7l/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-08-39_ee115cd2-cb2dd8261c6d858f6217617045113175-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351771942,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-08-39_ee115cd2-cb2dd8261c6d858f6217617045113175-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303760298,
+      "sku": "",
+      "name": "Pokebola de Kadabra",
+      "slug": "pokebola-de-kadabra-gi1pg",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-kadabra-gi1pg/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-06-47_e8b49be7-36807f1996afa4f47a17617042959772-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351761771,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-06-47_e8b49be7-36807f1996afa4f47a17617042959772-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303764165,
+      "sku": "",
+      "name": "Pokebola de Leafeon",
+      "slug": "pokebola-de-leafeon-wte5a",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-leafeon-wte5a/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-20-01_dd10a898-26b335be3018bfdec617617052205260-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351792043,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-20-01_dd10a898-26b335be3018bfdec617617052205260-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303763959,
+      "sku": "",
+      "name": "Pokebola de Lucario",
+      "slug": "pokebola-de-lucario-12a3r",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-lucario-12a3r/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-19-28_3d40ba42-8716dbb666cd4aeff917617051735873-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351790498,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-19-28_3d40ba42-8716dbb666cd4aeff917617051735873-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303763354,
+      "sku": "",
+      "name": "Pokebola de Lugia",
+      "slug": "pokebola-de-lugia-k9yd9",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-lugia-k9yd9/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-16-55_8d3b8155-9b4bd52cf78d3932f017617050131549-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351786174,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-16-55_8d3b8155-9b4bd52cf78d3932f017617050131549-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303754954,
+      "sku": "",
+      "name": "Pokebola de Metapod",
+      "slug": "pokebola-de-metapod-fbh4r",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-metapod-fbh4r/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-22-49-19_6c0dfb7b-91b05dca4a20294fca17617026072745-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351723011,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-22-49-19_6c0dfb7b-91b05dca4a20294fca17617026072745-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303757894,
+      "sku": "",
+      "name": "Pokebola de Nidoqueen",
+      "slug": "pokebola-de-nidoqueen-lnwyp",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-nidoqueen-lnwyp/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-02-21_16427891-8f49253167a05c697f17617038192147-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351745631,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-02-21_16427891-8f49253167a05c697f17617038192147-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303757607,
+      "sku": "",
+      "name": "Pokebola de Nidorina",
+      "slug": "pokebola-de-nidorina-g6o1s",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-nidorina-g6o1s/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-01-54_cab60be0-3fbad93911cc8c956717617037121883-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351743252,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-01-54_cab60be0-3fbad93911cc8c956717617037121883-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303758440,
+      "sku": "",
+      "name": "Pokebola de Persian",
+      "slug": "pokebola-de-persian-t3foz",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-persian-t3foz/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-04-56_a861bd25-1cec6327dcc1e73fec17617039547700-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351749992,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-04-56_a861bd25-1cec6327dcc1e73fec17617039547700-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303763791,
+      "sku": "",
+      "name": "Pokebola de Rayquaza",
+      "slug": "pokebola-de-rayquaza-cv6pc",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-rayquaza-cv6pc/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-18-56_aff21b27-8d4783c5b5531b3d8217617051286205-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351789357,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-18-56_aff21b27-8d4783c5b5531b3d8217617051286205-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303762247,
+      "sku": "",
+      "name": "Pokebola de Snorlax",
+      "slug": "pokebola-de-snorlax-rtzez",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-snorlax-rtzez/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-10-20_fed37550-b0ad46d223a6d421cb17617047435100-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351777037,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-10-20_fed37550-b0ad46d223a6d421cb17617047435100-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303763142,
+      "sku": "",
+      "name": "Pokebola de Umbreon",
+      "slug": "pokebola-de-umbreon-nax42",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-de-umbreon-nax42/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-12-35_f936803b-8c107a7adfa336a98217617049499983-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351784366,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-12-35_f936803b-8c107a7adfa336a98217617049499983-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303766716,
+      "sku": "",
+      "name": "Pokebola Glaceon",
+      "slug": "pokebola-glaceon-zkxhi",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-glaceon-zkxhi/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/1-6141bcb62d8342e21e17617065780584-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola de 7 cm de diámetro",
+      "descriptionHtml": "<p>Pokebola de 7 cm de diámetro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351811480,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/1-6141bcb62d8342e21e17617065780584-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303766972,
+      "sku": "",
+      "name": "Pokebola Greninja",
+      "slug": "pokebola-greninja-g80jb",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-greninja-g80jb/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-21-52_b70d1538-2810ca3171c22fbe9517617066638713-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7 cm de díametro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7 cm de díametro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351813114,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-21-52_b70d1538-2810ca3171c22fbe9517617066638713-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303767372,
+      "sku": "",
+      "name": "Pokebola Mimikyu",
+      "slug": "pokebola-mimikyu-icke7",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-mimikyu-icke7/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-23-12_5ee4ae7e-941d473b1c0563cb1917617067371832-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7 cm de díametro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7 cm de díametro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351814562,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-23-12_5ee4ae7e-941d473b1c0563cb1917617067371832-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303757184,
+      "sku": "",
+      "name": "Pokebola Nidoran",
+      "slug": "pokebola-nidoran-jhhcm",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-nidoran-jhhcm/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-01-20_e24ab41c-93d900d8ee5ec0c01a17617036320569-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        },
+        {
+          "id": 23,
+          "name": "Pokebolas",
+          "slug": "pokebolas"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7cm de diámetro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7cm de diámetro</p>",
+      "weightKg": 0.009,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351740408,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-01-20_e24ab41c-93d900d8ee5ec0c01a17617036320569-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 303767235,
+      "sku": "",
+      "name": "Pokebola Sylveon",
+      "slug": "pokebola-sylveon-5nwpr",
+      "permalink": "https://ramas3.mitiendanube.com/productos/pokebola-sylveon-5nwpr/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-22-40_99a67927-a4c33f08c9ad320f3417617067156956-1024-1024.webp"
+      ],
+      "categories": [],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Pokebola decorativa Medidas: 7 cm de díametro",
+      "descriptionHtml": "<p>Pokebola decorativa</p> <p>Medidas: 7 cm de díametro</p>",
+      "weightKg": 0.09,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 12750
+        },
+        "web": {
+          "base": null,
+          "final": 15000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1351814026,
+          "sku": null,
+          "price": 15000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/imagen-de-whatsapp-2025-10-28-a-las-23-22-40_99a67927-a4c33f08c9ad320f3417617067156956-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 235931186,
+      "sku": "",
+      "name": "Snitch Dorada",
+      "slug": "snitch-dorada",
+      "permalink": "https://ramas3.mitiendanube.com/productos/snitch-dorada/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-17-696ba33d23acb647e417309434309270-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-16-bc251e9a10006c3cb717309434305728-1024-1024.webp"
+      ],
+      "categories": [],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Snitch Dorada Descubre la Snitch Dorada, una fascinante figura impresa en 3D que destaca por su increíble detalle y calidad. Este icónico objeto, símbolo del mundo mágico, es perfecto tanto para los coleccionistas como para los fanáticos de Harry Potter. Con dimensiones ideales para exhibir, la…",
+      "descriptionHtml": "<p><strong>Snitch Dorada</strong></p> <p>Descubre la <em>Snitch Dorada</em>, una fascinante figura impresa en 3D que destaca por su increíble detalle y calidad. Este icónico objeto, símbolo del mundo mágico, es perfecto tanto para los coleccionistas como para los fanáticos de Harry Potter.</p> <p>Con dimensiones ideales para exhibir, la Snitch se convertirá en una joya en tu colección. ¡No te pierdas la oportunidad de llevarte a casa este impresionante detalle de la magia!</p>",
+      "weightKg": 0.03,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 8500
+        },
+        "web": {
+          "base": null,
+          "final": 10000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1035143712,
+          "sku": null,
+          "price": 10000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-9-17-696ba33d23acb647e417309434309270-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315793258,
+      "sku": "",
+      "name": "Soporte auriculares Charmander",
+      "slug": "soporte-auriculares-charmander-7igl5",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-charmander-7igl5/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-2-145e9ec68185557bd117672230821704-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-3-fb660c2f1749a02d8117672232483294-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        },
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Figura decorativa impresa en 3D de dragón de fuego 🔥🐉Mide 23 cm de alto, con colores vibrantes y estilo caricaturesco, ideal para decorar escritorios, estanterías o regalar 🎁✨Liviana, llamativa y perfecta para fans del mundo gamer y coleccionables 🎮🔥",
+      "descriptionHtml": "<p>Figura decorativa impresa en 3D de dragón de fuego 🔥🐉<br>Mide <strong>23 cm de alto</strong>, con colores vibrantes y estilo caricaturesco, ideal para decorar escritorios, estanterías o regalar 🎁✨<br>Liviana, llamativa y perfecta para fans del mundo gamer y coleccionables 🎮🔥</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 35700
+        },
+        "web": {
+          "base": null,
+          "final": 42000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399316800,
+          "sku": null,
+          "price": 42000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-2-145e9ec68185557bd117672230821704-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315794219,
+      "sku": "",
+      "name": "Soporte Auriculares Gengar",
+      "slug": "soporte-auriculares-gengar-2bmmt",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-gengar-2bmmt/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-9-09a6c651a634bf8f7617672246928086-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        },
+        {
+          "id": 22,
+          "name": "Pokèmon",
+          "slug": "pokemon"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares con diseño gamer estilo personaje violeta 🎧🎮Impreso en 3D, 16 cm de alto, con pintado, ideal para apoyar tus auriculares y sumar personalidad a tu escritorio o setup gamer 🖥️Compacto, firme y llamativo, perfecto para fans del gaming y lo coleccionable ⚡",
+      "descriptionHtml": "<p>Soporte para auriculares con diseño gamer estilo personaje violeta 🎧🎮<br>Impreso en 3D, <strong>16 cm de alto</strong>, <strong>con pintado</strong>, ideal para apoyar tus auriculares y sumar personalidad a tu escritorio o setup gamer 🖥️<br>Compacto, firme y llamativo, perfecto para fans del gaming y lo coleccionable ⚡</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 34850
+        },
+        "web": {
+          "base": null,
+          "final": 41000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399318877,
+          "sku": null,
+          "price": 41000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-9-09a6c651a634bf8f7617672246928086-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315793602,
+      "sku": "",
+      "name": "Soporte Auriculares Japonés",
+      "slug": "soporte-auriculares-japones-cca7s",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-japones-cca7s/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-5-ca57028c3f533f8d1517672235950165-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-4-552db6100509b0b61017672236163460-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares inspirado en torii japonés ⛩️🎧Impreso en 3D, con 21 cm de alto, ideal para organizar y exhibir tus auriculares con un toque oriental en tu escritorio 🖥️✨Diseño firme, estable y decorativo, perfecto para setups gamer o minimalistas 🎮🖤",
+      "descriptionHtml": "<p>Soporte para auriculares inspirado en torii japonés ⛩️🎧<br>Impreso en 3D, con <strong>21 cm de alto</strong>, ideal para organizar y exhibir tus auriculares con un toque oriental en tu escritorio 🖥️✨<br>Diseño firme, estable y decorativo, perfecto para setups gamer o minimalistas 🎮🖤</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 26350
+        },
+        "web": {
+          "base": null,
+          "final": 31000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399317348,
+          "sku": null,
+          "price": 31000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-5-ca57028c3f533f8d1517672235950165-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315793723,
+      "sku": "",
+      "name": "Soporte Auriculares Kirby",
+      "slug": "soporte-auriculares-kirby-5y1c3",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-kirby-5y1c3/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-6-56d5b3a135b7511b1017672237847971-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares con diseño inspirado en personaje gamer rosado 🎧🎮Mide 20 cm de largo x 14 cm de alto, ideal para apoyar tus auriculares y sumar un toque cute a tu escritorio 🖥️💗Impreso en 3D, firme, decorativo y perfecto para setups gamers o fans de lo kawaii ✨🎶",
+      "descriptionHtml": "<p>Soporte para auriculares con diseño inspirado en personaje gamer rosado 🎧🎮<br>Mide <strong>20 cm de largo x 14 cm de alto</strong>, ideal para apoyar tus auriculares y sumar un toque cute a tu escritorio 🖥️💗<br>Impreso en 3D, firme, decorativo y perfecto para setups gamers o fans de lo kawaii ✨🎶</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 34850
+        },
+        "web": {
+          "base": null,
+          "final": 41000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399317627,
+          "sku": null,
+          "price": 41000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-6-56d5b3a135b7511b1017672237847971-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315794096,
+      "sku": "",
+      "name": "Soporte Auriculares Ragnar Vikingos",
+      "slug": "soporte-auriculares-ragnar-vikingos-r9zus",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-ragnar-vikingos-r9zus/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-8-37c5f49b77129a4cc017672244251609-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares con busto estilo vikingo ⚔️🛡️Impreso en 3D, mide 22 cm de alto y aporta un look imponente y detallado a tu escritorio o setup gamer 🖥️Firme, decorativo y funcional, ideal para quienes buscan un soporte con presencia y carácter épico 🔥",
+      "descriptionHtml": "<p>Soporte para auriculares con busto estilo vikingo ⚔️🛡️<br>Impreso en 3D, mide <strong>22 cm de alto</strong> y aporta un look imponente y detallado a tu escritorio o setup gamer 🖥️<br>Firme, decorativo y funcional, ideal para quienes buscan un soporte con presencia y carácter épico 🔥</p>",
+      "weightKg": 0.5,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 42500
+        },
+        "web": {
+          "base": null,
+          "final": 50000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399318712,
+          "sku": null,
+          "price": 50000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-8-37c5f49b77129a4cc017672244251609-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315794764,
+      "sku": "",
+      "name": "Soporte Auriculares Simple",
+      "slug": "soporte-auriculares-simple-axvb2",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-simple-axvb2/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-15-8a9d69b9d50ed6408c17672256289617-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte minimalista para auriculares 🎧Impreso en 3D, 24 cm de alto, con diseño simple y moderno, ideal para mantener tus auriculares organizados y lucir un escritorio prolijo 🖥️Firme, estable y funcional, perfecto para setups minimalistas o de oficina ⚡",
+      "descriptionHtml": "<p>Soporte minimalista para auriculares 🎧<br>Impreso en 3D, <strong>24 cm de alto</strong>, con diseño simple y moderno, ideal para mantener tus auriculares organizados y lucir un escritorio prolijo 🖥️<br>Firme, estable y funcional, perfecto para setups minimalistas o de oficina ⚡</p>",
+      "weightKg": 0.1,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 10625
+        },
+        "web": {
+          "base": null,
+          "final": 12500
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399319976,
+          "sku": null,
+          "price": 12500,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-15-8a9d69b9d50ed6408c17672256289617-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315793869,
+      "sku": "",
+      "name": "Soporte Auriculares Tentáculo",
+      "slug": "soporte-auriculares-tentaculo-xn8rf",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-auriculares-tentaculo-xn8rf/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-7-07de1a35433cc4710f17672240346117-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares con diseño de tentáculo marino 🐙🎧Impreso en 3D, mide 26 cm de alto y combina una estética oscura y original para destacar tu escritorio o setup gamer 🖥️🖤Firme, decorativo y llamativo, ideal para quienes buscan un soporte distinto y con personalidad ⚡✨ Colores a elección!",
+      "descriptionHtml": "<p>Soporte para auriculares con diseño de tentáculo marino 🐙🎧<br>Impreso en 3D, mide <strong>26 cm de alto</strong> y combina una estética oscura y original para destacar tu escritorio o setup gamer 🖥️🖤<br>Firme, decorativo y llamativo, ideal para quienes buscan un soporte distinto y con personalidad ⚡✨</p> <p>Colores a elección!</p>",
+      "weightKg": 0.3,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 31450
+        },
+        "web": {
+          "base": null,
+          "final": 37000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399318015,
+          "sku": null,
+          "price": 37000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-7-07de1a35433cc4710f17672240346117-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 304334662,
+      "sku": "",
+      "name": "Soporte de Joystick Bu",
+      "slug": "soporte-de-joystick-bu-81bot",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-de-joystick-bu-81bot/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/bu-f37c809e91693e536b17619203134632-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte de Joystick Bu – ¡El guardián más malévolo de tu setup! Si sos fan de Dragon Ball, este soporte inspirado en Majin Bu es el compañero ideal para mantener tu joystick bien cuidado y con onda. Su diseño robusto y lleno de detalles del personaje más travieso del universo hará que tu espacio…",
+      "descriptionHtml": "<p><strong>Soporte de Joystick Bu – ¡El guardián más malévolo de tu setup!</strong> Si sos fan de Dragon Ball, este soporte inspirado en Majin Bu es el compañero ideal para mantener tu joystick bien cuidado y con onda. Su diseño robusto y lleno de detalles del personaje más travieso del universo hará que tu espacio gamer se vea único y ordenado. ¡No dejes que tu joystick se pierda en el desorden, que Bu lo cuide por vos! Pedí el tuyo y poné orden con estilo.</p>",
+      "weightKg": 0.35,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 32300
+        },
+        "web": {
+          "base": null,
+          "final": 38000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1353991540,
+          "sku": null,
+          "price": 38000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/bu-f37c809e91693e536b17619203134632-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 304329542,
+      "sku": "",
+      "name": "Soporte de Joystick Cell",
+      "slug": "soporte-de-joystick-cell-malf7",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-de-joystick-cell-malf7/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/cell-990258a0100c9af90417619195710871-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte de Joystick Cell – Organiza tu espacio gamer con estilo Si sos fan de Dragon Ball, este soporte de joystick inspirado en Cell es perfecto para vos. Combina funcionalidad y diseño, manteniendo tu joystick seguro y siempre a mano. Su estructura resistente y detalles fieles al personaje le…",
+      "descriptionHtml": "<p><strong>Soporte de Joystick Cell – Organiza tu espacio gamer con estilo</strong></p> <p>Si sos fan de <em>Dragon Ball</em>, este soporte de joystick inspirado en <em>Cell</em> es perfecto para vos. Combina funcionalidad y diseño, manteniendo tu joystick seguro y siempre a mano. Su estructura resistente y detalles fieles al personaje le dan un toque único a tu setup.</p> <p>¡Dale vida a tu espacio gamer y ordena el tuyo hoy mismo!</p>",
+      "weightKg": 0.35,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 32300
+        },
+        "web": {
+          "base": null,
+          "final": 38000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1353962017,
+          "sku": null,
+          "price": 38000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/cell-990258a0100c9af90417619195710871-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 304332832,
+      "sku": "",
+      "name": "Soporte de Joystick Freezer",
+      "slug": "soporte-de-joystick-freezer-1yvb2",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-de-joystick-freezer-1yvb2/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/d_nq_np_2x_690277-mla84402097397_052025-f-65136a32a9ecddcac617619200467433-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte de Joystick Freezer – ¡Frío, firme y listo para la batalla! Si sos fan de Dragon Ball, este soporte de joystick inspirado en Freezer es el aliado perfecto para tu setup gamer. Con un diseño resistente y detalles que capturan la esencia del villano más frío del universo, vas a mantener tu…",
+      "descriptionHtml": "<h1>Soporte de Joystick Freezer – ¡Frío, firme y listo para la batalla!</h1> <p>Si sos fan de <em>Dragon Ball</em>, este soporte de joystick inspirado en Freezer es el aliado perfecto para tu setup gamer. Con un diseño resistente y detalles que capturan la esencia del villano más frío del universo, vas a mantener tu joystick seguro y con estilo.</p> <p>¡No dejes que tu joystick se derrita, pedí el tuyo y congelá el desorden hoy mismo!</p>",
+      "weightKg": 0.35,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 32300
+        },
+        "web": {
+          "base": null,
+          "final": 38000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1353980670,
+          "sku": null,
+          "price": 38000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/d_nq_np_2x_690277-mla84402097397_052025-f-65136a32a9ecddcac617619200467433-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 304331064,
+      "sku": "",
+      "name": "Soporte de Joystick Goku",
+      "slug": "soporte-de-joystick-goku-0ozmt",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-de-joystick-goku-0ozmt/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/d_nq_np_904761-mla93497311345_092025-o-6e68a2c36eb93e9aa817619197843572-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte de Joystick Goku – ¡Potencia y orden para tu setup gamer! Si sos fan de Dragon Ball, este soporte de joystick inspirado en Goku es la forma más épica de mantener tu joystick seguro y a mano. Con un diseño resistente y detalles que capturan la energía del personaje, tu espacio gamer va a…",
+      "descriptionHtml": "<p><strong>Soporte de Joystick Goku – ¡Potencia y orden para tu setup gamer!</strong></p> <p>Si sos fan de Dragon Ball, este soporte de joystick inspirado en Goku es <em>la</em> forma más épica de mantener tu joystick seguro y a mano. Con un diseño resistente y detalles que capturan la energía del personaje, tu espacio gamer va a quedar tan ordenado como una Genkidama lista para explotar.</p> <p>¡No esperes a que te diga “Kamehameha”! Pedí el tuyo hoy y dale un toque legendario a tu setup.</p>",
+      "weightKg": 0.35,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 32300
+        },
+        "web": {
+          "base": null,
+          "final": 38000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1353970136,
+          "sku": null,
+          "price": 38000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/d_nq_np_904761-mla93497311345_092025-o-6e68a2c36eb93e9aa817619197843572-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 304326264,
+      "sku": "",
+      "name": "Soporte de Joystick Piccolo",
+      "slug": "soporte-de-joystick-piccolo-sempk",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-de-joystick-piccolo-sempk/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/photoroom_20250216_171054-17ea6e947d61e7187b17619192554975-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Anime",
+          "slug": "anime"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte de Joystick Piccolo – Orden y estilo para tu espacio gamer Si sos fan de Dragon Ball, este soporte de joystick inspirado en Piccolo es ideal para vos. Mantiene tu joystick seguro y a mano, con un diseño resistente y detalles que reflejan la esencia del personaje. Perfecto para darle un…",
+      "descriptionHtml": "<h1>Soporte de Joystick Piccolo – Orden y estilo para tu espacio gamer</h1> <p>Si sos fan de <strong>Dragon Ball</strong>, este soporte de joystick inspirado en <em>Piccolo</em> es ideal para vos.</p> <p>Mantiene tu joystick seguro y a mano, con un diseño resistente y detalles que reflejan la esencia del personaje.</p> <p>Perfecto para darle un toque único a tu setup y mantener todo organizado.</p> <p><strong>¡No te lo pierdas y hace tu pedido hoy mismo!</strong></p>",
+      "weightKg": 0.35,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 32300
+        },
+        "web": {
+          "base": null,
+          "final": 38000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1353947735,
+          "sku": null,
+          "price": 38000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/photoroom_20250216_171054-17ea6e947d61e7187b17619192554975-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315794371,
+      "sku": "",
+      "name": "Soporte de Joystick y Auriculares",
+      "slug": "soporte-de-joystick-y-auriculares-qnth9",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-de-joystick-y-auriculares-qnth9/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-11-3707f84da0b933e74517672249533765-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-12-b36fe1eec63bc9474f17672249944797-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte multifunción para auricular y controles 🎧🎮Impreso en 3D, 23 cm de alto, diseñado para sostener 1 auricular y 2 controles de forma práctica y ordenada.Funcional, firme y ideal para mantener tu escritorio o setup gamer organizado 🖥️",
+      "descriptionHtml": "<p>Soporte multifunción para auricular y controles 🎧🎮<br>Impreso en 3D, <strong>23 cm de alto</strong>, diseñado para sostener <strong>1 auricular y 2 controles</strong> de forma práctica y ordenada.<br>Funcional, firme y ideal para mantener tu escritorio o setup gamer organizado 🖥️</p>",
+      "weightKg": 0.2,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 19125
+        },
+        "web": {
+          "base": null,
+          "final": 22500
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399319128,
+          "sku": null,
+          "price": 22500,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-11-3707f84da0b933e74517672249533765-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315990441,
+      "sku": "",
+      "name": "Soporte Joystick Darth Vader",
+      "slug": "soporte-joystick-darth-vader-kiykd",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-joystick-darth-vader-kiykd/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-28-89abdfd0bba99a127317674106571498-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-29-c66e55b52b45b0efb017674106578865-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para joystick con diseño simple de Darth Vader 🎮⚫Impreso en 3D, ideal para apoyar tu control y sumar un detalle del Lado Oscuro a tu escritorio o setup gamer 🖥️Minimalista, firme y perfecto para fans de Star Wars 🌌",
+      "descriptionHtml": "<p>Soporte para joystick con diseño simple de <strong>Darth Vader</strong> 🎮⚫<br>Impreso en 3D, ideal para apoyar tu control y sumar un detalle del Lado Oscuro a tu escritorio o setup gamer 🖥️<br>Minimalista, firme y perfecto para fans de <strong>Star Wars</strong> 🌌</p>",
+      "weightKg": 0.1,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 8500
+        },
+        "web": {
+          "base": null,
+          "final": 10000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400031034,
+          "sku": null,
+          "price": 10000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-28-89abdfd0bba99a127317674106571498-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315990083,
+      "sku": "",
+      "name": "Soporte Joystick Darth Vader",
+      "slug": "soporte-joystick-darth-vader-y6q6z",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-joystick-darth-vader-y6q6z/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-517aacdc995b2b5e9317888299402580-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-1-929e340c9640c8d69f17888299398822-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para joystick de Darth Vader 🎮⚫Impreso en 3D, ideal para apoyar tu control y sumar un ícono del Lado Oscuro a tu setup gamer 🖥️Decorativo, firme y perfecto para fans de Star Wars 🌌⚔️ 17 cm de alto",
+      "descriptionHtml": "<p>Soporte para joystick de <strong>Darth Vader</strong> 🎮⚫<br>Impreso en 3D, ideal para apoyar tu control y sumar un ícono del Lado Oscuro a tu setup gamer 🖥️<br>Decorativo, firme y perfecto para fans de <strong>Star Wars</strong> 🌌⚔️</p> <p>17 cm de alto</p>",
+      "weightKg": 0.16,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 23800
+        },
+        "web": {
+          "base": null,
+          "final": 28000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1400028700,
+          "sku": null,
+          "price": 28000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/diseno-sin-titulo-517aacdc995b2b5e9317888299402580-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315794504,
+      "sku": "",
+      "name": "Soporte Joystick Spiderman",
+      "slug": "soporte-joystick-spiderman-c4zsr",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-joystick-spiderman-c4zsr/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-13-c50bc68c9eaa17171217672251843267-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 8,
+          "name": "MARVEL/DC",
+          "slug": "marvel-dc"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares con diseño de máscara estilo superhéroe 🕷️🎧Impreso en 3D, 19 cm de alto, ideal para apoyar y exhibir tus auriculares mientras sumás un toque gamer a tu escritorio o setup 🖥️Firme, funcional y muy llamativo, perfecto para fans de los cómics y el gaming 🎮🔥",
+      "descriptionHtml": "<p>Soporte para auriculares con diseño de máscara estilo superhéroe 🕷️🎧<br>Impreso en 3D, <strong>19 cm de alto</strong>, ideal para apoyar y exhibir tus auriculares mientras sumás un toque gamer a tu escritorio o setup 🖥️<br>Firme, funcional y muy llamativo, perfecto para fans de los cómics y el gaming 🎮🔥</p>",
+      "weightKg": 0.25,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 31450
+        },
+        "web": {
+          "base": null,
+          "final": 37000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399319399,
+          "sku": null,
+          "price": 37000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-13-c50bc68c9eaa17171217672251843267-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315794661,
+      "sku": "",
+      "name": "Soporte Walter White Auriculares",
+      "slug": "soporte-walter-white-auriculares-vr78s",
+      "permalink": "https://ramas3.mitiendanube.com/productos/soporte-walter-white-auriculares-vr78s/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-14-37f7e884115fb0d2a717672253161070-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Tenés razón, va corregido 👍 Soporte para auriculares con busto de Walter White 🎧Impreso en 3D, 23 cm de alto, ideal para sostener y exhibir tus auriculares mientras sumás un ícono de la serie a tu escritorio o setup gamer 🖥️Firme, detallado y muy llamativo, perfecto para fans de Breaking Bad ⚡",
+      "descriptionHtml": "<p>Tenés razón, va corregido 👍</p> <p>Soporte para auriculares con busto de <strong>Walter White</strong> 🎧<br>Impreso en 3D, <strong>23 cm de alto</strong>, ideal para sostener y exhibir tus auriculares mientras sumás un ícono de la serie a tu escritorio o setup gamer 🖥️<br>Firme, detallado y muy llamativo, perfecto para fans de <strong>Breaking Bad</strong> ⚡</p>",
+      "weightKg": 0.5,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 46750
+        },
+        "web": {
+          "base": null,
+          "final": 55000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399319756,
+          "sku": null,
+          "price": 55000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-14-37f7e884115fb0d2a717672253161070-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 315793058,
+      "sku": "",
+      "name": "Storm Trooper Soporte de auriculares",
+      "slug": "storm-trooper-soporte-de-auriculares-1jqwn",
+      "permalink": "https://ramas3.mitiendanube.com/productos/storm-trooper-soporte-de-auriculares-1jqwn/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-20741ce29596e5086c17672225549924-1024-1024.webp",
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-1-59d08cd0556b0a89ec17672226641096-1024-1024.webp"
+      ],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Cine/Tv",
+          "slug": "cine-tv"
+        },
+        {
+          "id": 9,
+          "name": "Star Wars",
+          "slug": "star-wars"
+        },
+        {
+          "id": 12,
+          "name": "Gaming",
+          "slug": "gaming"
+        },
+        {
+          "id": 13,
+          "name": "Soporte Auriculares",
+          "slug": "soporte-auriculares"
+        }
+      ],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Soporte para auriculares inspirado en casco Stormtrooper 🎧🪖Impreso en 3D, ideal para apoyar y exhibir tus auriculares mientras decorás tu escritorio o setup gamer 🖥️✨Diseño firme, estable y con estética geek, perfecto para fans de la saga 🚀⚡ Altura 21 cm",
+      "descriptionHtml": "<p>Soporte para auriculares inspirado en casco Stormtrooper 🎧🪖<br>Impreso en 3D, ideal para apoyar y exhibir tus auriculares mientras decorás tu escritorio o setup gamer 🖥️✨<br>Diseño firme, estable y con estética geek, perfecto para fans de la saga 🚀⚡</p> <p>Altura 21 cm</p>",
+      "weightKg": null,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 53125
+        },
+        "web": {
+          "base": null,
+          "final": 62500
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1399316413,
+          "sku": null,
+          "price": 62500,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/untitled-20741ce29596e5086c17672225549924-1024-1024.webp"
+        }
+      ]
+    },
+    {
+      "id": 237980955,
+      "sku": "",
+      "name": "Varita de Harry Potter",
+      "slug": "varita-de-harry-potter",
+      "permalink": "https://ramas3.mitiendanube.com/productos/varita-de-harry-potter/",
+      "images": [],
+      "imagesRemote": [
+        "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-6-598fc2abf79f818a0517309443738252-1024-1024.webp"
+      ],
+      "categories": [],
+      "featured": false,
+      "inStock": true,
+      "shortDescription": "Varita de Harry Potter decorativa impresa en 3D con mucho detalle!",
+      "descriptionHtml": "<p>Varita de Harry Potter decorativa impresa en 3D con mucho detalle!&nbsp;</p>",
+      "weightKg": 0.02,
+      "prices": {
+        "efectivo": {
+          "base": null,
+          "final": 10200
+        },
+        "web": {
+          "base": null,
+          "final": 12000
+        }
+      },
+      "options": [],
+      "variants": [
+        {
+          "id": 1044040208,
+          "sku": null,
+          "price": 12000,
+          "compareAtPrice": null,
+          "stock": null,
+          "available": true,
+          "values": [],
+          "image": "https://dcdn-us.mitiendanube.com/stores/004/320/461/products/my-project-10-6-598fc2abf79f818a0517309443738252-1024-1024.webp"
+        }
+      ]
+    }
+  ]
+}

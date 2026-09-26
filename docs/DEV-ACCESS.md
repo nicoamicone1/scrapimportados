@@ -18,6 +18,44 @@ Pro de 14 días, `/s/taller-luna/`), ambas del usuario de arriba.
 
 Proyecto Supabase: `asudscbvsrmulbpozjmq`.
 
+## Demos de clientes
+
+Tiendas armadas con el catálogo y la marca de un cliente potencial, para mostrarle
+Ecommy funcionando con sus productos. Cada una tiene su usuario dueño; el equipo
+(`nicoamicone1@gmail.com`) queda como admin para verla en "Mis tiendas".
+
+| Tienda | Cliente | Origen | Dueño |
+| --- | --- | --- | --- |
+| `nextbooks` | NextBooks (libros, Tucumán) | — | `nicoamicone1@gmail.com` |
+| `daenvases` | DA Envases (descartables, Tucumán) | — | `nicoamicone1@gmail.com` |
+| `ramas` | RAMA´S (impresión 3D, Yerba Buena, Tucumán) | Tiendanube `ramas3.mitiendanube.com` | `nicoamicone1+ramas@gmail.com` (cuenta demo para el cliente) |
+
+La contraseña de cada cuenta demo NO va en el repo: se le pasa al cliente por privado.
+
+### Cómo se arma una demo desde Tiendanube (ej. `ramas`)
+
+1. **Scrape** (HTML público, sin credenciales):
+   `node scripts/scrape-tiendanube.mjs --url=https://<tienda>.mitiendanube.com --out=data/clients/<cliente>.json`
+   → productos con variantes y precios del cliente (el de transferencia sale del
+   descuento que muestra la tienda), descripción HTML, fotos del CDN, categorías
+   del menú, logo, WhatsApp e Instagram, y `featured` para lo que destaca en su home.
+2. **Cuenta demo**: `ADMIN_EMAIL=<alias>+<cliente>@gmail.com ADMIN_PASSWORD=… npm run create-admin`.
+   El proyecto exige confirmar el email: se confirmó por SQL (migración de datos
+   `demo_<cliente>_cuenta`).
+3. **Tienda**: logueado con esa cuenta, `rpc('create_store', { p_name, p_slug, p_kind, p_whatsapp, p_options })`
+   (queda dueño, trial Pro de 14 días).
+4. **Catálogo**: `SEED_EMAIL=… SEED_PASSWORD=… SEED_STORE=<slug> SEED_FILE=data/clients/<cliente>.json npx tsx scripts/seed-tiendanube.mts`
+   (sube fotos y logo al bucket, crea sólo las categorías con productos).
+5. **Marca**: tema, textos, home, menús, envíos y datos de transferencia de ejemplo
+   en migraciones de datos `demo_<cliente>_*` (herramienta MCP `apply_migration`,
+   NO están en `supabase/migrations/`), igual que `demo_nextbooks_*`.
+
+Para `ramas`: migraciones `demo_ramas_cuenta`, `demo_ramas_marca` (tema negro y
+amarillo `#F1C40F`, Unbounded + Figtree, home de 12 bloques, 15 % por transferencia,
+zonas de envío y CBU **de ejemplo**, categoría Harry Potter), `demo_ramas_ajustes` y
+`demo_ramas_descripciones`. Hero, favicon e imagen para compartir en
+`media/<store_id>/brand/` (armados con fotos de sus productos y su logo).
+
 ## Cómo se creó
 
 1. Primero se intentó el alta normal con `signUp` (`npm run create-admin`, ver
