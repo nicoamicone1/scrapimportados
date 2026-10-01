@@ -114,7 +114,7 @@ export function ProductMultiPicker({ value, onChange, invalid, id, ...aria }: Pr
                 type="button"
                 onClick={() => remove(p.id)}
                 aria-label={`Quitar ${p.name}`}
-                className="inline-flex size-7 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                className="inline-flex size-7 pointer-coarse:size-11 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
               >
                 <X className="size-4" aria-hidden />
               </button>

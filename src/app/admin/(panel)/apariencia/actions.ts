@@ -14,6 +14,7 @@ import { PlanError } from "@/lib/plans";
 import {
   announcementSchema,
   brandSchema,
+  canHideCredit,
   saveThemeSchema,
   themePlanMessage,
   themePlanViolation,
@@ -39,6 +40,8 @@ export async function saveTheme(input: unknown): Promise<ActionResult<{ preset: 
     const parsed = saveThemeSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error, "Revisá el tema: hay valores inválidos.");
     const theme = { ...parsed.data, custom_css: parsed.data.custom_css?.trim() ? parsed.data.custom_css : undefined };
+    // "Hecho con Ecommy" es obligatorio en Free (BRAND.md §12): el editor no deja apagarlo, y acá se asegura.
+    if (!theme.footer.showCredit && !canHideCredit(ctx.plan)) theme.footer = { ...theme.footer, showCredit: true };
     const missing = themePlanViolation(ctx.plan, theme);
     if (missing) throw new PlanError(themePlanMessage(missing), { feature: missing });
 

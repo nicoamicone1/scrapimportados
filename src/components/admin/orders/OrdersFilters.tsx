@@ -1,5 +1,6 @@
 "use client";
 
+import { ListFilter } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -17,12 +18,20 @@ const SORTS = [
 ];
 
 const FILTER_KEYS = ["q", "estado", "pago", "metodo", "entrega", "desde", "hasta", "orden"];
+/** Filtros secundarios: van detrás de "Más filtros" (divulgación progresiva). */
+const MORE_KEYS = ["metodo", "entrega", "desde", "hasta", "orden"];
 
-/** Barra de filtros del listado de pedidos (todo en la URL, resuelto en el server). */
+/**
+ * Barra de filtros del listado de pedidos (todo en la URL, resuelto en el server).
+ * Arriba lo de todos los días (buscar, estado, pago); método, entrega, fechas y
+ * orden quedan en un panel que se abre solo si hay alguno aplicado.
+ */
 export function OrdersFilters({ methods }: { methods: { code: string; name: string }[] }) {
   const { searchParams: params, setParams, pending } = useUrlTransition();
   // Remonta el buscador al limpiar (su texto es estado interno).
   const [resetKey, setResetKey] = useState(0);
+  const moreActive = MORE_KEYS.filter((k) => params.get(k)).length;
+  const [moreOpen, setMoreOpen] = useState(moreActive > 0);
 
   const set = (key: string, value: string) => setParams({ [key]: value || null });
 
@@ -32,86 +41,111 @@ export function OrdersFilters({ methods }: { methods: { code: string; name: stri
   };
 
   const active = FILTER_KEYS.some((k) => k !== "orden" && params.get(k));
+  const ctl = "max-md:h-11";
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2 transition-opacity", pending && "opacity-70")} aria-busy={pending || undefined}>
-      <SearchInput key={resetKey} placeholder="Número, cliente, email, teléfono o SKU" aria-label="Buscar pedidos" className="sm:w-[340px]" />
-      <Select
-        size="sm"
-        aria-label="Estado"
-        value={params.get("estado") ?? ""}
-        onChange={(e) => set("estado", e.target.value)}
-        className="w-40"
-        options={[{ value: "", label: "Todos los estados" }, ...ORDER_STATUSES.map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] }))]}
-      />
-      <Select
-        size="sm"
-        aria-label="Pago"
-        value={params.get("pago") ?? ""}
-        onChange={(e) => set("pago", e.target.value)}
-        className="w-40"
-        options={[
-          { value: "", label: "Todos los pagos" },
-          { value: "impago", label: "Sin cobrar (total o parcial)" },
-          ...(["pending", "partial", "paid", "refunded"] as const).map((s) => ({ value: s, label: PAYMENT_STATUS_LABELS[s] })),
-        ]}
-      />
-      <Select
-        size="sm"
-        aria-label="Método de pago"
-        value={params.get("metodo") ?? ""}
-        onChange={(e) => set("metodo", e.target.value)}
-        className="w-44"
-        options={[{ value: "", label: "Todos los métodos" }, ...methods.map((m) => ({ value: m.code, label: m.name }))]}
-      />
-      <Select
-        size="sm"
-        aria-label="Entrega"
-        value={params.get("entrega") ?? ""}
-        onChange={(e) => set("entrega", e.target.value)}
-        className="w-36"
-        options={[
-          { value: "", label: "Envío y retiro" },
-          { value: "envio", label: "Envío" },
-          { value: "retiro", label: "Retiro" },
-        ]}
-      />
-      <div className="flex flex-wrap items-center gap-1.5">
-        <label htmlFor="f-desde" className="text-[13px] text-adm-fg-muted">
-          Desde
-        </label>
-        <Input
-          id="f-desde"
-          type="date"
-          size="sm"
-          className="w-36"
-          value={params.get("desde") ?? ""}
-          onChange={(e) => set("desde", e.target.value)}
+    <div className={cn("space-y-2 transition-opacity", pending && "opacity-70")} aria-busy={pending || undefined}>
+      <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
+        <SearchInput
+          key={resetKey}
+          placeholder="Número, cliente, email, teléfono o SKU"
+          aria-label="Buscar pedidos"
+          className="col-span-2 sm:w-[340px] [&_input]:max-md:h-11"
         />
-        <label htmlFor="f-hasta" className="text-[13px] text-adm-fg-muted">
-          Hasta
-        </label>
-        <Input
-          id="f-hasta"
-          type="date"
+        <Select
           size="sm"
-          className="w-36"
-          value={params.get("hasta") ?? ""}
-          onChange={(e) => set("hasta", e.target.value)}
+          aria-label="Estado"
+          value={params.get("estado") ?? ""}
+          onChange={(e) => set("estado", e.target.value)}
+          className={cn("sm:w-40", ctl)}
+          options={[{ value: "", label: "Todos los estados" }, ...ORDER_STATUSES.map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] }))]}
         />
-      </div>
-      <Select
-        size="sm"
-        aria-label="Orden"
-        value={params.get("orden") ?? "recientes"}
-        onChange={(e) => set("orden", e.target.value === "recientes" ? "" : e.target.value)}
-        className="w-36"
-        options={SORTS}
-      />
-      {active ? (
-        <Button variant="ghost" size="sm" onClick={clear}>
-          Limpiar filtros
+        <Select
+          size="sm"
+          aria-label="Pago"
+          value={params.get("pago") ?? ""}
+          onChange={(e) => set("pago", e.target.value)}
+          className={cn("sm:w-40", ctl)}
+          options={[
+            { value: "", label: "Todos los pagos" },
+            { value: "impago", label: "Sin cobrar (total o parcial)" },
+            ...(["pending", "partial", "paid", "refunded"] as const).map((s) => ({ value: s, label: PAYMENT_STATUS_LABELS[s] })),
+          ]}
+        />
+        <Button
+          size="sm"
+          className={cn("max-md:col-span-1", ctl)}
+          icon={<ListFilter />}
+          aria-expanded={moreOpen}
+          aria-controls="orders-more-filters"
+          onClick={() => setMoreOpen((o) => !o)}
+        >
+          Más filtros{moreActive ? ` (${moreActive})` : ""}
         </Button>
+        {active ? (
+          <Button variant="ghost" size="sm" className={ctl} onClick={clear}>
+            Limpiar filtros
+          </Button>
+        ) : null}
+      </div>
+
+      {moreOpen ? (
+        <div id="orders-more-filters" className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
+          <Select
+            size="sm"
+            aria-label="Método de pago"
+            value={params.get("metodo") ?? ""}
+            onChange={(e) => set("metodo", e.target.value)}
+            className={cn("sm:w-44", ctl)}
+            options={[{ value: "", label: "Todos los métodos" }, ...methods.map((m) => ({ value: m.code, label: m.name }))]}
+          />
+          <Select
+            size="sm"
+            aria-label="Entrega"
+            value={params.get("entrega") ?? ""}
+            onChange={(e) => set("entrega", e.target.value)}
+            className={cn("sm:w-36", ctl)}
+            options={[
+              { value: "", label: "Envío y retiro" },
+              { value: "envio", label: "Envío" },
+              { value: "retiro", label: "Retiro" },
+            ]}
+          />
+          <Select
+            size="sm"
+            aria-label="Orden"
+            value={params.get("orden") ?? "recientes"}
+            onChange={(e) => set("orden", e.target.value === "recientes" ? "" : e.target.value)}
+            className={cn("max-sm:col-span-2 sm:w-36", ctl)}
+            options={SORTS}
+          />
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="f-desde" className="text-[13px] text-adm-fg-muted">
+              Desde
+            </label>
+            <Input
+              id="f-desde"
+              type="date"
+              size="sm"
+              className={cn("w-full sm:w-36", ctl)}
+              value={params.get("desde") ?? ""}
+              onChange={(e) => set("desde", e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="f-hasta" className="text-[13px] text-adm-fg-muted">
+              Hasta
+            </label>
+            <Input
+              id="f-hasta"
+              type="date"
+              size="sm"
+              className={cn("w-full sm:w-36", ctl)}
+              value={params.get("hasta") ?? ""}
+              onChange={(e) => set("hasta", e.target.value)}
+            />
+          </div>
+        </div>
       ) : null}
     </div>
   );

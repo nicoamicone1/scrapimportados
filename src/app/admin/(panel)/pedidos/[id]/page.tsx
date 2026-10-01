@@ -7,11 +7,10 @@ import { RefreshOrdersBadge } from "@/components/admin/OrdersBadge";
 import { AutosaveNotes } from "@/components/admin/orders/AutosaveNotes";
 import { CopyButton } from "@/components/admin/orders/CopyButton";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/orders/OrderBadges";
-import { OrderHeaderActions } from "@/components/admin/orders/OrderHeaderActions";
+import { OrderActionsProvider, OrderHeaderActions, OrderNextStep, OrderWhatsAppButton } from "@/components/admin/orders/OrderActions";
 import { OrderTimeline } from "@/components/admin/orders/OrderTimeline";
 import { PaymentsCard } from "@/components/admin/orders/PaymentsCard";
 import { ReservationControl } from "@/components/admin/orders/ReservationControl";
-import { WhatsAppComposer } from "@/components/admin/orders/WhatsAppComposer";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/display";
@@ -21,6 +20,7 @@ import {
   amountPaid,
   balanceDue,
   cancelReasonLabel,
+  expiryInfo,
   hasReservation,
   isOrderStatus,
   otherDiscount,
@@ -90,8 +90,36 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
   const itemsCount = items.reduce((s, i) => s + i.qty, 0);
   const phone = customer.phone ?? customerRecord?.phone ?? null;
 
+  const expiry = hasReservation(order) ? expiryInfo(order.expires_at) : null;
+  const waContext = {
+    storeName: store.name,
+    customerName: customer.name,
+    number: order.number,
+    total: money(Number(order.total)),
+    balance: balance > 0 && balance !== Number(order.total) ? money(balance) : null,
+    orderUrl: publicUrl,
+    tracking: { carrier: order.tracking_carrier, number: order.tracking_number, url: order.tracking_url },
+    pickup: pickup ? { name: pickup.name, address: pickup.address, hours: pickup.hours_text } : null,
+    transfer: { alias: store.transfer.alias, cbu: store.transfer.cbu },
+    paymentMethodCode: order.payment_method_code,
+    expiresLabel: hasReservation(order) && order.expires_at ? formatDateTime(order.expires_at, tz) : null,
+  };
+
   return (
-    <>
+    <OrderActionsProvider
+      id={order.id}
+      number={order.number}
+      status={status}
+      fulfillment={order.fulfillment}
+      paymentStatus={order.payment_status}
+      paymentMethodCode={order.payment_method_code}
+      balance={balance}
+      currency={order.currency}
+      tracking={{ carrier: order.tracking_carrier, number: order.tracking_number, url: order.tracking_url }}
+      phone={phone}
+      defaultWhatsApp={whatsAppTemplateFor(order)}
+      whatsApp={waContext}
+    >
       {seenNow ? <RefreshOrdersBadge /> : null}
       <PageHeader
         breadcrumb={[{ label: "Pedidos", href: "/admin/pedidos" }, { label: `#${order.number}` }]}
@@ -111,15 +139,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
             {formatNumber(itemsCount)} {itemsCount === 1 ? "unidad" : "unidades"}
           </>
         }
-        actions={
-          <OrderHeaderActions
-            id={order.id}
-            number={order.number}
-            status={status}
-            fulfillment={order.fulfillment}
-            tracking={{ carrier: order.tracking_carrier, number: order.tracking_number, url: order.tracking_url }}
-          />
-        }
+        actions={<OrderHeaderActions />}
       />
 
       {order.status === "cancelled" ? (
@@ -131,8 +151,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-4">
+      <OrderNextStep expiryLabel={expiry?.label ?? null} />
+
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_1fr]">
+        <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           {/* Ítems y totales */}
           <Card>
             <CardHeader title="Productos" description={`${items.length} ${items.length === 1 ? "línea" : "líneas"}`} />
@@ -178,16 +200,19 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                                 {it.variant_title && it.sku ? " · " : null}
                                 {it.sku ? <span className="font-mono">{it.sku}</span> : null}
                               </div>
+                              <div className="tnum text-xs text-adm-fg-muted sm:hidden">
+                                {it.qty} × {money(Number(it.unit_price))}
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className="tnum px-3 py-2.5 text-right whitespace-nowrap">
+                        <td className="tnum hidden px-3 py-2.5 text-right whitespace-nowrap sm:table-cell">
                           {promo ? (
                             <span className="mr-1.5 text-xs text-adm-fg-muted line-through">{money(Number(it.list_price))}</span>
                           ) : null}
                           {money(Number(it.unit_price))}
                         </td>
-                        <td className="tnum px-3 py-2.5 text-right whitespace-nowrap text-adm-fg-muted">× {it.qty}</td>
+                        <td className="tnum hidden px-3 py-2.5 text-right whitespace-nowrap text-adm-fg-muted sm:table-cell">× {it.qty}</td>
                         <td className="tnum py-2.5 pr-4 pl-3 text-right font-medium whitespace-nowrap">{money(Number(it.total))}</td>
                       </tr>
                     );
@@ -259,8 +284,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
           />
         </div>
 
-        {/* Columna lateral */}
-        <div className="space-y-4">
+        {/* Columna lateral: quién y adónde primero (en celular va antes de los productos). */}
+        <div className="order-first space-y-4 lg:order-none lg:col-start-2 lg:row-start-1">
           <Card>
             <CardHeader title="Cliente" />
             <CardBody className="space-y-3 text-[13px]">
@@ -293,7 +318,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                 {phone ? (
                   <div>
                     <dt className="sr-only">Teléfono</dt>
-                    <dd className="tnum">{phone}</dd>
+                    <dd className="tnum">
+                      <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="hover:underline">
+                        {phone}
+                      </a>
+                    </dd>
                   </div>
                 ) : null}
                 {customer.doc ? (
@@ -303,25 +332,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                   </div>
                 ) : null}
               </dl>
-              <WhatsAppComposer
-                orderId={order.id}
-                phone={phone}
-                defaultKind={whatsAppTemplateFor(order)}
-                context={{
-                  storeName: store.name,
-                  customerName: customer.name,
-                  number: order.number,
-                  total: money(Number(order.total)),
-                  balance: balance > 0 && balance !== Number(order.total) ? money(balance) : null,
-                  orderUrl: publicUrl,
-                  tracking: { carrier: order.tracking_carrier, number: order.tracking_number, url: order.tracking_url },
-                  pickup: pickup ? { name: pickup.name, address: pickup.address, hours: pickup.hours_text } : null,
-                  transfer: { alias: store.transfer.alias, cbu: store.transfer.cbu },
-                  paymentMethodCode: order.payment_method_code,
-                  expiresLabel:
-                    hasReservation(order) && order.expires_at ? formatDateTime(order.expires_at, tz) : null,
-                }}
-              />
+              <OrderWhatsAppButton />
             </CardBody>
           </Card>
 
@@ -375,6 +386,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
             </CardBody>
           </Card>
 
+        </div>
+
+        <div className="space-y-4 lg:col-start-2 lg:row-start-2">
           {hasReservation(order) && order.expires_at ? (
             <Card>
               <CardHeader title="Reserva de stock" />
@@ -415,7 +429,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
           </Card>
         </div>
       </div>
-    </>
+    </OrderActionsProvider>
   );
 }
 

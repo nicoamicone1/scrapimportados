@@ -65,7 +65,7 @@ export function CategoryMultiSelect({ categories, value, onChange, cascade = fal
           visible.map((row) => (
             <li key={row.id}>
               <label
-                className="flex h-8 cursor-pointer items-center gap-2 pr-3 text-sm hover:bg-adm-hover"
+                className="flex h-8 pointer-coarse:h-11 cursor-pointer items-center gap-2 pr-3 text-sm hover:bg-adm-hover"
                 style={{ paddingLeft: `${12 + (term ? 0 : row.depth * 18)}px` }}
               >
                 <input

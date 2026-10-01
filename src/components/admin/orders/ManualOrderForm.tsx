@@ -359,10 +359,17 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
               <Input
                 ref={productInput}
                 leading={<Search />}
-                placeholder="Ej.: auriculares, AUR-123"
+                placeholder="Nombre o SKU. Enter agrega el primero"
                 aria-label="Buscar productos"
                 value={productQuery}
                 onChange={(e) => productSearch.onChange(e.target.value)}
+                onKeyDown={(e) => {
+                  // Enter agrega el primer resultado con stock (SKU tipeado o lector de código).
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  const first = productHits.find((v) => !(v.trackInventory && !v.allowBackorder && v.stock <= 0));
+                  if (first) addVariant(first);
+                }}
               />
               {productHits.length ? (
                 <ul className="absolute inset-x-0 top-full z-20 mt-1 max-h-80 overflow-y-auto rounded-adm border border-adm-border bg-adm-surface shadow-[var(--adm-shadow)]">
@@ -424,6 +431,7 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
                         <Input
                           id={`price-${l.variantId}`}
                           size="sm"
+                          className="max-sm:h-11"
                           inputMode="decimal"
                           leading="$"
                           value={l.unitPrice}
@@ -433,6 +441,7 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
                       <div className="flex items-center gap-1">
                         <Button
                           size="icon-sm"
+                          className="max-sm:size-11"
                           aria-label="Restar uno"
                           onClick={() => updateLine(l.variantId, { qty: Math.max(1, l.qty - 1) })}
                         >
@@ -447,14 +456,14 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
                           type="number"
                           min={1}
                           max={999}
-                          className="w-14 text-center"
+                          className="w-14 text-center max-sm:h-11"
                           value={l.qty}
                           invalid={over}
                           onChange={(e) =>
                             updateLine(l.variantId, { qty: Math.max(1, Math.min(999, Number.parseInt(e.target.value, 10) || 1)) })
                           }
                         />
-                        <Button size="icon-sm" aria-label="Sumar uno" onClick={() => updateLine(l.variantId, { qty: l.qty + 1 })}>
+                        <Button size="icon-sm" className="max-sm:size-11" aria-label="Sumar uno" onClick={() => updateLine(l.variantId, { qty: l.qty + 1 })}>
                           <Plus />
                         </Button>
                       </div>
@@ -462,6 +471,7 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
                       <Button
                         size="icon-sm"
                         variant="ghost"
+                        className="max-sm:size-11"
                         aria-label={`Quitar ${l.productName}`}
                         onClick={() => setLines((ls) => ls.filter((x) => x.variantId !== l.variantId))}
                       >
@@ -640,11 +650,24 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
               </p>
             </div>
 
-            <Button variant="primary" size="lg" className="w-full" onClick={submit} loading={saving} disabled={!lines.length}>
+            <Button variant="primary" size="lg" className="w-full max-lg:hidden" onClick={submit} loading={saving} disabled={!lines.length}>
               Crear pedido
             </Button>
           </CardBody>
         </Card>
+      </div>
+
+      {/* Celular: total siempre a la vista y el botón al alcance del pulgar. */}
+      <div data-adm-bottom-bar="" className="sticky bottom-0 z-10 flex items-center justify-between gap-3 rounded-adm border border-adm-border bg-adm-surface p-3 lg:hidden">
+        <div className="min-w-0">
+          <p className="text-xs text-adm-fg-muted">
+            {lines.length ? `${lines.reduce((n, l) => n + l.qty, 0)} ${lines.reduce((n, l) => n + l.qty, 0) === 1 ? "unidad" : "unidades"}` : "Sin productos"}
+          </p>
+          <p className="tnum text-base font-semibold">{money(totals.total, currency)}</p>
+        </div>
+        <Button variant="primary" className="h-11 px-5" onClick={submit} loading={saving} disabled={!lines.length}>
+          Crear pedido
+        </Button>
       </div>
     </div>
   );

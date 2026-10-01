@@ -27,10 +27,10 @@ export function AuditTable({ rows, timeZone, filtered }: { rows: AuditRow[]; tim
             <span className="sr-only">Detalle</span>
           </TH>
           <TH>Fecha</TH>
-          <TH>Usuario</TH>
-          <TH>Acción</TH>
-          <TH>Entidad</TH>
-          <TH>Resumen</TH>
+          <TH>Qué pasó</TH>
+          <TH className="hidden lg:table-cell">Usuario</TH>
+          <TH className="hidden lg:table-cell">Entidad</TH>
+          <TH className="hidden lg:table-cell">Acción</TH>
         </tr>
       </THead>
       <TBody>
@@ -61,7 +61,7 @@ export function AuditTable({ rows, timeZone, filtered }: { rows: AuditRow[]; tim
                         }}
                         aria-label={expanded ? "Ocultar detalle" : "Ver detalle"}
                         aria-expanded={expanded}
-                        className="inline-flex size-6 items-center justify-center rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                        className="inline-flex size-6 max-sm:size-11 items-center justify-center rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
                       >
                         <ChevronRight className={cn("size-4 transition-transform duration-100", expanded && "rotate-90")} aria-hidden />
                       </button>
@@ -72,11 +72,37 @@ export function AuditTable({ rows, timeZone, filtered }: { rows: AuditRow[]; tim
                       {formatRelative(r.created_at)}
                     </time>
                   </TD>
-                  <TD className="max-w-[200px] truncate" title={r.actor_email ?? undefined}>
+                  <TD className="max-w-[420px] min-w-48">
+                    <div className="line-clamp-2" title={r.summary ?? undefined}>
+                      {r.summary ?? <span className="text-adm-fg-muted">—</span>}
+                    </div>
+                    {/* En pantallas chicas, quién y sobre qué van debajo del resumen. */}
+                    <div className="mt-0.5 text-xs text-adm-fg-muted lg:hidden">
+                      {r.actor_email ?? "Sistema"}
+                      {r.entity ? " · " : ""}
+                      {r.entity ? (
+                        r.href ? (
+                          <Link
+                            href={r.href}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-adm-accent underline-offset-2 hover:underline"
+                            title={r.entity_id ?? undefined}
+                          >
+                            {r.entity}
+                            {r.entity_id && r.entity_id.length <= 12 ? ` ${r.entity_id}` : ""}
+                          </Link>
+                        ) : (
+                          <span title={r.entity_id ?? undefined}>{r.entity}</span>
+                        )
+                      ) : (
+                        <span className="text-adm-fg-muted">—</span>
+                      )}
+                    </div>
+                  </TD>
+                  <TD className="hidden max-w-[200px] truncate lg:table-cell" title={r.actor_email ?? undefined}>
                     {r.actor_email ?? <span className="text-adm-fg-muted">Sistema</span>}
                   </TD>
-                  <TD className="font-mono text-xs whitespace-nowrap">{r.action}</TD>
-                  <TD className="whitespace-nowrap">
+                  <TD className="hidden whitespace-nowrap lg:table-cell">
                     {r.entity ? (
                       r.href ? (
                         <Link
@@ -95,8 +121,8 @@ export function AuditTable({ rows, timeZone, filtered }: { rows: AuditRow[]; tim
                       <span className="text-adm-fg-muted">—</span>
                     )}
                   </TD>
-                  <TD className="max-w-[420px] truncate" title={r.summary ?? undefined}>
-                    {r.summary ?? <span className="text-adm-fg-muted">—</span>}
+                  <TD muted className="hidden font-mono text-xs whitespace-nowrap lg:table-cell">
+                    {r.action}
                   </TD>
                 </TR>
                 {expanded ? (

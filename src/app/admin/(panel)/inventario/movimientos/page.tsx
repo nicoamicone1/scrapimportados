@@ -50,7 +50,7 @@ export default async function MovementsPage({ searchParams }: PageProps<"/admin/
           <tr>
             <TH>Fecha</TH>
             <TH>Producto</TH>
-            <TH>Motivo</TH>
+            <TH className="hidden sm:table-cell">Motivo</TH>
             <TH numeric>Cambio</TH>
             <TH numeric>Queda</TH>
             <TH className="hidden lg:table-cell">Nota</TH>
@@ -91,8 +91,11 @@ export default async function MovementsPage({ searchParams }: PageProps<"/admin/
                       {m.variant.sku ? <span className="font-mono"> · {m.variant.sku}</span> : null}
                     </Link>
                   ) : null}
+                  <span className="mt-0.5 inline-flex sm:hidden">
+                    <Badge tone={REASON_TONES[m.reason]}>{MOVEMENT_REASON_LABELS[m.reason]}</Badge>
+                  </span>
                 </TD>
-                <TD>
+                <TD className="hidden sm:table-cell">
                   <Badge tone={REASON_TONES[m.reason]}>{MOVEMENT_REASON_LABELS[m.reason]}</Badge>
                 </TD>
                 <TD numeric className={cn("font-medium", m.delta > 0 ? "text-adm-success" : "text-adm-danger")}>

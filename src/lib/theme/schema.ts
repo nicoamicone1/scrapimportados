@@ -110,6 +110,12 @@ export const themeSchema = z.object({
     style: z.enum(["simple", "columns", "minimal"]),
     showSocial: z.boolean(),
     showPayments: z.boolean(),
+    /**
+     * Crédito "Hecho con Ecommy" en la banda legal (BRAND.md §12): obligatorio
+     * en Free; desde Starter el dueño lo puede apagar. No es parte del estilo:
+     * aplicar un preset lo conserva y cambiarlo no pasa el tema a "custom".
+     */
+    showCredit: z.boolean().default(true),
   }),
   effects: z.object({
     shadows: z.enum(["none", "soft", "strong"]),

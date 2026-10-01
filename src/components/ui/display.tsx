@@ -34,7 +34,7 @@ export function EmptyState({ title, description, actions, icon, className, bare 
       )}
     >
       {icon ? (
-        <div aria-hidden className="mb-4 text-adm-fg-subtle [&_svg]:size-10 [&_svg]:stroke-[1.25]">
+        <div aria-hidden className="mb-3 text-adm-fg-subtle [&_svg]:size-6 [&_svg]:stroke-[1.5]">
           {icon}
         </div>
       ) : null}
@@ -150,11 +150,11 @@ export function Stat({ label, value, delta, alert, trend, href, className }: Sta
   const body = (
     <>
       <div className="text-xs font-medium text-adm-fg-muted">{label}</div>
-      <div className="tnum mt-1.5 text-[28px] leading-8 font-semibold tracking-[-0.01em] text-adm-fg">{value}</div>
+      <div className="tnum mt-1.5 truncate text-[22px] leading-7 font-semibold tracking-[-0.01em] text-adm-fg sm:text-[28px] sm:leading-8">{value}</div>
       {delta ? <div className={cn("tnum mt-1.5 text-xs", deltaTone)}>{delta}</div> : null}
     </>
   );
-  const cls = cn("block min-w-0 px-5 py-4", href && "transition-colors hover:bg-adm-row-hover", className);
+  const cls = cn("block min-w-0 px-4 py-3.5 sm:px-5 sm:py-4", href && "transition-colors duration-[120ms] hover:bg-adm-row-hover", className);
   return href ? (
     <Link href={href} className={cls}>
       {body}

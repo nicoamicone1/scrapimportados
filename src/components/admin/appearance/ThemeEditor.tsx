@@ -11,23 +11,27 @@ import { PLAN_PAGE, PlanGate } from "@/components/admin/PlanGate";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Textarea } from "@/components/ui/Input";
+import { Switch } from "@/components/ui/Switch";
 import { toast } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { featureMinPlan, PLAN_NAMES } from "@/lib/plans";
-import { basePresetOf, CUSTOM_CSS_MAX_BYTES, isPresetAllowed, validateCustomCss } from "@/lib/schemas/appearance";
+import { APP_NAME } from "@/lib/version";
+import { basePresetOf, canHideCredit, CUSTOM_CSS_MAX_BYTES, isPresetAllowed, validateCustomCss } from "@/lib/schemas/appearance";
 import {
+  checkContrast,
   closestWeight,
-  contrastRatio,
+  fixThemeColor,
   getFont,
   PRESET_LIST,
   PRESETS,
   type PresetId,
+  type ContrastResult,
   type Theme,
   type ThemeColors,
 } from "@/lib/theme";
 
 import { FontSelect } from "./FontSelect";
-import { PresetApplyAction, PresetGallery, presetMeta, presetStatus, type PresetKey } from "./PresetGallery";
+import { PresetApplyAction, PresetGallery, presetMeta, presetStatus, THEME_PREVIEW_ID, type PresetKey } from "./PresetGallery";
 import { PresetThumb, presetFontsHref } from "./PresetThumb";
 import { PreviewFrame } from "./PreviewFrame";
 import type { PreviewDevice } from "./preview-css";
@@ -55,17 +59,18 @@ const COLOR_FIELDS: { key: keyof ThemeColors; label: string; hint: string }[] = 
   { key: "danger", label: "Error", hint: "Errores y «Sin stock»." },
 ];
 
-/** Pares de contraste a controlar (DESIGN.md §3.1). */
-const CONTRAST_CHECKS: { fg: keyof ThemeColors; bg: keyof ThemeColors; min: number; label: string }[] = [
-  { fg: "text", bg: "background", min: 4.5, label: "Texto sobre fondo" },
-  { fg: "textMuted", bg: "background", min: 4.5, label: "Texto secundario sobre fondo" },
-  { fg: "textMuted", bg: "surface", min: 4.5, label: "Texto secundario sobre superficie" },
-  { fg: "primaryText", bg: "primary", min: 4.5, label: "Texto sobre botón primario" },
-  { fg: "primary", bg: "background", min: 3, label: "Primario sobre fondo" },
-  { fg: "accent", bg: "background", min: 4.5, label: "Acento (precio promo) sobre fondo" },
-  { fg: "text", bg: "secondary", min: 4.5, label: "Texto sobre secundario" },
-  { fg: "danger", bg: "background", min: 4.5, label: "Error sobre fondo" },
-];
+/**
+ * Un preset aplicado sobre el tema actual: copia todo el estilo y conserva lo
+ * que no es estilo sino decisión del dueño (CSS propio y el crédito del footer).
+ */
+function withOwnerChoices(preset: Theme, current: Theme): Theme {
+  return {
+    ...preset,
+    cards: { ...preset.cards },
+    footer: { ...preset.footer, showCredit: current.footer.showCredit },
+    custom_css: current.custom_css,
+  };
+}
 
 /** Claves que cambian la estructura del preview (requieren render en el server). */
 function structuralKey(t: Theme) {
@@ -111,35 +116,76 @@ function Accordion({
   );
 }
 
-function ContrastList({ colors }: { colors: ThemeColors }) {
+/**
+ * Contraste (DESIGN.md §3.1): resumen en una línea y, si algo no llega, cada
+ * par con su arreglo de un toque (mismo tono, más claro u oscuro). Los que
+ * cumplen quedan plegados: la lista larga de "AA" no le dice nada al dueño.
+ */
+function ContrastList({ colors, onFix }: { colors: ThemeColors; onFix: (keys: (keyof ThemeColors)[]) => void }) {
+  const results = checkContrast(colors);
+  const failing = results.filter((r) => !r.ok);
+  const fixKeys = [...new Set(failing.map((r) => r.fg))];
+  const row = (r: ContrastResult) => (
+    <li key={`${r.fg}-${r.bg}`} className="flex min-h-7 items-center gap-2">
+      <span
+        aria-hidden
+        className="inline-flex h-5 w-8 shrink-0 items-center justify-center rounded-[3px] border border-adm-border text-[11px] font-semibold"
+        style={{ background: colors[r.bg], color: colors[r.fg] }}
+      >
+        Aa
+      </span>
+      <span className="min-w-0 flex-1 text-adm-fg">{r.label}</span>
+      <span className={cn("tnum shrink-0 font-medium", r.ok ? "text-adm-success" : "text-adm-danger")}>
+        {r.ratio.toFixed(1)}:1{r.ok ? "" : ` · mín. ${r.min}`}
+      </span>
+      {r.ok ? null : (
+        <Button size="sm" variant="ghost" onClick={() => onFix([r.fg])} title={`Ajusta «${COLOR_LABEL[r.fg]}» hasta que se lea bien`}>
+          Ajustar
+        </Button>
+      )}
+    </li>
+  );
   return (
-    <ul className="space-y-1 rounded-adm border border-adm-border bg-adm-surface-2/50 p-2.5 text-xs">
-      {CONTRAST_CHECKS.map((ck) => {
-        const ratio = contrastRatio(colors[ck.fg], colors[ck.bg]);
-        const okay = ratio >= ck.min;
-        return (
-          <li key={`${ck.fg}-${ck.bg}`} className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className="inline-flex h-5 w-8 shrink-0 items-center justify-center rounded-[3px] border border-adm-border text-[11px] font-semibold"
-              style={{ background: colors[ck.bg], color: colors[ck.fg] }}
-            >
-              Aa
-            </span>
-            <span className="min-w-0 flex-1 truncate text-adm-fg">{ck.label}</span>
-            <span className={cn("tnum shrink-0 font-medium", okay ? "text-adm-success" : "text-adm-danger")}>
-              {ratio.toFixed(1)}:1 {okay ? "AA" : `· mínimo ${ck.min}`}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="space-y-2 rounded-adm border border-adm-border bg-adm-surface-2/50 p-2.5 text-xs" aria-live="polite">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {failing.length ? (
+          <span className="font-medium text-adm-danger">
+            {failing.length === 1 ? "1 par no se lee bien" : `${failing.length} pares no se leen bien`} (WCAG AA)
+          </span>
+        ) : (
+          <span className="font-medium text-adm-success">Todo se lee bien: {results.length} de {results.length} pares cumplen AA</span>
+        )}
+        {fixKeys.length > 1 ? (
+          <Button size="sm" className="ml-auto" onClick={() => onFix(fixKeys)}>
+            Ajustar todos
+          </Button>
+        ) : null}
+      </p>
+      {failing.length ? <ul className="space-y-1">{failing.map(row)}</ul> : null}
+      <details className="group">
+        <summary className="cursor-pointer text-adm-fg-muted hover:text-adm-fg">{failing.length ? "Ver los que cumplen" : "Ver el detalle"}</summary>
+        <ul className="mt-1.5 space-y-1">{results.filter((r) => r.ok).map(row)}</ul>
+      </details>
+    </div>
   );
 }
 
-export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme; initialNode: ReactNode }) {
+const COLOR_LABEL = Object.fromEntries(COLOR_FIELDS.map((f) => [f.key, f.label])) as Record<keyof ThemeColors, string>;
+
+export function ThemeEditor({
+  initialTheme,
+  initialNode,
+  recommended = null,
+}: {
+  initialTheme: Theme;
+  initialNode: ReactNode;
+  /** Preset del rubro elegido en el alta: va primero en el selector, marcado. */
+  recommended?: PresetKey | null;
+}) {
   const adminStore = useOptionalAdminStore();
   const plan = adminStore?.plan ?? null;
+  /** Sin contexto (tests, storybook) no se bloquea; el server igual lo valida. */
+  const creditOptional = !plan || canHideCredit(plan);
   const brand = adminStore?.store.name || "Tu tienda";
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [savedJson, setSavedJson] = useState(() => JSON.stringify(initialTheme));
@@ -174,7 +220,7 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
 
   // Lo que muestra la vista previa: el tema en edición o el preset que se está probando.
   const shownTheme = useMemo<Theme>(
-    () => (trial ? { ...PRESETS[trial], cards: { ...PRESETS[trial].cards }, custom_css: theme.custom_css } : theme),
+    () => (trial ? withOwnerChoices(PRESETS[trial], theme) : theme),
     [trial, theme],
   );
 
@@ -223,7 +269,7 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
     edit((t) => ({ ...t, [section]: { ...(t[section] as object), ...(patch as object) } }) as Theme);
 
   const applyPreset = (id: Exclude<PresetId, "custom">) => {
-    setTheme({ ...PRESETS[id], cards: { ...PRESETS[id].cards }, custom_css: theme.custom_css });
+    setTheme(withOwnerChoices(PRESETS[id], theme));
     setBasePreset(id);
     setTrial(null);
     setBrowsing(false);
@@ -284,6 +330,7 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
             base={customBase}
             trial={trial}
             plan={plan}
+            recommended={recommended}
             onTry={setTrial}
             onApply={requestApply}
             onClose={closeGallery}
@@ -328,7 +375,16 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
           </Accordion>
 
           <Accordion id="colors" title="Colores" summary={<ColorDots colors={theme.colors} />} open={open === "colors"} onToggle={toggle}>
-            <ContrastList colors={theme.colors} />
+            <ContrastList
+              colors={theme.colors}
+              onFix={(keys) => {
+                const next = { ...theme.colors };
+                // Dos pasadas: si se corrige el primario, su texto se vuelve a medir contra el nuevo.
+                for (let pass = 0; pass < 2; pass++) for (const k of keys) next[k] = fixThemeColor(next, k);
+                set("colors", next);
+                toast.success(keys.length === 1 ? `Ajustamos «${COLOR_LABEL[keys[0]]}» para que se lea bien.` : "Ajustamos los colores para que todo se lea bien.");
+              }}
+            />
             <div className="grid gap-3.5">
               {COLOR_FIELDS.map((f) => (
                 <ColorField
@@ -552,6 +608,24 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
             />
             <ToggleField label="Redes sociales" checked={theme.footer.showSocial} onChange={(showSocial) => set("footer", { showSocial })} />
             <ToggleField label="Medios de pago (en texto)" checked={theme.footer.showPayments} onChange={(showPayments) => set("footer", { showPayments })} />
+            <div className="space-y-1.5">
+              <Switch
+                label={`Mostrar «Hecho con ${APP_NAME}»`}
+                description="Una línea chica en la banda legal, con los colores de tu tema."
+                checked={theme.footer.showCredit || !creditOptional}
+                disabled={!creditOptional}
+                // No es estilo: cambiarlo no pasa el tema a "Personalizado".
+                onCheckedChange={(showCredit) => setTheme((t) => ({ ...t, footer: { ...t.footer, showCredit } }))}
+              />
+              {creditOptional ? null : (
+                <p className="text-xs text-adm-fg-muted">
+                  En el plan Free es obligatorio. Desde {PLAN_NAMES.starter} lo podés sacar.{" "}
+                  <Link href={PLAN_PAGE} className="font-medium text-adm-accent underline-offset-2 hover:underline">
+                    Ver planes
+                  </Link>
+                </p>
+              )}
+            </div>
           </Accordion>
 
           <Accordion id="effects" title="Efectos" open={open === "effects"} onToggle={toggle}>
@@ -618,7 +692,7 @@ export function ThemeEditor({ initialTheme, initialNode }: { initialTheme: Theme
       )}
 
       {/* Preview */}
-      <div className="min-w-0 flex-1">
+      <div id={THEME_PREVIEW_ID} className="min-w-0 flex-1 scroll-mt-4">
         <div className="sticky top-0 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-adm border border-adm-border bg-adm-surface px-3 py-2">
           <div role="radiogroup" aria-label="Dispositivo" className="flex rounded-adm border border-adm-input-border p-0.5">
             {(

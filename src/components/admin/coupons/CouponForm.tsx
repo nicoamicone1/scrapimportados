@@ -6,8 +6,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { saveCoupon } from "@/app/admin/(panel)/cupones/actions";
 import { CategoryMultiSelect } from "@/components/admin/pricing/CategoryMultiSelect";
+import { CollapsibleCard } from "@/components/admin/products/CollapsibleCard";
 import { ProductMultiPicker } from "@/components/admin/pricing/ProductMultiPicker";
-import { parseNumberInput } from "@/components/admin/pricing/shared";
+import { discountLabel, parseNumberInput, scopeSummary, windowSummary } from "@/components/admin/pricing/shared";
 import { toast } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -17,6 +18,7 @@ import { Switch } from "@/components/ui/Switch";
 import { SaveBar } from "@/components/ui/SaveBar";
 import type { PickerProduct } from "@/lib/admin/pricing";
 import { cn } from "@/lib/cn";
+import { formatMoney } from "@/lib/money";
 import type { CategoryLite } from "@/lib/pricing";
 import {
   COUPON_TYPE_LABELS,
@@ -152,6 +154,21 @@ export function CouponForm({ id, initial, initialProducts, categories, timezone 
     setShowErrors(false);
   };
 
+  // Frase de lo que se está armando: se ve de un vistazo si quedó como se pensó.
+  const value = parseNumberInput(draft.value);
+  const summary = [
+    draft.code ? draft.code : "Sin código",
+    draft.type === "free_shipping" || value != null ? discountLabel(draft.type, value ?? 0).replace(/^-/, "") + (draft.type === "free_shipping" ? "" : " de descuento") : null,
+    parseNumberInput(draft.minSubtotal) ? `compra mínima ${formatMoney(parseNumberInput(draft.minSubtotal) ?? 0)}` : null,
+    parseNumberInput(draft.maxUsesPerCustomer) ? `${parseNumberInput(draft.maxUsesPerCustomer)} por cliente` : null,
+    parseNumberInput(draft.maxUses) ? `${parseNumberInput(draft.maxUses)} usos en total` : null,
+    draft.firstOrderOnly ? "primera compra" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const scopeText = scopeSummary({ scope: draft.scope, categoryIds: draft.categoryIds, productIds: draft.products.map((p) => p.id) }, categories);
+  const windowText = windowSummary(draft.startsAt, draft.endsAt, timezone);
+
   return (
     <div className="space-y-5">
       <Card>
@@ -205,6 +222,13 @@ export function CouponForm({ id, initial, initialProducts, categories, timezone 
               <p className="self-end pb-2 text-[13px] text-adm-fg-muted">El envío sale $ 0 en cualquier zona.</p>
             )}
           </div>
+          <Switch
+            label="Activo"
+            description="Pausalo para que deje de funcionar sin borrarlo."
+            checked={draft.isActive}
+            onCheckedChange={(v) => patch({ isActive: v })}
+            className="max-w-md"
+          />
         </CardBody>
       </Card>
 
@@ -238,16 +262,21 @@ export function CouponForm({ id, initial, initialProducts, categories, timezone 
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader title="Alcance" description="Sobre qué productos del carrito se calcula el descuento." />
-        <CardBody className="space-y-4">
+      <CollapsibleCard
+        title="Alcance"
+        description="Sobre qué productos del carrito se calcula el descuento."
+        summary={scopeText}
+        defaultOpen={draft.scope !== "all"}
+        forceOpen={Boolean(err("categoryIds") || err("productIds"))}
+      >
+        <div className="space-y-4">
           <fieldset className="flex flex-wrap gap-2">
             <legend className="sr-only">Alcance</legend>
             {PROMO_SCOPES.map((s) => (
               <label
                 key={s}
                 className={cn(
-                  "inline-flex h-8 cursor-pointer items-center rounded-adm border px-3 text-sm",
+                  "inline-flex h-8 cursor-pointer items-center rounded-adm border px-3 text-sm max-md:h-11 has-[:focus-visible]:shadow-[var(--adm-focus)]",
                   draft.scope === s
                     ? "border-adm-accent bg-adm-accent-soft font-medium text-adm-accent"
                     : "border-adm-input-border bg-adm-surface hover:bg-adm-hover",
@@ -268,29 +297,31 @@ export function CouponForm({ id, initial, initialProducts, categories, timezone 
               <ProductMultiPicker value={draft.products} onChange={(products) => patch({ products })} />
             </Field>
           ) : null}
-        </CardBody>
-      </Card>
+        </div>
+      </CollapsibleCard>
 
-      <Card>
-        <CardHeader title="Vigencia y estado" description={`Hora de la tienda (${timezone.replace(/_/g, " ")}). Vacío = sin límite.`} />
-        <CardBody className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Empieza" error={err("startsAt")}>
-              <Input type="datetime-local" value={draft.startsAt} onChange={(e) => patch({ startsAt: e.target.value })} />
-            </Field>
-            <Field label="Termina" error={err("endsAt")}>
-              <Input type="datetime-local" value={draft.endsAt} onChange={(e) => patch({ endsAt: e.target.value })} />
-            </Field>
-          </div>
-          <Switch
-            label="Activo"
-            description="Pausalo para que deje de funcionar sin borrarlo."
-            checked={draft.isActive}
-            onCheckedChange={(v) => patch({ isActive: v })}
-            className="max-w-md"
-          />
-        </CardBody>
-      </Card>
+      <CollapsibleCard
+        title="Vigencia"
+        description={`Hora de la tienda (${timezone.replace(/_/g, " ")}). Vacío = sin límite.`}
+        summary={windowText}
+        defaultOpen={Boolean(draft.startsAt || draft.endsAt)}
+        forceOpen={Boolean(err("startsAt") || err("endsAt"))}
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Empieza" error={err("startsAt")}>
+            <Input type="datetime-local" value={draft.startsAt} onChange={(e) => patch({ startsAt: e.target.value })} />
+          </Field>
+          <Field label="Termina" error={err("endsAt")}>
+            <Input type="datetime-local" value={draft.endsAt} onChange={(e) => patch({ endsAt: e.target.value })} />
+          </Field>
+        </div>
+      </CollapsibleCard>
+
+      <p className="rounded-adm border border-adm-border bg-adm-surface-2 px-4 py-3 text-[13px] text-adm-fg" aria-live="polite">
+        <span className="text-adm-fg-muted">Así queda: </span>
+        {summary}. Alcance: {scopeText}. {windowText === "Sin límite" ? "Sin vencimiento." : `Vigencia: ${windowText}.`}
+        {draft.isActive ? "" : " Queda pausado."}
+      </p>
 
       <SaveBar
         visible={dirty || !id}

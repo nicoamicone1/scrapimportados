@@ -10,7 +10,6 @@ import { EmptyState, PageHeader } from "@/components/ui/display";
 export function UnderConstruction({
   title,
   description,
-  owner,
 }: {
   title: string;
   description: string;
@@ -23,11 +22,11 @@ export function UnderConstruction({
       <EmptyState
         icon={<Hammer />}
         title="En construcción"
-        description={`Esta sección llega en la próxima entrega (agente ${owner}). Mientras tanto podés recorrer el resto del panel.`}
+        description="Esta sección todavía no está disponible. Mientras tanto podés seguir con el resto del panel."
         actions={
           <>
             <ButtonLink href="/admin" variant="secondary">
-              Ir al dashboard
+              Ir al inicio
             </ButtonLink>
             <ButtonLink href="/" external variant="ghost">
               Ver la tienda

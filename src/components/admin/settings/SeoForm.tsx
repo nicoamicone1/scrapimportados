@@ -16,7 +16,7 @@ import { Input, Textarea } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
 import type { SeoSettingsInput } from "@/lib/schemas/settings";
 
-import { HeaderSave, SaveBar } from "./SaveBar";
+import { SaveBar } from "./SaveBar";
 import { SettingsHeader } from "./SettingsHeader";
 import { useSettingsForm } from "./useSettingsForm";
 
@@ -47,13 +47,10 @@ export function SeoForm({ initial, storeName, tagline }: { initial: SeoSettingsI
         title="SEO e integraciones"
         description="Cómo aparece la tienda en Google y al compartirla, y los códigos de medición."
         actions={
-          <>
-            <Link href="/admin/configuracion/seo/redirecciones" className="inline-flex h-8 items-center gap-1 rounded-adm px-2.5 text-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg">
-              Redirecciones 301
-              <ChevronRight className="size-4" aria-hidden />
-            </Link>
-            <HeaderSave dirty={form.dirty} saving={form.saving} onSave={form.save} />
-          </>
+          <Link href="/admin/configuracion/seo/redirecciones" className="inline-flex h-8 items-center gap-1 rounded-adm px-2.5 text-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg max-sm:h-11">
+            Redirecciones 301
+            <ChevronRight className="size-4" aria-hidden />
+          </Link>
         }
       />
 

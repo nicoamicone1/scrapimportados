@@ -64,8 +64,8 @@ export function StockAlertsTable({ rows, filter, available }: { rows: StockAlert
         <THead>
           <tr>
             <TH>Producto</TH>
-            <TH>Email</TH>
-            <TH>Pedido</TH>
+            <TH className="hidden md:table-cell">Email</TH>
+            <TH className="hidden sm:table-cell">Pidió</TH>
             <TH numeric className="hidden md:table-cell">
               Stock hoy
             </TH>
@@ -80,7 +80,7 @@ export function StockAlertsTable({ rows, filter, available }: { rows: StockAlert
             <TableEmpty
               colSpan={6}
               title="Los avisos de stock todavía no están activos"
-              description="Falta aplicar una actualización de la base de datos (migración 0016). Cuando esté, en la ficha de los productos agotados aparece el formulario y los pedidos llegan acá."
+              description="Cuando se activen, en la ficha de los productos agotados aparece el formulario y los pedidos de aviso llegan acá."
             />
           ) : rows.length === 0 ? (
             <TableEmpty
@@ -118,9 +118,10 @@ export function StockAlertsTable({ rows, filter, available }: { rows: StockAlert
                         "Cualquier variante"
                       )}
                     </div>
+                    <div className="truncate text-xs md:hidden">{a.email}</div>
                   </TD>
-                  <TD className="max-w-64 truncate">{a.email}</TD>
-                  <TD className="whitespace-nowrap" muted>
+                  <TD className="hidden max-w-64 truncate md:table-cell">{a.email}</TD>
+                  <TD className="hidden whitespace-nowrap sm:table-cell" muted>
                     <Time value={a.createdAt} />
                   </TD>
                   <TD numeric className="hidden md:table-cell">
@@ -136,7 +137,7 @@ export function StockAlertsTable({ rows, filter, available }: { rows: StockAlert
                     )}
                   </TD>
                   <TD className="text-right whitespace-nowrap">
-                    <Button size="sm" variant="ghost" onClick={() => setTarget(a)}>
+                    <Button size="sm" variant="ghost" onClick={() => setTarget(a)} className="max-md:h-10">
                       Borrar
                     </Button>
                   </TD>

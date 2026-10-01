@@ -3,12 +3,16 @@ import { forwardRef, type ComponentPropsWithoutRef, type ReactNode } from "react
 
 import { cn } from "@/lib/cn";
 
+/*
+ * Borde `--adm-input-border` (3,2:1, BRAND §5.4). En pantallas táctiles el
+ * texto pasa a 16 px (iOS no hace zoom al enfocar) y el control a 44 px.
+ */
 export const controlClass =
-  "w-full rounded-adm border border-adm-input-border bg-adm-surface text-sm text-adm-fg placeholder:text-adm-fg-muted/70 transition-colors hover:border-adm-input-border-hover disabled:cursor-not-allowed disabled:bg-adm-surface-2 disabled:text-adm-fg-muted read-only:bg-adm-surface-2 aria-invalid:border-adm-danger";
+  "w-full rounded-adm border border-adm-input-border bg-adm-surface text-sm pointer-coarse:text-base text-adm-fg placeholder:text-adm-fg-muted transition-colors duration-[120ms] hover:border-adm-input-border-hover disabled:cursor-not-allowed disabled:bg-adm-surface-2 disabled:text-adm-fg-muted read-only:bg-adm-surface-2 aria-invalid:border-adm-danger";
 
 type ControlSize = "sm" | "md";
 
-const heights: Record<ControlSize, string> = { sm: "h-8", md: "h-9" };
+const heights: Record<ControlSize, string> = { sm: "h-8 pointer-coarse:h-10", md: "h-9 pointer-coarse:h-11" };
 
 export interface InputProps extends Omit<ComponentPropsWithoutRef<"input">, "size" | "prefix"> {
   size?: ControlSize;

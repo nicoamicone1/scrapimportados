@@ -48,12 +48,12 @@ export default async function CustomerPage({ params }: PageProps<"/admin/cliente
         actions={
           <>
             {wa ? (
-              <ButtonLink href={wa} external icon={<MessageCircle />}>
+              <ButtonLink href={wa} external icon={<MessageCircle />} className="max-sm:h-11">
                 WhatsApp
               </ButtonLink>
             ) : null}
             {c.email ? (
-              <ButtonLink href={`mailto:${c.email}`} external icon={<Mail />}>
+              <ButtonLink href={`mailto:${c.email}`} external icon={<Mail />} className="max-sm:h-11">
                 Email
               </ButtonLink>
             ) : null}
@@ -134,8 +134,8 @@ export default async function CustomerPage({ params }: PageProps<"/admin/cliente
             <CardHeader title="Datos" />
             <CardBody>
               <dl className="space-y-2 text-[13px]">
-                <Item label="Email" value={c.email} />
-                <Item label="Teléfono" value={c.phone} />
+                <Item label="Email" value={c.email} href={c.email ? `mailto:${c.email}` : undefined} />
+                <Item label="Teléfono" value={c.phone} href={c.phone ? `tel:${c.phone.replace(/[^\d+]/g, "")}` : undefined} />
                 <Item label="DNI o CUIT" value={c.doc_number} />
                 <div>
                   <dt className="text-xs text-adm-fg-muted">Dirección</dt>
@@ -179,11 +179,13 @@ export default async function CustomerPage({ params }: PageProps<"/admin/cliente
   );
 }
 
-function Item({ label, value }: { label: string; value: string | null }) {
+function Item({ label, value, href }: { label: string; value: string | null; href?: string }) {
   return (
     <div>
       <dt className="text-xs text-adm-fg-muted">{label}</dt>
-      <dd className="break-words">{value || <span className="text-adm-fg-muted">—</span>}</dd>
+      <dd className="break-words">
+        {value ? href ? <a href={href} className="underline-offset-2 hover:underline">{value}</a> : value : <span className="text-adm-fg-muted">—</span>}
+      </dd>
     </div>
   );
 }

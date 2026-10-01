@@ -37,7 +37,7 @@ const atelier: Theme = {
     textMuted: "#6A655D",
     primary: "#1B1A18",
     primaryText: "#FAF8F4",
-    secondary: "#E8E1D5",
+    secondary: "#EBE4D8",
     accent: "#8B5A34",
     border: "#DDD6CA",
     success: "#3F6B45",
@@ -57,7 +57,7 @@ const atelier: Theme = {
   cards: { style: "flat", imageRatio: "4:5", hover: "zoom", showSku: false, showBrand: false, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-center", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "airy", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 3 } },
-  footer: { style: "columns", showSocial: true, showPayments: false },
+  footer: { style: "columns", showSocial: true, showPayments: false, showCredit: true },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -95,14 +95,16 @@ const mercado: Theme = {
   cards: { style: "bordered", imageRatio: "1:1", hover: "lift", showSku: false, showBrand: false, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "none", dividers: false, imageFilter: "grain" },
 };
 
 /**
  * Electro, hogar, ferretería, importadoras. Default de una tienda nueva.
- * Se distingue por la precisión de vidriera técnica: 5 columnas, SKU y marca,
- * reglas finas y un solo rojo para precio promo y errores.
+ * Se distingue por la precisión de vidriera técnica: 5 columnas de tarjetas
+ * blancas con borde fino sobre gris claro (cada foto de fábrica queda en su
+ * caja), SKU y marca a la vista y un solo rojo para precio promo y errores.
+ * Sin reglas entre celdas: la grilla-tabla es de `galpon`.
  */
 const nordico: Theme = {
   preset: "nordico",
@@ -133,8 +135,8 @@ const nordico: Theme = {
   cards: { style: "bordered", imageRatio: "1:1", hover: "zoom", showSku: true, showBrand: true, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "compact", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 5 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
-  effects: { shadows: "none", dividers: true, imageFilter: "none" },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
 /**
@@ -171,7 +173,7 @@ const editorial: Theme = {
   cards: { style: "flat", imageRatio: "3:4", hover: "none", showSku: false, showBrand: false, showTransferPrice: true, showNetPrice: true },
   header: { layout: "minimal", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "comfortable", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 4 } },
-  footer: { style: "simple", showSocial: true, showPayments: false },
+  footer: { style: "simple", showSocial: true, showPayments: false, showCredit: true },
   effects: { shadows: "none", dividers: true, imageFilter: "none" },
 };
 
@@ -210,7 +212,7 @@ const neon: Theme = {
   cards: { style: "elevated", imageRatio: "1:1", hover: "lift", showSku: false, showBrand: true, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "soft", dividers: false, imageFilter: "none" },
 };
 
@@ -249,7 +251,7 @@ const botica: Theme = {
   cards: { style: "flat", imageRatio: "1:1", hover: "zoom", showSku: false, showBrand: true, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -288,7 +290,7 @@ const recreo: Theme = {
   cards: { style: "elevated", imageRatio: "1:1", hover: "zoom", showSku: false, showBrand: true, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -327,7 +329,7 @@ const lapacho: Theme = {
   cards: { style: "flat", imageRatio: "16:9", hover: "zoom", showSku: false, showBrand: false, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "airy", containerWidth: "wide", gridColumns: { mobile: 1, desktop: 3 } },
-  footer: { style: "minimal", showSocial: true, showPayments: true },
+  footer: { style: "minimal", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -367,7 +369,7 @@ const galpon: Theme = {
   cards: { style: "flat", imageRatio: "1:1", hover: "none", showSku: true, showBrand: true, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "compact", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 5 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "none", dividers: true, imageFilter: "none" },
 };
 
@@ -406,7 +408,7 @@ const bodega: Theme = {
   cards: { style: "flat", imageRatio: "3:4", hover: "zoom", showSku: false, showBrand: true, showTransferPrice: true, showNetPrice: true },
   header: { layout: "logo-left", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
-  footer: { style: "columns", showSocial: true, showPayments: true },
+  footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 

@@ -1,4 +1,4 @@
-import { UserRound } from "lucide-react";
+import { ChevronDown, UserRound } from "lucide-react";
 import type { Metadata } from "next";
 
 import { NoPermission } from "@/components/admin/settings/NoPermission";
@@ -6,7 +6,6 @@ import { LimitBanner } from "@/components/admin/LimitBanner";
 import { InviteButton, InvitesCard } from "@/components/admin/users/InviteButton";
 import { UsersTable } from "@/components/admin/users/UsersTable";
 import { ButtonLink } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/display";
 import { can } from "@/lib/admin/permissions";
 import { listInvites, listUsers } from "@/lib/admin/users";
@@ -66,9 +65,17 @@ export default async function UsuariosPage() {
 
       <UsersTable users={users} currentUserId={ctx.user.id} canManage={canManage} />
 
-      <Card className="mt-6 max-w-3xl">
-        <CardHeader title="Qué puede hacer cada rol" description="Los roles son por tienda: la misma persona puede ser dueña de una y staff de otra. Invitar y cambiar roles además está protegido en la base de datos." />
-        <CardBody className="p-0">
+      <details className="group mt-6 max-w-3xl rounded-adm border border-adm-border bg-adm-surface shadow-adm-card">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+          <span>
+            <span className="block text-[15px] font-semibold text-adm-fg">Qué puede hacer cada rol</span>
+            <span className="block text-[13px] text-adm-fg-muted">
+              Los roles son por tienda: la misma persona puede ser dueña de una y staff de otra.
+            </span>
+          </span>
+          <ChevronDown className="size-4 shrink-0 text-adm-fg-muted transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="border-t border-adm-border">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-adm-border text-left text-xs text-adm-fg-muted">
@@ -95,8 +102,11 @@ export default async function UsuariosPage() {
               ))}
             </tbody>
           </table>
-        </CardBody>
-      </Card>
+          <p className="border-t border-adm-border px-4 py-2.5 text-xs text-adm-fg-muted">
+            Invitar y cambiar roles además está protegido en la base de datos.
+          </p>
+        </div>
+      </details>
     </>
   );
 }

@@ -62,7 +62,8 @@ export function PriceTag({
         <span
           className={cn(
             "font-semibold",
-            size === "lg" ? "text-xl lg:text-2xl" : size === "md" ? "text-lg" : "text-base",
+            // Card: --text-lg (DESIGN.md §6.1); el precio es lo segundo que se lee después de la foto.
+            size === "lg" ? "text-xl lg:text-2xl" : "text-lg",
             muted ? "text-fg-muted" : onSale ? "text-accent" : "text-fg",
           )}
         >

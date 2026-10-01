@@ -25,7 +25,7 @@ import {
 } from "@/lib/schemas/settings";
 import { buildOrderMessage, buildProductMessage } from "@/lib/store/whatsapp";
 
-import { HeaderSave, SaveBar } from "./SaveBar";
+import { SaveBar } from "./SaveBar";
 import { SettingsHeader } from "./SettingsHeader";
 import { MarkdownField, TemplateTextarea } from "./TemplateInput";
 import { useSettingsForm } from "./useSettingsForm";
@@ -108,7 +108,6 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
       <SettingsHeader
         title="Pagos y checkout"
         description="Cómo te pagan, qué datos pedís al comprar y cuánto tiempo se reserva el stock."
-        actions={<HeaderSave dirty={form.dirty} saving={form.saving} onSave={form.save} />}
       />
 
       <Card className="max-w-5xl px-5 md:px-6">

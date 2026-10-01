@@ -1,5 +1,6 @@
 import { Undo2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 
 /**
@@ -8,13 +9,13 @@ import { ButtonLink } from "@/components/ui/Button";
  */
 export function WithdrawalsLink({ count }: { count: number }) {
   return (
-    <ButtonLink href="/admin/pedidos/arrepentimientos" icon={<Undo2 />}>
+    <ButtonLink href="/admin/pedidos/arrepentimientos" icon={<Undo2 />} className="max-sm:h-11">
       Arrepentimientos
       {count ? (
-        <span className="tnum ml-0.5 rounded-[4px] bg-[#F5EAD3] px-1 text-[11px] font-medium text-[#7A4A00]">
+        <Badge tone="amber" dot={false} className="tnum ml-0.5 h-4 px-1 text-[11px]">
           {count}
           <span className="sr-only"> {count === 1 ? "nueva" : "nuevas"}</span>
-        </span>
+        </Badge>
       ) : null}
     </ButtonLink>
   );

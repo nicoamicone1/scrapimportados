@@ -33,7 +33,7 @@ export function Pagination({ page, perPage, total, param = "page", className }: 
   };
 
   const btn =
-    "inline-flex h-8 items-center gap-1 rounded-adm border border-adm-input-border bg-adm-surface px-2.5 text-sm text-adm-fg hover:bg-adm-hover";
+    "inline-flex h-8 items-center gap-1 rounded-adm border border-adm-input-border bg-adm-surface px-2.5 text-sm text-adm-fg transition-colors duration-[120ms] hover:border-adm-input-border-hover hover:bg-adm-hover pointer-coarse:h-11 pointer-coarse:px-3.5";
   const disabled = "pointer-events-none opacity-40";
 
   return (

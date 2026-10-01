@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Checkbox } from "@/components/ui/Input";
@@ -30,7 +31,14 @@ export function CategoryTreeSelect({
   const toggle = (id: string) => onChange(selected.has(id) ? value.filter((v) => v !== id) : [...value, id]);
 
   if (!categories.length) {
-    return <p className="text-[13px] text-adm-fg-muted">Todavía no hay categorías. Creá la primera en Categorías.</p>;
+    return (
+      <p className="text-[13px] text-adm-fg-muted">
+        Todavía no hay categorías.{" "}
+        <Link href="/admin/categorias" className="text-adm-accent underline underline-offset-2">
+          Crear la primera
+        </Link>
+      </p>
+    );
   }
 
   return (
@@ -43,7 +51,7 @@ export function CategoryTreeSelect({
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar categoría"
           aria-label="Buscar categoría"
-          className="h-8 w-full rounded-t-adm bg-transparent pr-2 pl-8 text-sm outline-none [&::-webkit-search-cancel-button]:hidden"
+          className="h-8 w-full rounded-t-adm bg-transparent pr-2 pl-8 text-sm outline-none max-md:h-11 max-md:text-base [&::-webkit-search-cancel-button]:hidden"
         />
       </div>
       <ul className="adm-scroll max-h-64 overflow-y-auto py-1" aria-label="Categorías">
@@ -54,7 +62,7 @@ export function CategoryTreeSelect({
               checked={selected.has(r.id)}
               onChange={() => toggle(r.id)}
               label={<span className="text-[13px]">{r.label}</span>}
-              className="py-1"
+              className="py-1 max-md:min-h-11 max-md:items-center"
             />
           </li>
         ))}

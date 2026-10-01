@@ -53,7 +53,7 @@ export default async function StockAlertsPage({ searchParams }: PageProps<"/admi
 
       {list.available && mailOff ? (
         <p className="mb-3 text-[13px] text-adm-fg-muted">
-          Los mails están apagados en este entorno (falta la clave de envío): los avisos quedan pendientes hasta que se configure.
+          El envío de mails no está activo en este entorno: los avisos quedan pendientes hasta que se active.
         </p>
       ) : null}
 

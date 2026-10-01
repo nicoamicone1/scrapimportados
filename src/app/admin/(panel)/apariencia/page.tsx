@@ -9,9 +9,16 @@ import { PageHeader } from "@/components/ui/display";
 import { TabsNav } from "@/components/ui/Tabs";
 import { getAppearanceData } from "@/lib/admin/appearance";
 import { requireAdmin } from "@/lib/auth";
+import { presetForKind } from "@/lib/tenant/kinds";
 import { storeHref } from "@/lib/tenant/urls";
 
 export const metadata: Metadata = { title: "Apariencia" };
+
+/** Preset del rubro que eligió en el alta (`stores.onboarding.kind`); "otro" o sin dato → ninguno. */
+function recommendedPreset(onboarding: unknown) {
+  const kind = onboarding && typeof onboarding === "object" ? (onboarding as Record<string, unknown>).kind : null;
+  return typeof kind === "string" && kind !== "otro" ? presetForKind(kind) : null;
+}
 
 export default async function AppearancePage({ searchParams }: PageProps<"/admin/apariencia">) {
   const { tab } = await searchParams;
@@ -46,7 +53,11 @@ export default async function AppearancePage({ searchParams }: PageProps<"/admin
       {brandTab ? (
         <BrandEditor data={data} />
       ) : (
-        <ThemeEditor initialTheme={data.theme} initialNode={<ThemePreview storeId={ctx.store.id} theme={data.theme} device="desktop" />} />
+        <ThemeEditor
+          initialTheme={data.theme}
+          recommended={recommendedPreset(ctx.store.onboarding)}
+          initialNode={<ThemePreview storeId={ctx.store.id} theme={data.theme} device="desktop" />}
+        />
       )}
     </>
   );

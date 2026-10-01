@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { NewPasswordForm } from "@/app/(platform)/login/LoginForms";
-import { AuthLayout } from "@/app/admin/AuthLayout";
+import { AccountShell } from "@/components/platform/AccountShell";
 import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Nueva contraseña" };
@@ -16,8 +16,8 @@ export default async function ResetPage() {
   const { user } = await getSession();
   if (!user) redirect("/login?error=link");
   return (
-    <AuthLayout>
+    <AccountShell>
       <NewPasswordForm />
-    </AuthLayout>
+    </AccountShell>
   );
 }

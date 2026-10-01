@@ -1,7 +1,7 @@
 "use client";
 
-import { ImageOff, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ChevronRight, ImageOff, Plus, Trash2 } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/Button";
@@ -34,6 +34,19 @@ interface Props {
   onChange: (options: FormOption[], variants: FormVariant[]) => void;
   stockNote: string;
   onStockNote: (note: string) => void;
+}
+
+/** `md` en adelante: tabla densa; abajo, tarjetas por variante (la tabla mide 1080 px). */
+function useIsDesktop() {
+  return useSyncExternalStore(
+    (notify) => {
+      const mq = window.matchMedia("(min-width: 768px)");
+      mq.addEventListener("change", notify);
+      return () => mq.removeEventListener("change", notify);
+    },
+    () => window.matchMedia("(min-width: 768px)").matches,
+    () => true,
+  );
 }
 
 const OPTION_SUGGESTIONS = ["Talle", "Color", "Material", "Tamaño", "Modelo", "Capacidad"];
@@ -188,6 +201,15 @@ export function VariantsEditor({ options, variants, images, errors, onChange, st
 
 // ---------------------------------------------------------------------------
 
+/** ¿Algún dato "avanzado" ya tiene valor (o falló)? Entonces el bloque arranca abierto. */
+function hasAdvanced(v: FormVariant) {
+  return Boolean(
+    v.cost || v.sku || v.barcode || v.weight_grams || v.low_stock_threshold || !v.track_inventory || v.allow_backorder,
+  );
+}
+
+const ADVANCED_FIELDS = ["cost", "sku", "barcode", "weight_grams", "low_stock_threshold"];
+
 function SingleVariantFields({
   variant: v,
   errors,
@@ -198,39 +220,19 @@ function SingleVariantFields({
   onUpdate: (patch: Partial<FormVariant>) => void;
 }) {
   const e = (field: string) => errors[`variants.0.${field}`];
+  const advancedError = ADVANCED_FIELDS.some((f) => e(f)?.length);
+  // Divulgación progresiva: lo diario (precio, tachado, stock) arriba; el resto, en "Más datos".
+  const [open, setOpen] = useState(() => hasAdvanced(v));
+  const showAdvanced = open || advancedError;
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Precio" required error={e("price")}>
           <Input inputMode="decimal" leading="$" value={v.price} onChange={(ev) => onUpdate({ price: ev.target.value })} placeholder="0" />
         </Field>
-        <Field label="Precio tachado" hint="El precio anterior, para mostrar la oferta." error={e("compare_at_price")}>
-          <Input
-            inputMode="decimal"
-            leading="$"
-            value={v.compare_at_price}
-            onChange={(ev) => onUpdate({ compare_at_price: ev.target.value })}
-          />
-        </Field>
-        <Field label="Costo" hint="No se muestra en la tienda." error={e("cost")}>
-          <Input inputMode="decimal" leading="$" value={v.cost} onChange={(ev) => onUpdate({ cost: ev.target.value })} />
-        </Field>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="SKU" error={e("sku")}>
-          <Input value={v.sku} onChange={(ev) => onUpdate({ sku: ev.target.value })} className="font-mono" maxLength={64} />
-        </Field>
-        <Field label="Código de barras" error={e("barcode")}>
-          <Input value={v.barcode} onChange={(ev) => onUpdate({ barcode: ev.target.value })} className="font-mono" maxLength={64} />
-        </Field>
-        <Field label="Peso (g)" hint="Para calcular envíos." error={e("weight_grams")}>
-          <Input inputMode="numeric" value={v.weight_grams} onChange={(ev) => onUpdate({ weight_grams: ev.target.value })} />
-        </Field>
-      </div>
-      <div className="grid gap-4 border-t border-adm-border pt-4 sm:grid-cols-3">
         <Field
           label="Stock"
-          hint={v.id && v.stock_original !== null ? `Actual: ${v.stock_original}. El cambio queda como ajuste.` : undefined}
+          hint={v.id && v.stock_original !== null ? `Actual: ${v.stock_original}. El cambio queda como ajuste.` : v.track_inventory ? undefined : "No controlás el stock."}
           error={e("stock")}
         >
           <Input
@@ -241,27 +243,68 @@ function SingleVariantFields({
             onChange={(ev) => onUpdate({ stock: ev.target.value })}
           />
         </Field>
-        <Field label="Aviso de stock bajo" hint="Vacío = el de la tienda." error={e("low_stock_threshold")}>
+        <Field label="Precio tachado" hint="El precio anterior, para mostrar la oferta." error={e("compare_at_price")}>
           <Input
-            inputMode="numeric"
-            value={v.low_stock_threshold}
-            disabled={!v.track_inventory}
-            onChange={(ev) => onUpdate({ low_stock_threshold: ev.target.value })}
+            inputMode="decimal"
+            leading="$"
+            value={v.compare_at_price}
+            onChange={(ev) => onUpdate({ compare_at_price: ev.target.value })}
           />
         </Field>
-        <div className="space-y-2 sm:pt-6">
-          <Checkbox
-            checked={v.track_inventory}
-            onChange={(ev) => onUpdate({ track_inventory: ev.target.checked })}
-            label="Controlar stock"
-          />
-          <Checkbox
-            checked={v.allow_backorder}
-            disabled={!v.track_inventory}
-            onChange={(ev) => onUpdate({ allow_backorder: ev.target.checked })}
-            label="Vender sin stock"
-          />
-        </div>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          aria-expanded={showAdvanced}
+          aria-controls="variant-advanced"
+          onClick={() => setOpen(!showAdvanced)}
+          className="inline-flex h-8 items-center gap-1.5 rounded-adm px-1 text-[13px] font-medium text-adm-accent hover:underline max-md:h-11"
+        >
+          <ChevronRight className={cn("size-4 transition-transform duration-100", showAdvanced && "rotate-90")} aria-hidden />
+          Más datos: costo, SKU, código de barras, peso y control de stock
+        </button>
+        {showAdvanced ? (
+          <div id="variant-advanced" className="mt-3 space-y-4 rounded-adm border border-adm-border bg-adm-surface-2/40 p-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Costo" hint="No se muestra en la tienda. Sirve para calcular márgenes." error={e("cost")}>
+                <Input inputMode="decimal" leading="$" value={v.cost} onChange={(ev) => onUpdate({ cost: ev.target.value })} />
+              </Field>
+              <Field label="SKU" error={e("sku")}>
+                <Input value={v.sku} onChange={(ev) => onUpdate({ sku: ev.target.value })} className="font-mono" maxLength={64} />
+              </Field>
+              <Field label="Código de barras" error={e("barcode")}>
+                <Input value={v.barcode} onChange={(ev) => onUpdate({ barcode: ev.target.value })} className="font-mono" maxLength={64} />
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Peso (g)" hint="Para calcular envíos." error={e("weight_grams")}>
+                <Input inputMode="numeric" value={v.weight_grams} onChange={(ev) => onUpdate({ weight_grams: ev.target.value })} />
+              </Field>
+              <Field label="Aviso de stock bajo" hint="Vacío = el de la tienda." error={e("low_stock_threshold")}>
+                <Input
+                  inputMode="numeric"
+                  value={v.low_stock_threshold}
+                  disabled={!v.track_inventory}
+                  onChange={(ev) => onUpdate({ low_stock_threshold: ev.target.value })}
+                />
+              </Field>
+              <div className="space-y-2 sm:pt-6">
+                <Checkbox
+                  checked={v.track_inventory}
+                  onChange={(ev) => onUpdate({ track_inventory: ev.target.checked })}
+                  label="Controlar stock"
+                />
+                <Checkbox
+                  checked={v.allow_backorder}
+                  disabled={!v.track_inventory}
+                  onChange={(ev) => onUpdate({ allow_backorder: ev.target.checked })}
+                  label="Vender sin stock"
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -270,7 +313,7 @@ function SingleVariantFields({
 // ---------------------------------------------------------------------------
 
 const cellInput =
-  "h-8 w-full min-w-0 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-[13px] text-adm-fg placeholder:text-adm-fg-muted/60 hover:border-[#bdb7ab] disabled:bg-adm-surface-2 disabled:text-adm-fg-muted aria-invalid:border-adm-danger";
+  "h-8 pointer-coarse:h-11 pointer-coarse:text-base w-full min-w-0 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-[13px] text-adm-fg placeholder:text-adm-fg-muted/60 hover:border-adm-input-border-hover disabled:bg-adm-surface-2 disabled:text-adm-fg-muted aria-invalid:border-adm-danger";
 
 function VariantsTable({
   variants,
@@ -285,6 +328,7 @@ function VariantsTable({
   onUpdate: (key: string, patch: Partial<FormVariant>) => void;
   onChangeAll: (variants: FormVariant[]) => void;
 }) {
+  const desktop = useIsDesktop();
   const [bulkPrice, setBulkPrice] = useState("");
   const [bulkStock, setBulkStock] = useState("");
   const err = (i: number, f: string) => errors[`variants.${i}.${f}`]?.[0];
@@ -339,6 +383,9 @@ function VariantsTable({
         </span>
       </div>
 
+      {!desktop ? (
+        <VariantCards variants={variants} images={images} errors={errors} onUpdate={onUpdate} />
+      ) : (
       <div className="adm-scroll overflow-x-auto rounded-adm border border-adm-border">
         <table className="w-full min-w-[1080px] border-collapse text-[13px]">
           <thead className="bg-adm-surface-2 text-xs text-adm-fg-muted">
@@ -352,7 +399,7 @@ function VariantsTable({
               <th className="w-32">Cód. de barras</th>
               <th className="w-16" title="Aviso de stock bajo">Umbral</th>
               <th className="w-16">Peso (g)</th>
-              <th className="w-16 text-center" title="Controlar stock">Stock</th>
+              <th className="w-16 text-center" title="Controlar stock">Controla</th>
               <th className="w-16 text-center" title="Vender sin stock">Sin stock</th>
               <th className="w-16 text-center">Activa</th>
             </tr>
@@ -475,10 +522,116 @@ function VariantsTable({
           </tbody>
         </table>
       </div>
+      )}
       <p className="text-xs text-adm-fg-muted">
         Las variantes se arman solas con las opciones. Si sacás un valor, se borran sus variantes al guardar. Una variante inactiva no se vende.
       </p>
     </div>
+  );
+}
+
+const cardInput = "max-md:h-11 max-md:text-base";
+
+/** Una variante como tarjeta (celular): precio y stock a mano, el resto en "Más datos". */
+function VariantCards({
+  variants,
+  images,
+  errors,
+  onUpdate,
+}: {
+  variants: FormVariant[];
+  images: AdminImage[];
+  errors: Errors;
+  onUpdate: (key: string, patch: Partial<FormVariant>) => void;
+}) {
+  const err = (i: number, f: string) => errors[`variants.${i}.${f}`]?.[0];
+  const imageUrl = new Map(images.map((img) => [img.id, img.url]));
+  return (
+    <ul className="space-y-3">
+      {variants.map((v, i) => (
+        <li key={v.key} className={cn("rounded-adm border border-adm-border p-3", !v.is_active && "bg-adm-surface-2/50")}>
+          <div className="flex items-center gap-3">
+            <VariantImagePicker
+              images={images}
+              value={v.image_id}
+              url={v.image_id ? (imageUrl.get(v.image_id) ?? null) : null}
+              label={v.title}
+              onChange={(image_id) => onUpdate(v.key, { image_id })}
+              large
+            />
+            <div className="min-w-0 flex-1">
+              <p className={cn("truncate text-sm font-medium", !v.is_active && "text-adm-fg-muted")}>{v.title}</p>
+              {!v.id ? <p className="text-xs text-adm-fg-muted">Nueva</p> : null}
+              {err(i, "title") ? <p className="text-xs text-adm-danger">{err(i, "title")}</p> : null}
+            </div>
+            <Switch aria-label={`${v.title} activa`} checked={v.is_active} onCheckedChange={(is_active) => onUpdate(v.key, { is_active })} />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Field label="Precio" error={err(i, "price")}>
+              <Input inputMode="decimal" leading="$" className={cardInput} value={v.price} onChange={(e) => onUpdate(v.key, { price: e.target.value })} />
+            </Field>
+            <Field label="Stock" error={err(i, "stock")}>
+              <Input
+                inputMode="numeric"
+                className={cardInput}
+                value={v.track_inventory ? v.stock : ""}
+                disabled={!v.track_inventory}
+                placeholder={v.track_inventory ? "0" : "—"}
+                onChange={(e) => onUpdate(v.key, { stock: e.target.value })}
+              />
+            </Field>
+          </div>
+          <details className="group mt-2" open={ADVANCED_FIELDS.concat("compare_at_price").some((f) => err(i, f)) || undefined}>
+            <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-adm-accent [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
+              Más datos
+            </summary>
+            <div className="grid grid-cols-2 gap-3 pb-1">
+              <Field label="Precio tachado" error={err(i, "compare_at_price")}>
+                <Input
+                  inputMode="decimal"
+                  leading="$"
+                  className={cardInput}
+                  value={v.compare_at_price}
+                  onChange={(e) => onUpdate(v.key, { compare_at_price: e.target.value })}
+                />
+              </Field>
+              <Field label="Costo" error={err(i, "cost")}>
+                <Input inputMode="decimal" leading="$" className={cardInput} value={v.cost} onChange={(e) => onUpdate(v.key, { cost: e.target.value })} />
+              </Field>
+              <Field label="SKU" error={err(i, "sku")}>
+                <Input className={cn(cardInput, "font-mono")} value={v.sku} onChange={(e) => onUpdate(v.key, { sku: e.target.value })} maxLength={64} />
+              </Field>
+              <Field label="Cód. de barras" error={err(i, "barcode")}>
+                <Input className={cn(cardInput, "font-mono")} value={v.barcode} onChange={(e) => onUpdate(v.key, { barcode: e.target.value })} maxLength={64} />
+              </Field>
+              <Field label="Aviso de stock bajo" error={err(i, "low_stock_threshold")}>
+                <Input
+                  inputMode="numeric"
+                  className={cardInput}
+                  value={v.low_stock_threshold}
+                  disabled={!v.track_inventory}
+                  onChange={(e) => onUpdate(v.key, { low_stock_threshold: e.target.value })}
+                />
+              </Field>
+              <Field label="Peso (g)" error={err(i, "weight_grams")}>
+                <Input inputMode="numeric" className={cardInput} value={v.weight_grams} onChange={(e) => onUpdate(v.key, { weight_grams: e.target.value })} />
+              </Field>
+              <div className="col-span-2 space-y-1">
+                <Checkbox checked={v.track_inventory} onChange={(e) => onUpdate(v.key, { track_inventory: e.target.checked })} label="Controlar stock" className="min-h-11 items-center" />
+                <Checkbox
+                  checked={v.allow_backorder}
+                  disabled={!v.track_inventory}
+                  onChange={(e) => onUpdate(v.key, { allow_backorder: e.target.checked })}
+                  label="Vender sin stock"
+                  className="min-h-11 items-center"
+                />
+              </div>
+            </div>
+          </details>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -522,12 +675,14 @@ function VariantImagePicker({
   url,
   label,
   onChange,
+  large,
 }: {
   images: AdminImage[];
   value: string | null;
   url: string | null;
   label: string;
   onChange: (id: string | null) => void;
+  large?: boolean;
 }) {
   const trigger = (
     <button
@@ -535,7 +690,10 @@ function VariantImagePicker({
       aria-label={`Imagen de ${label}`}
       disabled={!images.length}
       title={images.length ? "Elegir imagen" : "Subí imágenes al producto para asignarlas"}
-      className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-adm-sm border border-adm-border bg-adm-surface-2 hover:border-adm-input-border disabled:cursor-not-allowed"
+      className={cn(
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-adm-sm border border-adm-border bg-adm-surface-2 hover:border-adm-input-border disabled:cursor-not-allowed",
+        large ? "size-11" : "size-8",
+      )}
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element -- miniatura

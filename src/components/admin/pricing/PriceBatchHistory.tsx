@@ -71,9 +71,11 @@ export function PriceBatchHistory({ rows }: { rows: PriceBatchRow[] }) {
             </TH>
             <TH>Fecha</TH>
             <TH>Regla</TH>
-            <TH>Alcance</TH>
-            <TH numeric>Variantes</TH>
-            <TH>Usuario</TH>
+            <TH className="hidden lg:table-cell">Alcance</TH>
+            <TH numeric className="hidden sm:table-cell">
+              Variantes
+            </TH>
+            <TH className="hidden xl:table-cell">Usuario</TH>
             <TH>Estado</TH>
             <TH className="w-28">
               <span className="sr-only">Acciones</span>
@@ -93,7 +95,7 @@ export function PriceBatchHistory({ rows }: { rows: PriceBatchRow[] }) {
                       onClick={() => void toggle(row.batchId)}
                       aria-expanded={isOpen}
                       aria-label={isOpen ? "Ocultar detalle" : "Ver detalle por variante"}
-                      className="inline-flex size-7 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                      className="inline-flex size-7 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg max-md:size-11"
                     >
                       {isOpen ? <ChevronDown className="size-4" aria-hidden /> : <ChevronRight className="size-4" aria-hidden />}
                     </button>
@@ -105,12 +107,17 @@ export function PriceBatchHistory({ rows }: { rows: PriceBatchRow[] }) {
                   </TD>
                   <TD className="max-w-[340px]">
                     <span className="line-clamp-2">{row.ruleSummary || SOURCE_LABELS[row.source] || "—"}</span>
+                    <span className="tnum line-clamp-1 text-xs text-adm-fg-muted lg:hidden">
+                      {row.scopeSummary || "—"} · {formatNumber(row.variantCount)} variantes
+                    </span>
                   </TD>
-                  <TD className="max-w-[260px] text-adm-fg-muted">
+                  <TD className="hidden max-w-[260px] text-adm-fg-muted lg:table-cell">
                     <span className="line-clamp-2">{row.scopeSummary || "—"}</span>
                   </TD>
-                  <TD numeric>{formatNumber(row.variantCount)}</TD>
-                  <TD className="max-w-[180px] truncate text-adm-fg-muted">{row.createdByEmail ?? "—"}</TD>
+                  <TD numeric className="hidden sm:table-cell">
+                    {formatNumber(row.variantCount)}
+                  </TD>
+                  <TD className="hidden max-w-[180px] truncate text-adm-fg-muted xl:table-cell">{row.createdByEmail ?? "—"}</TD>
                   <TD>
                     {row.undoneAt ? (
                       <Badge
@@ -125,7 +132,7 @@ export function PriceBatchHistory({ rows }: { rows: PriceBatchRow[] }) {
                   </TD>
                   <TD className="text-right">
                     {!row.undoneAt ? (
-                      <Button size="sm" icon={<Undo2 aria-hidden />} onClick={() => setUndoTarget(row)}>
+                      <Button size="sm" icon={<Undo2 aria-hidden />} onClick={() => setUndoTarget(row)} className="max-md:h-10">
                         Deshacer
                       </Button>
                     ) : row.undoResult?.skipped ? (
@@ -183,9 +190,11 @@ function BatchDetail({ changes, undone }: { changes: PriceChangeDetail[]; undone
           <thead className="sticky top-0 bg-adm-surface-2">
             <tr>
               <TH>Producto</TH>
-              <TH>SKU</TH>
+              <TH className="hidden sm:table-cell">SKU</TH>
               <TH numeric>Precio</TH>
-              <TH numeric>Tachado</TH>
+              <TH numeric className="hidden sm:table-cell">
+                Tachado
+              </TH>
               <TH numeric>Precio actual</TH>
             </tr>
           </thead>
@@ -200,11 +209,11 @@ function BatchDetail({ changes, undone }: { changes: PriceChangeDetail[]; undone
                       <span className="block truncate text-xs text-adm-fg-muted">{c.variantTitle}</span>
                     ) : null}
                   </TD>
-                  <TD className="font-mono text-xs text-adm-fg-muted">{c.sku ?? "—"}</TD>
+                  <TD className="hidden font-mono text-xs text-adm-fg-muted sm:table-cell">{c.sku ?? "—"}</TD>
                   <TD numeric>
                     <PriceChange from={c.oldPrice} to={c.newPrice} />
                   </TD>
-                  <TD numeric>
+                  <TD numeric className="hidden sm:table-cell">
                     <PriceChange from={c.oldCompareAt} to={c.newCompareAt} />
                   </TD>
                   <TD numeric>

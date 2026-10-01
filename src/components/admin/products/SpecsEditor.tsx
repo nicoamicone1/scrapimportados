@@ -23,7 +23,7 @@ import { ProductPicker } from "./ProductPicker";
 import { Thumb } from "./Thumb";
 
 const rowInput =
-  "h-8 w-full min-w-0 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-[13px] text-adm-fg placeholder:text-adm-fg-muted/60 hover:border-[#bdb7ab] aria-invalid:border-adm-danger";
+  "h-8 pointer-coarse:h-11 pointer-coarse:text-base w-full min-w-0 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-[13px] text-adm-fg placeholder:text-adm-fg-muted/60 hover:border-adm-input-border-hover aria-invalid:border-adm-danger";
 
 function useListSensors() {
   return useSensors(
@@ -39,7 +39,7 @@ function DragHandle({ label, listeners, attributes }: { label: string; listeners
       aria-label={label}
       {...attributes}
       {...listeners}
-      className="inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 active:cursor-grabbing"
+      className="inline-flex size-8 pointer-coarse:size-11 touch-none shrink-0 cursor-grab items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 active:cursor-grabbing"
     >
       <GripVertical className="size-4" aria-hidden />
     </button>

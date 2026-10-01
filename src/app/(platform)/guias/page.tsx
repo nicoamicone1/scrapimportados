@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DISPLAY } from "@/components/platform/brand";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
 import { GUIDES } from "@/content/guias";
@@ -37,7 +38,7 @@ export default function GuiasPage() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
         <header className="max-w-[62ch]">
           <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Guías</p>
-          <h1 className="mt-3 text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[38px]">{TITLE}</h1>
+          <h1 className={`${DISPLAY} mt-3 text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[38px]`}>{TITLE}</h1>
           <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">
             Lo que conviene saber antes de abrir o mudar una tienda: qué pide la ley, cómo ordenar las ventas y cómo cuidar lo que ya ganaste en
             Google. Sin relleno y con la fecha de la última revisión.

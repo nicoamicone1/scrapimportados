@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { BrandMark } from "@/components/platform/brand";
 import { APP_NAME, APP_VERSION } from "@/lib/version";
 
 /**
  * Marco de las pantallas sin sesión (login, registro, reset, onboarding):
- * formulario sobre superficie blanca a la izquierda y, en desktop, panel pino
- * con una frase corta y un mock del storefront hecho con CSS (spec §14.6).
+ * formulario sobre superficie blanca a la izquierda y, en desktop, banda tinta
+ * (BRAND §5.2: el pino es para lo accionable, no para fondos grandes) con una
+ * frase corta y un mock del storefront hecho con CSS (spec §14.6).
  *
  * - `title` / `subtitle`: encabezado del formulario (opcional: los forms que
  *   ya traen su `<h1>` no lo pasan).
@@ -32,20 +34,17 @@ export function AuthLayout({
   return (
     <div className="grid min-h-dvh bg-adm-surface md:grid-cols-[minmax(440px,540px)_1fr]">
       <section className="flex flex-col justify-between px-6 py-6 sm:px-12 md:py-8">
-        <header className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="inline-flex size-7 items-center justify-center rounded-[5px] bg-adm-sidebar-bg text-[14px] leading-none font-bold text-adm-accent-2"
-          >
-            e
-          </span>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold tracking-[-0.01em]">{APP_NAME}</div>
-            {storeName && storeName !== APP_NAME ? <div className="text-xs text-adm-fg-muted">{storeName}</div> : null}
-          </div>
+        <header>
+          <Link href="/" className="inline-flex items-center gap-2.5 rounded-adm" aria-label={`${APP_NAME}, ir al inicio`}>
+            <BrandMark size={28} />
+            <span className="leading-tight">
+              <span className="block text-[17px] leading-5 font-semibold tracking-[-0.01em] text-adm-fg">{APP_NAME}</span>
+              {storeName && storeName !== APP_NAME ? <span className="block text-xs text-adm-fg-muted">{storeName}</span> : null}
+            </span>
+          </Link>
         </header>
 
-        <div className="w-full max-w-[380px] py-12">
+        <div className="w-full max-w-[380px] py-10 md:py-12">
           {title ? (
             <div className="mb-6">
               <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.01em]">{title}</h1>
@@ -70,13 +69,13 @@ export function AuthLayout({
         </footer>
       </section>
 
-      <aside className="relative hidden overflow-hidden bg-adm-accent text-white md:flex md:flex-col md:justify-between md:px-12 md:py-12 lg:px-16">
+      <aside className="relative hidden overflow-hidden bg-eco-ink text-eco-mist md:flex md:flex-col md:justify-between md:px-12 md:py-12 lg:px-16">
         <div className="max-w-[440px]">
-          <p className="text-[11px] font-medium tracking-[0.08em] text-[#e8b574] uppercase">Panel de tu tienda</p>
-          <p className="mt-3 text-[26px] leading-[1.2] font-semibold tracking-[-0.015em]">
+          <p className="text-[12px] font-medium tracking-[0.08em] text-eco-amber uppercase">Panel de tu tienda</p>
+          <p className="mt-3 text-[26px] leading-[1.2] font-semibold tracking-[-0.015em] text-white">
             {panelTitle ?? "Catálogo, precios y pedidos en un solo lugar. Tu tienda sale con tu marca."}
           </p>
-          {aside ? <p className="tnum mt-4 text-sm text-[#cfe0d7]">{aside}</p> : null}
+          {aside ? <p className="tnum mt-4 text-sm text-eco-sage">{aside}</p> : null}
         </div>
         <StorefrontMock />
       </aside>
@@ -93,23 +92,23 @@ function StorefrontMock() {
   ];
   return (
     <div aria-hidden className="relative mt-10 w-full max-w-[560px] translate-x-6 self-end lg:translate-x-10">
-      <div className="overflow-hidden rounded-[8px] bg-[#f7f4ee] text-adm-fg shadow-[0_24px_48px_-24px_rgb(0_0_0/0.45)] ring-1 ring-black/10">
+      <div className="overflow-hidden rounded-eco-lg bg-adm-table-head text-adm-fg ring-1 ring-white/10">
         {/* barra del navegador */}
-        <div className="flex h-8 items-center gap-3 border-b border-[#e2dbcd] bg-white px-3">
+        <div className="flex h-8 items-center gap-3 border-b border-adm-border bg-adm-surface px-3">
           <span className="flex gap-1">
-            <span className="size-2 rounded-full bg-[#e2dbcd]" />
-            <span className="size-2 rounded-full bg-[#e2dbcd]" />
-            <span className="size-2 rounded-full bg-[#e2dbcd]" />
+            <span className="size-2 rounded-full bg-adm-border" />
+            <span className="size-2 rounded-full bg-adm-border" />
+            <span className="size-2 rounded-full bg-adm-border" />
           </span>
-          <span className="h-5 flex-1 rounded-[4px] bg-[#f4f1ea] px-2 text-[10px] leading-5 text-adm-fg-muted">tutienda.ecommy.app</span>
+          <span className="h-5 flex-1 rounded-adm-sm bg-adm-surface-2 px-2 text-[10px] leading-5 text-adm-fg-muted">tutienda.ecommy.app</span>
         </div>
         {/* header de la tienda */}
-        <div className="flex items-center justify-between border-b border-[#e2dbcd] bg-white px-5 py-3">
+        <div className="flex items-center justify-between border-b border-adm-border bg-adm-surface px-5 py-3">
           <span className="text-[13px] font-semibold tracking-[0.04em] uppercase">Lapacho</span>
           <span className="flex gap-3">
-            <span className="h-1.5 w-8 rounded-full bg-[#d9d2c3]" />
-            <span className="h-1.5 w-10 rounded-full bg-[#d9d2c3]" />
-            <span className="h-1.5 w-7 rounded-full bg-[#d9d2c3]" />
+            <span className="h-1.5 w-8 rounded-full bg-adm-border" />
+            <span className="h-1.5 w-10 rounded-full bg-adm-border" />
+            <span className="h-1.5 w-7 rounded-full bg-adm-border" />
           </span>
         </div>
         {/* hero */}
@@ -128,14 +127,14 @@ function StorefrontMock() {
           {products.map((p) => (
             <div key={p.price}>
               <div className="aspect-[4/5] rounded-[6px]" style={{ background: p.tone }} />
-              <span className={`mt-2 block h-1.5 rounded-full bg-[#d9d2c3] ${p.name}`} />
+              <span className={`mt-2 block h-1.5 rounded-full bg-adm-border ${p.name}`} />
               <span className="tnum mt-1.5 block text-[10px] font-semibold">{p.price}</span>
             </div>
           ))}
         </div>
       </div>
       {/* aviso de pedido nuevo (lo que ve el dueño en el panel) */}
-      <div className="absolute -top-5 -left-8 flex items-center gap-2.5 rounded-[6px] bg-adm-sidebar-bg px-3 py-2 text-[12px] text-adm-sidebar-fg shadow-[0_12px_24px_-12px_rgb(0_0_0/0.5)] ring-1 ring-white/10">
+      <div className="absolute -top-5 -left-8 flex items-center gap-2.5 rounded-adm bg-eco-pine px-3 py-2 text-[12px] text-eco-mist ring-1 ring-white/10">
         <span className="size-1.5 rounded-full bg-adm-accent-2" />
         <span className="tnum">
           Pedido <span className="font-semibold text-white">#1043</span> · $ 48.500 · Transferencia

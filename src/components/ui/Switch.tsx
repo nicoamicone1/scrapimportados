@@ -53,7 +53,7 @@ export function Switch({
       disabled={disabled}
       onClick={toggle}
       className={cn(
-        "relative inline-flex h-[18px] w-8 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-50",
+        "relative inline-flex h-[18px] w-8 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-[120ms] disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:before:absolute pointer-coarse:before:-inset-x-2 pointer-coarse:before:-inset-y-3 pointer-coarse:before:content-['']",
         isOn ? "border-adm-accent bg-adm-accent" : "border-adm-input-border bg-adm-surface-2",
         !label && className,
       )}
@@ -61,8 +61,9 @@ export function Switch({
       <span
         aria-hidden
         className={cn(
-          "inline-block size-3 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-100",
-          isOn ? "translate-x-[15px]" : "translate-x-[2px]",
+          "inline-block size-3 rounded-full shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-[120ms]",
+          // Apagado: perilla gris (5:1 sobre el riel) para que el estado no dependa sólo del color del riel.
+          isOn ? "translate-x-[15px] bg-white" : "translate-x-[2px] bg-adm-fg-muted",
         )}
       />
       {name ? <input type="hidden" name={name} value={isOn ? "on" : ""} /> : null}

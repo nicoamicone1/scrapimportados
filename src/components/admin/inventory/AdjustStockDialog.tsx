@@ -144,7 +144,7 @@ export function AdjustStockDialog({
                 setError(null);
               }}
               className={cn(
-                "h-8 rounded-[4px] text-sm",
+                "h-8 pointer-coarse:h-11 rounded-[4px] text-sm",
                 mode === m ? "bg-adm-surface font-medium text-adm-fg shadow-[0_0_0_1px_var(--adm-border)]" : "text-adm-fg-muted hover:text-adm-fg",
               )}
             >
