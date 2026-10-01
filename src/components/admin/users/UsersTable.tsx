@@ -60,8 +60,8 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
             <TH>Usuario</TH>
             <TH>Rol</TH>
             <TH>Estado</TH>
-            <TH>Último acceso</TH>
-            <TH>Alta</TH>
+            <TH className="hidden md:table-cell">Último acceso</TH>
+            <TH className="hidden lg:table-cell">Alta</TH>
             {canManage ? (
               <TH className="w-12">
                 <span className="sr-only">Acciones</span>
@@ -83,13 +83,22 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
                       {u.name || u.email.split("@")[0]}
                       {isMe ? <span className="ml-1.5 text-xs font-normal text-adm-fg-muted">(vos)</span> : null}
                     </div>
-                    <div className="text-xs text-adm-fg-muted">{u.email}</div>
+                    <div className="text-xs break-all text-adm-fg-muted">{u.email}</div>
+                    <div className="text-xs text-adm-fg-muted md:hidden">
+                      {u.last_access_at ? (
+                        <time suppressHydrationWarning dateTime={u.last_access_at}>
+                          Último acceso {formatRelative(u.last_access_at)}
+                        </time>
+                      ) : (
+                        "Nunca entró"
+                      )}
+                    </div>
                   </TD>
                   <TD>
                     <Badge tone={role.tone}>{role.label}</Badge>
                   </TD>
                   <TD>{u.is_active ? <Badge tone="green">Activo</Badge> : <Badge tone="neutral">Desactivado</Badge>}</TD>
-                  <TD muted>
+                  <TD muted className="hidden md:table-cell">
                     {u.last_access_at ? (
                       <time suppressHydrationWarning dateTime={u.last_access_at} title={formatDateTime(u.last_access_at)}>
                         {formatRelative(u.last_access_at)}
@@ -98,7 +107,7 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
                       "Nunca"
                     )}
                   </TD>
-                  <TD muted>
+                  <TD muted className="hidden lg:table-cell">
                     <time suppressHydrationWarning dateTime={u.created_at}>{formatDate(u.created_at)}</time>
                   </TD>
                   {canManage ? (
@@ -109,7 +118,7 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
                           <button
                             type="button"
                             aria-label={`Acciones para ${u.email}`}
-                            className="inline-flex size-7 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                            className="inline-flex size-7 max-sm:size-11 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
                           >
                             <MoreHorizontal className="size-4" aria-hidden />
                           </button>

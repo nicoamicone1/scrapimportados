@@ -72,7 +72,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ped
         actions={
           <>
             <WithdrawalsLink count={withdrawalsNew} />
-            <ButtonLink href="/admin/pedidos/nuevo" variant="primary" icon={<Plus />}>
+            <ButtonLink href="/admin/pedidos/nuevo" variant="primary" icon={<Plus />} className="max-sm:h-11">
               Crear pedido
             </ButtonLink>
           </>
@@ -97,14 +97,14 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ped
         empty={
           filtered ? (
             <TableEmpty
-              colSpan={10}
+              colSpan={8}
               title="No hay pedidos con estos filtros."
               description="Probá con otra búsqueda o sacá algún filtro."
               action={<ButtonLink href="/admin/pedidos">Limpiar filtros</ButtonLink>}
             />
           ) : (
             <TableEmpty
-              colSpan={10}
+              colSpan={8}
               title="Todavía no hay pedidos"
               description="Cuando alguien compre en tu tienda lo vas a ver acá. También podés cargar uno a mano, por ejemplo una venta por WhatsApp o en el local."
               action={

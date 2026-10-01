@@ -1,8 +1,9 @@
-import { CreditCard } from "lucide-react";
+import { CreditCard, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 
 import { PlanCards, PlanComparison } from "@/components/platform/PlanCards";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
@@ -33,18 +34,29 @@ const STATUS_TEXT: Record<string, string> = {
 function UsageBar({ label, used, max }: { label: string; used: number; max: number | null }) {
   const pct = max === null ? 0 : max === 0 ? 100 : Math.min(100, Math.round((used / max) * 100));
   const full = max !== null && used >= max;
+  const near = !full && max !== null && max > 0 && used / max >= 0.8;
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3 text-[13px]">
         <span>{label}</span>
         <span className="tnum text-adm-fg-muted">
-          <span className={cn("font-medium", full ? "text-adm-accent-2-ink" : "text-adm-fg")}>{used.toLocaleString("es-AR")}</span>
+          <span className={cn("font-medium", full || near ? "text-adm-accent-2-ink" : "text-adm-fg")}>{used.toLocaleString("es-AR")}</span>
           {max === null ? " · sin límite" : ` de ${max.toLocaleString("es-AR")}`}
         </span>
       </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-adm-surface-2">
-        {max !== null ? <div className={cn("h-full rounded-full", full ? "bg-adm-accent-2" : "bg-adm-accent")} style={{ width: `${pct}%` }} /> : null}
+      <div
+        role={max !== null ? "progressbar" : undefined}
+        aria-label={max !== null ? label : undefined}
+        aria-valuemin={max !== null ? 0 : undefined}
+        aria-valuemax={max !== null ? max : undefined}
+        aria-valuenow={max !== null ? Math.min(used, max) : undefined}
+        className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-adm-surface-2"
+      >
+        {max !== null ? <div className={cn("h-full rounded-full", full || near ? "bg-adm-accent-2" : "bg-adm-accent")} style={{ width: `${pct}%` }} /> : null}
       </div>
+      {full || near ? (
+        <p className="mt-1 text-xs text-adm-accent-2-ink">{full ? "Llegaste al límite del plan." : "Cerca del límite."}</p>
+      ) : null}
     </div>
   );
 }
@@ -132,6 +144,20 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
   // Se puede pagar el MISMO plan en prueba (para quedárselo) o con la renovación cancelada (para seguir).
   const canRenewSamePlan = plan.status === "trialing" || mpState === "cancelling";
   const payerEmail = ctx.user.email ?? null;
+  // Lo más cerca del límite va primero; desde el 80 % se avisa arriba (BRAND §10).
+  const ratio = (k: (typeof USAGE_KEYS)[number], used: number) => {
+    const max = plan.limits[k];
+    return max === null ? -1 : max === 0 ? 2 : used / max;
+  };
+  const usageSorted = [...usage].sort((a, b) => ratio(b[0], b[1]) - ratio(a[0], a[1]));
+  const [topKey, topUsed] = usageSorted[0] ?? [];
+  const topMax = topKey ? plan.limits[topKey] : null;
+  const limitNotice =
+    topKey && topMax !== null && topMax > 0 && topUsed !== undefined && topUsed / topMax >= 0.8
+      ? topUsed >= topMax
+        ? `Llegaste al límite de ${LIMITS[topKey].unit} del plan ${planLabel}: ${topUsed.toLocaleString("es-AR")} de ${topMax.toLocaleString("es-AR")}. Lo que ya cargaste sigue ahí; para sumar más, cambiá de plan.`
+        : `Usaste ${topUsed.toLocaleString("es-AR")} de ${topMax.toLocaleString("es-AR")} ${LIMITS[topKey].unit} del plan ${planLabel}.`
+      : null;
 
   return (
     <>
@@ -140,7 +166,24 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
         section="system"
         icon={<CreditCard />}
         description={`${ctx.store.name} · ${planLabel} · ${STATUS_TEXT[plan.status] ?? plan.status}`}
+        actions={
+          <ButtonLink href="#cambiar-plan" variant="secondary" className="max-sm:h-11">
+            Ver planes
+          </ButtonLink>
+        }
       />
+
+      {limitNotice ? (
+        <p role="status" className="mb-4 flex items-start gap-2.5 rounded-adm bg-adm-accent-2-soft px-3 py-2.5 text-[13px] text-adm-fg">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-adm-accent-2-ink" aria-hidden />
+          <span>
+            {limitNotice}{" "}
+            <a href="#cambiar-plan" className="font-medium text-adm-accent underline underline-offset-2">
+              Ver planes
+            </a>
+          </span>
+        </p>
+      ) : null}
 
       <ReturnNotice mp={mp} billing={billing} planName={planLabel} />
 
@@ -217,23 +260,39 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
         <Card>
           <CardHeader title="Uso" description="Lo que usa hoy tu tienda contra los límites del plan." />
           <CardBody className="grid gap-4 sm:grid-cols-2">
-            {usage.map(([key, used]) => (
+            {usageSorted.map(([key, used]) => (
               <UsageBar key={key} label={LIMITS[key].label} used={used} max={plan.limits[key]} />
             ))}
           </CardBody>
         </Card>
       </div>
 
-      <h2 className="mt-8 mb-3 text-[15px] font-semibold">Cambiar de plan</h2>
-      <p className="mb-4 max-w-2xl text-[13px] text-adm-fg-muted">
+      <h2 id="cambiar-plan" className="mt-8 mb-2 scroll-mt-20 text-[15px] font-semibold">
+        Cambiar de plan
+      </h2>
+      <p className="mb-2 max-w-2xl text-[13px] text-adm-fg-muted">
         {anyMp
-          ? `Pagá con MercadoPago (tarjeta o dinero en cuenta, se renueva solo ${anyYearlyMp ? "cada mes o cada año, según elijas," : "cada mes"} y lo cancelás cuando quieras) y el plan se activa apenas MercadoPago lo confirma.${anyYearlyMp ? " Pagando el año, el precio queda fijo 12 meses." : ""} Entrá a MercadoPago con la cuenta de ${payerEmail ?? "tu email de Ecommy"}: el débito automático queda a nombre de ese email. Si preferís, pedilo por WhatsApp.`
+          ? "Pagá con MercadoPago y el plan se activa apenas lo confirma. Lo cancelás cuando quieras. También podés pedirlo por WhatsApp."
           : mpLocked && billing?.enabled
             ? "Tu plan se cobra con MercadoPago. Para pasar a otro, cancelá la renovación arriba y después pagá el nuevo, o pedilo por WhatsApp."
             : hasWhatsApp
               ? "Elegí el plan y te abrimos WhatsApp con el pedido armado: lo activamos en el día."
               : "Elegí el plan y registramos el pedido: te contactamos para activarlo."}
       </p>
+      {anyMp ? (
+        <details className="mb-4 max-w-2xl text-[13px] text-adm-fg-muted">
+          <summary className="inline-flex min-h-8 cursor-pointer items-center text-adm-accent underline underline-offset-2 max-sm:min-h-11">
+            Cómo funciona el cobro
+          </summary>
+          <p className="mt-1">
+            Con tarjeta o dinero en cuenta; se renueva solo {anyYearlyMp ? "cada mes o cada año, según elijas" : "cada mes"}.
+            {anyYearlyMp ? " Pagando el año, el precio queda fijo 12 meses." : ""} Entrá a MercadoPago con la cuenta de{" "}
+            {payerEmail ?? "tu email de Ecommy"}: el débito automático queda a nombre de ese email.
+          </p>
+        </details>
+      ) : (
+        <div className="mb-4" />
+      )}
       <PlanCards
         plans={plans}
         current={plan.code}

@@ -211,30 +211,30 @@ function ItemRow({
             ref={setActivatorNodeRef}
             type="button"
             aria-label={`Mover ${item.label || "ítem"}`}
-            className="flex h-10 w-7 shrink-0 cursor-grab items-center justify-center text-adm-fg-muted active:cursor-grabbing"
+            className="flex h-10 w-7 shrink-0 cursor-grab touch-none items-center justify-center text-adm-fg-muted active:cursor-grabbing max-sm:h-11 max-sm:w-9"
             {...attributes}
             {...listeners}
           >
             <GripVertical className="size-4" aria-hidden />
           </button>
           {depth === 1 ? <CornerDownRight className="size-3.5 shrink-0 text-adm-fg-muted" aria-hidden /> : null}
-          <button type="button" onClick={onToggle} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left text-[13px]">
+          <button type="button" onClick={onToggle} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-2 py-2 text-left text-[13px] max-sm:min-h-11">
             <span className="truncate font-medium text-adm-fg">{item.label || "Sin etiqueta"}</span>
             <span className="truncate font-mono text-xs text-adm-fg-muted">{isGroup && (!item.href || item.href === "#") ? "Grupo" : item.href}</span>
             {item.newTab ? <ExternalLink className="size-3 shrink-0 text-adm-fg-muted" aria-label="Abre en otra pestaña" /> : null}
             <ChevronDown className={cn("ml-auto size-4 shrink-0 text-adm-fg-muted transition-transform", !open && "-rotate-90")} aria-hidden />
           </button>
           {depth === 0 && onIndent ? (
-            <Button size="icon-sm" variant="ghost" aria-label="Meter dentro del ítem de arriba" title="Meter dentro del de arriba" disabled={!canIndent} onClick={onIndent}>
+            <Button size="icon-sm" className="max-sm:size-11" variant="ghost" aria-label="Meter dentro del ítem de arriba" title="Meter dentro del de arriba" disabled={!canIndent} onClick={onIndent}>
               <IndentIncrease />
             </Button>
           ) : null}
           {depth === 1 && onOutdent ? (
-            <Button size="icon-sm" variant="ghost" aria-label="Sacar al primer nivel" title="Sacar al primer nivel" onClick={onOutdent}>
+            <Button size="icon-sm" className="max-sm:size-11" variant="ghost" aria-label="Sacar al primer nivel" title="Sacar al primer nivel" onClick={onOutdent}>
               <IndentDecrease />
             </Button>
           ) : null}
-          <Button size="icon-sm" variant="ghost" aria-label={`Quitar ${item.label || "ítem"}`} onClick={onRemove}>
+          <Button size="icon-sm" className="max-sm:size-11" variant="ghost" aria-label={`Quitar ${item.label || "ítem"}`} onClick={onRemove}>
             <Trash2 />
           </Button>
         </div>
@@ -375,7 +375,7 @@ export function MenuEditor({ handle, initialItems, options }: { handle: MenuHand
           ))}
         </SortableLevel>
         {total < MAX_MENU_ITEMS ? (
-          <Button size="sm" icon={<Plus />} onClick={add}>
+          <Button size="sm" className="max-sm:h-11" icon={<Plus />} onClick={add}>
             Agregar link
           </Button>
         ) : null}
@@ -392,7 +392,7 @@ export function MenuEditor({ handle, initialItems, options }: { handle: MenuHand
         <Button disabled={!dirty || saving} onClick={() => setItems(toEditor(JSON.parse(saved) as MenuItemInput[]))}>
           Descartar
         </Button>
-        <Button variant="primary" disabled={!dirty || hasErrors} loading={saving} onClick={() => void save()} title={hasErrors ? "Hay ítems con errores" : undefined}>
+        <Button variant={dirty ? "primary" : "secondary"} disabled={!dirty || hasErrors} loading={saving} onClick={() => void save()} title={hasErrors ? "Hay ítems con errores" : undefined}>
           Guardar
         </Button>
       </CardFooter>

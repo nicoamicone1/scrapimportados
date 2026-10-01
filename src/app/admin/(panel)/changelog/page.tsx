@@ -76,7 +76,7 @@ export default function ChangelogPage() {
                 {previous.map((entry) => (
                   <li key={entry.version}>
                     <details className="group">
-                      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-adm-hover [&::-webkit-details-marker]:hidden">
+                      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 max-sm:min-h-11 hover:bg-adm-hover [&::-webkit-details-marker]:hidden">
                         <ChevronRight className="size-4 shrink-0 text-adm-fg-muted transition-transform duration-100 group-open:rotate-90" aria-hidden />
                         <span className="tnum text-sm font-medium">v{entry.version}</span>
                         <span className="min-w-0 flex-1 truncate text-[13px] text-adm-fg-muted">{entry.title}</span>

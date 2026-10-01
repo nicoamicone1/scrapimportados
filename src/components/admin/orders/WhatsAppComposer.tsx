@@ -19,82 +19,67 @@ import {
 const KINDS = Object.keys(WHATSAPP_TEMPLATE_LABELS) as WhatsAppTemplateKind[];
 
 /**
- * "Enviar mensaje por WhatsApp": elige la plantilla según el estado del
- * pedido (editable antes de abrir) y abre `wa.me` con el texto. No envía nada
- * solo: el vendedor lo manda desde su WhatsApp.
+ * Diálogo "Mensaje por WhatsApp": arranca con la plantilla que corresponde al
+ * estado del pedido (editable antes de abrir) y abre `wa.me` con el texto. No
+ * envía nada solo: el vendedor lo manda desde su WhatsApp. Se monta sólo
+ * cuando está abierto (el estado inicial sale de las props).
  */
-export function WhatsAppComposer({
+export function WhatsAppDialog({
   orderId,
   phone,
-  defaultKind,
+  initialKind,
   context,
+  onClose,
 }: {
   orderId?: string;
   phone: string | null;
-  defaultKind: WhatsAppTemplateKind;
+  initialKind: WhatsAppTemplateKind;
   context: WhatsAppMessageContext;
+  onClose: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [kind, setKind] = useState<WhatsAppTemplateKind>(defaultKind);
-  const [text, setText] = useState(() => buildWhatsAppMessage(defaultKind, context));
+  const [kind, setKind] = useState<WhatsAppTemplateKind>(initialKind);
+  const [text, setText] = useState(() => buildWhatsAppMessage(initialKind, context));
   const number = toWhatsAppNumber(phone);
 
   const openWa = () => {
     if (!number) return;
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
     if (orderId) void logWhatsAppOpened({ orderId, template: kind });
-    setOpen(false);
+    onClose();
   };
 
-  if (!number) {
-    return <p className="text-xs text-adm-fg-muted">Sin un teléfono válido no se puede abrir WhatsApp.</p>;
-  }
-
   return (
-    <>
-      <Button
-        className="w-full"
-        icon={<MessageCircle />}
-        onClick={() => {
-          setKind(defaultKind);
-          setText(buildWhatsAppMessage(defaultKind, context));
-          setOpen(true);
-        }}
-      >
-        Enviar mensaje por WhatsApp
-      </Button>
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-        title="Mensaje por WhatsApp"
-        description="Revisalo y editalo si hace falta. Se abre WhatsApp con el texto listo para mandar."
-        size="lg"
-        footer={
-          <>
-            <Button onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button variant="primary" icon={<MessageCircle />} onClick={openWa} disabled={!text.trim()}>
-              Abrir WhatsApp
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <Field label="Plantilla">
-            <Select
-              value={kind}
-              onChange={(e) => {
-                const k = e.target.value as WhatsAppTemplateKind;
-                setKind(k);
-                setText(buildWhatsAppMessage(k, context));
-              }}
-              options={KINDS.map((k) => ({ value: k, label: WHATSAPP_TEMPLATE_LABELS[k] }))}
-            />
-          </Field>
-          <Field label="Mensaje" aside={`${text.length} caracteres`} hint="Menos de 1.000 caracteres para que WhatsApp no lo corte.">
-            <Textarea rows={9} value={text} onChange={(e) => setText(e.target.value)} />
-          </Field>
-        </div>
-      </Dialog>
-    </>
+    <Dialog
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title="Mensaje por WhatsApp"
+      description="Revisalo y editalo si hace falta. Se abre WhatsApp con el texto listo para mandar."
+      size="lg"
+      footer={
+        <>
+          <Button onClick={onClose}>Cancelar</Button>
+          <Button variant="primary" icon={<MessageCircle />} onClick={openWa} disabled={!text.trim()}>
+            Abrir WhatsApp
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Field label="Plantilla">
+          <Select
+            value={kind}
+            onChange={(e) => {
+              const k = e.target.value as WhatsAppTemplateKind;
+              setKind(k);
+              setText(buildWhatsAppMessage(k, context));
+            }}
+            options={KINDS.map((k) => ({ value: k, label: WHATSAPP_TEMPLATE_LABELS[k] }))}
+          />
+        </Field>
+        <Field label="Mensaje" aside={`${text.length} caracteres`} hint="Menos de 1.000 caracteres para que WhatsApp no lo corte.">
+          <Textarea rows={9} value={text} onChange={(e) => setText(e.target.value)} />
+        </Field>
+      </div>
+    </Dialog>
   );
 }

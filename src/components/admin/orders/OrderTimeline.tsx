@@ -101,7 +101,7 @@ export function OrderTimeline({ orderId, events, timeZone }: { orderId: string; 
             label="Visible para el cliente"
             className="flex-row-reverse justify-end gap-2"
           />
-          <Button size="sm" variant="primary" onClick={submit} loading={saving} disabled={!message.trim()}>
+          <Button size="sm" onClick={submit} loading={saving} disabled={!message.trim()}>
             {visible ? "Publicar nota" : "Agregar nota interna"}
           </Button>
         </div>

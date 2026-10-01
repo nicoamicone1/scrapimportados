@@ -2,6 +2,7 @@
 
 import { Printer } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { logOrdersPrinted } from "@/app/admin/(panel)/pedidos/actions";
@@ -13,6 +14,8 @@ import { cn } from "@/lib/cn";
  * `printed` una vez por apertura y dispara `window.print()` solo; el botón
  * queda por si el navegador lo bloquea.
  */
+const FORMAT_KEY = "ecommy.print.format";
+
 export function PrintToolbar({
   ids,
   count,
@@ -26,6 +29,24 @@ export function PrintToolbar({
 }) {
   const logged = useRef(false);
   const autoDone = useRef(false);
+  const router = useRouter();
+  const params = useSearchParams();
+
+  // Se acuerda del formato elegido: quien imprime tickets de 80 mm no lo cambia en cada remito.
+  useEffect(() => {
+    if (params.get("format")) return;
+    try {
+      if (window.localStorage.getItem(FORMAT_KEY) === "80mm") {
+        const next = new URLSearchParams(params.toString());
+        next.set("format", "80mm");
+        router.replace(`/admin/pedidos/imprimir?${next.toString()}`);
+      }
+    } catch {
+      /* sin almacenamiento: queda A4 */
+    }
+    // Sólo al abrir la vista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // El evento se registra cuando de verdad se abre el diálogo de impresión
   // (auto, botón o Ctrl+P), una vez por apertura de la vista.
@@ -53,6 +74,13 @@ export function PrintToolbar({
     <Link
       href={href(f)}
       aria-current={format === f ? "page" : undefined}
+      onClick={() => {
+        try {
+          window.localStorage.setItem(FORMAT_KEY, f);
+        } catch {
+          /* sin almacenamiento */
+        }
+      }}
       className={cn(
         "inline-flex h-7 items-center rounded-adm px-2.5 text-[13px]",
         format === f ? "bg-adm-surface font-medium text-adm-fg shadow-[0_0_0_1px_var(--adm-border)]" : "text-adm-fg-muted hover:text-adm-fg",

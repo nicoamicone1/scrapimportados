@@ -115,12 +115,12 @@ function SortableRow({
           {...attributes}
           {...listeners}
           aria-label={`Mover ${zone.name} (prioridad ${index + 1})`}
-          className="inline-flex size-7 cursor-grab touch-none items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg active:cursor-grabbing"
+          className="inline-flex size-7 max-sm:size-11 cursor-grab touch-none items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg active:cursor-grabbing"
         >
           <GripVertical className="size-4" aria-hidden />
         </button>
       </TD>
-      <TD numeric muted className="w-8 pl-1 text-left">
+      <TD numeric muted className="hidden w-8 pl-1 text-left sm:table-cell">
         {index + 1}
       </TD>
       <TD className="min-w-48">
@@ -132,18 +132,28 @@ function SortableRow({
         ) : zone.type === "polygon" && !zone.geometry ? (
           <div className="text-xs text-adm-warning">Falta dibujar el área.</div>
         ) : null}
+        {/* En pantallas chicas el alcance, la demora y el envío gratis van debajo del nombre. */}
+        <div className="mt-0.5 text-xs font-normal text-adm-fg-muted lg:hidden">
+          {[
+            scopeSummary(zone),
+            zone.etaText,
+            zone.freeOver !== null ? `Gratis desde ${formatMoney(zone.freeOver)}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
       </TD>
-      <TD>
+      <TD className="hidden lg:table-cell">
         <ZoneTypeBadge type={zone.type} />
       </TD>
-      <TD muted className="max-w-56 truncate" title={scopeSummary(zone)}>
+      <TD muted className="hidden max-w-56 truncate lg:table-cell" title={scopeSummary(zone)}>
         {scopeSummary(zone)}
       </TD>
       <TD numeric>{zone.cost === 0 ? "Gratis" : formatMoney(zone.cost)}</TD>
-      <TD numeric muted>
+      <TD numeric muted className="hidden lg:table-cell">
         {zone.freeOver === null ? "—" : formatMoney(zone.freeOver)}
       </TD>
-      <TD muted className="whitespace-nowrap">
+      <TD muted className="hidden whitespace-nowrap lg:table-cell">
         {zone.etaText || "—"}
       </TD>
       <TD>
@@ -157,7 +167,7 @@ function SortableRow({
       <TD className="w-10 text-right">
         <DropdownMenu
           trigger={
-            <Button variant="ghost" size="icon-sm" aria-label={`Acciones de ${zone.name}`}>
+            <Button variant="ghost" size="icon-sm" className="max-sm:size-11" aria-label={`Acciones de ${zone.name}`}>
               <MoreHorizontal aria-hidden />
             </Button>
           }
@@ -302,13 +312,15 @@ export function ZonesList({ zones: initialZones }: { zones: AdminShippingZone[] 
           <TH className="w-10">
             <span className="sr-only">Mover</span>
           </TH>
-          <TH className="w-8 pl-1">#</TH>
+          <TH className="hidden w-8 pl-1 sm:table-cell">#</TH>
           <TH>Nombre</TH>
-          <TH>Tipo</TH>
-          <TH>Alcance</TH>
+          <TH className="hidden lg:table-cell">Tipo</TH>
+          <TH className="hidden lg:table-cell">Alcance</TH>
           <TH numeric>Costo</TH>
-          <TH numeric>Gratis desde</TH>
-          <TH>Demora</TH>
+          <TH numeric className="hidden lg:table-cell">
+            Gratis desde
+          </TH>
+          <TH className="hidden lg:table-cell">Demora</TH>
           <TH>Activa</TH>
           <TH className="w-10">
             <span className="sr-only">Acciones</span>

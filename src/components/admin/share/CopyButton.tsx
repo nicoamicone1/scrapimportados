@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Copy, MessageCircle } from "lucide-react";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Check, Copy, MessageCircle, Share2 } from "lucide-react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { markOnboardingStep } from "@/app/admin/(panel)/onboarding-actions";
@@ -87,7 +87,7 @@ export function CopyButton({ text, label = "Copiar", ariaLabel, variant = "secon
       <Button
         variant={variant}
         size={size}
-        className={cn("min-w-[92px]", className)}
+        className={cn("min-w-[92px] max-sm:h-11", className)}
         icon={copied ? <Check /> : <Copy />}
         onClick={copy}
         aria-label={ariaLabel}
@@ -98,6 +98,34 @@ export function CopyButton({ text, label = "Copiar", ariaLabel, variant = "secon
         {copied ? "Copiado al portapapeles." : ""}
       </span>
     </>
+  );
+}
+
+const subscribeNothing = () => () => {};
+
+/** "Compartir…": hoja nativa del celular (Instagram, Telegram, mail…). No se muestra si el navegador no la tiene. */
+export function NativeShareButton({ url, text, title, className }: { url: string; text?: string; title?: string; className?: string }) {
+  const mark = useContext(MarkSharedContext);
+  const supported = useSyncExternalStore(
+    subscribeNothing,
+    () => typeof navigator !== "undefined" && typeof navigator.share === "function",
+    () => false,
+  );
+  if (!supported) return null;
+  return (
+    <Button
+      className={cn("max-sm:h-11", className)}
+      icon={<Share2 />}
+      onClick={() => {
+        void navigator
+          .share({ url, text, title })
+          .then(mark)
+          // Cerrar la hoja sin elegir nada no es un error.
+          .catch(() => {});
+      }}
+    >
+      Compartir…
+    </Button>
   );
 }
 
@@ -122,7 +150,7 @@ export function WhatsAppShareLink({
       target="_blank"
       rel="noopener noreferrer"
       onClick={mark}
-      className={buttonClass(variant, size, className)}
+      className={buttonClass(variant, size, cn("max-sm:h-11", className))}
     >
       <MessageCircle aria-hidden strokeWidth={1.5} />
       {label}

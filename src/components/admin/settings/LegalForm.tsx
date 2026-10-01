@@ -16,7 +16,7 @@ import { LEGAL_DISCLAIMER, LEGAL_TEMPLATES, renderLegalTemplate } from "@/lib/le
 import { formatMoney } from "@/lib/money";
 import { isValidCuit, POLICY_KEYS, VAT_OPTIONS, type LegalSettingsInput, type PolicyKey } from "@/lib/schemas/settings";
 
-import { HeaderSave, SaveBar } from "./SaveBar";
+import { SaveBar } from "./SaveBar";
 import { SettingsHeader } from "./SettingsHeader";
 import { MarkdownField } from "./TemplateInput";
 import { useSettingsForm } from "./useSettingsForm";
@@ -81,7 +81,6 @@ export function LegalForm({ initial, store }: { initial: LegalSettingsInput; sto
       <SettingsHeader
         title="Impuestos y legales"
         description="Lo que la ley pide mostrar en una tienda online en Argentina."
-        actions={<HeaderSave dirty={form.dirty} saving={form.saving} onSave={form.save} />}
       />
 
       <Card className="max-w-5xl px-5 md:px-6">
