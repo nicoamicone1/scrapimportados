@@ -21,7 +21,7 @@ export interface TabItem {
 
 const tabClass = (active: boolean) =>
   cn(
-    "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-0.5 text-sm whitespace-nowrap transition-colors",
+    "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-0.5 text-sm whitespace-nowrap transition-colors duration-[120ms] pointer-coarse:h-11",
     active
       ? "border-adm-accent font-medium text-adm-fg"
       : "border-transparent text-adm-fg-muted hover:border-adm-border hover:text-adm-fg",
@@ -29,7 +29,7 @@ const tabClass = (active: boolean) =>
 
 function Count({ n }: { n?: number }) {
   if (n === undefined) return null;
-  return <span className="tnum rounded-[4px] bg-adm-surface-2 px-1 text-xs text-adm-fg-muted">{n}</span>;
+  return <span className="tnum rounded-adm-sm bg-adm-surface-2 px-1 text-xs text-adm-fg-muted">{n}</span>;
 }
 
 export interface TabsProps {

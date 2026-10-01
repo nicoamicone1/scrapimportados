@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { BrandMark } from "@/components/platform/brand";
 import { cn } from "@/lib/cn";
 
 import { isNavActive, NAV } from "./nav";
@@ -28,17 +29,20 @@ export interface SidebarProps {
   className?: string;
 }
 
-/** Marca "Ecommy": cuadrado ámbar con la "e" y el nombre en blanco. Sin gradientes ni brillo. */
+/**
+ * Lockup sobre tinta (BRAND §4.2): tile pino de 28 px con la "e" ámbar en SVG
+ * (`BrandGlyph`) + "Ecommy" en `--eco-mist`, stack del sistema 600 (el panel
+ * no carga Archivo). Separación 0,36 × lado = 10 px.
+ */
 function Brand({ collapsed }: { collapsed: boolean }) {
   return (
-    <span className="flex items-center gap-2">
-      <span
-        aria-hidden
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] bg-adm-accent-2 text-[13px] leading-none font-bold text-adm-accent-2-fg"
-      >
-        e
-      </span>
-      {collapsed ? <span className="sr-only">Ecommy</span> : <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">Ecommy</span>}
+    <span className="flex items-center gap-2.5">
+      <BrandMark size={28} tone="dark" />
+      {collapsed ? (
+        <span className="sr-only">Ecommy, inicio</span>
+      ) : (
+        <span className="text-[17px] leading-none font-semibold tracking-[-0.01em] text-adm-sidebar-fg">Ecommy</span>
+      )}
     </span>
   );
 }
@@ -54,7 +58,7 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
   return (
     <div className={cn("adm-dark flex h-full flex-col bg-adm-sidebar-bg text-adm-sidebar-fg", className)}>
       <div className={cn("shrink-0 border-b border-adm-sidebar-border", collapsed ? "flex h-14 items-center justify-center px-2" : "px-4 pt-4 pb-3.5")}>
-        <Link href="/admin" onClick={onNavigate} className="inline-flex rounded-[5px]" title={collapsed ? `Ecommy · ${storeName}` : undefined}>
+        <Link href="/admin" onClick={onNavigate} className="inline-flex rounded-adm" title={collapsed ? `Ecommy · ${storeName}` : undefined}>
           <Brand collapsed={collapsed} />
         </Link>
         {!collapsed ? (
@@ -67,7 +71,7 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
         ) : null}
       </div>
 
-      <nav aria-label="Principal" className="adm-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3 [scrollbar-color:#3a4642_transparent]">
+      <nav aria-label="Principal" className="adm-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3 [scrollbar-color:var(--adm-sidebar-border)_transparent]">
         {NAV.map((group, gi) => {
           const items = group.items.filter((i) => !i.ownerOnly || isOwner);
           if (!items.length) return null;
@@ -93,7 +97,7 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
                         aria-current={active ? "page" : undefined}
                         title={collapsed ? item.label : undefined}
                         className={cn(
-                          "relative flex h-8 items-center gap-2.5 rounded-adm text-sm transition-colors duration-100",
+                          "relative flex h-8 items-center gap-2.5 rounded-adm text-sm transition-colors duration-[120ms] pointer-coarse:h-11",
                           collapsed ? "justify-center px-0" : "px-2.5",
                           active
                             ? "bg-adm-sidebar-active font-medium text-white"
@@ -136,7 +140,7 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
             onClick={onToggleCollapsed}
             aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
             title={collapsed ? "Expandir menú" : "Contraer menú"}
-            className="inline-flex size-7 items-center justify-center rounded-adm text-adm-sidebar-muted hover:bg-adm-sidebar-hover hover:text-adm-sidebar-fg"
+            className="inline-flex size-8 items-center justify-center rounded-adm text-adm-sidebar-muted hover:bg-adm-sidebar-hover hover:text-adm-sidebar-fg"
           >
             {collapsed ? <PanelLeftOpen className="size-4" aria-hidden /> : <PanelLeftClose className="size-4" aria-hidden />}
           </button>
@@ -155,7 +159,7 @@ export function SidebarPlanChip({ children, tone = "plan", href }: { children: R
     "inline-flex h-5 items-center gap-1 rounded-[4px] px-1.5 text-[11px] font-medium",
     tone === "trial" && "bg-adm-accent-2/15 text-adm-accent-2",
     tone === "plan" && "bg-white/8 text-adm-sidebar-fg",
-    tone === "warning" && "bg-[#f3b1a8]/15 text-[#f3b1a8]",
+    tone === "warning" && "bg-adm-danger-on-dark/15 text-adm-danger-on-dark",
     href && "hover:bg-white/12",
   );
   return href ? (

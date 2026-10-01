@@ -12,7 +12,42 @@
  *
  * Admin: tokens fijos `--adm-*` en `src/app/admin/admin.css` (scope
  * `.admin-root`) mapeados acá como `bg-adm-bg text-adm-fg border-adm-border`…
+ *
+ * Marca Ecommy (docs/BRAND.md §5.5): primitivos `--eco-*` en `:root`. Los
+ * `--adm-*` los referencian. Se usan directo sólo en momentos de marca (logo,
+ * bandas ink, placas, OG): `bg-eco-ink text-eco-mist text-eco-amber-ink`,
+ * `font-display`, `rounded-eco`, `ease-eco-out`. El storefront no usa ninguno.
  */
+
+:root {
+  --eco-ink: #1a2320;
+  --eco-ink-2: #232e2a;
+  --eco-pine: #2e4a3f;
+  --eco-pine-dark: #243c33;
+  --eco-pine-soft: #e6efe9;
+  --eco-amber: #e0a458;
+  --eco-amber-dark: #d3954a;
+  --eco-amber-soft: #f8ecd9;
+  --eco-amber-ink: #8a5a12;
+  --eco-cream: #efeae1;
+  --eco-paper: #ffffff;
+  --eco-sand: #f4f1ea;
+  --eco-line: #e2dbcd;
+  --eco-text-muted: #6b6860;
+  --eco-sage: #8fa39a;
+  --eco-mist: #e8e6df;
+  --eco-font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --eco-font-text: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --eco-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --eco-radius-sm: 4px;
+  --eco-radius: 6px;
+  --eco-radius-lg: 10px;
+  --eco-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --eco-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --eco-dur-1: 120ms;
+  --eco-dur-2: 200ms;
+  --eco-dur-3: 280ms;
+}
 
 @theme inline {
   /* Storefront (valores del tema) */
@@ -46,6 +81,8 @@
   --color-adm-accent-fg: var(--adm-accent-fg);
   --color-adm-danger: var(--adm-danger);
   --color-adm-danger-soft: var(--adm-danger-soft);
+  --color-adm-danger-hover: var(--adm-danger-hover);
+  --color-adm-danger-on-dark: var(--adm-danger-on-dark);
   --color-adm-warning: var(--adm-warning);
   --color-adm-success: var(--adm-success);
   --color-adm-info: var(--adm-info);
@@ -81,6 +118,30 @@
   --color-adm-row-hover: var(--adm-row-hover);
   --color-adm-skeleton: var(--adm-skeleton);
   --shadow-adm-card: var(--adm-shadow-surface);
+
+  /* Marca Ecommy (primitivos de BRAND.md §5.5) */
+  --color-eco-ink: var(--eco-ink);
+  --color-eco-ink-2: var(--eco-ink-2);
+  --color-eco-pine: var(--eco-pine);
+  --color-eco-pine-dark: var(--eco-pine-dark);
+  --color-eco-pine-soft: var(--eco-pine-soft);
+  --color-eco-amber: var(--eco-amber);
+  --color-eco-amber-dark: var(--eco-amber-dark);
+  --color-eco-amber-soft: var(--eco-amber-soft);
+  --color-eco-amber-ink: var(--eco-amber-ink);
+  --color-eco-cream: var(--eco-cream);
+  --color-eco-paper: var(--eco-paper);
+  --color-eco-sand: var(--eco-sand);
+  --color-eco-line: var(--eco-line);
+  --color-eco-text-muted: var(--eco-text-muted);
+  --color-eco-sage: var(--eco-sage);
+  --color-eco-mist: var(--eco-mist);
+  --font-display: var(--eco-font-display);
+  --radius-eco-sm: var(--eco-radius-sm);
+  --radius-eco: var(--eco-radius);
+  --radius-eco-lg: var(--eco-radius-lg);
+  --ease-eco-out: var(--eco-ease-out);
+  --ease-eco-in: var(--eco-ease-in);
 }
 
 @theme {
@@ -92,7 +153,7 @@
   --radius-pill: 9999px;
   --radius-adm: 6px;
   --radius-adm-sm: 4px;
-  --shadow-adm: 0 12px 32px -12px rgb(31 30 27 / 0.25), 0 0 0 1px #e2dbcd;
+  --shadow-adm: 0 12px 32px -12px rgb(26 35 32 / 0.25), 0 0 0 1px var(--eco-line);
   --container-store: var(--container, 1280px);
 }
 
@@ -222,7 +283,7 @@ body {
   background-size: 200% 100%;
   background-repeat: no-repeat;
   background-position: 150% 0;
-  animation: sk-shimmer 1.6s ease-in-out infinite;
+  animation: sk-shimmer 1.2s linear infinite;
 }
 
 @keyframes sk-shimmer {
@@ -243,10 +304,10 @@ body {
   display: block;
   height: 100%;
   width: 100%;
-  background: var(--nav-progress-color, #e0a458);
+  background: var(--nav-progress-color, var(--eco-amber));
   transform-origin: 0 50%;
   transform: scaleX(var(--p, 0));
-  transition: transform 200ms ease-out, opacity 240ms ease-out 80ms;
+  transition: transform var(--eco-dur-2) var(--eco-ease-out), opacity 240ms var(--eco-ease-out) 80ms;
 }
 
 /* Sliders con scroll-snap sin barra visible. */

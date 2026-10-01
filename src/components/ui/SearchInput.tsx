@@ -79,14 +79,14 @@ export function SearchInput({
         aria-label={aria["aria-label"] ?? placeholder}
         aria-busy={(pending && !controlled) || undefined}
         autoFocus={autoFocus}
-        className="h-8 w-full rounded-adm border border-adm-input-border bg-adm-surface pr-8 pl-8 text-sm text-adm-fg placeholder:text-adm-fg-muted/70 [&::-webkit-search-cancel-button]:hidden"
+        className="h-8 w-full rounded-adm border border-adm-input-border bg-adm-surface pr-9 pl-8 text-sm text-adm-fg transition-colors duration-[120ms] placeholder:text-adm-fg-muted hover:border-adm-input-border-hover pointer-coarse:h-10 pointer-coarse:text-base [&::-webkit-search-cancel-button]:hidden"
       />
       {shown ? (
         <button
           type="button"
           onClick={() => update("")}
           aria-label="Limpiar búsqueda"
-          className="absolute top-1/2 right-1.5 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+          className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-adm-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg pointer-coarse:right-1 pointer-coarse:size-8"
         >
           <X className="size-3.5" aria-hidden />
         </button>

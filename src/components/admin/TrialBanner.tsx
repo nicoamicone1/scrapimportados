@@ -22,7 +22,7 @@ export function TrialBanner({ state }: { state: Exclude<TrialBannerState, { kind
   if (hidden || pathname === PLAN_PAGE || pathname.startsWith(`${PLAN_PAGE}/`)) return null;
 
   const link = (
-    <Link href={PLAN_PAGE} className="shrink-0 font-medium text-adm-accent underline-offset-2 hover:underline">
+    <Link href={PLAN_PAGE} className="shrink-0 font-medium text-adm-accent underline underline-offset-2 hover:no-underline">
       Ver planes
     </Link>
   );
@@ -47,7 +47,7 @@ export function TrialBanner({ state }: { state: Exclude<TrialBannerState, { kind
           onClick={dismiss}
           aria-label={`Ocultar este aviso por ${FREE_BANNER_DISMISS_DAYS} días`}
           title={`Ocultar por ${FREE_BANNER_DISMISS_DAYS} días`}
-          className="-my-1 -mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-adm-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+          className="-my-1 -mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-adm-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg pointer-coarse:size-11"
         >
           <X className="size-3.5" strokeWidth={1.75} aria-hidden />
         </button>

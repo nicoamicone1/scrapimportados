@@ -658,7 +658,7 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
       </div>
 
       {/* Celular: total siempre a la vista y el botón al alcance del pulgar. */}
-      <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 rounded-adm border border-adm-border bg-adm-surface p-3 lg:hidden">
+      <div data-adm-bottom-bar="" className="sticky bottom-0 z-10 flex items-center justify-between gap-3 rounded-adm border border-adm-border bg-adm-surface p-3 lg:hidden">
         <div className="min-w-0">
           <p className="text-xs text-adm-fg-muted">
             {lines.length ? `${lines.reduce((n, l) => n + l.qty, 0)} ${lines.reduce((n, l) => n + l.qty, 0) === 1 ? "unidad" : "unidades"}` : "Sin productos"}

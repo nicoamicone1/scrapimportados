@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/display";
 import { formatDateShort } from "@/lib/dates";
 import { APP_NAME, APP_VERSION, CHANGELOG, type ChangelogEntry } from "@/lib/version";
 
-export const metadata: Metadata = { title: "Changelog" };
+export const metadata: Metadata = { title: "Novedades" };
 
 const SECTION_LABELS = { added: "Agregado", changed: "Cambiado", fixed: "Corregido" } as const;
 type SectionKey = keyof typeof SECTION_LABELS;
@@ -50,7 +50,7 @@ export default function ChangelogPage() {
   return (
     <>
       <MarkChangelogSeen />
-      <PageHeader title="Changelog" description={`Estás usando ${APP_NAME} ${APP_VERSION}. Acá están las novedades de cada versión.`} />
+      <PageHeader title="Novedades" description={`Estás usando ${APP_NAME} ${APP_VERSION}. Acá están las novedades de cada versión.`} />
       <div className="max-w-3xl space-y-6">
         {current ? (
           <Card className="p-5 md:p-6">

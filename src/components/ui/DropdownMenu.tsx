@@ -146,7 +146,7 @@ export function DropdownMenu({ trigger, children, align = "end", width = 208, cl
 
   return (
     <MenuContext.Provider value={{ close: () => close() }}>
-      <span ref={wrapperRef} className="inline-flex">
+      <span ref={wrapperRef} className="inline-flex max-w-full min-w-0">
         {triggerNode}
       </span>
       {open ? (
@@ -170,7 +170,7 @@ export function DropdownMenu({ trigger, children, align = "end", width = 208, cl
 }
 
 const itemClass =
-  "flex h-8 w-full cursor-pointer items-center gap-2 rounded-[4px] px-2 text-left text-sm outline-none select-none focus:bg-adm-surface-2 hover:bg-adm-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-adm-fg-muted";
+  "flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-adm-sm px-2 py-1 text-left text-sm pointer-coarse:min-h-11 outline-none select-none focus:bg-adm-surface-2 hover:bg-adm-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-adm-fg-muted";
 
 export interface DropdownItemProps {
   children: ReactNode;
@@ -224,5 +224,5 @@ export function DropdownSeparator() {
 }
 
 export function DropdownLabel({ children }: { children: ReactNode }) {
-  return <div className="px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-wide text-adm-fg-muted uppercase">{children}</div>;
+  return <div className="px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-[0.07em] text-adm-fg-muted uppercase">{children}</div>;
 }

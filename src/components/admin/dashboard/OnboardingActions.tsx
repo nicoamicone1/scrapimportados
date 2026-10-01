@@ -7,13 +7,24 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { markOnboardingStep } from "@/app/admin/(panel)/onboarding-actions";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 
 /**
  * "Compartí tu link": copiar o mandar por WhatsApp (y tildar el paso), más
  * el acceso a `/admin/compartir` (QR y mensajes listos).
  */
-export function ShareStoreLink({ url, storeName, moreHref }: { url: string; storeName: string; moreHref?: string }) {
+export function ShareStoreLink({
+  url,
+  storeName,
+  moreHref,
+  primary = true,
+}: {
+  url: string;
+  storeName: string;
+  moreHref?: string;
+  /** Es el próximo paso: botón ámbar (máximo uno por pantalla, BRAND §5.3). */
+  primary?: boolean;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const mark = () =>
@@ -36,7 +47,7 @@ export function ShareStoreLink({ url, storeName, moreHref }: { url: string; stor
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button size="sm" variant="accent" icon={<Copy />} onClick={copy} loading={pending}>
+      <Button size="sm" variant={primary ? "accent" : "secondary"} icon={<Copy />} onClick={copy} loading={pending}>
         Copiar link
       </Button>
       <a
@@ -44,17 +55,45 @@ export function ShareStoreLink({ url, storeName, moreHref }: { url: string; stor
         target="_blank"
         rel="noopener noreferrer"
         onClick={mark}
-        className="inline-flex h-7 items-center gap-1.5 rounded-adm border border-adm-input-border bg-adm-surface px-2.5 text-[13px] font-medium hover:bg-adm-hover"
+        className={buttonClass("secondary", "sm")}
       >
-        <MessageCircle className="size-3.5" aria-hidden />
+        <MessageCircle aria-hidden />
         Mandar por WhatsApp
       </a>
       {moreHref ? (
-        <Link href={moreHref} className="text-[13px] font-medium text-adm-accent underline-offset-2 hover:underline">
+        <Link href={moreHref} className="text-[13px] font-medium text-adm-accent underline underline-offset-2 hover:no-underline">
           QR y mensajes listos
         </Link>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * "Copiar link" del encabezado del dashboard: compartir la tienda a un toque
+ * (BRAND §11). Si el paso "compartí tu link" del checklist sigue abierto, lo
+ * tilda.
+ */
+export function CopyStoreLinkButton({ url, markShared = false }: { url: string; markShared?: boolean }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link de la tienda copiado.", { description: url });
+      if (markShared)
+        startTransition(async () => {
+          const res = await markOnboardingStep({ step: "shared" });
+          if (res.ok) router.refresh();
+        });
+    } catch {
+      toast.error("No se pudo copiar. Abrí Compartir para ver el link.");
+    }
+  };
+  return (
+    <Button icon={<Copy />} onClick={copy} loading={pending} aria-label={`Copiar el link de la tienda: ${url}`}>
+      Copiar link
+    </Button>
   );
 }
 
