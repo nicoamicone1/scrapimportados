@@ -16,7 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EyeOff, FolderPlus, GripVertical, MoreHorizontal, Pencil, Plus, ExternalLink, Trash2 } from "lucide-react";
+import { EyeOff, FolderPlus, GripVertical, MoreHorizontal, Package, Pencil, Plus, ExternalLink, Tags, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -169,7 +169,7 @@ export function CategoriesManager({ categories: initial }: { categories: AdminCa
           }
         />
       ) : (
-        <div className="rounded-adm border border-adm-border bg-adm-surface">
+        <div className="rounded-adm border border-adm-border bg-adm-surface shadow-adm-card">
           <div className="flex h-9 items-center gap-3 border-b border-adm-border bg-adm-surface-2 px-3 text-xs font-medium text-adm-fg-muted">
             <span className="w-7" />
             <span className="flex-1">Nombre</span>
@@ -280,7 +280,7 @@ function CategoryRow({
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
-        "group/row flex h-10 items-center gap-3 border-b border-adm-border px-3 text-[13px] last:border-b-0 hover:bg-adm-hover",
+        "group/row flex h-10 items-center gap-3 border-b border-adm-border px-3 text-[13px] last:border-b-0 hover:bg-adm-hover max-md:h-12 max-md:gap-1 max-md:px-1.5",
         ghost && "bg-adm-surface-2 opacity-60",
       )}
     >
@@ -289,13 +289,13 @@ function CategoryRow({
         {...attributes}
         {...listeners}
         aria-label={`Mover ${c.name}. Arrastrá hacia la derecha para anidar.`}
-        className="inline-flex size-7 shrink-0 cursor-grab items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 active:cursor-grabbing"
+        className="inline-flex size-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 active:cursor-grabbing max-md:size-11"
       >
         <GripVertical className="size-4" aria-hidden />
       </button>
       <div className="flex min-w-0 flex-1 items-center gap-2" style={{ paddingLeft: depth * INDENT }}>
         {depth > 0 ? <span aria-hidden className="h-px w-3 shrink-0 bg-adm-input-border" /> : null}
-        <button type="button" onClick={onEdit} className="truncate font-medium text-adm-fg hover:underline">
+        <button type="button" onClick={onEdit} className="truncate font-medium text-adm-fg hover:underline max-md:min-h-11">
           {c.name}
         </button>
         <span className="hidden truncate font-mono text-xs text-adm-fg-muted md:inline">/{c.slug}</span>
@@ -305,6 +305,9 @@ function CategoryRow({
           </Badge>
         ) : null}
         {childCount ? <span className="text-xs text-adm-fg-muted">{childCount} sub</span> : null}
+        <span className="tnum shrink-0 text-xs text-adm-fg-muted sm:hidden">
+          {formatNumber(c.product_count)} prod.
+        </span>
       </div>
       <Link
         href={`/admin/productos?categoria=${c.id}`}
@@ -316,7 +319,7 @@ function CategoryRow({
       <DropdownMenu
         width={220}
         trigger={
-          <Button variant="ghost" size="icon-sm" aria-label={`Acciones de ${c.name}`}>
+          <Button variant="ghost" size="icon-sm" aria-label={`Acciones de ${c.name}`} className="max-md:size-11">
             <MoreHorizontal />
           </Button>
         }
@@ -326,6 +329,12 @@ function CategoryRow({
         </DropdownItem>
         <DropdownItem icon={<FolderPlus />} onSelect={onAddChild} disabled={depth >= MAX_CATEGORY_DEPTH - 1}>
           Agregar subcategoría
+        </DropdownItem>
+        <DropdownItem icon={<Package />} href={`/admin/productos?categoria=${c.id}`}>
+          Ver sus productos
+        </DropdownItem>
+        <DropdownItem icon={<Tags />} href={`/admin/precios?categoria=${c.id}`}>
+          Cambiar sus precios
         </DropdownItem>
         <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(`${store.href}/categoria/${c.slug}`, "_blank", "noopener")}>
           Ver en la tienda

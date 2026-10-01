@@ -27,15 +27,16 @@ interface DetectResponse {
 
 type ApiError = { ok: false; error: string };
 
-export function NewImportPanel({ categories }: { categories: CategoryOption[] }) {
+export function NewImportPanel({ categories, hasProducts }: { categories: CategoryOption[]; hasProducts: boolean }) {
   return (
     <Card>
       <CardBody className="pt-2">
         <Tabs
+          defaultValue={hasProducts ? "csv" : "url"}
           items={[
             {
               value: "url",
-              label: "Desde una tienda online",
+              label: "Traer de otra tienda",
               content: (
                 <PlanGate
                   feature="catalog.import_web"
@@ -48,14 +49,14 @@ export function NewImportPanel({ categories }: { categories: CategoryOption[] })
             },
             {
               value: "csv",
-              label: "Archivo CSV",
+              label: "Planilla CSV del proveedor",
               content: (
                 <PlanGate
                   feature="catalog.import_csv"
                   className="mt-3"
                   description="Creá productos o actualizá precios y stock por SKU desde una planilla."
                 >
-                  <CsvImportForm categories={categories} />
+                  <CsvImportForm categories={categories} hasProducts={hasProducts} />
                 </PlanGate>
               ),
             },
@@ -154,7 +155,7 @@ function UrlImportForm({ categories }: { categories: CategoryOption[] }) {
             ]}
           />
         </Field>
-        <Button onClick={detect} loading={detecting} icon={<Radar aria-hidden />} className="md:mb-[22px]" size="lg">
+        <Button onClick={detect} loading={detecting} icon={<Radar aria-hidden />} className="max-md:h-11 md:mb-[22px]" size="lg">
           Detectar
         </Button>
       </div>
@@ -170,7 +171,7 @@ function UrlImportForm({ categories }: { categories: CategoryOption[] }) {
         <p className="mr-auto text-[13px] text-adm-fg-muted">
           La importación corre por partes mientras tenés abierta la página del detalle. Podés pausarla y seguirla después.
         </p>
-        <Button type="submit" variant="primary" size="lg" loading={pending} disabled={!url.trim()}>
+        <Button type="submit" variant="primary" size="lg" loading={pending} disabled={!url.trim()} className="max-md:h-11 max-md:w-full">
           Iniciar importación
         </Button>
       </div>
@@ -224,11 +225,11 @@ function DetectPreview({ result, options }: { result: DetectResponse; options: I
 // CSV
 // ---------------------------------------------------------------------------
 
-function CsvImportForm({ categories }: { categories: CategoryOption[] }) {
+function CsvImportForm({ categories, hasProducts }: { categories: CategoryOption[]; hasProducts: boolean }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [mode, setMode] = useState<CsvMode>("update");
+  const [mode, setMode] = useState<CsvMode>(hasProducts ? "update" : "create");
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -388,7 +389,7 @@ function CsvImportForm({ categories }: { categories: CategoryOption[] }) {
       ) : null}
 
       <div className="flex justify-end border-t border-adm-border pt-4">
-        <Button type="submit" variant="primary" size="lg" loading={uploading} disabled={!file}>
+        <Button type="submit" variant="primary" size="lg" loading={uploading} disabled={!file} className="max-md:h-11 max-md:w-full">
           Subir y ver la vista previa
         </Button>
       </div>

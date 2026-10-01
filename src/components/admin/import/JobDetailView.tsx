@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play, RefreshCw, Trash2 } from "lucide-react";
+import { ChevronRight, Pause, Play, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -11,7 +11,7 @@ import {
   resumeImportJob,
   resyncImportJob,
 } from "@/app/admin/(panel)/importar/actions";
-import { Button, Card, CardBody, CardHeader, ConfirmDialog, PageHeader, Stat, StatStrip, toast } from "@/components/ui";
+import { Button, ButtonLink, Card, CardBody, CardHeader, ConfirmDialog, PageHeader, Stat, StatStrip, toast } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/dates";
 import { formatNumber } from "@/lib/money";
@@ -166,6 +166,65 @@ export function JobDetailView({ initialJob }: { initialJob: JobDetail }) {
   const title = jobTitle(job);
   const refreshKey = `${job.phase}|${job.status}|${processed}|${s.found}|${s.images}`;
 
+  const statsStrip = (
+    <StatStrip>
+      <Stat label={job.adapter === "csv" ? "Filas" : "Encontrados"} value={formatNumber(s.found)} delta={job.total && job.adapter !== "csv" ? `de ${formatNumber(job.total)} en la fuente` : undefined} />
+      <Stat label="Creados" value={formatNumber(s.created)} />
+      <Stat label="Actualizados" value={formatNumber(s.updated)} />
+      <Stat label="Omitidos" value={formatNumber(s.skipped)} />
+      <Stat label="Con error" value={formatNumber(s.errors)} alert={s.errors > 0} />
+      {job.adapter !== "csv" || job.csv?.mode === "create" ? <Stat label="Imágenes" value={formatNumber(s.images)} /> : null}
+    </StatStrip>
+  );
+  const itemsCard = (
+    <Card>
+      <CardHeader
+        title={reviewing ? "Elegí qué importar" : "Productos"}
+        description={
+          job.options.markup_percent && job.adapter !== "csv"
+            ? `Precio final = origen + ${formatNumber(job.options.markup_percent)} %${job.options.round_to ? `, redondeado (${job.options.round_to === 990 ? "termina en 990" : `múltiplo de ${formatNumber(job.options.round_to)}`})` : ""}.`
+            : undefined
+        }
+      />
+      <CardBody>
+        <JobItemsTable key={reviewing ? "review" : "list"} jobId={job.id} refreshKey={refreshKey} reviewing={reviewing} onImportSelected={onImportSelected} />
+      </CardBody>
+    </Card>
+  );
+  const logCard = (
+    <details className="group rounded-adm border border-adm-border bg-adm-surface shadow-adm-card" open={job.status !== "done" || s.errors > 0 || undefined}>
+      <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 text-[15px] font-semibold text-adm-fg [&::-webkit-details-marker]:hidden">
+        <ChevronRight className="size-4 text-adm-fg-muted transition-transform group-open:rotate-90" aria-hidden />
+        Registro
+        <span className="text-[13px] font-normal text-adm-fg-muted">Últimas 200 líneas</span>
+      </summary>
+      <div
+        ref={logRef}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+        }}
+        className="adm-scroll max-h-64 overflow-auto border-t border-adm-border px-4 py-3 font-mono text-xs leading-relaxed"
+        role="log"
+        aria-live="polite"
+        tabIndex={0}
+      >
+        {job.log.length ? (
+          job.log.map((l, i) => (
+            <div key={`${l.t}-${i}`} className={cn("flex gap-3", l.level === "error" ? "text-adm-danger" : l.level === "warn" ? "text-adm-warning" : "text-adm-fg")}>
+              <time suppressHydrationWarning className="shrink-0 text-adm-fg-muted tnum" dateTime={l.t}>
+                {formatDateTime(l.t).slice(-5)}
+              </time>
+              <span className="break-words">{l.msg}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-adm-fg-muted">Sin registros todavía.</p>
+        )}
+      </div>
+    </details>
+  );
+
   return (
     <>
       <PageHeader
@@ -204,7 +263,7 @@ export function JobDetailView({ initialJob }: { initialJob: JobDetail }) {
               </>
             ) : null}
             {job.status === "done" && job.adapter !== "csv" ? (
-              <Button variant="primary" icon={<RefreshCw aria-hidden />} onClick={resync} loading={acting}>
+              <Button icon={<RefreshCw aria-hidden />} onClick={resync} loading={acting}>
                 Volver a sincronizar
               </Button>
             ) : null}
@@ -228,6 +287,7 @@ export function JobDetailView({ initialJob }: { initialJob: JobDetail }) {
             </div>
             <PhaseSteps phase={job.phase} status={job.status} />
             <ProgressBar job={job} />
+            {job.status === "done" ? <DoneNext job={job} /> : null}
             {job.status === "failed" && job.error ? (
               <p role="alert" className="rounded-adm border border-adm-danger/30 bg-adm-danger-soft px-3 py-2 text-[13px] text-adm-danger">
                 {job.error} Podés reanudarla: sigue desde donde quedó.
@@ -242,56 +302,19 @@ export function JobDetailView({ initialJob }: { initialJob: JobDetail }) {
           </CardBody>
         </Card>
 
-        <StatStrip>
-          <Stat label={job.adapter === "csv" ? "Filas" : "Encontrados"} value={formatNumber(s.found)} delta={job.total && job.adapter !== "csv" ? `de ${formatNumber(job.total)} en la fuente` : undefined} />
-          <Stat label="Creados" value={formatNumber(s.created)} />
-          <Stat label="Actualizados" value={formatNumber(s.updated)} />
-          <Stat label="Omitidos" value={formatNumber(s.skipped)} />
-          <Stat label="Con error" value={formatNumber(s.errors)} alert={s.errors > 0} />
-          {job.adapter !== "csv" || job.csv?.mode === "create" ? <Stat label="Imágenes" value={formatNumber(s.images)} /> : null}
-        </StatStrip>
-
-        <Card>
-          <CardHeader title="Registro" description="Últimas 200 líneas." />
-          <div
-            ref={logRef}
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
-            }}
-            className="adm-scroll max-h-64 overflow-auto px-4 py-3 font-mono text-xs leading-relaxed"
-            role="log"
-            aria-live="polite"
-            tabIndex={0}
-          >
-            {job.log.length ? (
-              job.log.map((l, i) => (
-                <div key={`${l.t}-${i}`} className={cn("flex gap-3", l.level === "error" ? "text-adm-danger" : l.level === "warn" ? "text-adm-warning" : "text-adm-fg")}>
-                  <time suppressHydrationWarning className="shrink-0 text-adm-fg-muted tnum" dateTime={l.t}>
-                    {formatDateTime(l.t).slice(-5)}
-                  </time>
-                  <span className="break-words">{l.msg}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-adm-fg-muted">Sin registros todavía.</p>
-            )}
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader
-            title={reviewing ? "Elegí qué importar" : "Productos"}
-            description={
-              job.options.markup_percent && job.adapter !== "csv"
-                ? `Precio final = origen + ${formatNumber(job.options.markup_percent)} %${job.options.round_to ? `, redondeado (${job.options.round_to === 990 ? "termina en 990" : `múltiplo de ${formatNumber(job.options.round_to)}`})` : ""}.`
-                : undefined
-            }
-          />
-          <CardBody>
-            <JobItemsTable key={reviewing ? "review" : "list"} jobId={job.id} refreshKey={refreshKey} reviewing={reviewing} onImportSelected={onImportSelected} />
-          </CardBody>
-        </Card>
+        {reviewing ? (
+          <>
+            {itemsCard}
+            {statsStrip}
+            {logCard}
+          </>
+        ) : (
+          <>
+            {statsStrip}
+            {itemsCard}
+            {logCard}
+          </>
+        )}
       </div>
 
       <ConfirmDialog
@@ -315,6 +338,40 @@ function duration(from: string, to: string): string {
   const m = Math.floor(secs / 60);
   if (m < 60) return `${m} min ${secs % 60} s`;
   return `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+
+/** Qué hacer cuando termina: ir a ver (y publicar) lo que entró. */
+function DoneNext({ job }: { job: JobDetail }) {
+  const s = job.stats;
+  const origin = job.adapter === "csv" ? "import" : "scrape";
+  const onlyUpdates = job.adapter === "csv" && job.csv?.mode === "update";
+  const hasDrafts = s.created > 0 && job.options.default_status === "draft" && !onlyUpdates;
+  if (s.created + s.updated === 0) {
+    return (
+      <p className="rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-2 text-[13px] text-adm-fg">
+        No se creó ni se actualizó ningún producto. Revisá los omitidos y los errores de la lista de abajo.
+      </p>
+    );
+  }
+  return (
+    <div className="rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-3 text-[13px]">
+      <p className="tnum text-adm-fg">
+        {formatNumber(s.created)} {s.created === 1 ? "producto creado" : "productos creados"} · {formatNumber(s.updated)}{" "}
+        {s.updated === 1 ? "actualizado" : "actualizados"}
+        {s.errors ? ` · ${formatNumber(s.errors)} con error` : ""}.
+        {hasDrafts ? " Los nuevos quedaron en borrador: revisalos y publicalos cuando estén listos." : ""}
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <ButtonLink
+          variant="primary"
+          href={hasDrafts ? `/admin/productos?estado=borradores&origen=${origin}` : `/admin/productos?origen=${origin}`}
+        >
+          {hasDrafts ? "Revisar y publicar los borradores" : "Ver los productos"}
+        </ButtonLink>
+        {s.updated > 0 ? <ButtonLink href="/admin/precios/historial">Ver historial de precios</ButtonLink> : null}
+      </div>
+    </div>
+  );
 }
 
 function PhaseMessage({ job, runner }: { job: JobDetail; runner: "idle" | "running" | "busy" }) {

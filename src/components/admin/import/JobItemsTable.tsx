@@ -141,7 +141,7 @@ export function JobItemsTable({
             }}
             aria-current={filter === f ? "true" : undefined}
             className={cn(
-              "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-0.5 text-sm whitespace-nowrap transition-colors",
+              "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-0.5 text-sm whitespace-nowrap transition-colors max-md:h-11",
               filter === f
                 ? "border-adm-accent font-medium text-adm-fg"
                 : "border-transparent text-adm-fg-muted hover:border-adm-border hover:text-adm-fg",
@@ -157,18 +157,93 @@ export function JobItemsTable({
         <SearchInput value={q} onChange={setQ} placeholder="Buscar por nombre o ID de origen" className="w-full sm:w-[280px]" aria-label="Buscar ítems" />
         {reviewing ? (
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <span className="text-[13px] text-adm-fg-muted">{formatNumber(selected.size)} seleccionados</span>
-            <Button onClick={() => submit(false)} disabled={!selected.size} loading={submitting}>
+            <span className="text-[13px] text-adm-fg-muted" aria-live="polite">{formatNumber(selected.size)} seleccionados</span>
+            <Button onClick={() => submit(false)} disabled={!selected.size} loading={submitting} className="max-md:h-11">
               Importar seleccionados
             </Button>
-            <Button variant="primary" onClick={() => submit(true)} disabled={!counts?.pending} loading={submitting}>
+            <Button variant="primary" onClick={() => submit(true)} disabled={!counts?.pending} loading={submitting} className="max-md:h-11">
               Importar todos los pendientes ({formatNumber(counts?.pending ?? 0)})
             </Button>
           </div>
         ) : null}
       </div>
 
-      <Table containerClassName="max-h-[640px]">
+      {/* Mobile: una tarjeta por ítem */}
+      <div className="rounded-adm border border-adm-border bg-adm-surface md:hidden">
+        {loading && !data ? (
+          <p className="px-4 py-6 text-[15px] font-semibold text-adm-fg">Cargando…</p>
+        ) : rows.length === 0 ? (
+          <div className="px-4 py-6">
+            <p className="text-[15px] font-semibold text-adm-fg">
+              {query || filter !== "all" ? "No hay ítems con estos filtros." : "Todavía no hay ítems"}
+            </p>
+            {query || filter !== "all" ? null : (
+              <p className="mt-1 text-[13px] text-adm-fg-muted">Aparecen a medida que se lee el catálogo de origen.</p>
+            )}
+          </div>
+        ) : (
+          <ul>
+            {rows.map((r) => (
+              <li key={r.id} className={cn("flex items-start border-b border-adm-border last:border-b-0", selected.has(r.id) && "bg-adm-accent-2-soft/60")}>
+                {reviewing ? (
+                  <label className="flex h-14 w-12 shrink-0 cursor-pointer items-center justify-center">
+                    <Checkbox
+                      aria-label={`Seleccionar ${r.name ?? "ítem"}`}
+                      checked={selected.has(r.id)}
+                      disabled={r.status !== "pending"}
+                      onChange={() => toggle(r.id)}
+                    />
+                  </label>
+                ) : null}
+                <div className={cn("min-w-0 flex-1 py-3 pr-2", reviewing ? "" : "pl-4")}>
+                  <div className="flex items-start gap-3">
+                    {r.image ? (
+                      // Miniatura remota del origen (vista previa, dominio arbitrario).
+                      // eslint-disable-next-line @next/next/no-img-element -- dominio arbitrario del origen
+                      <img src={r.image} alt="" referrerPolicy="no-referrer" loading="lazy" className="size-11 shrink-0 rounded-[4px] border border-adm-border object-cover" />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm font-medium text-adm-fg">{r.name ?? "Sin nombre"}</p>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-adm-fg-muted">
+                        <ItemStatusBadge status={r.status} />
+                        {r.price !== null ? <span className="tnum text-adm-fg">{formatMoney(r.price)}</span> : null}
+                        <span className="truncate font-mono">{r.line !== null ? `Fila ${r.line}` : r.external_id}</span>
+                      </p>
+                    </div>
+                  </div>
+                  {r.changes.length ? (
+                    <ul className="tnum mt-2 space-y-0.5 text-xs">
+                      {r.changes.map((c) => (
+                        <li key={c.field}>
+                          <span className="text-adm-fg-muted">{FIELD_LABELS[c.field] ?? c.field}: </span>
+                          <span className="text-adm-fg-muted line-through decoration-adm-fg-muted/60">{fmtValue(c.field, c.from)}</span>
+                          <span aria-hidden> → </span>
+                          <span className="sr-only"> pasa a </span>
+                          <span className="font-medium text-adm-fg">{fmtValue(c.field, c.to)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : r.summary ? (
+                    <p className="mt-2 line-clamp-2 text-xs text-adm-fg-muted">{r.summary}</p>
+                  ) : null}
+                  {r.error ? <p className={cn("mt-1 text-xs", r.status === "error" ? "text-adm-danger" : "text-adm-fg-muted")}>{r.error}</p> : null}
+                </div>
+                {r.product_id ? (
+                  <Link
+                    href={`/admin/productos/${r.product_id}`}
+                    className="flex h-14 w-12 shrink-0 items-center justify-center text-adm-fg-muted hover:text-adm-fg"
+                    aria-label={`Abrir ${r.name ?? "producto"}`}
+                  >
+                    <ExternalLink className="size-4" aria-hidden />
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <Table containerClassName="hidden max-h-[640px] md:block">
         <THead>
           <tr>
             {reviewing ? (
@@ -267,7 +342,7 @@ export function JobItemsTable({
                   {r.product_id ? (
                     <Link
                       href={`/admin/productos/${r.product_id}`}
-                      className="inline-flex size-7 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                      className="inline-flex size-7 pointer-coarse:size-11 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
                       aria-label={`Abrir ${r.name ?? "producto"}`}
                       title="Abrir el producto"
                     >

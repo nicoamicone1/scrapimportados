@@ -131,12 +131,20 @@ export interface BulkPriceWizardProps {
   categories: CategoryLite[];
   brands: FacetOption[];
   tags: FacetOption[];
+  /** Alcance preelegido desde otra pantalla (lista de productos, categorías). */
+  initialScope?: { kind: "products"; products: PickerProduct[] } | { kind: "categories"; categoryIds: string[] };
 }
 
-export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardProps) {
+export function BulkPriceWizard({ categories, brands, tags, initialScope }: BulkPriceWizardProps) {
   // Paso 1: alcance
-  const [scopeDraft, setScopeDraft] = useState<PriceScope>(DEFAULT_SCOPE);
-  const [pickedProducts, setPickedProducts] = useState<PickerProduct[]>([]);
+  const [scopeDraft, setScopeDraft] = useState<PriceScope>(() =>
+    initialScope?.kind === "categories"
+      ? { ...DEFAULT_SCOPE, kind: "categories", categoryIds: initialScope.categoryIds }
+      : initialScope?.kind === "products"
+        ? { ...DEFAULT_SCOPE, kind: "products" }
+        : DEFAULT_SCOPE,
+  );
+  const [pickedProducts, setPickedProducts] = useState<PickerProduct[]>(() => (initialScope?.kind === "products" ? initialScope.products : []));
   const [minPriceText, setMinPriceText] = useState("");
   const [maxPriceText, setMaxPriceText] = useState("");
   /** Último resultado de carga, asociado a la clave del alcance que lo pidió. */
@@ -324,9 +332,9 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
       <Card>
         <CardBody className="flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold">Aumento rápido</p>
+            <p className="text-[15px] font-semibold">Aumento rápido por inflación</p>
             <p className="text-[13px] text-adm-fg-muted">
-              Prepara el asistente para aumentar todo el catálogo. Revisás la vista previa antes de aplicar.
+              Subí todo el catálogo un porcentaje y revisá cómo queda antes de aplicar. Si querés otra cosa, seguí con los pasos de abajo.
             </p>
           </div>
           <div className="flex items-end gap-2">
@@ -342,8 +350,8 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
                 className="w-28"
               />
             </Field>
-            <Button variant="primary" size="lg" onClick={quickPrepare}>
-              Preparar
+            <Button size="lg" onClick={quickPrepare}>
+              Ver vista previa
             </Button>
           </div>
         </CardBody>
@@ -374,7 +382,7 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
                 <label
                   key={kind}
                   className={cn(
-                    "inline-flex h-8 cursor-pointer items-center gap-2 rounded-adm border px-3 text-sm",
+                    "inline-flex h-8 cursor-pointer items-center gap-2 rounded-adm border px-3 text-sm max-md:h-11 has-[:focus-visible]:shadow-[var(--adm-focus)]",
                     scopeDraft.kind === kind
                       ? "border-adm-accent bg-adm-accent-soft font-medium text-adm-accent"
                       : "border-adm-input-border bg-adm-surface hover:bg-adm-hover",
@@ -488,7 +496,7 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
               <label
                 key={opt.value}
                 className={cn(
-                  "flex cursor-pointer items-start gap-2.5 rounded-adm border px-3 py-2",
+                  "flex cursor-pointer items-start gap-2.5 rounded-adm border px-3 py-2 has-[:focus-visible]:shadow-[var(--adm-focus)] max-md:min-h-11",
                   draft.type === opt.value ? "border-adm-accent bg-adm-accent-soft/60" : "border-transparent hover:bg-adm-hover",
                 )}
               >
@@ -706,9 +714,11 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
                       />
                     </TH>
                     <TH>Producto</TH>
-                    <TH>SKU</TH>
+                    <TH className="hidden md:table-cell">SKU</TH>
                     <TH numeric>Precio</TH>
-                    <TH numeric>Tachado</TH>
+                    <TH numeric className="hidden sm:table-cell">
+                      Tachado
+                    </TH>
                     <TH numeric>Diferencia</TH>
                   </tr>
                 </THead>
@@ -725,7 +735,7 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
                       const included = r.changed && !isExcluded;
                       return (
                         <TR key={r.variant.id} className={cn(!included && "text-adm-fg-muted")}>
-                          <TD>
+                          <TD className="max-md:h-11">
                             <Checkbox
                               aria-label={`Incluir ${r.variant.productName}`}
                               checked={included}
@@ -746,11 +756,11 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
                               </span>
                             </span>
                           </TD>
-                          <TD className="font-mono text-xs text-adm-fg-muted">{r.variant.sku ?? "—"}</TD>
+                          <TD className="hidden font-mono text-xs text-adm-fg-muted md:table-cell">{r.variant.sku ?? "—"}</TD>
                           <TD numeric>
                             <PriceChange from={r.oldPrice} to={r.newPrice} />
                           </TD>
-                          <TD numeric>
+                          <TD numeric className="hidden sm:table-cell">
                             <PriceChange from={r.oldCompareAt} to={r.newCompareAt} />
                           </TD>
                           <TD numeric>
@@ -810,17 +820,38 @@ export function BulkPriceWizard({ categories, brands, tags }: BulkPriceWizardPro
         </Card>
       </div>
 
-      {/* Barra de aplicar */}
-      <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-3 rounded-adm border border-adm-border bg-adm-surface px-4 py-3 shadow-[var(--adm-shadow)]">
-        {rule && summary?.skipped ? (
-          <span className="mr-auto inline-flex items-center gap-1.5 text-[13px] text-adm-warning">
-            <AlertTriangle className="size-4" aria-hidden />
-            {formatNumber(summary.skipped)} variantes se omiten (ver filtro Omitidas).
-          </span>
-        ) : (
-          <span className="mr-auto text-[13px] text-adm-fg-muted">Cada cambio queda en el historial y se puede deshacer.</span>
-        )}
-        <Button variant="primary" size="lg" disabled={!rule || !toApply.length || loadingScope} onClick={() => setConfirmOpen(true)}>
+      {/* Barra de aplicar: dice qué se va a hacer y a cuántas variantes, siempre a la vista. */}
+      <div data-adm-bottom-bar="" className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-adm border border-adm-border bg-adm-surface px-4 py-3 shadow-[var(--adm-shadow)]">
+        <div className="min-w-0 flex-1 text-[13px]" aria-live="polite">
+          {rule && toApply.length ? (
+            <>
+              <p className="font-medium text-adm-fg">
+                {describeBulkRule(rule)}
+              </p>
+              <p className="tnum text-adm-fg-muted">
+                {formatNumber(toApply.length)} variantes · {formatMoney(applyOld)} → {formatMoney(applyNew)} ({applyChangePercent > 0 ? "+" : ""}
+                {formatPercent(applyChangePercent)} en total)
+              </p>
+            </>
+          ) : (
+            <p className="text-adm-fg-muted">
+              {loadingScope ? "Calculando…" : rule ? "Con esta regla no cambia ningún precio." : "Revisá la regla para poder aplicar."}
+            </p>
+          )}
+          {rule && summary?.skipped ? (
+            <p className="mt-0.5 inline-flex items-center gap-1.5 text-adm-warning">
+              <AlertTriangle className="size-4" aria-hidden />
+              {formatNumber(summary.skipped)} variantes se omiten (ver filtro Omitidas).
+            </p>
+          ) : null}
+        </div>
+        <Button
+          variant="primary"
+          size="lg"
+          className="max-sm:h-11 max-sm:w-full"
+          disabled={!rule || !toApply.length || loadingScope}
+          onClick={() => setConfirmOpen(true)}
+        >
           {toApply.length === 1 ? "Aplicar a 1 variante" : `Aplicar a ${formatNumber(toApply.length)} variantes`}
         </Button>
       </div>

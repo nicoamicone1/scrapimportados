@@ -26,7 +26,6 @@ import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
 import { withPendingToast } from "@/components/ui/feedback";
 import { SaveBar } from "@/components/ui/SaveBar";
-import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/dates";
 import type { CategoryNodeInput } from "@/lib/admin/category-tree";
 import type { AdminImage, AdminProductDetail } from "@/lib/admin/products";
@@ -36,6 +35,7 @@ import { PRODUCT_SOURCE_LABELS, PRODUCT_STATUS_LABELS, tierBasePrice, VAT_RATES,
 import { saveProduct, setProductStatus } from "@/app/admin/(panel)/productos/actions";
 
 import { CategoryTreeSelect } from "./CategoryTreeSelect";
+import { CollapsibleCard } from "./CollapsibleCard";
 import { emptyFormState, formStateFromProduct, parseDecimal, snapshot, toPayload, type ProductFormState } from "./form-state";
 import { ImageManager } from "./ImageManager";
 import { PriceTiersEditor } from "./PriceTiersEditor";
@@ -181,13 +181,43 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
     }
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (another = false) => {
     const wasNew = !productId;
     const p = await save();
     if (!p) return;
+    if (wasNew && another) {
+      startNext(p);
+      return;
+    }
     toast.success(wasNew ? "Producto creado" : "Cambios guardados");
     if (wasNew) router.replace(`/admin/productos/${p.id}`);
     else router.refresh();
+  };
+
+  /** "Crear y cargar otro": formulario limpio, pero con la categoría, marca, estado e IVA del anterior (suele ser una tanda del mismo rubro). */
+  const startNext = (created: AdminProductDetail) => {
+    const saved = formStateFromProduct(created);
+    const next: ProductFormState = {
+      ...emptyFormState(),
+      category_ids: saved.category_ids,
+      brand: saved.brand,
+      status: saved.status,
+      vat_percent: saved.vat_percent,
+    };
+    setProductId(null);
+    setMeta(null);
+    setImages([]);
+    setState(next);
+    setBaseline(snapshot(next));
+    setErrors({});
+    window.history.replaceState(null, "", "/admin/productos/nuevo");
+    toast.success(`«${created.name}» creado. Cargá el siguiente.`, {
+      action: { label: "Ver", onClick: () => router.push(`/admin/productos/${created.id}`) },
+    });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0 });
+      document.getElementById("product-name")?.focus();
+    });
   };
 
   /** Para subir imágenes en un producto nuevo: se guarda primero (como borrador si no eligió estado). */
@@ -239,6 +269,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
   const isActive = meta?.status === "active";
   const usedImages = new Set(state.variants.map((v) => v.image_id).filter((x): x is string => Boolean(x)));
   const title = state.name.trim() || (productId ? "Producto sin nombre" : "Nuevo producto");
+  const tierCount = (state.price_tiers ?? []).length;
   const tierBase = tierBasePrice(state.variants.map((v) => ({ price: parseDecimal(v.price) ?? Number.NaN, is_active: v.is_active })));
 
   return (
@@ -311,15 +342,12 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                 )}
               </DropdownMenu>
             ) : null}
-            <Button variant="primary" onClick={onSubmit} loading={saving} disabled={!dirty && Boolean(productId)} className="hidden md:inline-flex">
-              {productId ? "Guardar" : "Crear producto"}
-            </Button>
           </>
         }
       />
 
       {draft ? (
-        <div role="status" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-adm border border-[#E9D3A8] bg-[#F5EAD3] px-4 py-2.5 text-[13px] text-[#7A4A00]">
+        <div role="status" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-adm border border-adm-border bg-adm-accent-2-soft px-4 py-2.5 text-[13px] text-adm-fg">
           <span className="flex-1">
             Tenés cambios sin guardar de <time suppressHydrationWarning title={formatDateTime(draft.savedAt)}>{formatRelative(draft.savedAt)}</time> en este navegador.
           </span>
@@ -337,7 +365,6 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
           <Button
             size="sm"
             variant="ghost"
-            className="text-[#7A4A00] hover:bg-[#EBDDBF] hover:text-[#5C3800]"
             onClick={() => {
               removeDraft(draftKeyFor(product?.id ?? null));
               setDraft(null);
@@ -362,10 +389,10 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
         }}
         className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start"
       >
-        {/* Columna principal */}
+        {/* Lo esencial para vender: nombre, fotos, precio y stock. En celular va primero, y después Estado/Organización. */}
         <div className="min-w-0 space-y-5">
           <Card>
-            <CardBody className="space-y-4 p-5">
+            <CardBody className="p-5">
               <Field label="Nombre" required error={err("name")}>
                 <Input
                   id="product-name"
@@ -374,18 +401,8 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                   maxLength={200}
                   placeholder="Ej.: Remera oversize de algodón"
                   autoFocus={!productId}
+                  enterKeyHint="next"
                 />
-              </Field>
-              <Field label="Descripción" error={err("description_html")}>
-                <RichTextEditor value={state.description_html} onChange={(html) => set("description_html", html)} />
-              </Field>
-              <Field
-                label="Descripción corta"
-                hint="Una línea para listados y, si no completás el SEO, para Google."
-                error={err("short_description")}
-                aside={<span className="tnum">{state.short_description.length}/300</span>}
-              >
-                <Textarea rows={2} value={state.short_description} maxLength={300} onChange={(e) => set("short_description", e.target.value)} />
               </Field>
             </CardBody>
           </Card>
@@ -420,75 +437,10 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
               />
             </CardBody>
           </Card>
-
-          <Card>
-            <CardHeader
-              title="Precio por cantidad"
-              description="Precio mayorista por producto. La tienda lo aplica sola en el carrito; el cupón y el descuento por medio de pago van encima."
-            />
-            <CardBody>
-              <PriceTiersEditor
-                value={state.price_tiers ?? []}
-                onChange={(rows) => set("price_tiers", rows)}
-                basePrice={tierBase}
-                errors={errors}
-                sharedAcrossVariants={state.variants.length > 1}
-              />
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Ficha técnica" description="Características en formato tabla." />
-            <CardBody>
-              <SpecsEditor value={state.specs} onChange={(v) => set("specs", v)} productId={productId} errors={errors} />
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Productos relacionados" description="Aparecen en la ficha como «También te puede interesar». Hasta 8." />
-            <CardBody>
-              <RelatedEditor
-                value={state.related}
-                onChange={(v) => set("related", v)}
-                productId={productId}
-                error={err("related_ids")?.[0]}
-              />
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Buscadores (SEO)" description="Cómo aparece en Google y al compartir el link." />
-            <CardBody>
-              <SeoFields
-                value={{ title: state.seo.title, description: state.seo.description, slug: state.slug }}
-                onChange={(patch) => {
-                  setState((s) => ({
-                    ...s,
-                    slug: patch.slug ?? s.slug,
-                    seo: {
-                      title: patch.title ?? s.seo.title,
-                      description: patch.description ?? s.seo.description,
-                    },
-                  }));
-                }}
-                fallbackTitle={state.name}
-                fallbackDescription={state.short_description || stripHtml(state.description_html).slice(0, 160)}
-                pathPrefix="/producto/"
-                siteUrl={store.url}
-                siteName={siteName}
-                errors={{ title: err("seo.title"), description: err("seo.description"), slug: err("slug") }}
-                slugHint={
-                  productId
-                    ? "Si la cambiás, la URL vieja redirige sola a la nueva."
-                    : "Si la dejás vacía se arma con el nombre."
-                }
-              />
-            </CardBody>
-          </Card>
         </div>
 
-        {/* Lateral */}
-        <div className="min-w-0 space-y-5 lg:sticky lg:top-4">
+        {/* Lateral (en celular queda entre lo esencial y el resto) */}
+        <div className="min-w-0 space-y-5 lg:sticky lg:top-4 lg:row-span-2 lg:self-start">
           <Card>
             <CardHeader title="Estado" />
             <CardBody className="space-y-3">
@@ -536,25 +488,27 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader title="Impuestos" />
-            <CardBody>
-              <Field
-                label="Alícuota de IVA"
-                hint="Se usa para mostrar el precio sin impuestos nacionales (Ley 27.743) si lo activás en Configuración."
-                error={err("vat_percent")}
-              >
-                <Select
-                  value={state.vat_percent}
-                  onChange={(e) => set("vat_percent", e.target.value)}
-                  options={[
-                    { value: "", label: "Por defecto de la tienda" },
-                    ...VAT_RATES.map((r) => ({ value: String(r), label: `${String(r).replace(".", ",")} %` })),
-                  ]}
-                />
-              </Field>
-            </CardBody>
-          </Card>
+          <CollapsibleCard
+            title="Impuestos"
+            summary={state.vat_percent ? `IVA ${state.vat_percent.replace(".", ",")} %` : "Por defecto"}
+            defaultOpen={Boolean(state.vat_percent)}
+            forceOpen={Boolean(err("vat_percent"))}
+          >
+            <Field
+              label="Alícuota de IVA"
+              hint="Se usa para mostrar el precio sin impuestos nacionales (Ley 27.743) si lo activás en Configuración."
+              error={err("vat_percent")}
+            >
+              <Select
+                value={state.vat_percent}
+                onChange={(e) => set("vat_percent", e.target.value)}
+                options={[
+                  { value: "", label: "Por defecto de la tienda" },
+                  ...VAT_RATES.map((r) => ({ value: String(r), label: `${String(r).replace(".", ",")} %` })),
+                ]}
+              />
+            </Field>
+          </CollapsibleCard>
 
           {meta && meta.source !== "manual" ? (
             <Card>
@@ -566,7 +520,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                     href={meta.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex max-w-full items-center gap-1 text-adm-accent hover:underline"
+                    className="inline-flex max-w-full items-center gap-1 text-adm-accent underline underline-offset-2"
                   >
                     <span className="truncate">{hostOf(meta.source_url)}</span>
                     <ExternalLink className="size-3.5 shrink-0" aria-hidden />
@@ -578,16 +532,133 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
           ) : null}
         </div>
 
+        {/* Lo que se completa una vez y después casi no se toca */}
+        <div className="min-w-0 space-y-5">
+          <Card>
+            <CardHeader title="Descripción" description="Lo que ve el cliente en la ficha del producto." />
+            <CardBody className="space-y-4">
+              <Field label="Descripción" error={err("description_html")}>
+                <RichTextEditor value={state.description_html} onChange={(html) => set("description_html", html)} />
+              </Field>
+              <Field
+                label="Descripción corta"
+                hint="Una línea para listados y, si no completás el SEO, para Google."
+                error={err("short_description")}
+                aside={<span className="tnum">{state.short_description.length}/300</span>}
+              >
+                <Textarea rows={2} value={state.short_description} maxLength={300} onChange={(e) => set("short_description", e.target.value)} />
+              </Field>
+            </CardBody>
+          </Card>
+
+          <CollapsibleCard
+            title="Precio por cantidad"
+            description="Precio mayorista por producto. La tienda lo aplica sola en el carrito; el cupón y el descuento por medio de pago van encima."
+            summary={tierCount ? `${tierCount} tramo${tierCount === 1 ? "" : "s"}` : "Sin tramos"}
+            defaultOpen={tierCount > 0}
+            forceOpen={Object.keys(errors).some((k) => k.startsWith("price_tiers"))}
+          >
+            <PriceTiersEditor
+              value={state.price_tiers ?? []}
+              onChange={(rows) => set("price_tiers", rows)}
+              basePrice={tierBase}
+              errors={errors}
+              sharedAcrossVariants={state.variants.length > 1}
+            />
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="Ficha técnica"
+            description="Características en formato tabla."
+            summary={state.specs.length ? `${state.specs.length} característica${state.specs.length === 1 ? "" : "s"}` : "Sin cargar"}
+            defaultOpen={state.specs.length > 0}
+            forceOpen={Object.keys(errors).some((k) => k.startsWith("specs"))}
+          >
+            <SpecsEditor value={state.specs} onChange={(v) => set("specs", v)} productId={productId} errors={errors} />
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="Productos relacionados"
+            description="Aparecen en la ficha como «También te puede interesar». Hasta 8."
+            summary={state.related.length ? `${state.related.length} elegido${state.related.length === 1 ? "" : "s"}` : "Ninguno"}
+            defaultOpen={state.related.length > 0}
+            forceOpen={Boolean(err("related_ids"))}
+          >
+            <RelatedEditor
+              value={state.related}
+              onChange={(v) => set("related", v)}
+              productId={productId}
+              error={err("related_ids")?.[0]}
+            />
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="Buscadores (SEO)"
+            description="Cómo aparece en Google y al compartir el link."
+            summary={state.seo.title || state.seo.description || state.slug ? "Personalizado" : "Automático"}
+            defaultOpen={Boolean(state.seo.title || state.seo.description)}
+            forceOpen={Boolean(err("seo.title") || err("seo.description") || err("slug"))}
+          >
+            <SeoFields
+              value={{ title: state.seo.title, description: state.seo.description, slug: state.slug }}
+              onChange={(patch) => {
+                setState((s) => ({
+                  ...s,
+                  slug: patch.slug ?? s.slug,
+                  seo: {
+                    title: patch.title ?? s.seo.title,
+                    description: patch.description ?? s.seo.description,
+                  },
+                }));
+              }}
+              fallbackTitle={state.name}
+              fallbackDescription={state.short_description || stripHtml(state.description_html).slice(0, 160)}
+              pathPrefix="/producto/"
+              siteUrl={store.url}
+              siteName={siteName}
+              errors={{ title: err("seo.title"), description: err("seo.description"), slug: err("slug") }}
+              slugHint={
+                productId
+                  ? "Si la cambiás, la URL vieja redirige sola a la nueva."
+                  : "Si la dejás vacía se arma con el nombre."
+              }
+            />
+          </CollapsibleCard>
+        </div>
+
         {/* Barra de guardado */}
         <SaveBar
-          className={cn("mt-0 lg:col-span-2", !dirty && "md:hidden")}
-          message={dirty ? "Cambios sin guardar" : productId ? "Sin cambios" : "Producto nuevo"}
+          visible={dirty || !productId}
+          className="mt-0 lg:col-span-2"
+          message={dirty ? (productId ? "Cambios sin guardar" : "Producto sin guardar") : "Producto nuevo"}
           onDiscard={dirty && productId ? discard : undefined}
           saving={saving}
           saveLabel={productId ? "Guardar" : "Crear producto"}
           savingLabel={productId ? "Guardando…" : "Creando…"}
           saveDisabled={!dirty && Boolean(productId)}
-        />
+        >
+          {!productId ? (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <label className="flex min-h-9 cursor-pointer items-center gap-2 text-sm text-adm-sidebar-fg">
+                <input
+                  type="checkbox"
+                  className="size-4 cursor-pointer accent-[var(--adm-accent-2)]"
+                  checked={state.status === "active"}
+                  onChange={(e) => set("status", e.target.checked ? "active" : "draft")}
+                />
+                Publicar al crear
+              </label>
+              <Button
+                variant="ghost"
+                disabled={saving}
+                onClick={() => void onSubmit(true)}
+                className="border border-white/20 text-adm-sidebar-fg hover:border-white/35 hover:bg-white/10 hover:text-white"
+              >
+                Crear y cargar otro
+              </Button>
+            </div>
+          ) : null}
+        </SaveBar>
       </form>
 
       {meta ? (

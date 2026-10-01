@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Loader2, Trash2, X } from "lucide-react";
+import { ChevronRight, ImagePlus, Loader2, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -74,6 +74,7 @@ export function CategoryDrawer({
   /** Archivos subidos en esta edición que todavía no se guardaron (para limpiar si se cancela). */
   const pendingUploads = useRef<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   if (target !== lastTarget) {
     setLastTarget(target);
@@ -112,7 +113,7 @@ export function CategoryDrawer({
     }
   };
 
-  const submit = async () => {
+  const submit = async (another = false) => {
     setSaving(true);
     const res = await saveCategory({
       id: editing?.id ?? null,
@@ -135,6 +136,14 @@ export function CategoryDrawer({
     if (pendingUploads.current.length) await removeUploaded(pendingUploads.current);
     pendingUploads.current = [];
     toast.success(editing ? "Categoría guardada" : "Categoría creada");
+    if (another && !editing) {
+      // Armar el árbol es una tanda: queda abierto, mismo nivel, listo para la siguiente.
+      setValues(valuesFor({ mode: "new", parentId: values.parent_id || null }));
+      setSlugTouched(false);
+      setErrors({});
+      requestAnimationFrame(() => nameRef.current?.focus());
+      return;
+    }
     onOpenChange(false);
   };
 
@@ -158,6 +167,11 @@ export function CategoryDrawer({
           <Button onClick={() => void close()} disabled={saving}>
             Cancelar
           </Button>
+          {!editing ? (
+            <Button onClick={() => void submit(true)} disabled={saving || uploading}>
+              Crear y agregar otra
+            </Button>
+          ) : null}
           <Button variant="primary" onClick={() => void submit()} loading={saving} disabled={uploading}>
             {editing ? "Guardar" : "Crear categoría"}
           </Button>
@@ -173,7 +187,7 @@ export function CategoryDrawer({
         }}
       >
         <Field label="Nombre" required error={errors.name}>
-          <Input value={values.name} onChange={(e) => set("name", e.target.value)} maxLength={100} autoFocus />
+          <Input ref={nameRef} value={values.name} onChange={(e) => set("name", e.target.value)} maxLength={100} autoFocus />
         </Field>
         <Field label="Categoría madre" hint="Dejala vacía para que sea de primer nivel." error={errors.parent_id}>
           <Select value={values.parent_id} onChange={(e) => set("parent_id", e.target.value)}>
@@ -236,8 +250,18 @@ export function CategoryDrawer({
           onCheckedChange={(v) => set("is_visible", v)}
         />
 
-        <div className="border-t border-adm-border pt-4">
-          <h3 className="mb-3 text-sm font-semibold">Buscadores (SEO)</h3>
+        <details
+          className="group border-t border-adm-border pt-2"
+          open={Boolean(values.seo.title || values.seo.description || errors["seo.title"] || errors["seo.description"] || errors.slug) || undefined}
+        >
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+            <ChevronRight className="size-4 text-adm-fg-muted transition-transform group-open:rotate-90" aria-hidden />
+            Buscadores (SEO)
+            <span className="text-[13px] font-normal text-adm-fg-muted">
+              {values.seo.title || values.seo.description ? "Personalizado" : "Automático"}
+            </span>
+          </summary>
+          <div className="pt-2">
           <SeoFields
             value={{ title: values.seo.title, description: values.seo.description, slug: values.slug }}
             onChange={(patch) => {
@@ -255,7 +279,8 @@ export function CategoryDrawer({
             errors={{ title: errors["seo.title"], description: errors["seo.description"], slug: errors.slug }}
             slugHint={editing ? "Si la cambiás, la URL vieja redirige sola a la nueva." : "Si la dejás vacía se arma con el nombre."}
           />
-        </div>
+          </div>
+        </details>
       </form>
     </Drawer>
   );

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 import { InventoryTable } from "@/components/admin/inventory/InventoryTable";
 import { ButtonLink } from "@/components/ui/Button";
-import { PageHeader, Stat, StatStrip } from "@/components/ui/display";
+import { PageHeader } from "@/components/ui/display";
 import { TabsNav } from "@/components/ui/Tabs";
 import { listCategoryOptions } from "@/lib/admin/categories";
 import { categoryPath, flattenTree } from "@/lib/admin/category-tree";
@@ -41,7 +41,16 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
     <>
       <PageHeader
         title="Inventario"
-        description="Stock por variante. Cada ajuste queda registrado con motivo, usuario y fecha."
+        description={
+          <>
+            {summary.low || summary.out
+              ? `${formatNumber(summary.out)} agotadas · ${formatNumber(summary.low)} con stock bajo`
+              : "Nada por reponer"}
+            {summary.withCost ? ` · ${formatMoney(summary.valueAtCost, { decimals: 0 })} de inventario a costo` : ""}
+            {" · "}
+            {formatNumber(summary.untracked)} sin seguimiento
+          </>
+        }
         actions={
           <>
             <ButtonLink href="/admin/configuracion/exportar" icon={<Download />}>
@@ -53,29 +62,6 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           </>
         }
       />
-
-      <StatStrip className="mb-5">
-        <Stat
-          label="Stock bajo"
-          value={formatNumber(summary.low)}
-          delta={summary.low ? "Variantes en o bajo su umbral" : "Nada por reponer"}
-          alert={summary.low > 0}
-          href={hrefWith({}, { estado: "bajo" })}
-        />
-        <Stat
-          label="Agotadas"
-          value={formatNumber(summary.out)}
-          delta={summary.out ? "Sin stock y a la venta" : "Todo con stock"}
-          alert={summary.out > 0}
-          href={hrefWith({}, { estado: "agotado" })}
-        />
-        <Stat
-          label="Valor del inventario a costo"
-          value={summary.withCost ? formatMoney(summary.valueAtCost, { decimals: 0 }) : "—"}
-          delta={summary.withCost ? `Con costo cargado en ${formatNumber(summary.withCost)} variantes` : "Cargá el costo en las variantes para verlo"}
-        />
-        <Stat label="Variantes con seguimiento" value={formatNumber(summary.tracked)} delta={`${formatNumber(summary.untracked)} sin seguimiento`} />
-      </StatStrip>
 
       <TabsNav
         label="Estado de stock"

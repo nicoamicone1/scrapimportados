@@ -50,7 +50,7 @@ function ToolButton({
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={cn(
-        "inline-flex size-7 items-center justify-center rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg disabled:opacity-40 [&_svg]:size-4",
+        "inline-flex size-7 items-center justify-center pointer-coarse:size-10 rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg disabled:opacity-40 [&_svg]:size-4",
         active && "bg-adm-surface-2 text-adm-fg",
       )}
     >

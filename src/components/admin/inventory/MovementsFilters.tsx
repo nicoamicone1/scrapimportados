@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { MOVEMENT_REASON_LABELS, MOVEMENT_REASONS } from "@/lib/schemas/inventory";
 
 const dateClass =
-  "h-8 rounded-adm border border-adm-input-border bg-adm-surface px-2 text-sm text-adm-fg hover:border-adm-input-border-hover [color-scheme:light]";
+  "h-8 max-md:h-11 max-md:text-base rounded-adm border border-adm-input-border bg-adm-surface px-2 text-sm text-adm-fg hover:border-adm-input-border-hover [color-scheme:light]";
 
 /** Filtros del historial: motivo, rango de fechas y variante (chip). */
 export function MovementsFilters({ variantLabel }: { variantLabel: string | null }) {
@@ -16,7 +16,7 @@ export function MovementsFilters({ variantLabel }: { variantLabel: string | null
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       {variantLabel ? (
-        <span className="inline-flex h-8 max-w-full items-center gap-1 rounded-adm border border-adm-accent bg-adm-surface pr-1 pl-2.5 text-[13px]">
+        <span className="inline-flex h-8 pointer-coarse:h-11 max-w-full items-center gap-1 rounded-adm border border-adm-accent bg-adm-surface pr-1 pl-2.5 text-[13px]">
           <span className="truncate">
             Variante: <span className="font-medium">{variantLabel}</span>
           </span>
@@ -24,7 +24,7 @@ export function MovementsFilters({ variantLabel }: { variantLabel: string | null
             type="button"
             aria-label="Quitar filtro de variante"
             onClick={() => set({ variante: null })}
-            className="inline-flex size-6 items-center justify-center rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+            className="inline-flex size-6 pointer-coarse:size-9 items-center justify-center rounded-[4px] text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
           >
             <X className="size-3.5" aria-hidden />
           </button>
