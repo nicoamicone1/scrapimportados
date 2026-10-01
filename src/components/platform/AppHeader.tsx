@@ -2,9 +2,10 @@ import Link from "next/link";
 
 import { signOut } from "@/app/admin/actions";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { cn } from "@/lib/cn";
 import { APP_NAME } from "@/lib/version";
 
-import { BrandMark } from "./PlatformChrome";
+import { BrandLockup } from "./brand";
 
 /** Header de las pantallas con sesión fuera del panel (/app, /platform). "Plataforma" y "Redes" sólo para superadmins. */
 export function AppHeader({
@@ -20,19 +21,18 @@ export function AppHeader({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={active ? "font-medium text-adm-fg" : "text-adm-fg-muted hover:text-adm-fg"}
+      className={cn("inline-flex h-11 shrink-0 items-center whitespace-nowrap", active ? "font-medium text-adm-fg" : "text-adm-fg-muted hover:text-adm-fg")}
     >
       {label}
     </Link>
   );
   return (
     <header className="border-b border-adm-border bg-adm-surface">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 rounded-[5px]">
-          <BrandMark />
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">{APP_NAME}</span>
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
+        <Link href="/" aria-label={`${APP_NAME}, inicio`} className="flex shrink-0 items-center rounded-adm">
+          <BrandLockup hideWordmarkOnMobile />
         </Link>
-        <nav aria-label="Cuenta" className="flex items-center gap-5 text-[13px]">
+        <nav aria-label="Cuenta" className="flex min-w-0 items-center gap-4 overflow-x-auto text-[13px] sm:gap-5">
           {link("/app", "Mis tiendas", section === "app")}
           {isPlatformAdmin ? link("/platform", "Plataforma", section === "platform") : null}
           {isPlatformAdmin ? link("/platform/redes", "Redes", section === "redes") : null}

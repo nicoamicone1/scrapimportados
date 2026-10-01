@@ -7,6 +7,8 @@ import { planPriceLabel, type PublicPlan } from "@/lib/plans/catalog";
 import { FEATURE_KEYS, FEATURES, LIMITS, type LimitKey, type PlanInfo } from "@/lib/plans";
 import { yearlyLine } from "@/lib/plans/yearly";
 
+import { DISPLAY } from "./brand";
+
 /** Renglones de límites que importan para elegir (en ese orden). */
 function limitLines(plan: PlanInfo): string[] {
   const l = plan.limits;
@@ -29,15 +31,17 @@ export interface PlanCardsProps {
   plans: PublicPlan[];
   /** CTA por plan (link o botón). */
   renderCta: (plan: PublicPlan) => ReactNode;
-  /** Código del plan a destacar (borde pino + "Recomendado"). */
+  /** Código del plan a destacar (borde pino + etiqueta). */
   highlight?: string;
+  /** Etiqueta del plan destacado. En el sitio: "Incluido en la prueba" (la prueba es de Pro). */
+  highlightLabel?: string;
   /** Código del plan actual (muestra "Tu plan"). */
   current?: string;
   className?: string;
 }
 
 /** Tarjetas de planes (landing, /planes, /admin/plan). Server-safe. */
-export function PlanCards({ plans, renderCta, highlight, current, className }: PlanCardsProps) {
+export function PlanCards({ plans, renderCta, highlight, highlightLabel = "Recomendado", current, className }: PlanCardsProps) {
   return (
     <div className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-4", className)}>
       {plans.map((plan, i) => {
@@ -55,16 +59,16 @@ export function PlanCards({ plans, renderCta, highlight, current, className }: P
             )}
           >
             <header className="flex items-center justify-between gap-2">
-              <h3 className="text-base font-semibold">{plan.name}</h3>
+              <h3 className={cn(DISPLAY, "text-[18px] font-semibold tracking-[-0.01em]")}>{plan.name}</h3>
               {plan.code === current ? (
                 <span className="rounded-[4px] bg-adm-accent-soft px-1.5 py-0.5 text-[11px] font-medium text-adm-accent">Tu plan</span>
               ) : isHighlight ? (
-                <span className="rounded-[4px] bg-adm-accent-2-soft px-1.5 py-0.5 text-[11px] font-medium text-adm-accent-2-ink">Recomendado</span>
+                <span className="rounded-[4px] bg-adm-accent-2-soft px-1.5 py-0.5 text-[11px] font-medium text-adm-accent-2-ink">{highlightLabel}</span>
               ) : null}
             </header>
             {plan.description ? <p className="mt-1 text-[13px] text-adm-fg-muted">{plan.description}</p> : null}
             <p className="mt-4 flex items-baseline gap-1.5">
-              <span className="tnum text-[26px] leading-none font-semibold tracking-[-0.02em]">{price.amount}</span>
+              <span className={cn(DISPLAY, "tnum text-[32px] leading-none font-semibold tracking-[-0.025em]")}>{price.amount}</span>
               {price.suffix ? <span className="text-[13px] text-adm-fg-muted">{price.suffix}</span> : null}
             </p>
             {yearly ? <p className="tnum mt-2 text-[12px] leading-snug text-adm-fg-muted">{yearly}</p> : null}
@@ -80,7 +84,7 @@ export function PlanCards({ plans, renderCta, highlight, current, className }: P
               {extras.length ? (
                 extras.map((label) => (
                   <li key={label} className="flex gap-2">
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-adm-accent" strokeWidth={2} aria-hidden />
+                    <Check className="mt-0.5 size-3.5 shrink-0 text-adm-accent" strokeWidth={1.75} aria-hidden />
                     <span>{label}</span>
                   </li>
                 ))
@@ -109,11 +113,14 @@ export function PlanComparison({ plans }: { plans: PlanInfo[] }) {
   return (
     <div className="overflow-x-auto rounded-adm border border-adm-border bg-adm-surface">
       <table className="w-full min-w-[640px] text-[13px]">
+        <caption className="sr-only">Comparación de límites y funciones por plan</caption>
         <thead>
           <tr className="border-b border-adm-border bg-adm-table-head text-left">
-            <th className="px-4 py-2.5 font-medium text-adm-fg-muted">Capacidad</th>
+            <th scope="col" className="sticky left-0 bg-adm-table-head px-4 py-2.5 font-medium text-adm-fg-muted">
+              Capacidad
+            </th>
             {plans.map((p) => (
-              <th key={p.code} className="w-32 px-3 py-2.5 font-semibold">
+              <th key={p.code} scope="col" className="w-32 px-3 py-2.5 font-semibold">
                 {p.name}
               </th>
             ))}
@@ -122,7 +129,9 @@ export function PlanComparison({ plans }: { plans: PlanInfo[] }) {
         <tbody>
           {limitKeys.map((k) => (
             <tr key={k} className="border-b border-adm-border">
-              <td className="px-4 py-2">{LIMITS[k].label}</td>
+              <th scope="row" className="sticky left-0 bg-adm-surface px-4 py-2 text-left font-normal">
+                {LIMITS[k].label}
+              </th>
               {plans.map((p) => (
                 <td key={p.code} className="tnum px-3 py-2">
                   {limitCell(p, k)}
@@ -131,17 +140,19 @@ export function PlanComparison({ plans }: { plans: PlanInfo[] }) {
             </tr>
           ))}
           <tr className="border-b border-adm-border bg-adm-table-head">
-            <td colSpan={plans.length + 1} className="px-4 py-2 font-medium text-adm-fg-muted">
+            <th scope="colgroup" colSpan={plans.length + 1} className="px-4 py-2 text-left font-medium text-adm-fg-muted">
               Funciones
-            </td>
+            </th>
           </tr>
           {FEATURE_KEYS.map((k) => (
             <tr key={k} className="border-b border-adm-border last:border-b-0">
-              <td className="px-4 py-2">{FEATURES[k].label}</td>
+              <th scope="row" className="sticky left-0 bg-adm-surface px-4 py-2 text-left font-normal">
+                {FEATURES[k].label}
+              </th>
               {plans.map((p) => (
                 <td key={p.code} className="px-3 py-2">
                   {p.features[k] ? (
-                    <Check className="size-4 text-adm-accent" strokeWidth={2} aria-label="Incluido" />
+                    <Check className="size-4 text-adm-accent" strokeWidth={1.75} aria-label="Incluido" />
                   ) : (
                     <Minus className="size-4 text-adm-fg-subtle" aria-label="No incluido" />
                   )}
@@ -161,7 +172,7 @@ export function PlanCtaLink({ href, children, primary }: { href: string; childre
     <Link
       href={href}
       className={cn(
-        "inline-flex h-9 w-full items-center justify-center rounded-adm px-3 text-sm font-medium transition-colors",
+        "inline-flex h-11 w-full items-center justify-center rounded-adm px-3 text-sm font-medium transition-colors duration-[120ms] sm:h-10",
         primary
           ? "bg-adm-accent text-adm-accent-fg hover:bg-adm-accent-hover"
           : "border border-adm-input-border bg-adm-surface text-adm-fg hover:bg-adm-hover",

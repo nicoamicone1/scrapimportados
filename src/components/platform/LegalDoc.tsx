@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { DISPLAY } from "./brand";
 import { formatLegalDate } from "./site";
 
 export interface LegalSection {
@@ -42,7 +43,7 @@ export function LegalDoc({
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14">
       <header className="max-w-[68ch] border-b border-adm-border pb-6">
-        <h1 className="text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[36px]">{title}</h1>
+        <h1 className={`${DISPLAY} text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[36px]`}>{title}</h1>
         <p className="mt-2 text-[13px] text-adm-fg-muted">
           Última actualización: <time dateTime={updatedAt}>{formatLegalDate(updatedAt)}</time>
         </p>

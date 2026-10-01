@@ -4,9 +4,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/platform/AppHeader";
+import { DISPLAY, FormAlert } from "@/components/platform/brand";
+import { CopyText } from "@/components/platform/CopyText";
 import { Badge } from "@/components/ui/Badge";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { getProfile, getSession, listMyStores, ROLE_LABELS, type MyStore } from "@/lib/auth";
+import { cn } from "@/lib/cn";
 import { getPlanChip } from "@/lib/plans/chip";
 import { parsePlan } from "@/lib/plans";
 import { storeDisplayHost, storeHref } from "@/lib/tenant/urls";
@@ -37,46 +40,58 @@ export default async function MisTiendasPage({ searchParams }: PageProps<"/app">
   const owned = stores.filter((s) => s.role === "owner").length;
   const error = typeof params.error === "string" ? params.error : null;
 
+  const single = stores.length === 1;
+  const canCreate = owned < MAX_STORES || Boolean(profile?.is_platform_admin);
+
   return (
     <div className="min-h-dvh">
       <AppHeader email={user.email ?? ""} isPlatformAdmin={Boolean(profile?.is_platform_admin)} section="app" />
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Mis tiendas</h1>
-            <p className="mt-1 text-sm text-adm-fg-muted">Elegí cuál administrar. Podés tener hasta {MAX_STORES} tiendas propias.</p>
+            <h1 className={cn(DISPLAY, "text-[28px] leading-tight font-semibold tracking-[-0.02em]")}>Mis tiendas</h1>
+            <p className="mt-1 text-sm text-adm-fg-muted">
+              {single ? "Entrá al panel o compartí el link de tu tienda." : "Elegí cuál administrar."}{" "}
+              <span className="tnum">
+                {owned} de {MAX_STORES} tiendas propias.
+              </span>
+            </p>
           </div>
-          {owned < MAX_STORES || profile?.is_platform_admin ? (
+          {canCreate ? (
             <Link
               href="/app/nueva"
-              className="inline-flex h-8 items-center gap-1.5 rounded-adm bg-adm-accent px-3 text-sm font-medium text-adm-accent-fg hover:bg-adm-accent-hover"
+              className="inline-flex h-11 items-center gap-1.5 rounded-adm border border-adm-input-border bg-adm-surface px-3.5 text-sm font-medium text-adm-fg hover:bg-adm-hover sm:h-9"
             >
-              <Plus className="size-4" aria-hidden />
-              Crear tienda
+              <Plus className="size-4" strokeWidth={1.75} aria-hidden />
+              Crear otra tienda
             </Link>
           ) : null}
         </div>
 
-        {error ? (
-          <p role="alert" className="mt-4 rounded-adm border border-[#efc6c0] bg-adm-danger-soft px-3 py-2 text-[13px] text-[#8f1c13]">
-            {error}
-          </p>
-        ) : null}
+        {error ? <FormAlert className="mt-4">{error}</FormAlert> : null}
 
         {stores.length ? (
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {stores.map((s) => {
               const chip = planChipFor(s);
+              const url = storeHref(s);
               return (
                 <li key={s.id} className="flex flex-col rounded-adm border border-adm-border bg-adm-surface p-5 shadow-adm-card">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-base font-semibold">{s.name}</h2>
-                      <p className="truncate text-[13px] text-adm-fg-muted">{storeDisplayHost(s)}</p>
-                    </div>
+                    <h2 className="min-w-0 truncate text-[17px] font-semibold tracking-[-0.01em]">{s.name}</h2>
                     <Badge tone={chip.tone === "trial" ? "amber" : chip.tone === "warning" ? "red" : "accent"}>{chip.label}</Badge>
                   </div>
-                  <dl className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="tnum mt-1 inline-flex min-h-8 w-fit max-w-full items-center gap-1 truncate text-[13px] text-adm-fg-muted underline-offset-2 hover:text-adm-fg hover:underline"
+                  >
+                    <span className="truncate">{storeDisplayHost(s)}</span>
+                    <ExternalLink className="size-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                    <span className="sr-only">(abre la tienda en otra pestaña)</span>
+                  </a>
+                  <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
                     <div>
                       <dt className="sr-only">Tu rol</dt>
                       <dd className="text-adm-fg-muted">{ROLE_LABELS[s.role]}</dd>
@@ -94,31 +109,34 @@ export default async function MisTiendasPage({ searchParams }: PageProps<"/app">
                       </dd>
                     </div>
                   </dl>
-                  <div className="mt-5 flex items-center gap-2">
-                    <form action={enterStore} className="flex-1">
+                  <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
+                    <form action={enterStore} className="min-w-[10rem] flex-1">
                       <input type="hidden" name="storeId" value={s.id} />
-                      <SubmitButton className="w-full" disabled={!s.is_active} pendingText="Entrando…">
+                      <SubmitButton
+                        variant={single ? "primary" : "secondary"}
+                        className="h-11 w-full sm:h-9"
+                        disabled={!s.is_active}
+                        pendingText="Entrando…"
+                      >
                         Entrar al panel
                       </SubmitButton>
                     </form>
-                    <a
-                      href={storeHref(s)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex h-8 items-center gap-1.5 rounded-adm border border-adm-input-border px-3 text-sm hover:bg-adm-hover"
-                    >
-                      Ver tienda
-                      <ExternalLink className="size-3.5" aria-hidden />
-                    </a>
+                    {s.status === "active" ? <CopyText text={url} label="Copiar link" ariaLabel={`Copiar el link de ${s.name}`} size="md" /> : null}
                   </div>
                 </li>
               );
             })}
           </ul>
         ) : (
-          <div className="mt-8 rounded-adm border border-dashed border-adm-input-border bg-adm-surface px-6 py-10 text-sm">
-            <p className="font-medium">Todavía no sos parte de ninguna tienda.</p>
-            <p className="mt-1 text-adm-fg-muted">Creá la tuya o entrá a una desde Plataforma.</p>
+          <div className="mt-8 max-w-[560px] rounded-adm border border-adm-border bg-adm-surface px-6 py-8">
+            <h2 className="text-base font-semibold">Todavía no sos parte de ninguna tienda</h2>
+            <p className="mt-1 text-sm text-adm-fg-muted">Creá la tuya: nombre, rubro y WhatsApp, en dos pasos. O entrá a una tienda desde Plataforma.</p>
+            <Link
+              href="/app/nueva"
+              className="mt-5 inline-flex h-11 items-center rounded-adm bg-adm-accent px-4 text-[15px] font-medium text-adm-accent-fg hover:bg-adm-accent-hover"
+            >
+              Crear tu tienda
+            </Link>
           </div>
         )}
       </main>

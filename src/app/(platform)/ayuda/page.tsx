@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DISPLAY } from "@/components/platform/brand";
 import { HelpSearch } from "@/components/platform/HelpSearch";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { HELP_ARTICLES, helpBySection, helpSectionTitle } from "@/content/ayuda";
@@ -37,7 +38,7 @@ export default function AyudaPage() {
       <section className="border-b border-adm-border bg-adm-surface">
         <div className="mx-auto max-w-6xl px-4 pt-12 pb-10 sm:px-6 md:pt-14">
           <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Centro de ayuda</p>
-          <h1 className="mt-3 max-w-[22ch] text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[38px]">
+          <h1 className={`${DISPLAY} mt-3 max-w-[22ch] text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[38px]`}>
             Cómo hacer cada cosa en tu tienda, paso a paso.
           </h1>
           <p className="mt-3 max-w-[60ch] text-[15px] leading-relaxed text-adm-fg-muted">
@@ -50,7 +51,7 @@ export default function AyudaPage() {
         <HelpSearch items={items}>
           <div className="mt-10 space-y-12">
             {start ? (
-              <section aria-labelledby={`sec-${start.id}`} className="max-w-[860px] rounded-adm border border-[#cfdcd3] bg-adm-accent-soft px-5 py-5 sm:px-6">
+              <section aria-labelledby={`sec-${start.id}`} className="max-w-[860px] rounded-adm border border-adm-accent/20 bg-adm-accent-soft px-5 py-5 sm:px-6">
                 <h2 id={`sec-${start.id}`} className="text-[12px] font-medium tracking-[0.07em] text-adm-accent uppercase">
                   ¿Recién abrís tu tienda? {start.title} por acá
                 </h2>
