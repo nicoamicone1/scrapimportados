@@ -6,7 +6,7 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.5.0";
+export const APP_VERSION = "0.6.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.6.0",
+    date: "2026-10-01",
+    title: "Marca Ecommy y rediseño de la experiencia",
+    sections: {
+      added: [
+        "Manual de marca de Ecommy: personalidad, voz, logo, colores, tipografía y reglas de uso. La landing, el registro y el panel lo siguen.",
+        "Panel en el celular: barra inferior con Inicio, Pedidos, Productos, Compartir y Menú, y controles de 44 px en pantallas táctiles.",
+        "Pedidos: botón de siguiente paso en cada pedido («Confirmar pago», «Marcar enviado»…) con Deshacer; «Confirmar pago» registra el cobro, confirma el pedido y ofrece avisar por WhatsApp.",
+        "Apariencia: interruptor «Hecho con Ecommy» en el pie de la tienda, apagable desde Starter. El estilo de tu rubro aparece primero y el control de contraste tiene «Ajustar».",
+        "Productos: «Crear y cargar otro», «Publicar al crear», stock editable en la fila del inventario y «Cambiar precios» desde la selección.",
+      ],
+      changed: [
+        "Inicio del panel muestra primero lo que hay que hacer hoy (pedidos por confirmar, para despachar, sin stock) y deja las métricas al final.",
+        "Crear una tienda lleva 2 pasos en vez de 3: la dirección sale del nombre, el WhatsApp se acepta en cualquier formato y los datos de cobro quedan para después. El registro pide 3 datos.",
+        "Al ingresar vas directo al panel de tu tienda.",
+        "El alta de producto muestra primero nombre, fotos, precio y stock; lo demás queda plegado. Los listados del panel se ven como tarjetas en el celular.",
+        "Configuración tiene pestañas entre sus secciones y un solo botón Guardar.",
+        "Los estilos Nórdico y Galpón se diferencian mejor, y Atelier corrige el contraste del texto sobre su banda de color.",
+        "En el menú, «Dashboard» pasa a llamarse «Inicio» y «Changelog» pasa a «Novedades»; Importar se mudó a Catálogo.",
+        "Mejor contraste en el panel: bordes de los campos y anillo de foco.",
+      ],
+      fixed: [
+        "Crear tienda ya no te devuelve al paso 1 cuando el WhatsApp faltaba.",
+        "«Ver tienda» desde el buscador del panel abría la página de Ecommy en vez de tu tienda.",
+        "En una banda de color de la tienda, el botón y las tarjetas ya no quedan del mismo color que el fondo.",
+      ],
+    },
+  },
   {
     version: "0.5.0",
     date: "2026-09-23",
