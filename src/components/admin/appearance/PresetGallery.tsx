@@ -86,11 +86,20 @@ export function PresetApplyAction({
   );
 }
 
+/** Id del contenedor de la vista previa en ThemeEditor. */
+export const THEME_PREVIEW_ID = "theme-preview";
+
+function scrollToPreview() {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById(THEME_PREVIEW_ID)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+}
+
 function PresetOption({
   meta,
   brand,
   status,
   selected,
+  recommended,
   onTry,
   onApply,
 }: {
@@ -98,6 +107,7 @@ function PresetOption({
   brand: string;
   status: PresetStatus;
   selected: boolean;
+  recommended?: boolean;
   onTry: () => void;
   onApply: (id: PresetKey) => void;
 }) {
@@ -124,6 +134,7 @@ function PresetOption({
             <span className="text-[13px] font-semibold text-adm-fg">{meta.name}</span>
             {status === "current" ? <Badge tone="accent">En uso</Badge> : null}
             {status === "base" ? <Badge tone="neutral">Base de tu tema</Badge> : null}
+            {recommended && status !== "current" ? <Badge tone="neutral">Para tu rubro</Badge> : null}
             {status === "locked" ? (
               <span className="ml-auto inline-flex items-center gap-1 text-xs text-adm-fg-muted">
                 <Lock className="size-4" strokeWidth={1.75} aria-hidden />
@@ -146,8 +157,12 @@ function PresetOption({
       </button>
       {selected ? (
         // En pantallas anchas la acción vive en la toolbar de la vista previa, al lado.
-        <div className="flex items-center gap-2 border-t border-adm-border px-3 py-2 xl:hidden">
+        <div className="flex flex-wrap items-center gap-2 border-t border-adm-border px-3 py-2 xl:hidden">
           <PresetApplyAction id={meta.id} status={status} onApply={onApply} />
+          {/* En el celular la vista previa queda debajo de la grilla: un toque la trae. */}
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={scrollToPreview}>
+            Ver con mis productos
+          </Button>
         </div>
       ) : null}
     </li>
@@ -161,13 +176,15 @@ export interface PresetGalleryProps {
   base: PresetKey | null;
   trial: PresetKey | null;
   plan: Pick<PlanInfo, "features"> | null;
+  /** Preset del rubro de la tienda (alta): primero en la grilla y marcado. */
+  recommended?: PresetKey | null;
   onTry: (id: PresetKey | null) => void;
   onApply: (id: PresetKey) => void;
   onClose: () => void;
   headingRef?: Ref<HTMLHeadingElement>;
 }
 
-export function PresetGallery({ brand, current, base, trial, plan, onTry, onApply, onClose, headingRef }: PresetGalleryProps) {
+export function PresetGallery({ brand, current, base, trial, plan, recommended = null, onTry, onApply, onClose, headingRef }: PresetGalleryProps) {
   const [filter, setFilter] = useState<PresetFilter>(EMPTY_PRESET_FILTER);
   const headingId = useId();
 
@@ -177,7 +194,9 @@ export function PresetGallery({ brand, current, base, trial, plan, onTry, onAppl
   const lockedCount = PRESET_LIST.filter((p) => !isAllowed(p.id)).length;
   const showTone = darkCount > 0 && darkCount < PRESET_LIST.length;
 
-  const list = filterPresets(PRESET_LIST, filter, { isDark, isAllowed });
+  const filteredList = filterPresets(PRESET_LIST, filter, { isDark, isAllowed });
+  // El del rubro va primero: es el punto de partida más probable.
+  const list = recommended ? [...filteredList].sort((a, b) => Number(b.id === recommended) - Number(a.id === recommended)) : filteredList;
   const filtered = list.length !== PRESET_LIST.length;
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -260,6 +279,7 @@ export function PresetGallery({ brand, current, base, trial, plan, onTry, onAppl
                 brand={brand}
                 status={presetStatus(p.id, { current, base, plan })}
                 selected={trial === p.id}
+                recommended={recommended === p.id}
                 onTry={() => onTry(trial === p.id ? null : p.id)}
                 onApply={onApply}
               />

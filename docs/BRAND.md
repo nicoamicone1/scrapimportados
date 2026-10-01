@@ -299,7 +299,7 @@ Lo que mide la auditoría. Cada pantalla tiene que poder contestar "¿para qué 
 
 | Superficie | Marca que manda | Ecommy aparece |
 | --- | --- | --- |
-| Storefront (`<tienda>.ecommy.app`, dominio propio) | La del comercio vía tema/preset (DESIGN §3–§4) | Sólo "Hecho con Ecommy" en el footer: texto 12 px `--fg-muted` del tema, sin logo ni color de Ecommy. **Hoy se muestra en todos los planes** (`Footer.tsx`); la regla de marca: obligatorio en Free (con link a `ecommy.app`), opcional y apagable desde Starter. |
+| Storefront (`<tienda>.ecommy.app`, dominio propio) | La del comercio vía tema/preset (DESIGN §3–§4) | Sólo "Hecho con Ecommy" en el footer: texto 12 px `--fg-muted` del tema, sin logo ni color de Ecommy. Obligatorio en Free (con link a `ecommy.app`); desde Starter se apaga en Apariencia › Pie de página (`theme.footer.showCredit`). Pendiente: volver a exigirlo si la tienda baja a Free sin guardar Apariencia (ver `docs/ux-audit/presets-apariencia.md`). |
 | Checkout, página de pedido, mensaje de WhatsApp, remito | Comercio | Nunca. El cliente final le compra al comercio. |
 | Presets | Los pone el comercio (colores, fuentes, logo). Ningún preset usa pino + ámbar + crema como combinación de fábrica, para no parecer "la tienda de Ecommy". | Nunca. |
 | Panel | Ecommy (shell, sidebar, tokens `--adm-*`) | Siempre; dentro de la vista previa, el tema de la tienda. |

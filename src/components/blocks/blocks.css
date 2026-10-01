@@ -77,6 +77,33 @@
     --fg-muted: color-mix(in oklab, #16181c 70%, var(--blk-bg));
     --border: color-mix(in oklab, #16181c 18%, var(--blk-bg));
   }
+  /*
+   * Botón primario dentro de la banda primaria: sin esto el relleno es del
+   * mismo color que la banda (el botón se ve como texto suelto) y el hover del
+   * outline pinta --primary-fg sobre --bg (blanco sobre crema). Se invierte.
+   */
+  .blk-bg-primary .sbtn:is([data-btn="solid"], [data-btn="soft"]) {
+    background: var(--primary-fg);
+    color: var(--primary);
+    box-shadow: none;
+  }
+  .blk-bg-primary .sbtn:is([data-btn="solid"], [data-btn="soft"]):hover,
+  .blk-bg-primary .sbtn[data-btn="outline"]:hover {
+    background: color-mix(in oklab, var(--primary-fg) 88%, var(--primary));
+    color: var(--primary);
+  }
+  /* Tarjetas con panel (--surface) dentro de una banda: vuelven a los tokens del tema. */
+  :is(.blk-bg-primary, .blk-bg-custom) .pcard:is([data-style="bordered"], [data-style="elevated"]) {
+    --fg: var(--theme-fg);
+    --fg-muted: var(--theme-fg-muted);
+    --accent: var(--theme-accent);
+    --border: var(--theme-border);
+    color: var(--fg);
+  }
+  /* El badge de promo va sobre la foto con fondo --bg: siempre el acento del tema. */
+  :is(.blk-bg-primary, .blk-bg-custom) .pcard .store-badge {
+    color: var(--theme-accent);
+  }
 
   .blk-narrow {
     max-width: calc(760px + 2 * var(--gutter, 16px));

@@ -40,7 +40,7 @@ export function PresetSpecimens({
     <ul className={cn("grid gap-px overflow-hidden rounded-adm border border-adm-border bg-adm-border lg:grid-cols-2", className)}>
       {specimens.map((s) => {
         const plan = specimenPlanLabel(plans, s);
-        const outline = s.theme.buttons.style === "outline";
+        const btn = s.theme.buttons.style;
         return (
           <li
             key={s.kind}
@@ -65,7 +65,12 @@ export function PresetSpecimens({
               <span
                 className={cn(
                   "hidden h-9 shrink-0 items-center rounded-[var(--btn-radius)] px-3.5 text-[12px] [font-weight:var(--body-strong-weight)] [letter-spacing:var(--btn-tracking)] [text-transform:var(--btn-transform)] sm:inline-flex",
-                  outline ? "border border-primary text-primary" : "bg-primary text-primary-fg",
+                  // Igual que `.btn-primary` del storefront: el outline va en --fg, el soft en --primary sobre su tinte.
+                  btn === "outline"
+                    ? "border border-fg text-fg"
+                    : btn === "soft"
+                      ? "bg-[color-mix(in_oklab,var(--primary)_12%,var(--bg))] text-primary"
+                      : "bg-primary text-primary-fg",
                 )}
               >
                 {SPECIMEN_BUTTON}

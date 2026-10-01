@@ -21,6 +21,7 @@ import { cn } from "@/lib/cn";
 import { stripHtml } from "@/lib/html";
 
 import { BLOCK_ICONS } from "./BlockThumb";
+import { hasExampleCopy } from "./example-copy";
 
 /** Resumen corto del contenido del bloque (segunda línea de la lista). */
 export function blockSummary(block: Block): string {
@@ -74,6 +75,7 @@ const Row = memo(function Row({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, setActivatorNodeRef } = useSortable({ id: block.id });
   const Icon = BLOCK_ICONS[block.type];
   const hidden = Boolean(block.style.hidden);
+  const example = hasExampleCopy(block);
   return (
     <li
       ref={setNodeRef}
@@ -98,7 +100,11 @@ const Row = memo(function Row({
         <Icon className={cn("size-4 shrink-0", selected ? "text-adm-accent" : "text-adm-fg-muted")} aria-hidden />
         <span className={cn("min-w-0", hidden && "opacity-50")}>
           <span className="block truncate font-medium text-adm-fg">{BLOCK_META[block.type].label}</span>
-          <span className="block truncate text-xs text-adm-fg-muted">{blockSummary(block) || "—"}</span>
+          {example ? (
+            <span className="block truncate text-xs font-medium text-adm-warning">Texto de ejemplo: cambialo</span>
+          ) : (
+            <span className="block truncate text-xs text-adm-fg-muted">{blockSummary(block) || "—"}</span>
+          )}
         </span>
         {block.style.hideOnMobile ? <MonitorOff className="size-3.5 shrink-0 text-adm-fg-muted" aria-label="Oculto en celulares" /> : null}
       </button>

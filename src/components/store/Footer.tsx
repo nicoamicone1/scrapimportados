@@ -6,6 +6,7 @@ import type { StoreSettings } from "@/lib/store/settings";
 import { CONSUMER_DEFENSE_URL, POLICY_LINKS } from "@/lib/store/policies";
 import type { StoreShippingZone } from "@/lib/store/shipping";
 import { waLink } from "@/lib/store/whatsapp";
+import { platformUrl } from "@/lib/tenant/urls";
 import { APP_NAME } from "@/lib/version";
 
 const SOCIAL_LABELS = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", x: "X", youtube: "YouTube" } as const;
@@ -70,8 +71,15 @@ function LegalBand({ settings, year }: { settings: StoreSettings; year: number }
           <p>
             © {year} {legal.razon_social || settings.name}
             {legal.cuit ? ` · CUIT ${legal.cuit}` : ""}
-            {" · "}
-            <span>Hecho con {APP_NAME}</span>
+            {settings.theme.footer.showCredit ? (
+              <>
+                {" · "}
+                {/* BRAND.md §12: texto del tema, sin logo ni color de la plataforma. Obligatorio en Free. */}
+                <a href={platformUrl("/")} target="_blank" rel="noopener" className="hover:text-fg hover:underline hover:underline-offset-2">
+                  Hecho con {APP_NAME}
+                </a>
+              </>
+            ) : null}
           </p>
         </div>
         {legal.data_fiscal.image_url ? (

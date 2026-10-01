@@ -256,6 +256,7 @@ Reglas fijas:
 
 ### 3.8 `footer` y `effects`
 
+- `footer.showCredit` (default `true`): "Hecho con Ecommy" en la banda legal, texto `--text-xs` `--fg-muted` del tema con link a la plataforma. Obligatorio en Free; desde Starter el dueño lo apaga en Apariencia › Pie de página (el server lo fuerza a `true` en Free). No es estilo: no pasa el tema a `custom` ni lo pisa un preset.
 - `footer.style`: §6.7. `showSocial`: links de `store_settings.social` como texto ("Instagram · TikTok") o íconos lucide 18px monocromos; nunca logos a color. `showPayments`: **texto**, no logos de tarjetas (no hay pasarela): "Transferencia bancaria (10 % off) · Acordás con el vendedor".
 - `effects.shadows`:
 
@@ -274,7 +275,7 @@ Reglas fijas:
 
 ## 4. Presets
 
-Cada preset define **todos** los campos. Elegirlo en el admin copia el objeto completo; cualquier edición posterior pasa `preset` a `"custom"`. Contrastes verificados (WCAG 2.1) y protegidos por `src/lib/theme/presets.test.ts`: `text`, `textMuted`, `accent`, `success` y `danger` ≥ 4.5:1 sobre `background` **y** sobre `surface`; `text` ≥ 7:1 sobre `background`; `primaryText` ≥ 4.5:1 sobre `primary` (7:1 cuando el primario lo permite; un mandarina o un rojo con texto blanco no llega); `primary` ≥ 3:1 sobre `background`; `accent` y `danger` son el mismo color o están a ΔE_OKLab ≥ 0.08. Default de una tienda nueva: `nordico` (el más neutro y el que mejor tolera catálogos importados con fotos heterogéneas).
+Cada preset define **todos** los campos. Elegirlo en el admin copia el objeto completo; cualquier edición posterior pasa `preset` a `"custom"`. Contrastes verificados (WCAG 2.1) y protegidos por `src/lib/theme/presets.test.ts`: `text`, `textMuted`, `accent`, `success` y `danger` ≥ 4.5:1 sobre `background` **y** sobre `surface`; `text` ≥ 7:1 sobre `background`; `primaryText` ≥ 4.5:1 sobre `primary` (7:1 cuando el primario lo permite; un mandarina o un rojo con texto blanco no llega); `primary` ≥ 3:1 sobre `background`, `surface` y `secondary` (es el relleno del botón en el hero sin foto y en el drawer); `text` y `textMuted` ≥ 4.5:1 sobre `secondary` (barra de anuncio, hero sin foto); `accent` y `danger` son el mismo color o están a ΔE_OKLab ≥ 0.08. Los mismos pares los muestra el editor de apariencia (`src/lib/theme/contrast.ts`), con un botón "Ajustar" que corrige el color que falla sin cambiarle el tono. `footer.showCredit` es `true` en todos: el crédito de la plataforma no es estilo, lo decide el dueño según su plan (BRAND.md §12) y aplicar un preset lo conserva. Default de una tienda nueva: `nordico` (el más neutro y el que mejor tolera catálogos importados con fotos heterogéneas).
 
 `create_store()` guarda sólo `{ "preset": "…" }` y `parseTheme` completa con el preset: **cambiar un preset cambia todas las tiendas que nunca guardaron su apariencia**. Por eso se cura con razones concretas, no por gusto.
 
@@ -292,9 +293,21 @@ Auditoría de los 5 presets originales contra §1 y alta de 5 nuevos (§4.6–§
 
 Resuelto en la misma pasada, fuera de §4: `libre-caslon-text` sólo existe en 400 y 700 en Google Fonts (500/600 hacen que css2 responda 400 y la familia no cargue; corregido en `fonts.ts` y en la tabla de §5); `fonts.ts` y §5 suman `atkinson-hyperlegible-next`, `archivo` y `chivo-mono`; y el derivado `--border-strong` pasó de `color-mix` al 38 % (2.45–2.92:1 en los diez presets) al 50 %, para cumplir el 3:1 que promete §3.1.
 
+### Curado 2026-10-01
+
+Auditoría completa en [`docs/ux-audit/presets-apariencia.md`](ux-audit/presets-apariencia.md). Cambios:
+
+| Preset | Cambio | Razón |
+| --- | --- | --- |
+| `nordico` | `effects.dividers: true → false` | Con reglas entre celdas, las tarjetas `bordered` pierden el radio y quedan como celdas de tabla: en una categoría, `nordico` y `galpon` (también 5 columnas compactas, SKU, marca, azul + un rojo) se veían iguales. Ahora `nordico` son tarjetas blancas con borde fino sobre gris (vidriera de electro) y `galpon` conserva la grilla-tabla (lista de precios). Afecta a las tiendas que nunca guardaron su apariencia: el cambio es sólo de separación, no de color ni tipografía. |
+| `atelier` | `secondary #E8E1D5 → #EBE4D8` | El texto secundario (4.45:1) y el tostado de promo (4.48:1) no llegaban a AA sobre la banda secundaria (barra de anuncio, hero sin foto). Con el lino un punto más claro: 4.58 y 4.60:1; la banda se sigue distinguiendo del fondo y de la superficie. |
+| todos | `footer.showCredit: true` | Campo nuevo del schema (default `true`, sin migración: `theme` es jsonb). |
+
+Fuera de §4, en la misma pasada: el precio de la card pasa a `--text-lg` como pide §6.1 (estaba en `--text-base`); dentro de una banda `background: 'primary'` el botón primario se invierte (antes tenía el mismo color que la banda) y las tarjetas con panel vuelven a los tokens del tema (antes: texto `--primary-fg` sobre `--surface`, blanco sobre blanco).
+
 ### 4.1 `atelier` — moda, joyería, marroquinería
 
-Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lencería. Cormorant Garamond en títulos grandes sobre blanco roto, Jost (geométrica tipo Futura) para el resto, cero sombras, cero radios, botones rectos en mayúsculas espaciadas y fotos 4:5 grandes en 3 columnas. El tostado sólo aparece en promos. Sin reglas entre celdas: el aire es el único separador. Se distingue por el silencio: mucho aire, poca UI.
+Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lencería. Cormorant Garamond en títulos grandes sobre blanco roto, Jost (geométrica tipo Futura) para el resto, cero sombras, cero radios, botones rectos en mayúsculas espaciadas y fotos 4:5 grandes en 3 columnas. El tostado sólo aparece en promos; la banda secundaria (anuncio, hero sin foto) es un lino claro donde también se lee el texto secundario. Sin reglas entre celdas: el aire es el único separador. Se distingue por el silencio: mucho aire, poca UI.
 
 ```json
 {
@@ -306,7 +319,7 @@ Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lenc
     "textMuted": "#6A655D",
     "primary": "#1B1A18",
     "primaryText": "#FAF8F4",
-    "secondary": "#E8E1D5",
+    "secondary": "#EBE4D8",
     "accent": "#8B5A34",
     "border": "#DDD6CA",
     "success": "#3F6B45",
@@ -326,7 +339,7 @@ Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lenc
   "cards": { "style": "flat", "imageRatio": "4:5", "hover": "zoom", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-center", "sticky": true, "transparentOnHome": true, "showSearch": true },
   "layout": { "density": "airy", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 3 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": false },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": false, "showCredit": true },
   "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
@@ -365,7 +378,7 @@ Para quien vende cerámica, mates, textiles, velas, productos naturales. Fondo c
   "cards": { "style": "bordered", "imageRatio": "1:1", "hover": "lift", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "none", "dividers": false, "imageFilter": "grain" }
 }
 ```
@@ -374,7 +387,7 @@ Nota: `1:1` va con `contain` (§2.5). Si el dueño sube fotos ambientadas (cerá
 
 ### 4.3 `nordico` — electro, hogar, ferretería, importadoras
 
-Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminación, repuestos. Gris muy claro, negro suave y azul profundo; Sora en títulos y Manrope (cifras tabulares nítidas) para todo lo demás. Densidad compacta, 5 columnas, SKU y marca visibles, reglas finas entre celdas. Un solo rojo para precio promo y errores. El "flat con borde fino" del brief se implementa como `bordered` + `shadows: 'none'`. Se distingue por la precisión: se escanea como una planilla bien diseñada.
+Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminación, repuestos. Gris muy claro, negro suave y azul profundo; Sora en títulos y Manrope (cifras tabulares nítidas) para todo lo demás. Densidad compacta, 5 columnas de tarjetas blancas con borde fino sobre el gris (cada foto de fábrica, con su fondo blanco o gris, queda contenida en su caja), SKU y marca visibles. Un solo rojo para precio promo y errores. El "flat con borde fino" del brief se implementa como `bordered` + `shadows: 'none'`, **sin** reglas entre celdas (desde 2026-10-01: la grilla-tabla con reglas es la firma de `galpon`). Se distingue por la precisión de vidriera de electro: ordenado y escaneable, sin parecer una lista de precios.
 
 ```json
 {
@@ -406,8 +419,8 @@ Para catálogos grandes y técnicos: auriculares, herramientas, bazar, iluminaci
   "cards": { "style": "bordered", "imageRatio": "1:1", "hover": "zoom", "showSku": true, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "compact", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 5 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
-  "effects": { "shadows": "none", "dividers": true, "imageFilter": "none" }
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
+  "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
 
@@ -445,7 +458,7 @@ Para marcas que comunican como una revista: streetwear local, editoriales indepe
   "cards": { "style": "flat", "imageRatio": "3:4", "hover": "none", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "minimal", "sticky": true, "transparentOnHome": true, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 4 } },
-  "footer": { "style": "simple", "showSocial": true, "showPayments": false },
+  "footer": { "style": "simple", "showSocial": true, "showPayments": false, "showCredit": true },
   "effects": { "shadows": "none", "dividers": true, "imageFilter": "none" }
 }
 ```
@@ -484,7 +497,7 @@ Para hardware gamer, periféricos, audio, sintetizadores y disquerías. Grafito 
   "cards": { "style": "elevated", "imageRatio": "1:1", "hover": "lift", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "soft", "dividers": false, "imageFilter": "none" }
 }
 ```
@@ -523,7 +536,7 @@ Para farmacias de barrio, perfumerías, dermocosmética y herboristerías, rubro
   "cards": { "style": "flat", "imageRatio": "1:1", "hover": "zoom", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
@@ -562,7 +575,7 @@ Para librerías escolares, papelerías, jugueterías y ropa de chicos, que neces
   "cards": { "style": "elevated", "imageRatio": "1:1", "hover": "zoom", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
@@ -601,7 +614,7 @@ Para mueblerías de diseño, carpinterías a medida, iluminación y objetos. Es 
   "cards": { "style": "flat", "imageRatio": "16:9", "hover": "zoom", "showSku": false, "showBrand": false, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": true, "showSearch": true },
   "layout": { "density": "airy", "containerWidth": "wide", "gridColumns": { "mobile": 1, "desktop": 3 } },
-  "footer": { "style": "minimal", "showSocial": true, "showPayments": true },
+  "footer": { "style": "minimal", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
@@ -642,7 +655,7 @@ Para mayoristas de Once y Flores, distribuidoras de limpieza o bebidas, corralon
   "cards": { "style": "flat", "imageRatio": "1:1", "hover": "none", "showSku": true, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": false, "showSearch": true },
   "layout": { "density": "compact", "containerWidth": "wide", "gridColumns": { "mobile": 2, "desktop": 5 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "none", "dividers": true, "imageFilter": "none" }
 }
 ```
@@ -681,7 +694,7 @@ Para vinotecas, almacenes gourmet, tostadores de café y destilados: productos q
   "cards": { "style": "flat", "imageRatio": "3:4", "hover": "zoom", "showSku": false, "showBrand": true, "showTransferPrice": true, "showNetPrice": true },
   "header": { "layout": "logo-left", "sticky": true, "transparentOnHome": true, "showSearch": true },
   "layout": { "density": "comfortable", "containerWidth": "normal", "gridColumns": { "mobile": 2, "desktop": 4 } },
-  "footer": { "style": "columns", "showSocial": true, "showPayments": true },
+  "footer": { "style": "columns", "showSocial": true, "showPayments": true, "showCredit": true },
   "effects": { "shadows": "none", "dividers": false, "imageFilter": "none" }
 }
 ```
@@ -852,7 +865,7 @@ Herramienta de trabajo: neutra, densa, rápida. **No** hereda el tema de la tien
 
 ### 7.1 Paleta fija (v0.1, spec §14.6)
 
-El admin deja de ser "hoja blanca": fondo crema, superficies blancas, sidebar verde-tinta, primario pino y acento ámbar. Fuente de verdad: `src/app/admin/admin.css` (mapeados en `globals.css` como `bg-adm-*`, `text-adm-*`, `shadow-adm-card`).
+El admin deja de ser "hoja blanca": fondo crema, superficies blancas, sidebar verde-tinta, primario pino y acento ámbar. Fuente de verdad: `src/app/admin/admin.css` (mapeados en `globals.css` como `bg-adm-*`, `text-adm-*`, `shadow-adm-card`). Los `--adm-*` referencian los primitivos de marca `--eco-*` de `globals.css` (BRAND.md §5.5); los valores de abajo ya incluyen las correcciones de contraste de BRAND §5.4.
 
 ```css
 .admin-root {
@@ -860,8 +873,8 @@ El admin deja de ser "hoja blanca": fondo crema, superficies blancas, sidebar ve
   --adm-surface:      #FFFFFF; /* paneles, tablas, dialogs, topbar */
   --adm-surface-2:    #F4F1EA; /* buscador del topbar, readonly, chips */
   --adm-border:       #E2DBCD;
-  --adm-input-border: #D9D2C3; /* hover #C2B9A6 */
-  --adm-fg:           #1C1917; /* tinta (14.6:1 sobre bg) */
+  --adm-input-border: #968F80; /* 3.21:1 sobre blanco (delimita el control); hover #7A7465 */
+  --adm-fg:           #1A2320; /* = --eco-ink (16.09:1 blanco, 13.43:1 crema) */
   --adm-fg-muted:     #6B6860; /* 4.64:1 sobre bg, 5.07:1 sobre table-head */
   --adm-fg-subtle:    #C9C1B0; /* sólo iconos decorativos de empty states */
   --adm-accent:       #2E4A3F; /* pino: botón primario, links, tabs activas */
@@ -869,7 +882,7 @@ El admin deja de ser "hoja blanca": fondo crema, superficies blancas, sidebar ve
   --adm-accent-2:     #E0A458; /* ámbar: foco, progreso, badge de pedidos, CTA "accent" */
   --adm-accent-2-fg:  #1A2320; /* texto sobre ámbar (7.37:1) */
   --adm-accent-2-ink: #8A5A12; /* ámbar legible como texto/icono */
-  --adm-focus-ring:   #B97A2E; /* anillo de foco sobre claro (3.57:1); en el sidebar #E0A458 */
+  --adm-focus-ring:   #A8702A; /* anillo de foco sobre claro (4.19:1 blanco, 3.49:1 crema); en el sidebar #E0A458 */
   --adm-sidebar-bg:     #1A2320;
   --adm-sidebar-fg:     #E8E6DF; /* 12.9:1 */
   --adm-sidebar-muted:  #8FA39A; /* grupos e iconos: 6.03:1 */
@@ -904,10 +917,14 @@ Reglas: foco = anillo ámbar (`--adm-focus`); en inputs, borde `--adm-focus-ring
 
 ### 7.3 Shell
 
-- Sidebar 232px, `bg --adm-sidebar-bg`. Arriba: marca "Ecommy" (cuadrado ámbar con "e" + nombre en blanco), debajo el nombre de la tienda 13px y el slot `planChip` (`SidebarPlanChip`). Ítems 32px, ícono 16px `--adm-sidebar-muted`, texto `--adm-sidebar-fg`; activo: fondo `--adm-sidebar-active`, texto blanco 500, ícono ámbar y barra izquierda ámbar de 3px. Grupos 11px uppercase `--adm-sidebar-muted`. Badge de pedidos nuevos en ámbar. Al pie, versión en `--adm-sidebar-muted`.
-- Topbar 48px, `--adm-surface` con borde inferior y franja de 3px de la sección: slot `storeSwitcher`, breadcrumb, buscador con fondo `--adm-surface-2` ("Buscar o ir a…  Ctrl K"), "Ver tienda", menú de usuario (avatar pino).
+- Sidebar 232px, `bg --adm-sidebar-bg`. Arriba: lockup sobre tinta (BRAND §4.2): `BrandMark` SVG de 28px en **tile pino** con la "e" ámbar (nunca la "e" en texto) + "Ecommy" 17px/600 en `--adm-sidebar-fg`; debajo el nombre de la tienda 13px y el slot `planChip` (`SidebarPlanChip`). Ítems 32px (44px en pantallas táctiles), ícono 16px `--adm-sidebar-muted`, texto `--adm-sidebar-fg`; activo: fondo `--adm-sidebar-active`, texto blanco 500, ícono ámbar y barra izquierda ámbar de 3px. Grupos 11px uppercase `--adm-sidebar-muted`. Badge de pedidos nuevos en ámbar. Al pie, versión en `--adm-sidebar-muted`.
+- Grupos del menú: Principal (Inicio, Pedidos, Carritos abandonados, Clientes) · Catálogo (Productos, Categorías, Inventario, Avisos de stock, **Importar**) · Marketing · Tienda · Sistema (Plan, Configuración, Usuarios, Auditoría, Novedades, Ayuda). Etiquetas en lenguaje del comercio: "Inicio" (no "Dashboard"), "Novedades" (no "Changelog").
+- Topbar 48px (56px táctil), `--adm-surface` con borde inferior y franja de 3px de la sección: slot `storeSwitcher`, breadcrumb (desde `lg`, no en Inicio), buscador con fondo `--adm-surface-2` ("Buscar pedidos, productos o ir a…  Ctrl K"), "Ver tienda", menú de usuario (avatar pino: Mi cuenta, Usuarios y roles, Cerrar sesión). En mobile: tienda a la izquierda + tres íconos de 44px (buscar, ver tienda, cuenta); sin hamburguesa.
+- **Mobile (< md): barra inferior** (`MobileTabBar`) de 56px + safe area: Inicio, Pedidos (con badge ámbar de nuevos), Productos, Compartir y "Menú" (drawer con el sidebar completo). Activo: texto pino + barra ámbar de 3px arriba. Se oculta cuando la página tiene su propia barra fija inferior (`data-adm-bottom-bar`, ej. `SaveBar`) o un campo con foco; los toasts suben para no taparla (`--adm-toast-*` en admin.css).
+- Pantallas táctiles (`pointer-coarse`): botones md/lg e inputs a 44px, sm a 36px con área táctil extendida, texto de inputs 16px (evita el zoom de iOS). En desktop rigen las densidades de §7.2.
+- "Saltar al contenido" como primer foco del shell.
 - Barra de progreso de navegación ámbar de 2px arriba de todo (`NavigationProgress`).
-- Guardado: `SaveBar` sticky inferior con fondo `--adm-sidebar-bg`, texto claro, "Descartar" (ghost claro) y "Guardar" (ámbar).
+- Guardado: `SaveBar` sticky inferior con fondo `--adm-sidebar-bg`, texto claro, "Descartar" (ghost claro) y "Guardar" (ámbar). Lleva `data-adm-bottom-bar` (oculta la barra inferior mobile); cualquier otra barra fija inferior (acciones masivas, wizard) tiene que llevarlo también.
 - Carga: cada ruta tiene `loading.tsx` con skeletons que imitan la página (`src/components/ui/skeletons.tsx`, shimmer `.sk`); los filtros usan `useUrlTransition` y la tabla muestra un velo con spinner chico mientras llega el resultado.
 
 ### 7.4 PageHeader
@@ -949,8 +966,8 @@ Alto 20px, radio 4px, 12px/500, punto de 6px del color del texto + etiqueta: el 
 
 ### 7.8 Dashboard
 
-- Arriba, **una** franja `--adm-surface` con 4 métricas separadas por reglas verticales: etiqueta 12px muted ("Ventas hoy", "Pedidos por confirmar", "Ticket promedio 7 días", "Por cobrar") + número 28px/600 `tabular-nums` + delta 12px ("+12 % vs. semana anterior") en verde `--adm-success` si sube, rojo `--adm-danger` si baja, muted si no hay comparación; `--adm-warning` si es alerta. Sin íconos ni fondos de color.
-- Debajo, 8/4: "Pedidos que requieren acción" (tabla: por confirmar, pagos sin acreditar, para despachar) y "Stock bajo" (lista con cantidad y link a inventario).
+- Orden por objetivo ("¿qué tengo que hacer hoy?"): encabezado con el nombre de la tienda y un resumen de una línea ("Para hoy: 3 por confirmar · 2 para despachar" o "Estás al día"), acciones "Copiar link" y avisos de pedidos; checklist de primeros pasos si está abierto; **"Para hacer"** (sólo lo que tiene pendientes: por confirmar, para despachar, pagos sin acreditar, reservas por vencer, arrepentimientos, stock bajo; cada fila lleva a la vista filtrada) + últimos pedidos (fila entera clickeable) en 8/4 con stock bajo y arrepentimientos; al final "Cómo viene la tienda" con el selector de período, la franja de métricas, el gráfico y más vendidos.
+- La franja: **una** franja `--adm-surface` con 4 métricas separadas por reglas verticales: etiqueta 12px muted ("Ventas hoy", "Pedidos por confirmar", "Ticket promedio 7 días", "Por cobrar") + número 28px/600 `tabular-nums` + delta 12px ("+12 % vs. semana anterior") en verde `--adm-success` si sube, rojo `--adm-danger` si baja, muted si no hay comparación; `--adm-warning` si es alerta. Sin íconos ni fondos de color.
 - Gráfico opcional "Ventas de los últimos 30 días": barras verticales `--adm-fg` al 80 %, hoy en `--adm-accent`, 3 líneas guía `--adm-border`, sin gradiente ni animación, tooltip con monto exacto. Nada de áreas, donuts ni radar.
 
 ### 7.9 Empty states
