@@ -1,5 +1,6 @@
 # Ecommy — Dirección de diseño
 
+> **Marca de la plataforma (logo, color, tipografía, voz):** [`BRAND.md`](BRAND.md). En marca manda ese documento; en storefront y presets, éste.
 > Documento OBLIGATORIO para todo agente que toque UI (storefront, bloques, admin).
 > Complementa `docs/ECOMMY-SPEC.md` (§8 Tema, §9 Bloques). Si algo acá contradice la spec en datos o schema, manda la spec; en estética, manda este documento.
 > Punto de partida: el storefront actual (`src/app/globals.css`, `src/components/*`) funciona pero es genérico: violeta + naranja fijos, `rounded-2xl` y `shadow-card` en todo, header con gradiente, barrita de color en cada título, chips pill por todos lados. **Nada de eso sobrevive** en el storefront temable.
