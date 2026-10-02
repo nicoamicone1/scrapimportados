@@ -74,6 +74,7 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
         storeName={ctx.store.name}
         storeHref={storeHref(ctx.store)}
         isOwner={ctx.membership.role === "owner"}
+        modules={ctx.modules}
         initialCollapsed={cookieStore.get(SIDEBAR_COOKIE)?.value === "collapsed"}
         planChip={
           <SidebarPlanChip tone={chip.tone} href="/admin/plan">

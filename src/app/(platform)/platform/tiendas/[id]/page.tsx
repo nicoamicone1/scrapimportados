@@ -9,17 +9,25 @@ import { AppHeader } from "@/components/platform/AppHeader";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { mercadoPagoDebitActive } from "@/lib/billing/state";
 import { formatDate, formatDateTime } from "@/lib/dates";
-import { formatNumber } from "@/lib/money";
+import { moduleState } from "@/lib/modules/registry";
+import { listModuleCatalog, listStoreModuleRows, modulesTablesReady } from "@/lib/modules/server";
+import { formatMoney, formatNumber } from "@/lib/money";
 import { parsePlan } from "@/lib/plans";
 import { billingPeriodLabel, isBillingPeriod, type BillingPeriod } from "@/lib/plans/yearly";
 import { ROLE_LABELS, isAdminRole } from "@/lib/auth";
 import { storeDisplayHost, storeHref } from "@/lib/tenant/urls";
 
 import { BillingPanel, type BillingPanelProps } from "./BillingPanel";
+import { ModulesPanel, type ModulesPanelItem } from "./ModulesPanel";
 import { StoreAdminForms } from "./StoreAdminForms";
 
 export const metadata: Metadata = { title: "Tienda · Plataforma" };
 export const dynamic = "force-dynamic";
+
+/** Fecha "YYYY-MM-DD" en Buenos Aires (para `<input type="date">`). */
+function formatDateInput(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+}
 
 function toDateInput(iso: string | null): string {
   if (!iso) return new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
@@ -44,7 +52,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
   // Cobro con MercadoPago (migración 0015): si falta, el panel lo avisa.
   // Periodicidad (0019): si falta, no se muestra. La vigente sale de current_plan()
   // (Free, la prueba o un plan vencido cuentan como mensual aunque la fila diga otra cosa).
-  const [billingRes, eventsRes, periodRes, effectiveRes] = await Promise.all([
+  const [billingRes, eventsRes, periodRes, effectiveRes, modulesReady, moduleCatalog, moduleRows] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("provider, provider_ref, provider_status, provider_plan_code, cancel_at_period_end, last_payment_at, current_period_end")
@@ -53,7 +61,43 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
     supabase.from("billing_events").select("id, type, result, created_at").eq("store_id", id).order("created_at", { ascending: false }).limit(8),
     supabase.from("subscriptions").select("billing_period, provider_billing_period").eq("store_id", id).maybeSingle(),
     supabase.rpc("current_plan", { p_store_id: id }),
+    // Apps (0022): sin la migración, el panel lo avisa.
+    modulesTablesReady(supabase),
+    listModuleCatalog(supabase, { includeHidden: true }),
+    listStoreModuleRows(supabase, id),
   ]);
+  const moduleItems: ModulesPanelItem[] = moduleCatalog.map((m) => {
+    const row = moduleRows.find((r) => r.code === m.code);
+    const state = moduleState(row ? { status: row.status, expires_at: row.expiresAt } : null);
+    return {
+      code: m.code,
+      name: m.name,
+      tagline: m.tagline,
+      price: m.priceMonthly !== null ? `${formatMoney(m.priceMonthly)}/mes` : null,
+      isPublic: m.isPublic,
+      current: row
+        ? {
+            status: row.status,
+            expiresAt: row.expiresAt ? formatDateInput(row.expiresAt) : "",
+            notes: row.notes ?? "",
+            stateLabel:
+              state.kind === "active"
+                ? state.expiresAt
+                  ? `Activa hasta el ${formatDate(state.expiresAt)}`
+                  : "Activa"
+                : state.kind === "trial"
+                  ? state.expiresAt
+                    ? `Prueba hasta el ${formatDate(state.expiresAt)}`
+                    : "En prueba"
+                  : state.kind === "expired"
+                    ? `Venció el ${formatDate(state.expiresAt)}`
+                    : "Desactivada",
+            stateTone: state.kind === "active" ? "green" : state.kind === "trial" ? "amber" : "neutral",
+            since: state.kind === "active" || state.kind === "trial" ? `activada el ${formatDate(row.activatedAt)}` : null,
+          }
+        : null,
+    };
+  });
   const period: BillingPeriod | null = periodRes.error ? null : effectiveRes.error ? "monthly" : parsePlan(effectiveRes.data).billingPeriod;
   const providerPeriod = periodRes.error ? null : isBillingPeriod(periodRes.data?.provider_billing_period) ? periodRes.data.provider_billing_period : null;
   const b = billingRes.error ? null : billingRes.data;
@@ -128,6 +172,10 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
             mercadoPagoDebit={mercadoPagoDebitActive(b)}
             period={period}
           />
+        </div>
+
+        <div className="mt-6">
+          <ModulesPanel storeId={store.id} items={moduleItems} available={modulesReady} />
         </div>
 
         <section className="mt-6 rounded-adm border border-adm-border bg-adm-surface">

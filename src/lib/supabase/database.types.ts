@@ -735,6 +735,39 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          code: string
+          created_at: string
+          description_md: string
+          is_public: boolean
+          name: string
+          position: number
+          price_monthly: number | null
+          tagline: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description_md?: string
+          is_public?: boolean
+          name: string
+          position?: number
+          price_monthly?: number | null
+          tagline: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description_md?: string
+          is_public?: boolean
+          name?: string
+          position?: number
+          price_monthly?: number | null
+          tagline?: string
+        }
+        Relationships: []
+      }
       order_events: {
         Row: {
           created_at: string
@@ -1478,6 +1511,962 @@ export type Database = {
           },
         ]
       }
+      print3d_calibration: {
+        Row: {
+          grams_factor: number
+          material_id: string
+          quality_id: string
+          samples: number
+          store_id: string
+          time_factor: number
+          updated_at: string
+        }
+        Insert: {
+          grams_factor?: number
+          material_id: string
+          quality_id: string
+          samples?: number
+          store_id: string
+          time_factor?: number
+          updated_at?: string
+        }
+        Update: {
+          grams_factor?: number
+          material_id?: string
+          quality_id?: string
+          samples?: number
+          store_id?: string
+          time_factor?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_calibration_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_calibration_quality_id_fkey"
+            columns: ["quality_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_qualities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_calibration_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_colors: {
+        Row: {
+          created_at: string
+          hex: string
+          id: string
+          is_active: boolean
+          material_id: string
+          name: string
+          position: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hex?: string
+          id?: string
+          is_active?: boolean
+          material_id: string
+          name: string
+          position?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hex?: string
+          id?: string
+          is_active?: boolean
+          material_id?: string
+          name?: string
+          position?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_colors_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_colors_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_jobs: {
+        Row: {
+          actual_grams: number | null
+          actual_minutes: number | null
+          color_id: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          est_grams: number | null
+          est_minutes: number | null
+          failure_reason: string | null
+          finished_at: string | null
+          id: string
+          material_id: string | null
+          notes: string | null
+          order_id: string | null
+          order_item_id: string | null
+          parent_job_id: string | null
+          position: number
+          post_minutes: number
+          printer_id: string | null
+          product_id: string | null
+          qty: number
+          quality_id: string | null
+          quote_item_id: string | null
+          raw_grams: number | null
+          raw_minutes: number | null
+          spool_id: string | null
+          started_at: string | null
+          status: string
+          store_id: string
+          title: string
+          updated_at: string
+          variant_id: string | null
+          wasted_grams: number
+        }
+        Insert: {
+          actual_grams?: number | null
+          actual_minutes?: number | null
+          color_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          est_grams?: number | null
+          est_minutes?: number | null
+          failure_reason?: string | null
+          finished_at?: string | null
+          id?: string
+          material_id?: string | null
+          notes?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          parent_job_id?: string | null
+          position?: number
+          post_minutes?: number
+          printer_id?: string | null
+          product_id?: string | null
+          qty?: number
+          quality_id?: string | null
+          quote_item_id?: string | null
+          raw_grams?: number | null
+          raw_minutes?: number | null
+          spool_id?: string | null
+          started_at?: string | null
+          status?: string
+          store_id: string
+          title: string
+          updated_at?: string
+          variant_id?: string | null
+          wasted_grams?: number
+        }
+        Update: {
+          actual_grams?: number | null
+          actual_minutes?: number | null
+          color_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          est_grams?: number | null
+          est_minutes?: number | null
+          failure_reason?: string | null
+          finished_at?: string | null
+          id?: string
+          material_id?: string | null
+          notes?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          parent_job_id?: string | null
+          position?: number
+          post_minutes?: number
+          printer_id?: string | null
+          product_id?: string | null
+          qty?: number
+          quality_id?: string | null
+          quote_item_id?: string | null
+          raw_grams?: number | null
+          raw_minutes?: number | null
+          spool_id?: string | null
+          started_at?: string | null
+          status?: string
+          store_id?: string
+          title?: string
+          updated_at?: string
+          variant_id?: string | null
+          wasted_grams?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_jobs_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_parent_job_id_fkey"
+            columns: ["parent_job_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_quality_id_fkey"
+            columns: ["quality_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_qualities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_quote_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_spools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "admin_inventory"
+            referencedColumns: ["variant_id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_variants"
+            referencedColumns: ["variant_id"]
+          },
+          {
+            foreignKeyName: "print3d_jobs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_materials: {
+        Row: {
+          brand: string | null
+          created_at: string
+          density: number
+          id: string
+          is_active: boolean
+          name: string
+          position: number
+          price_per_gram: number
+          speed_factor: number
+          store_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          density?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: number
+          price_per_gram: number
+          speed_factor?: number
+          store_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          density?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: number
+          price_per_gram?: number
+          speed_factor?: number
+          store_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_materials_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_printers: {
+        Row: {
+          bed_x: number
+          bed_y: number
+          bed_z: number
+          brand: string | null
+          color: string
+          created_at: string
+          hours_used: number
+          id: string
+          lifetime_hours: number
+          materials: string[]
+          model: string | null
+          name: string
+          notes: string | null
+          nozzle_mm: number
+          position: number
+          purchase_price: number
+          status: string
+          store_id: string
+          updated_at: string
+          watts: number
+        }
+        Insert: {
+          bed_x: number
+          bed_y: number
+          bed_z: number
+          brand?: string | null
+          color?: string
+          created_at?: string
+          hours_used?: number
+          id?: string
+          lifetime_hours?: number
+          materials?: string[]
+          model?: string | null
+          name: string
+          notes?: string | null
+          nozzle_mm?: number
+          position?: number
+          purchase_price?: number
+          status?: string
+          store_id: string
+          updated_at?: string
+          watts?: number
+        }
+        Update: {
+          bed_x?: number
+          bed_y?: number
+          bed_z?: number
+          brand?: string | null
+          color?: string
+          created_at?: string
+          hours_used?: number
+          id?: string
+          lifetime_hours?: number
+          materials?: string[]
+          model?: string | null
+          name?: string
+          notes?: string | null
+          nozzle_mm?: number
+          position?: number
+          purchase_price?: number
+          status?: string
+          store_id?: string
+          updated_at?: string
+          watts?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_printers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_product_specs: {
+        Row: {
+          color_id: string | null
+          created_at: string
+          grams_per_unit: number
+          id: string
+          made_to_order: boolean
+          material_id: string
+          minutes_per_unit: number
+          post_minutes: number
+          product_id: string
+          quality_id: string
+          store_id: string
+          units_per_plate: number
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          color_id?: string | null
+          created_at?: string
+          grams_per_unit: number
+          id?: string
+          made_to_order?: boolean
+          material_id: string
+          minutes_per_unit: number
+          post_minutes?: number
+          product_id: string
+          quality_id: string
+          store_id: string
+          units_per_plate?: number
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          color_id?: string | null
+          created_at?: string
+          grams_per_unit?: number
+          id?: string
+          made_to_order?: boolean
+          material_id?: string
+          minutes_per_unit?: number
+          post_minutes?: number
+          product_id?: string
+          quality_id?: string
+          store_id?: string
+          units_per_plate?: number
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_product_specs_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "admin_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_quality_id_fkey"
+            columns: ["quality_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_qualities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "admin_inventory"
+            referencedColumns: ["variant_id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_variants"
+            referencedColumns: ["variant_id"]
+          },
+          {
+            foreignKeyName: "print3d_product_specs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_qualities: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          layer_height: number
+          name: string
+          position: number
+          price_multiplier: number
+          store_id: string
+          throughput_g_h: number
+          updated_at: string
+          wall_mm: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layer_height: number
+          name: string
+          position?: number
+          price_multiplier?: number
+          store_id: string
+          throughput_g_h: number
+          updated_at?: string
+          wall_mm?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layer_height?: number
+          name?: string
+          position?: number
+          price_multiplier?: number
+          store_id?: string
+          throughput_g_h?: number
+          updated_at?: string
+          wall_mm?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_qualities_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_quote_items: {
+        Row: {
+          color_id: string
+          created_at: string
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          format: string | null
+          geometry: Json
+          grams: number | null
+          id: string
+          infill_pct: number
+          material_id: string
+          minutes: number | null
+          needs_review: boolean
+          position: number
+          qty: number
+          quality_id: string
+          quote_id: string
+          raw_grams: number | null
+          raw_minutes: number | null
+          review_reasons: string[]
+          store_id: string
+          supports: boolean
+          total: number | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          color_id: string
+          created_at?: string
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          format?: string | null
+          geometry: Json
+          grams?: number | null
+          id?: string
+          infill_pct: number
+          material_id: string
+          minutes?: number | null
+          needs_review?: boolean
+          position?: number
+          qty?: number
+          quality_id: string
+          quote_id: string
+          raw_grams?: number | null
+          raw_minutes?: number | null
+          review_reasons?: string[]
+          store_id: string
+          supports?: boolean
+          total?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          color_id?: string
+          created_at?: string
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          format?: string | null
+          geometry?: Json
+          grams?: number | null
+          id?: string
+          infill_pct?: number
+          material_id?: string
+          minutes?: number | null
+          needs_review?: boolean
+          position?: number
+          qty?: number
+          quality_id?: string
+          quote_id?: string
+          raw_grams?: number | null
+          raw_minutes?: number | null
+          review_reasons?: string[]
+          store_id?: string
+          supports?: boolean
+          total?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_quote_items_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_quote_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_quote_items_quality_id_fkey"
+            columns: ["quality_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_qualities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_quote_items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_quotes: {
+        Row: {
+          contact: Json
+          created_at: string
+          estimated_ready_date: string | null
+          expires_at: string
+          id: string
+          ip_hash: string
+          min_adjustment: number
+          notes: string | null
+          order_id: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          setup_fee: number
+          status: string
+          store_id: string
+          subtotal: number
+          token: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          contact?: Json
+          created_at?: string
+          estimated_ready_date?: string | null
+          expires_at: string
+          id?: string
+          ip_hash: string
+          min_adjustment?: number
+          notes?: string | null
+          order_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          setup_fee?: number
+          status?: string
+          store_id: string
+          subtotal?: number
+          token: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          contact?: Json
+          created_at?: string
+          estimated_ready_date?: string | null
+          expires_at?: string
+          id?: string
+          ip_hash?: string
+          min_adjustment?: number
+          notes?: string | null
+          order_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          setup_fee?: number
+          status?: string
+          store_id?: string
+          subtotal?: number
+          token?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_quotes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_settings: {
+        Row: {
+          buffer_days: number
+          created_at: string
+          daily_print_hours: number
+          enabled: boolean
+          hour_rate: number
+          intro_md: string
+          kwh_price: number
+          labor_hour_cost: number
+          max_auto_hours: number
+          max_file_mb: number
+          min_order_price: number
+          min_piece_price: number
+          post_process_days: number
+          post_process_fee: number
+          quote_valid_days: number
+          round_to: number
+          setup_fee: number
+          store_id: string
+          support_extra_pct: number
+          updated_at: string
+          working_days: number[]
+        }
+        Insert: {
+          buffer_days?: number
+          created_at?: string
+          daily_print_hours?: number
+          enabled?: boolean
+          hour_rate?: number
+          intro_md?: string
+          kwh_price?: number
+          labor_hour_cost?: number
+          max_auto_hours?: number
+          max_file_mb?: number
+          min_order_price?: number
+          min_piece_price?: number
+          post_process_days?: number
+          post_process_fee?: number
+          quote_valid_days?: number
+          round_to?: number
+          setup_fee?: number
+          store_id: string
+          support_extra_pct?: number
+          updated_at?: string
+          working_days?: number[]
+        }
+        Update: {
+          buffer_days?: number
+          created_at?: string
+          daily_print_hours?: number
+          enabled?: boolean
+          hour_rate?: number
+          intro_md?: string
+          kwh_price?: number
+          labor_hour_cost?: number
+          max_auto_hours?: number
+          max_file_mb?: number
+          min_order_price?: number
+          min_piece_price?: number
+          post_process_days?: number
+          post_process_fee?: number
+          quote_valid_days?: number
+          round_to?: number
+          setup_fee?: number
+          store_id?: string
+          support_extra_pct?: number
+          updated_at?: string
+          working_days?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print3d_spools: {
+        Row: {
+          brand: string | null
+          color_id: string
+          cost: number
+          created_at: string
+          id: string
+          net_grams: number
+          notes: string | null
+          purchased_at: string | null
+          remaining_grams: number
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          color_id: string
+          cost?: number
+          created_at?: string
+          id?: string
+          net_grams?: number
+          notes?: string | null
+          purchased_at?: string | null
+          remaining_grams: number
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          color_id?: string
+          cost?: number
+          created_at?: string
+          id?: string
+          net_grams?: number
+          notes?: string | null
+          purchased_at?: string | null
+          remaining_grams?: number
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print3d_spools_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "print3d_colors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print3d_spools_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           category_id: string
@@ -2040,6 +3029,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "store_members_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_modules: {
+        Row: {
+          activated_at: string
+          activated_by: string | null
+          created_at: string
+          expires_at: string | null
+          module_code: string
+          notes: string | null
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string
+          activated_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          module_code: string
+          notes?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          module_code?: string
+          notes?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_modules_module_code_fkey"
+            columns: ["module_code"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "store_modules_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -2741,6 +3781,36 @@ export type Database = {
           variant_title: string
         }[]
       }
+      print3d_can_upload: { Args: { p_name: string }; Returns: boolean }
+      print3d_checkout_quote: {
+        Args: { p_token: string; payload: Json }
+        Returns: Json
+      }
+      print3d_fail_job: {
+        Args: {
+          p_job_id: string
+          p_reason: string
+          p_requeue: boolean
+          p_wasted_grams: number
+        }
+        Returns: Json
+      }
+      print3d_finish_job: {
+        Args: {
+          p_actual_grams: number
+          p_actual_minutes: number
+          p_job_id: string
+          p_post_minutes?: number | null
+          p_spool_id?: string | null
+        }
+        Returns: Json
+      }
+      print3d_get_quote: { Args: { p_token: string }; Returns: Json }
+      print3d_public_config: { Args: { p_store_id: string }; Returns: Json }
+      print3d_submit_quote: {
+        Args: { p_ip_hash: string; p_store_id: string; payload: Json }
+        Returns: Json
+      }
       purge_checkout_sessions: { Args: never; Returns: number }
       release_checkout_reminder: {
         Args: { p_at: string; p_id: string }
@@ -2751,6 +3821,10 @@ export type Database = {
         Returns: number
       }
       run_daily_maintenance: { Args: never; Returns: Json }
+      store_has_module: {
+        Args: { p_code: string; p_store_id: string }
+        Returns: boolean
+      }
       store_is_active: { Args: { p_store_id: string }; Returns: boolean }
       touch_last_seen: { Args: never; Returns: undefined }
       undo_price_batch: {

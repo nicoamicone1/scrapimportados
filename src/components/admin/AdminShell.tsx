@@ -6,6 +6,7 @@ import { Drawer } from "@/components/ui/Dialog";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { UrlPendingScope } from "@/components/ui/useUrlTransition";
 import { cn } from "@/lib/cn";
+import type { ModuleCode } from "@/lib/modules/registry";
 
 import { CommandPalette } from "./CommandPalette";
 import { SIDEBAR_COOKIE } from "./nav";
@@ -16,6 +17,8 @@ export interface AdminShellProps {
   storeName: string;
   user: TopbarUser;
   isOwner: boolean;
+  /** Apps vigentes de la tienda (`ctx.modules`): grupo "Apps" del sidebar y del command palette. */
+  modules?: readonly ModuleCode[];
   /** Estado inicial leído de la cookie (evita salto al hidratar). */
   initialCollapsed: boolean;
   /** Slot: chip del plan debajo del nombre de la tienda en el sidebar (M). */
@@ -44,7 +47,7 @@ function useIsMac() {
  * `UrlPendingScope` (los filtros de la página y sus tablas comparten el
  * estado "cargando").
  */
-export function AdminShell({ storeName, user, isOwner, initialCollapsed, planChip, storeSwitcher, storeHref, children }: AdminShellProps) {
+export function AdminShell({ storeName, user, isOwner, modules, initialCollapsed, planChip, storeSwitcher, storeHref, children }: AdminShellProps) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -81,6 +84,7 @@ export function AdminShell({ storeName, user, isOwner, initialCollapsed, planChi
         <Sidebar
           storeName={storeName}
           isOwner={isOwner}
+          modules={modules}
           planChip={planChip}
           collapsed={collapsed}
           onToggleCollapsed={toggleCollapsed}
@@ -96,7 +100,7 @@ export function AdminShell({ storeName, user, isOwner, initialCollapsed, planChi
         label="Menú"
         className="bg-adm-sidebar-bg md:hidden"
       >
-        <Sidebar storeName={storeName} isOwner={isOwner} planChip={planChip} onNavigate={() => setMobileOpen(false)} />
+        <Sidebar storeName={storeName} isOwner={isOwner} modules={modules} planChip={planChip} onNavigate={() => setMobileOpen(false)} />
       </Drawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -113,7 +117,7 @@ export function AdminShell({ storeName, user, isOwner, initialCollapsed, planChi
         </main>
       </div>
 
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} modules={modules} />
     </div>
   );
 }

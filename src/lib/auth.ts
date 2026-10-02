@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { getStoreModules } from "@/lib/modules/server";
+import type { ModuleCode } from "@/lib/modules/registry";
 import { parsePlan, type PlanInfo } from "@/lib/plans";
 import type { Json, Tables } from "@/lib/supabase/database.types";
 import { createClient, type ServerSupabase } from "@/lib/supabase/server";
@@ -126,6 +128,8 @@ export interface AdminContext {
   store: AdminStore;
   membership: Membership;
   plan: PlanInfo;
+  /** Apps (módulos) vigentes de la tienda activa (docs/modules §1). `[]` si no hay o falta la migración 0022. */
+  modules: ModuleCode[];
 }
 
 /** Plan efectivo de una tienda (RPC `current_plan`: un trial vencido ya cuenta como Free). */
@@ -133,6 +137,16 @@ async function loadPlan(supabase: ServerSupabase, storeId: string): Promise<Plan
   const { data, error } = await supabase.rpc("current_plan", { p_store_id: storeId });
   if (error) console.error("[auth] current_plan:", error.message);
   return parsePlan(data);
+}
+
+/** Códigos de las apps vigentes de la tienda. Nunca rompe el admin: ante error → `[]`. */
+async function loadModules(supabase: ServerSupabase, storeId: string): Promise<ModuleCode[]> {
+  try {
+    return (await getStoreModules(supabase, storeId)).map((m) => m.code);
+  } catch (err) {
+    console.error("[auth] modules:", err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
 type Resolved =
@@ -179,8 +193,8 @@ const resolveAdmin = cache(async (): Promise<Resolved> => {
     return inactive ? { kind: "inactive", store: inactive } : { kind: "no-stores" };
   }
 
-  const plan = await loadPlan(supabase, store.id);
-  return { kind: "ok", ctx: { supabase, user, profile, store, membership, plan } };
+  const [plan, modules] = await Promise.all([loadPlan(supabase, store.id), loadModules(supabase, store.id)]);
+  return { kind: "ok", ctx: { supabase, user, profile, store, membership, plan, modules } };
 });
 
 /**

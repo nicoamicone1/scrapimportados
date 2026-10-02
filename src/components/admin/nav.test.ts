@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isNavActive, NAV, navItemFor } from "./nav";
+import { buildNav, isNavActive, NAV, navItemFor, sectionFor } from "./nav";
 
 const find = (href: string) => NAV.flatMap((g) => g.items).find((i) => i.href === href)!;
 
@@ -22,5 +22,40 @@ describe("isNavActive", () => {
   it("navItemFor devuelve el ítem más específico", () => {
     expect(navItemFor("/admin/inventario/avisos")?.item.href).toBe("/admin/inventario/avisos");
     expect(navItemFor("/admin/inventario/movimientos")?.item.href).toBe("/admin/inventario");
+  });
+});
+
+describe("buildNav", () => {
+  it("sin apps devuelve el menú fijo, con el ítem Apps en Sistema", () => {
+    expect(buildNav([])).toBe(NAV);
+    const system = NAV.find((g) => g.section === "system")!;
+    expect(system.items.some((i) => i.href === "/admin/apps")).toBe(true);
+  });
+
+  it("con una app vigente suma el grupo Apps justo antes de Sistema", () => {
+    const groups = buildNav(["print3d"]);
+    expect(groups).toHaveLength(NAV.length + 1);
+    const at = groups.findIndex((g) => g.label === "Apps");
+    expect(groups[at + 1].section).toBe("system");
+    expect(groups[at].items.map((i) => i.href)).toEqual([
+      "/admin/taller-3d",
+      "/admin/taller-3d/cola",
+      "/admin/taller-3d/cotizaciones",
+      "/admin/taller-3d/filamento",
+    ]);
+    // No muta el menú fijo.
+    expect(NAV.some((g) => g.label === "Apps")).toBe(false);
+  });
+
+  it("las rutas de la app resuelven activo, breadcrumb y tinta", () => {
+    const apps = buildNav(["print3d"]).find((g) => g.label === "Apps")!;
+    const home = apps.items.find((i) => i.href === "/admin/taller-3d")!;
+    expect(isNavActive(home, "/admin/taller-3d")).toBe(true);
+    expect(isNavActive(home, "/admin/taller-3d/cola")).toBe(false);
+    expect(navItemFor("/admin/taller-3d/cola")?.item.href).toBe("/admin/taller-3d/cola");
+    expect(navItemFor("/admin/taller-3d/impresoras")?.item.href).toBe("/admin/taller-3d");
+    expect(navItemFor("/admin/taller-3d")?.group.label).toBe("Apps");
+    expect(sectionFor("/admin/taller-3d/configuracion")).toBe("store");
+    expect(navItemFor("/admin/taller-3dx")).toBeNull();
   });
 });

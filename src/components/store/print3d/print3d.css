@@ -1,0 +1,107 @@
+/*
+ * Taller 3D en la tienda. Sólo tokens del tema (DESIGN.md §3): nada de
+ * colores, radios ni sombras literales.
+ */
+
+@layer components {
+  /* Radios con forma de chip (material, calidad, soportes). */
+  .p3d .chip[aria-checked="true"] {
+    border-color: var(--fg);
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  /* Swatch de filamento */
+  .p3d-swatch {
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--fg) 12%, transparent);
+  }
+  .p3d-swatch:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+  }
+  .p3d-swatch-active {
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 4px var(--fg);
+  }
+  /* Sin stock: tachado en diagonal sobre el color. */
+  .p3d-swatch-out::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      to top right,
+      transparent calc(50% - 1.5px),
+      var(--bg) calc(50% - 1.5px),
+      var(--bg) calc(50% + 1.5px),
+      transparent calc(50% + 1.5px)
+    );
+    opacity: 0.9;
+  }
+
+  /* Slider de relleno */
+  .p3d-range {
+    accent-color: var(--primary);
+    min-height: 32px;
+  }
+
+  /* Zona de arrastre: la cama de la impresora (grilla de 10 y 50). */
+  .p3d-bed {
+    --p3d-grid: color-mix(in oklab, var(--fg) 9%, transparent);
+    --p3d-grid-major: color-mix(in oklab, var(--fg) 16%, transparent);
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(var(--p3d-grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--p3d-grid-major) 1px, transparent 1px),
+      linear-gradient(var(--p3d-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--p3d-grid) 1px, transparent 1px);
+    background-size:
+      80px 80px,
+      80px 80px,
+      16px 16px,
+      16px 16px;
+    background-position: -1px -1px;
+  }
+  .p3d-drop {
+    border: 1.5px dashed var(--border-strong);
+    transition: border-color 120ms ease;
+  }
+  .p3d-drop[data-over="1"] {
+    border-color: var(--primary);
+    border-style: solid;
+  }
+
+  /* Barra de progreso de lectura */
+  .p3d-progress {
+    height: 3px;
+    background: var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .p3d-progress > span {
+    display: block;
+    height: 100%;
+    background: var(--fg);
+    transition: width 120ms linear;
+  }
+
+  /* Visor */
+  .p3d-viewer {
+    background: var(--surface);
+    color: var(--fg-muted);
+  }
+  .p3d-viewer canvas {
+    cursor: grab;
+  }
+  .p3d-viewer canvas:active {
+    cursor: grabbing;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p3d-progress > span,
+  .p3d-drop {
+    transition: none;
+  }
+}

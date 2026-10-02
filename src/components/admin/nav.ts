@@ -1,6 +1,7 @@
 import {
   BadgePercent,
   BellRing,
+  Blocks,
   Boxes,
   CreditCard,
   FileClock,
@@ -25,6 +26,8 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
+
+import { MODULE_CODES, MODULES, type ModuleCode } from "@/lib/modules/registry";
 
 /**
  * Navegación del admin (ARCHIVO COMPARTIDO — spec §10).
@@ -120,6 +123,8 @@ export const NAV: NavGroup[] = [
     items: [
       // G: importador / scraping
       { label: "Importar", href: "/admin/importar", icon: Import, keywords: ["scraping", "catálogo", "woocommerce", "shopify"] },
+      // A — Apps: catálogo de apps extra (docs/modules/TALLER-3D.md §1.3)
+      { label: "Apps", href: "/admin/apps", icon: Blocks, keywords: ["módulos", "modulos", "extensiones", "taller 3d", "impresión 3d", "activar"] },
       // M: plan de la tienda (uso, límites, cambio de plan)
       { label: "Plan", href: "/admin/plan", icon: CreditCard, keywords: ["suscripción", "suscripcion", "precio", "límites", "limites", "upgrade", "facturación"] },
       // H: configuración (tienda, pagos, checkout, SEO, políticas)
@@ -136,8 +141,31 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-/** Todas las entradas en una lista plana. */
+/** Todas las entradas en una lista plana (sin las apps: esas dependen de la tienda). */
 export const NAV_ITEMS: NavItem[] = NAV.flatMap((g) => g.items);
+
+/** Grupo "Apps" del sidebar: se pinta con la tinta de "Tienda" (sin sección nueva). */
+export const APPS_GROUP_LABEL = "Apps";
+
+/** Grupo "Apps" con el menú de cada app vigente (en el orden del registro); `null` si no hay ninguna. */
+export function appsNavGroup(modules: readonly ModuleCode[]): NavGroup | null {
+  const items = MODULE_CODES.filter((c) => modules.includes(c)).flatMap((c): NavItem[] => MODULES[c].nav);
+  return items.length ? { label: APPS_GROUP_LABEL, section: "store", items } : null;
+}
+
+/**
+ * Menú de la tienda: `NAV` + el grupo "Apps" (antes de "Sistema") con las
+ * apps vigentes (`ctx.modules`). Sin apps devuelve `NAV` tal cual.
+ */
+export function buildNav(modules: readonly ModuleCode[]): NavGroup[] {
+  const apps = appsNavGroup(modules);
+  if (!apps) return NAV;
+  const at = NAV.findIndex((g) => g.section === "system");
+  return at < 0 ? [...NAV, apps] : [...NAV.slice(0, at), apps, ...NAV.slice(at)];
+}
+
+/** Menú con TODAS las apps: para resolver rutas (activo, breadcrumb, tinta) sin saber cuáles tiene la tienda. */
+const ALL_NAV: NavGroup[] = buildNav(MODULE_CODES);
 
 function matchesPath(item: NavItem, pathname: string): boolean {
   if (item.external) return false;
@@ -152,18 +180,27 @@ function matchesPath(item: NavItem, pathname: string): boolean {
  */
 export function isNavActive(item: NavItem, pathname: string): boolean {
   if (!matchesPath(item, pathname)) return false;
-  return !NAV.some((g) => g.items.some((o) => o !== item && o.href.length > item.href.length && matchesPath(o, pathname)));
+  return !ALL_NAV.some((g) => g.items.some((o) => o !== item && o.href.length > item.href.length && matchesPath(o, pathname)));
 }
 
 /** Ítem del menú que corresponde a una ruta (para el breadcrumb). */
 export function navItemFor(pathname: string): { group: NavGroup; item: NavItem } | null {
-  for (const group of NAV) {
+  for (const group of ALL_NAV) {
     for (const item of group.items) {
       if (!item.exact && isNavActive(item, pathname)) return { group, item };
     }
   }
   const dashboard = NAV[0].items[0];
-  return pathname === dashboard.href ? { group: NAV[0], item: dashboard } : null;
+  if (pathname === dashboard.href) return { group: NAV[0], item: dashboard };
+  // Rutas de una app sin entrada propia (/admin/taller-3d, /admin/taller-3d/impresoras…): cuelgan de la app.
+  const apps = ALL_NAV.find((g) => g.label === APPS_GROUP_LABEL);
+  for (const code of MODULE_CODES) {
+    const { adminHref } = MODULES[code];
+    if (pathname !== adminHref && !pathname.startsWith(`${adminHref}/`)) continue;
+    const item = apps?.items.find((i) => i.href === adminHref);
+    if (apps && item) return { group: apps, item };
+  }
+  return null;
 }
 
 /** Sección (tinta) de una ruta del admin; null fuera de las rutas del menú. */

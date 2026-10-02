@@ -3,11 +3,12 @@
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
+import type { ModuleCode } from "@/lib/modules/registry";
 
-import { isNavActive, NAV } from "./nav";
+import { buildNav, isNavActive } from "./nav";
 import { OrdersBadge } from "./OrdersBadge";
 import { VersionBadge } from "./VersionBadge";
 
@@ -19,6 +20,8 @@ const NAV_BADGES: Partial<Record<string, (props: { collapsed: boolean }) => Reac
 export interface SidebarProps {
   storeName: string;
   isOwner: boolean;
+  /** Apps vigentes de la tienda (`ctx.modules`): suman el grupo "Apps". */
+  modules?: readonly ModuleCode[];
   /** Chip del plan debajo del nombre de la tienda (lo llena M: "Pro · trial 9 días"). */
   planChip?: ReactNode;
   collapsed?: boolean;
@@ -27,6 +30,8 @@ export interface SidebarProps {
   onNavigate?: () => void;
   className?: string;
 }
+
+const NO_MODULES: readonly ModuleCode[] = [];
 
 /** Marca "Ecommy": cuadrado ámbar con la "e" y el nombre en blanco. Sin gradientes ni brillo. */
 function Brand({ collapsed }: { collapsed: boolean }) {
@@ -48,8 +53,9 @@ function Brand({ collapsed }: { collapsed: boolean }) {
  * tienda + chip del plan arriba, ítem activo en pino con barra ámbar a la
  * izquierda, versión al pie.
  */
-export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onToggleCollapsed, onNavigate, className }: SidebarProps) {
+export function Sidebar({ storeName, isOwner, modules = NO_MODULES, planChip, collapsed = false, onToggleCollapsed, onNavigate, className }: SidebarProps) {
   const pathname = usePathname();
+  const nav = useMemo(() => buildNav(modules), [modules]);
 
   return (
     <div className={cn("adm-dark flex h-full flex-col bg-adm-sidebar-bg text-adm-sidebar-fg", className)}>
@@ -68,7 +74,7 @@ export function Sidebar({ storeName, isOwner, planChip, collapsed = false, onTog
       </div>
 
       <nav aria-label="Principal" className="adm-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3 [scrollbar-color:#3a4642_transparent]">
-        {NAV.map((group, gi) => {
+        {nav.map((group, gi) => {
           const items = group.items.filter((i) => !i.ownerOnly || isOwner);
           if (!items.length) return null;
           return (

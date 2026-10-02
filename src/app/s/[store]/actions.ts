@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/money";
 import { computeCart, type Coupon, type CartTotals } from "@/lib/pricing";
 import { normalizeProvince, provinceName, quoteShipping } from "@/lib/shipping";
 import { describeIssue, validateCart, type CartPatch } from "@/lib/store/cart-validation";
+import { addressSchema, customerIssues, customerSchema } from "@/lib/store/checkout-input";
 import { orderLinesPayload, supportsOrderBundle } from "@/lib/store/order-bundle";
 import { deliveryText, getOrderByToken } from "@/lib/store/orders";
 import { fetchPaymentMethodsFresh } from "@/lib/store/payment-methods";
@@ -172,19 +173,6 @@ export async function applyCoupon(input: unknown): Promise<ActionResult<{ coupon
 // Cotizar envío
 // ---------------------------------------------------------------------------
 
-const addressSchema = z.object({
-  street: z.string().trim().min(2, "Ingresá la calle").max(120),
-  number: z.string().trim().min(1, "Ingresá la altura").max(12),
-  floor: z.string().trim().max(40).optional().default(""),
-  city: z.string().trim().min(2, "Ingresá la ciudad o localidad").max(80),
-  province: z.string().trim().min(1, "Elegí la provincia").max(60),
-  postal_code: z
-    .string()
-    .trim()
-    .regex(/^([A-Za-z]?\d{4}[A-Za-z]{0,3})$/, "Revisá el código postal: 4 números (ej. 1425) o CPA (ej. C1425ABC)."),
-  notes: z.string().trim().max(300).optional().default(""),
-});
-
 export type AddressInput = z.input<typeof addressSchema>;
 
 export interface ShippingQuoteResult {
@@ -251,12 +239,7 @@ async function orderLevelBundleSupported(): Promise<boolean> {
 
 const orderSchema = z
   .object({
-    customer: z.object({
-      name: z.string().trim().min(2, "Ingresá tu nombre y apellido").max(120),
-      email: z.string().trim().toLowerCase().email("Revisá el email: tiene que tener el formato nombre@dominio.com").max(160),
-      phone: z.string().trim().max(40).optional().default(""),
-      doc: z.string().trim().max(20).optional().default(""),
-    }),
+    customer: customerSchema,
     fulfillment: z.enum(["delivery", "pickup"]),
     address: addressSchema.nullish(),
     pickupLocationId: uuid.nullish(),
@@ -268,13 +251,7 @@ const orderSchema = z
   .superRefine((v, ctx) => {
     if (v.fulfillment === "delivery" && !v.address) ctx.addIssue({ code: "custom", path: ["address"], message: "Completá la dirección de entrega" });
     if (v.fulfillment === "pickup" && !v.pickupLocationId) ctx.addIssue({ code: "custom", path: ["pickupLocationId"], message: "Elegí dónde retirás" });
-    const digits = v.customer.phone.replace(/\D/g, "");
-    if (v.customer.phone && (digits.length < 8 || digits.length > 15)) {
-      ctx.addIssue({ code: "custom", path: ["customer", "phone"], message: "Revisá el teléfono: tiene que tener código de área (ej. 11 5555 1234)." });
-    }
-    if (v.customer.doc && !/^\d{7,11}$/.test(v.customer.doc.replace(/[.\-\s]/g, ""))) {
-      ctx.addIssue({ code: "custom", path: ["customer", "doc"], message: "Revisá el DNI o CUIT: sólo números (7 a 11)." });
-    }
+    for (const issue of customerIssues(v.customer)) ctx.addIssue({ code: "custom", path: ["customer", issue.path], message: issue.message });
   });
 
 export type CreateOrderInput = z.input<typeof orderSchema>;

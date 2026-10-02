@@ -23,10 +23,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Dialog } from "@/components/ui/Dialog";
 import { Kbd } from "@/components/ui/display";
 import type { PaletteSearchResult } from "@/app/admin/api/search/route";
+import type { ModuleCode } from "@/lib/modules/registry";
 import { formatMoney } from "@/lib/money";
 import { normalizeText } from "@/lib/slug";
 
-import { NAV } from "./nav";
+import { buildNav } from "./nav";
 
 /**
  * Command palette (Ctrl K / ⌘K) — DESIGN.md §7.10.
@@ -38,12 +39,16 @@ import { NAV } from "./nav";
 export interface CommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Apps vigentes de la tienda (`ctx.modules`): sus pantallas aparecen en "Ir a". */
+  modules?: readonly ModuleCode[];
 }
 
-export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
+const NO_MODULES: readonly ModuleCode[] = [];
+
+export function CommandPalette({ open, onOpenChange, modules = NO_MODULES }: CommandPaletteProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} size="lg" hideClose label="Buscar o ir a" className="mt-[15vh] mb-auto">
-      {open ? <PaletteBody onClose={() => onOpenChange(false)} /> : null}
+      {open ? <PaletteBody modules={modules} onClose={() => onOpenChange(false)} /> : null}
     </Dialog>
   );
 }
@@ -115,7 +120,7 @@ function Enter() {
   return <CornerDownLeft className="size-3.5 text-adm-fg-muted opacity-0 group-data-[selected=true]/item:opacity-100" aria-hidden />;
 }
 
-function PaletteBody({ onClose }: { onClose: () => void }) {
+function PaletteBody({ modules, onClose }: { modules: readonly ModuleCode[]; onClose: () => void }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -123,10 +128,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const q = normalizeText(query.trim().replace(/^#/, ""));
 
   const navItems = useMemo(() => {
-    const all = NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.label })));
+    const all = buildNav(modules).flatMap((g) => g.items.map((i) => ({ ...i, group: g.label })));
     if (!q) return all;
     return all.filter((i) => normalizeText([i.label, i.group, ...(i.keywords ?? [])].join(" ")).includes(q));
-  }, [q]);
+  }, [q, modules]);
 
   const actions = useMemo(() => {
     if (!q) return ACTIONS;
