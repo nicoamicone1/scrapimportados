@@ -12,6 +12,7 @@ import type { CategoryOption, ProductOption } from "@/lib/admin/pages";
 import { isoToZonedLocal, zonedLocalToIso } from "@/lib/blocks/datetime";
 import type { ProductSource } from "@/lib/blocks/schema";
 import { cn } from "@/lib/cn";
+import type { ModuleCode } from "@/lib/modules/registry";
 
 import type { LinkSuggestion } from "./fields";
 
@@ -22,6 +23,8 @@ export interface BuilderOptions {
   tags: string[];
   links: LinkSuggestion[];
   timezone: string;
+  /** Apps activas de la tienda: los bloques de una app sólo se ofrecen si está activa. */
+  modules?: ModuleCode[];
 }
 
 const OptionsContext = createContext<BuilderOptions>({ categories: [], tags: [], links: [], timezone: "America/Argentina/Buenos_Aires" });

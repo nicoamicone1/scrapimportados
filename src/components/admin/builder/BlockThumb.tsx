@@ -12,6 +12,7 @@ import {
   MessageSquareQuote,
   Minus,
   PanelTop,
+  Printer,
   SquarePlay,
   Tags,
   type LucideIcon,
@@ -36,6 +37,7 @@ export const BLOCK_ICONS: Record<BlockType, LucideIcon> = {
   testimonials: MessageSquareQuote,
   video: SquarePlay,
   divider: Minus,
+  print3d_cta: Printer,
 };
 
 export const BlockIconImage = ImageIcon;
@@ -208,6 +210,18 @@ const THUMBS: Record<BlockType, () => ReactNode> = {
       <Lines x={14} y={22} widths={[100, 80]} o={0.2} />
       <rect x="14" y="48" width="132" height="1" {...fill(0.55)} />
       <Lines x={14} y={62} widths={[110, 70]} o={0.2} />
+    </Frame>
+  ),
+  print3d_cta: () => (
+    <Frame>
+      <Lines x={12} y={24} widths={[30]} h={3} o={0.4} />
+      <rect x="12" y="32" width="70" height="8" rx="2" {...fill(0.7)} />
+      <Lines x={12} y={46} widths={[64, 50]} />
+      <rect x="12" y="64" width="38" height="10" rx="2" {...fill(0.85)} />
+      <path d="M96 78 L126 63 L156 78 L126 93 Z" fill="none" stroke="currentColor" strokeOpacity=".4" />
+      <rect x="114" y="52" width="24" height="26" rx="2" {...fill(0.45)} />
+      <rect x="121" y="30" width="10" height="9" rx="1" {...fill(0.8)} />
+      <path d="M124 39 L128 39 L126 44 Z" {...fill(0.8)} />
     </Frame>
   ),
 };

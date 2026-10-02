@@ -39,6 +39,11 @@ export interface ProductViewProps {
   paymentMethods: { name: string; discountPercent: number; type: string }[];
   whatsappHref: string | null;
   contain: boolean;
+  /**
+   * Taller 3D: fecha "listo aprox." ya formateada ("jueves 9 de octubre") por
+   * variante, o "*" para todas. Sólo productos con spec `made_to_order`.
+   */
+  madeToOrder?: Record<string, string> | null;
   /** Entrega, descripción, ficha técnica (render del server). */
   children?: ReactNode;
 }
@@ -75,6 +80,7 @@ export function ProductView({
   paymentMethods,
   whatsappHref,
   contain,
+  madeToOrder,
   children,
 }: ProductViewProps) {
   const { add, open } = useCart();
@@ -193,6 +199,7 @@ export function ProductView({
   };
 
   const sku = variant?.sku ?? (variants.length === 1 ? variants[0].sku : null);
+  const readyLabel = madeToOrder ? ((variant ? madeToOrder[variant.id] : undefined) ?? madeToOrder["*"] ?? null) : null;
 
   return (
     <div className="grid gap-6 lg:grid-cols-12 lg:gap-12">
@@ -243,6 +250,12 @@ export function ProductView({
                 </li>
               ))}
             </ul>
+          ) : null}
+          {readyLabel ? (
+            <p className="mt-3 text-sm">
+              <span className="font-medium">Se imprime a pedido</span>
+              <span className="text-fg-muted"> · listo aprox. el {readyLabel}</span>
+            </p>
           ) : null}
           {shown.tiers.length && !soldOut ? (
             <TierTable rows={shown.tiers} qty={variant ? qty : 0} sharedAcrossVariants={variants.length > 1} />

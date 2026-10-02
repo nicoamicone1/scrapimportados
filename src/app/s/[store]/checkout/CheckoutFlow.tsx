@@ -69,7 +69,7 @@ export interface CheckoutFlowProps {
   remindersEnabled?: boolean;
 }
 
-type Step = 1 | 2 | 3 | 4;
+export type Step = 1 | 2 | 3 | 4;
 
 interface Customer {
   name: string;
@@ -108,7 +108,7 @@ function readSaved(): { customer?: Partial<Customer>; address?: Partial<Address>
 // Campos
 // ---------------------------------------------------------------------------
 
-function Field({
+export function Field({
   label,
   error,
   help,
@@ -143,7 +143,7 @@ function Field({
   );
 }
 
-function StepShell({
+export function StepShell({
   n,
   title,
   step,

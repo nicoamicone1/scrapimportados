@@ -56,7 +56,7 @@ export function formatReadyDate(isoDate: string | null | undefined): string | nu
   if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
   const d = new Date(`${isoDate}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(d);
+  return new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(d).replace(",", "");
 }
 
 /** Minutos → "45 min" · "3 h 20 min" · "26 h". */

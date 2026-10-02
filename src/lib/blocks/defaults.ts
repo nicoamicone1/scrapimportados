@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 
+import type { ModuleCode } from "@/lib/modules/registry";
 import type { PageTemplateId } from "@/lib/schemas/page";
 
 import { BLOCK_LABELS, type Block, type BlockOf, type BlockStyle, type BlockType } from "./schema";
@@ -24,6 +25,8 @@ export interface BlockMeta {
   label: string;
   description: string;
   group: BlockGroup;
+  /** App que lo habilita: la paleta sólo lo ofrece si la tienda la tiene activa. */
+  module?: ModuleCode;
 }
 
 export const BLOCK_META: Record<BlockType, BlockMeta> = {
@@ -41,6 +44,13 @@ export const BLOCK_META: Record<BlockType, BlockMeta> = {
   testimonials: { type: "testimonials", label: BLOCK_LABELS.testimonials, description: "Reseñas reales de clientes. Nace vacío: no inventes reseñas.", group: "content" },
   video: { type: "video", label: BLOCK_LABELS.video, description: "Video de YouTube, Vimeo o un .mp4. Carga sólo al tocar play.", group: "content" },
   divider: { type: "divider", label: BLOCK_LABELS.divider, description: "Una línea o espacio para separar secciones.", group: "structure" },
+  print3d_cta: {
+    type: "print3d_cta",
+    label: BLOCK_LABELS.print3d_cta,
+    description: "Lleva al cotizador de impresión 3D: subís el STL y ves precio y fecha. App Taller 3D.",
+    group: "campaign",
+    module: "print3d",
+  },
 };
 
 /** Orden de la paleta. */
@@ -48,6 +58,7 @@ export const PALETTE_ORDER: BlockType[] = [
   "hero",
   "banner_grid",
   "countdown",
+  "print3d_cta",
   "product_slider",
   "product_grid",
   "category_list",
@@ -77,6 +88,7 @@ const DEFAULT_PADDING: Record<BlockType, BlockStyle["paddingY"]> = {
   testimonials: "lg",
   video: "md",
   divider: "none",
+  print3d_cta: "md",
 };
 
 export function defaultStyle(type: BlockType): BlockStyle {
@@ -169,6 +181,12 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
   testimonials: () => ({ items: [] }),
   video: () => ({ url: "", ratio: "16:9" }),
   divider: () => ({ style: "line", size: "md" }),
+  print3d_cta: () => ({
+    eyebrow: "Impresión 3D a pedido",
+    title: "Imprimimos tu pieza",
+    text: "Subí el STL o 3MF y ves al instante cuánto sale y cuándo la tenés.",
+    cta: { label: "Cotizar mi pieza", href: "/impresion-3d" },
+  }),
 };
 
 /** Bloque nuevo con id único, settings de ejemplo y estilo por defecto. */

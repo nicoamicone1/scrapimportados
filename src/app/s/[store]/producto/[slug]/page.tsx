@@ -15,10 +15,13 @@ import { applyPromotions, bestPaymentDiscount, resolveVatPercent } from "@/lib/p
 import { listCategories } from "@/lib/store/categories";
 import { requireStore } from "@/lib/store/context";
 import { getStoreDisplay, type StoreDisplay } from "@/lib/store/display";
+import { storeHasModule } from "@/lib/store/modules";
+import { getPrint3dConfig, madeToOrderDates } from "@/lib/store/print3d";
 import { displayPrice, getProduct, getProductPreview, getRelated, type ProductDetail } from "@/lib/store/products";
 import { redirectIfMoved } from "@/lib/store/redirects";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata, productJsonLd } from "@/lib/store/seo";
 import { buildProductMessage, waLink } from "@/lib/store/whatsapp";
+import { formatReadyDate } from "@/components/store/print3d/shared";
 
 type Props = PageProps<"/s/[store]/producto/[slug]">;
 
@@ -43,6 +46,26 @@ async function loadProduct(
     return { product, previewing: Boolean(product && product.status !== "active") };
   }
   return { product: await getProduct(storeId, slug), previewing: false };
+}
+
+/**
+ * Taller 3D: "Se imprime a pedido · listo aprox. el …" por variante (o "*").
+ * Nunca rompe la ficha: ante cualquier error, sin línea.
+ */
+async function loadMadeToOrder(storeId: string, productId: string): Promise<Record<string, string> | null> {
+  try {
+    if (!(await storeHasModule(storeId, "print3d"))) return null;
+    const dates = madeToOrderDates(await getPrint3dConfig(storeId), productId);
+    const labels = Object.fromEntries(
+      Object.entries(dates).flatMap(([k, d]) => {
+        const label = formatReadyDate(d);
+        return label ? [[k, label]] : [];
+      }),
+    );
+    return Object.keys(labels).length ? labels : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -120,9 +143,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const url = absoluteUrl(store, `/producto/${product.slug}`);
   const variantParam = typeof sp.variant === "string" ? sp.variant : null;
 
-  const [categories, related] = await Promise.all([
+  const [categories, related, madeToOrder] = await Promise.all([
     listCategories(store.id),
     previewing ? Promise.resolve([]) : getRelated(store.id, product, 8),
+    loadMadeToOrder(store.id, product.id),
   ]);
 
   // Breadcrumb: la primera categoría con su cadena de padres.
@@ -231,6 +255,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
           paymentMethods={paymentMethods.map((m) => ({ name: m.name, discountPercent: m.discountPercent, type: m.type }))}
           whatsappHref={whatsappHref}
           contain={contain}
+          madeToOrder={madeToOrder}
         >
           <DeliveryNote display={display} />
           {product.shortDescription ? <p className="mt-6 text-fg-muted">{product.shortDescription}</p> : null}

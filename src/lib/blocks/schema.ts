@@ -230,6 +230,22 @@ export const dividerBlockSchema = z.object({
   }),
 });
 
+/**
+ * Llamado al cotizador de la app Taller 3D (`/impresion-3d`). Sólo se ofrece
+ * en el builder con la app activa; en la tienda no se muestra si se apagó
+ * (`ResolvedBlockData.print3d`). Spec: docs/modules/TALLER-3D.md §4.
+ */
+export const print3dCtaBlockSchema = z.object({
+  ...base,
+  type: z.literal("print3d_cta"),
+  settings: z.object({
+    eyebrow: z.string().max(120).optional(),
+    title: z.string().max(200),
+    text: z.string().max(500).default(""),
+    cta: ctaSchema,
+  }),
+});
+
 export const blockSchema = z.discriminatedUnion("type", [
   heroBlockSchema,
   productSliderBlockSchema,
@@ -245,6 +261,7 @@ export const blockSchema = z.discriminatedUnion("type", [
   testimonialsBlockSchema,
   videoBlockSchema,
   dividerBlockSchema,
+  print3dCtaBlockSchema,
 ]);
 
 export const blocksSchema = z.array(blockSchema);
@@ -268,6 +285,7 @@ export const BLOCK_TYPES = [
   "testimonials",
   "video",
   "divider",
+  "print3d_cta",
 ] as const satisfies readonly BlockType[];
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
@@ -285,6 +303,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   testimonials: "Testimonios",
   video: "Video",
   divider: "Separador",
+  print3d_cta: "Cotizador 3D",
 };
 
 export const DEFAULT_BLOCK_STYLE: BlockStyle = {
@@ -410,6 +429,17 @@ const FACTORIES: BlockFactories = {
   }),
   video: (id, style) => ({ id, type: "video", style, settings: { url: "", ratio: "16:9" } }),
   divider: (id, style) => ({ id, type: "divider", style, settings: { style: "line", size: "md" } }),
+  print3d_cta: (id, style) => ({
+    id,
+    type: "print3d_cta",
+    style,
+    settings: {
+      eyebrow: "Impresión 3D a pedido",
+      title: "Imprimimos tu pieza",
+      text: "Subí el STL o 3MF y ves al instante cuánto sale y cuándo la tenés.",
+      cta: { label: "Cotizar mi pieza", href: "/impresion-3d" },
+    },
+  }),
 };
 
 /** Bloque nuevo con valores razonables (para la paleta del builder). */

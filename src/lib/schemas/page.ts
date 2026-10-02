@@ -22,6 +22,8 @@ export const RESERVED_PAGE_SLUGS = [
   "_next",
   "arrepentimiento",
   "politicas",
+  // Apps (src/lib/modules/registry.ts → storefrontPaths): Taller 3D.
+  "impresion-3d",
   "sitemap",
   "sitemap-xml",
   "robots",

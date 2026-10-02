@@ -53,6 +53,8 @@ export function blockSummary(block: Block): string {
       return block.settings.url || "Sin video";
     case "divider":
       return block.settings.style === "line" ? "Línea" : "Espacio";
+    case "print3d_cta":
+      return block.settings.title;
   }
 }
 

@@ -21,7 +21,8 @@ export function roundTo(x: number, decimals: number): number {
 /**
  * Redondeo a 2 decimales para gramos, minutos y plata. Primero limpia el
  * ruido binario a 8 decimales (1711.4249999999997 → 1711.425) y después
- * redondea: en SQL alcanza con `round(x, 2)` porque numeric es exacto.
+ * redondea. Espejo SQL: `round(round(x, 8), 2)` — numeric NO es exacto al
+ * dividir (40.00/60 = 0.66666666666666666667), así que SQL también limpia a 8.
  */
 export function round2(x: number): number {
   return roundTo(roundTo(x, 8), 2);

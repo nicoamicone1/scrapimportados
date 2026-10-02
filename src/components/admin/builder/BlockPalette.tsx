@@ -5,12 +5,19 @@ import { BLOCK_GROUP_LABELS, BLOCK_META, PALETTE_ORDER, type BlockGroup } from "
 import type { BlockType } from "@/lib/blocks/schema";
 
 import { BlockThumb } from "./BlockThumb";
+import { useBuilderOptions } from "./pickers";
 
 /** Paleta "Agregar bloque": miniaturas esquemáticas agrupadas. */
 export function BlockPalette({ open, onOpenChange, onPick }: { open: boolean; onOpenChange: (o: boolean) => void; onPick: (type: BlockType) => void }) {
+  const { modules = [] } = useBuilderOptions();
+  // Bloques de apps (Taller 3D…): sólo con la app activa en la tienda.
+  const offered = PALETTE_ORDER.filter((t) => {
+    const app = BLOCK_META[t].module;
+    return !app || modules.includes(app);
+  });
   const groups = (Object.keys(BLOCK_GROUP_LABELS) as BlockGroup[]).map((g) => ({
     group: g,
-    types: PALETTE_ORDER.filter((t) => BLOCK_META[t].group === g),
+    types: offered.filter((t) => BLOCK_META[t].group === g),
   }));
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title="Agregar bloque" description="Se agrega debajo del bloque seleccionado." size="xl">

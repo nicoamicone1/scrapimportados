@@ -14,6 +14,7 @@ import { Features } from "./Features";
 import { Heading } from "./Heading";
 import { Hero } from "./Hero";
 import { ImageText } from "./ImageText";
+import { Print3dCta } from "./Print3dCta";
 import { ProductGridBlock } from "./ProductGrid";
 import { ProductSlider } from "./ProductSlider";
 import { RichText } from "./RichText";
@@ -57,6 +58,8 @@ export function isBlockEmpty(block: Block, ctx: BlockContext): boolean {
       return parseVideoUrl(block.settings.url) === null;
     case "rich_text":
       return !sanitizeHtml(block.settings.html).trim();
+    case "print3d_cta":
+      return !ctx.data.print3d || !block.settings.title.trim();
     case "countdown": {
       const end = Date.parse(block.settings.endsAt);
       const now = (ctx.now ?? new Date()).getTime();
@@ -99,6 +102,8 @@ export function renderBlock(block: Block, ctx: BlockContext, index: number): Rea
       return <Video block={block} ctx={ctx} index={index} />;
     case "divider":
       return <Divider block={block} ctx={ctx} index={index} />;
+    case "print3d_cta":
+      return <Print3dCta block={block} ctx={ctx} index={index} />;
   }
 }
 

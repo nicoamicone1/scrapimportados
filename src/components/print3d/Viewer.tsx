@@ -136,6 +136,18 @@ function inkFrom(el: HTMLElement): Color {
   return c;
 }
 
+function webglAvailable(): boolean {
+  if (typeof document === "undefined") return true;
+  try {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    return Boolean(gl);
+  } catch {
+    return false;
+  }
+}
+
 export function Viewer({
   positions,
   scale = 1,
@@ -150,7 +162,8 @@ export function Viewer({
 }: ViewerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Stage | null>(null);
-  const [failed, setFailed] = useState(false);
+  // Sin WebGL (navegador viejo, aceleración apagada): se muestra el `fallback`.
+  const [failed, setFailed] = useState(() => !webglAvailable());
   const snapshotRef = useRef(onSnapshot);
   const snapshotTimer = useRef<number | null>(null);
   const bedKey = bed ? bed.join("x") : "";
@@ -166,7 +179,8 @@ export function Viewer({
     try {
       renderer = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: "low-power" });
     } catch {
-      setFailed(true);
+      // Raro (se chequeó al montar), pero puede pasar si el navegador se queda sin contextos.
+      queueMicrotask(() => setFailed(true));
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -345,7 +359,6 @@ export function Viewer({
     stage.piece.material.color.set(color);
     stage.render();
     scheduleSnapshot();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color]);
 
   if (failed) return <div className={className}>{fallback ?? null}</div>;

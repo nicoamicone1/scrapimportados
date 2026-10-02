@@ -40,6 +40,7 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
 
   const links: LinkSuggestion[] = [
     ...STORE_ROUTES,
+    ...(ctx.modules.includes("print3d") ? [{ href: "/impresion-3d", label: "Cotizador 3D" }] : []),
     ...categories.map((c) => ({ href: `/categoria/${c.slug}`, label: `Categoría: ${c.path}` })),
     ...pages.filter((p) => p.slug !== "home").map((p) => ({ href: `/${p.slug}`, label: `Página: ${p.title}` })),
   ];
@@ -48,7 +49,7 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
     <PageEditor
       page={page}
       theme={settings.theme}
-      options={{ categories, tags, links, timezone: settings.timezone }}
+      options={{ categories, tags, links, timezone: settings.timezone, modules: ctx.modules }}
       siteUrl={storeUrl(ctx.store)}
       storeName={settings.name}
       initialNodes={initialNodes}

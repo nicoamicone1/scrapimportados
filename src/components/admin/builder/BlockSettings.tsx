@@ -487,6 +487,25 @@ function VideoForm({ block, set }: Props<"video">) {
   );
 }
 
+function Print3dCtaForm({ block, set }: Props<"print3d_cta">) {
+  const s = block.settings;
+  const { links } = useBuilderOptions();
+  return (
+    <Section title="Cotizador 3D">
+      <TextField label="Línea chica arriba" value={s.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v || undefined })} maxLength={120} />
+      <TextField label="Título" value={s.title} onChange={(title) => set({ title })} maxLength={200} />
+      <TextField label="Texto" value={s.text} onChange={(text) => set({ text })} maxLength={500} multiline rows={2} />
+      <CtaField
+        label="Botón"
+        value={s.cta}
+        onChange={(cta) => set({ cta: cta ?? { label: "Cotizar mi pieza", href: "/impresion-3d" } })}
+        suggestions={[{ href: "/impresion-3d", label: "Cotizador 3D" }, ...links]}
+        hint="Por defecto lleva al cotizador (/impresion-3d). Si apagás la app Taller 3D, el bloque deja de mostrarse."
+      />
+    </Section>
+  );
+}
+
 function DividerForm({ block, set }: Props<"divider">) {
   const s = block.settings;
   return (
@@ -598,6 +617,8 @@ function renderForm(block: Block, onChange: (b: Block) => void): ReactNode {
       return <VideoForm block={block} set={make(block)} />;
     case "divider":
       return <DividerForm block={block} set={make(block)} />;
+    case "print3d_cta":
+      return <Print3dCtaForm block={block} set={make(block)} />;
   }
 }
 

@@ -291,7 +291,7 @@ export async function finishJob(input: unknown): Promise<ActionResult> {
       p_job_id: v.jobId,
       p_actual_grams: v.actualGrams,
       p_actual_minutes: v.actualMinutes,
-      p_spool_id: v.spoolId ?? undefined,
+      p_spool_id: v.spoolId,
       p_post_minutes: v.postMinutes,
     });
     if (error) return fail(error.message || "No se pudo terminar el trabajo.");

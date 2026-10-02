@@ -6,14 +6,14 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.6.0";
+export const APP_VERSION = "0.7.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
  * con `app_meta.schema_version` (Configuración muestra un aviso si la base
  * está atrasada). Subila junto con la migración que la actualiza.
  */
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 export interface ChangelogEntry {
   version: string;
@@ -28,6 +28,24 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.7.0",
+    date: "2026-10-02",
+    title: "Apps de Ecommy y Taller 3D",
+    sections: {
+      added: [
+        "Apps: módulos extra que se suman a una tienda. Se ven en Sistema › Apps y los activa Ecommy desde la plataforma (activa, prueba con vencimiento o desactivada).",
+        "Taller 3D, la primera app, para talleres de impresión 3D: el cliente sube su STL o 3MF en la tienda (/impresion-3d), lo ve en 3D sobre la cama, elige material, color, calidad, relleno y soportes, y ve el precio, los gramos, las horas y la fecha en que lo tiene listo.",
+        "Taller 3D: cotizaciones con revisión manual cuando la pieza no entra, tarda demasiado, tiene la malla abierta o falta filamento; el taller verifica el archivo, ajusta el precio y aprueba. La cotización aprobada se paga con el checkout de siempre.",
+        "Taller 3D: cola de impresión con una columna por impresora (arrastrar y soltar, empezar, terminar, falló y reimprimir), «Sugerir asignación» y «Pedidos por producir» para productos del catálogo que se imprimen.",
+        "Taller 3D: impresoras con presets de modelos comunes, estante de bobinas con gramos restantes y aviso de stock bajo, calidades, precios con simulador en vivo y calibración automática con los gramos y minutos reales.",
+        "Taller 3D: costo real de cada pedido (filamento, luz, amortización, post-proceso y fallas) contra lo cobrado, en el pedido y en el resumen del taller.",
+        "Tienda: «Se imprime a pedido · listo aprox. el …» en la ficha de productos fabricados a pedido y bloque «Cotizador 3D» para las páginas.",
+      ],
+      changed: [],
+      fixed: [],
+    },
+  },
   {
     version: "0.6.0",
     date: "2026-10-01",

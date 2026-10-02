@@ -37,15 +37,6 @@ type RefTable = "print3d_quote_items" | "print3d_jobs" | "print3d_product_specs"
 /** Cuántas filas de `table` apuntan a `id` por `column` (dentro de la tienda). */
 async function countRefs(ctx: AdminContext, table: RefTable, column: "material_id" | "color_id" | "spool_id", ids: string[]) {
   if (!ids.length) return 0;
-  if (table === "print3d_quote_items") {
-    // Los ítems no tienen store_id: se filtran por su cotización.
-    const { count } = await ctx.supabase
-      .from("print3d_quote_items")
-      .select("id, print3d_quotes!inner(store_id)", { count: "exact", head: true })
-      .eq("print3d_quotes.store_id", ctx.store.id)
-      .in(column as "material_id" | "color_id", ids);
-    return count ?? 0;
-  }
   const { count } = await ctx.supabase
     .from(table)
     .select("id", { count: "exact", head: true })

@@ -15,7 +15,7 @@ const CLAIM_KEYS = new Set(["title", "subtitle", "text", "html", "a", "expiredTe
 /** Por debajo de este largo son títulos o CTAs genéricos que sirven a cualquier tienda. */
 const MIN_LENGTH = 30;
 /** Bloques cuyo copy por defecto es genérico y verdadero para cualquiera. */
-const GENERIC: ReadonlySet<BlockType> = new Set(["product_slider", "product_grid", "category_list", "heading", "divider", "video", "testimonials"]);
+const GENERIC: ReadonlySet<BlockType> = new Set(["product_slider", "product_grid", "category_list", "heading", "divider", "video", "testimonials", "print3d_cta"]);
 
 function collect(value: unknown, out: string[], key?: string) {
   if (typeof value === "string") {

@@ -31,11 +31,13 @@
 --    Unicidad de specs de producto con índice sobre
 --    (product_id, coalesce(variant_id, 0…0)): variant_id null = todas.
 --    Pedido cancelado (a mano o vencido sin pago) → sus trabajos que todavía
---    estaban 'queued' pasan a 'cancelled' (trigger en orders).
+--    estaban 'queued' pasan a 'cancelled' y la cotización vuelve a 'priced'
+--    (order_id = null) si sigue vigente (trigger en orders).
 -- 3. Storage: bucket privado `print3d-files` (100 MB, STL/3MF).
 --    Ruta `<store_id>/q/<uuid>/<archivo>.<stl|3mf>`. Sube anon/authenticated
 --    si la tienda está activa, con la app vigente y el cotizador prendido
---    (public.print3d_can_upload); lee y borra el equipo
+--    (public.print3d_can_upload, con cupo de 200 archivos por hora por
+--    tienda); lee y borra el equipo
 --    (public.can_manage_media, 0011). Nadie hace UPDATE.
 -- 4. Motor en SQL (espejo EXACTO de src/lib/print3d, §3.2, §3.3, §3.7):
 --      · private.print3d_geometry_plausible(geometry)
@@ -46,7 +48,9 @@
 --        para guardar; grams = round(raw_grams_sin_redondear · grams_factor, 2);
 --        minutes = round(raw_min_sin_redondear · time_factor, 2) (raw_min se
 --        calcula con los gramos SIN redondear); el precio usa grams/minutes
---        ya redondeados.
+--        ya redondeados. Cada "round(·, 2)" es round(round(·, 8), 2) y el
+--        ceilTo usa round(x, 8): igual que round2/ceilMultiple de round.ts
+--        (la división de numeric no es exacta).
 --      · private.print3d_fits(bbox, bed): 6 rotaciones = ordenar las 3
 --        medidas de pieza y de cama y comparar componente a componente (<=).
 -- 5. RPC (security definer, search_path = ''):
@@ -596,7 +600,9 @@ insert into public.print3d_settings (store_id)
 select sm.store_id from public.store_modules sm where sm.module_code = 'print3d'
 on conflict (store_id) do nothing;
 
--- Pedido cancelado (a mano o vencido sin pago): lo que no se empezó a imprimir sale de la cola.
+-- Pedido cancelado (a mano o vencido sin pago): lo que no se empezó a imprimir
+-- sale de la cola, y la cotización vuelve a 'priced' (sin pedido) si sigue
+-- vigente, para que el cliente la pueda volver a comprar.
 create or replace function private.print3d_cancel_order_jobs()
 returns trigger
 language plpgsql
@@ -607,6 +613,9 @@ begin
   update public.print3d_jobs
      set status = 'cancelled'
    where order_id = new.id and status = 'queued';
+  update public.print3d_quotes
+     set status = 'priced', order_id = null
+   where order_id = new.id and status = 'ordered' and expires_at > now();
   return null;
 end;
 $$;
@@ -657,7 +666,9 @@ values (
     'model/3mf', 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml', 'application/zip'
   ]
 )
-on conflict (id) do nothing;
+on conflict (id) do update
+   set file_size_limit = excluded.file_size_limit,
+       allowed_mime_types = excluded.allowed_mime_types;
 
 -- ¿Se puede subir este archivo? Ruta exacta, tienda activa, app vigente y cotizador prendido.
 create or replace function public.print3d_can_upload(p_name text)
@@ -683,9 +694,18 @@ begin
     return false;
   end if;
   v_store := v_parts[1]::uuid;
-  return public.store_is_active(v_store)
-     and public.store_has_module(v_store, 'print3d')
-     and exists (select 1 from public.print3d_settings s where s.store_id = v_store and s.enabled);
+  if not (public.store_is_active(v_store)
+          and public.store_has_module(v_store, 'print3d')
+          and exists (select 1 from public.print3d_settings s where s.store_id = v_store and s.enabled)) then
+    return false;
+  end if;
+  -- Cupo: 200 archivos por hora por tienda (el bucket es público para subir).
+  return (
+    select count(*) from storage.objects o
+     where o.bucket_id = 'print3d-files'
+       and o.name like v_store::text || '/q/%'
+       and o.created_at > now() - interval '1 hour'
+  ) < 200;
 end;
 $$;
 
@@ -766,13 +786,18 @@ end;
 $$;
 
 -- ceilTo(x, r) = r > 0 ? ceil(x / r) · r : round(x, 2)
+-- Primero round(x, 8), como ceilMultiple/round2 de round.ts: la división de
+-- numeric no es exacta (40.00/60 = 0.66666666666666666667) y sin esto
+-- 1500.000000000000000005 saltaba a 1600.
 create or replace function private.print3d_ceil_to(p_x numeric, p_r numeric)
 returns numeric
 language sql
 immutable
 set search_path = ''
 as $$
-  select case when coalesce(p_r, 0) > 0 then round(ceil(p_x / p_r) * p_r, 2) else round(p_x, 2) end;
+  select case when coalesce(p_r, 0) > 0
+              then round(ceil(round(p_x, 8) / p_r) * p_r, 2)
+              else round(round(p_x, 8), 2) end;
 $$;
 
 -- fitsPrinter: 6 rotaciones = ordenar las medidas de la pieza y de la cama
@@ -884,15 +909,16 @@ begin
   end if;
   v_raw_g := v_mat / 1000 * v_m.density;
   v_raw_m := v_raw_g / (v_q.throughput_g_h * v_m.speed_factor) * 60;
-  -- Gramos y minutos a 2 decimales ANTES de los precios.
-  v_grams := round(v_raw_g * v_gf, 2);
-  v_minutes := round(v_raw_m * v_tf, 2);
+  -- Gramos y minutos a 2 decimales ANTES de los precios. round(·, 8) primero,
+  -- como round2() de round.ts (la división de numeric no es exacta).
+  v_grams := round(round(v_raw_g * v_gf, 8), 2);
+  v_minutes := round(round(v_raw_m * v_tf, 8), 2);
   v_base := (v_grams * v_m.price_per_gram + v_minutes / 60 * v_s.hour_rate) * v_q.price_multiplier + v_s.post_process_fee;
   v_unit := private.print3d_ceil_to(greatest(v_s.min_piece_price, v_base), v_s.round_to);
 
   return jsonb_build_object(
-    'raw_grams', round(v_raw_g, 2),
-    'raw_minutes', round(v_raw_m, 2),
+    'raw_grams', round(round(v_raw_g, 8), 2),
+    'raw_minutes', round(round(v_raw_m, 8), 2),
     'grams', v_grams,
     'minutes', v_minutes,
     'unit_price', v_unit,
@@ -1167,7 +1193,8 @@ begin
       if v_size > v_s.max_file_mb::bigint * 1024 * 1024 then
         raise exception 'El archivo "%" pesa más de % MB.', v_name, v_s.max_file_mb;
       end if;
-      v_format := lower(coalesce(nullif(r.el ->> 'format', ''), substring(v_path from '\.([A-Za-z0-9]+)$')));
+      -- El formato sale de la extensión de la ruta (no del navegador).
+      v_format := lower(substring(v_path from '\.([A-Za-z0-9]+)$'));
       if v_format is null or v_format not in ('stl', '3mf') then
         raise exception 'Sólo aceptamos archivos STL o 3MF.';
       end if;
@@ -1215,6 +1242,14 @@ begin
       v_price := private.print3d_price_item(p_store_id, v_vol, v_area, v_m.id, v_q.id, v_infill, v_supports, v_qty);
       v_grams := (v_price ->> 'grams')::numeric;
       v_minutes := (v_price ->> 'minutes')::numeric;
+      -- Topes de las columnas numeric(10,2)/(12,2): mejor un mensaje claro
+      -- que un "numeric field overflow" al guardar.
+      if v_grams * v_qty > 99999999 or v_minutes * v_qty > 99999999
+         or (v_price ->> 'raw_grams')::numeric * v_qty > 99999999
+         or (v_price ->> 'raw_minutes')::numeric * v_qty > 99999999
+         or (v_price ->> 'total')::numeric > 9999999999 then
+        raise exception 'La pieza "%" es demasiado grande para cotizar automático. Escribinos por WhatsApp.', v_name;
+      end if;
 
       -- §3.4 revisión manual (mismo orden que REVIEW_REASONS).
       v_reasons := '{}';
@@ -1395,7 +1430,8 @@ begin
     'token', v_quote.token,
     'store_id', v_quote.store_id,
     'status', v_quote.status,
-    'contact', v_quote.contact,
+    -- Sólo el nombre: el link se comparte por WhatsApp (sin email ni teléfono).
+    'contact', jsonb_strip_nulls(jsonb_build_object('name', v_quote.contact -> 'name')),
     'notes', v_quote.notes,
     'subtotal', v_quote.subtotal,
     'setup_fee', v_quote.setup_fee,
@@ -1507,9 +1543,14 @@ begin
   end if;
 
   v_store := v_quote.store_id;
-  if nullif(payload ->> 'store_id', '') is not null and (payload ->> 'store_id')::uuid <> v_store then
-    raise exception 'La cotización es de otra tienda';
-  end if;
+  begin
+    if nullif(payload ->> 'store_id', '') is not null and (payload ->> 'store_id')::uuid <> v_store then
+      raise exception 'La cotización es de otra tienda';
+    end if;
+  exception
+    when invalid_text_representation then
+      raise exception 'El pedido tiene datos inválidos';
+  end;
   if not public.store_is_active(v_store) or not public.store_has_module(v_store, 'print3d') then
     raise exception 'La tienda no está disponible';
   end if;
@@ -1779,6 +1820,12 @@ begin
        for update;
     if not found then
       raise exception 'La bobina elegida no es de esta tienda.';
+    end if;
+    if v_job.color_id is not null and v_spool.color_id <> v_job.color_id then
+      raise exception 'Esa bobina es de otro color que el del trabajo.';
+    end if;
+    if v_spool.status = 'empty' then
+      raise exception 'Esa bobina está marcada como vacía. Elegí otra.';
     end if;
     update public.print3d_spools
        set remaining_grams = greatest(0, remaining_grams - round(p_actual_grams, 1)),

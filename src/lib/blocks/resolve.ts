@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Promotion } from "@/lib/pricing";
 import { listCategories } from "@/lib/store/categories";
+import { storeHasModule } from "@/lib/store/modules";
 import { getCatalogIndex, getProductCards, type ProductCardData } from "@/lib/store/products";
 
 import type { Block, ProductSource } from "./schema";
@@ -22,6 +23,8 @@ export interface ResolvedBlockData {
   products: Record<string, ProductCardData[]>;
   /** blockId → categorías (category_list). */
   categories: Record<string, CategoryTile[]>;
+  /** ¿La tienda tiene la app Taller 3D activa? (sólo se consulta si hay un `print3d_cta`; sin dato = no se muestra). */
+  print3d?: boolean;
 }
 
 export const EMPTY_BLOCK_DATA: ResolvedBlockData = { products: {}, categories: {} };
@@ -53,7 +56,9 @@ export async function resolveBlockData(
       b.type === "product_slider" || b.type === "product_grid",
   );
   const categoryBlocks = visible.filter((b): b is Extract<Block, { type: "category_list" }> => b.type === "category_list");
-  if (!productBlocks.length && !categoryBlocks.length) return { products: {}, categories: {} };
+  // Bloques de apps: se muestran sólo con la app activa (si se desactivó, desaparecen solos).
+  const print3d = visible.some((b) => b.type === "print3d_cta") ? await storeHasModule(storeId, "print3d") : undefined;
+  if (!productBlocks.length && !categoryBlocks.length) return { products: {}, categories: {}, print3d };
 
   const [index, categories] = await Promise.all([getCatalogIndex(storeId), listCategories(storeId)]);
   const opts = { categories, promotions, now };
@@ -83,5 +88,5 @@ export async function resolveBlockData(
     }),
   );
 
-  return { products, categories: Object.fromEntries(categoryEntries) };
+  return { products, categories: Object.fromEntries(categoryEntries), print3d };
 }

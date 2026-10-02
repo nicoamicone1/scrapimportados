@@ -11,6 +11,7 @@ import { OrderActionsProvider, OrderHeaderActions, OrderNextStep, OrderWhatsAppB
 import { OrderTimeline } from "@/components/admin/orders/OrderTimeline";
 import { PaymentsCard } from "@/components/admin/orders/PaymentsCard";
 import { ReservationControl } from "@/components/admin/orders/ReservationControl";
+import { Print3dOrderPanel } from "@/components/admin/print3d/production/Print3dOrderPanel";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/display";
@@ -245,6 +246,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
               <TotalRow label="Método de pago" value={paymentMethodName(methods, order.payment_method_code)} muted />
             </dl>
           </Card>
+
+          <Print3dOrderPanel orderId={order.id} />
 
           <PaymentsCard
             orderId={order.id}
