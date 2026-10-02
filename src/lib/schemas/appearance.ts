@@ -25,8 +25,9 @@ type PresetKey = Exclude<PresetId, "custom">;
  */
 export function basePresetOf(theme: Theme): PresetKey {
   if (theme.preset !== "custom") return theme.preset;
-  // Se comparan sólo los valores del tema (sin `preset` ni `custom_css`).
-  const comparable = (t: Theme) => ({ ...t, preset: "custom", custom_css: "" }) as unknown as Json;
+  // Se comparan sólo los valores de estilo (sin `preset`, `custom_css` ni el crédito del footer).
+  const comparable = (t: Theme) =>
+    ({ ...t, preset: "custom", custom_css: "", footer: { ...t.footer, showCredit: true } }) as unknown as Json;
   const target = comparable(theme);
   let best: PresetKey = "nordico";
   let bestScore = Number.POSITIVE_INFINITY;
@@ -54,6 +55,15 @@ export function themePlanViolation(plan: Pick<PlanInfo, "features"> | null | und
   if (theme.custom_css?.trim() && !hasFeature(plan, "theme.custom_css")) return "theme.custom_css";
   if (!isPresetAllowed(plan, basePresetOf(theme))) return "theme.all_presets";
   return null;
+}
+
+/**
+ * ¿Puede la tienda apagar "Hecho con Ecommy" del footer? (BRAND.md §12:
+ * obligatorio en Free, opcional desde Starter). Va por código de plan y no
+ * por feature flag para no tocar `public.plans`; ver docs/ux-audit/presets-apariencia.md.
+ */
+export function canHideCredit(plan: Pick<PlanInfo, "code"> | null | undefined): boolean {
+  return plan != null && plan.code !== "free";
 }
 
 /** "Nórdico y Mercado": nombres de los presets de Free, derivados de FREE_THEME_PRESETS. */

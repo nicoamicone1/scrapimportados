@@ -68,6 +68,18 @@ describe("presets: catálogo", () => {
     expect(new Set(pairs).size).toBe(pairs.length);
   });
 
+  it("ningún preset apaga el crédito de la plataforma (lo decide el dueño, según su plan)", () => {
+    for (const [id, t] of entries) expect(t.footer.showCredit, id).toBe(true);
+  });
+
+  it("los presets de catálogo denso no comparten la misma grilla (tarjetas vs. tabla con reglas)", () => {
+    // nordico y galpon: mismas 5 columnas compactas; los separa cómo se arma la grilla.
+    const grid = (t: (typeof PRESETS)[keyof typeof PRESETS]) => `${t.cards.style}/${t.effects.dividers}/${t.radius}`;
+    expect(grid(PRESETS.nordico)).not.toBe(grid(PRESETS.galpon));
+    expect(PRESETS.nordico.effects.dividers).toBe(false);
+    expect(PRESETS.galpon.effects.dividers).toBe(true);
+  });
+
   it("el cuerpo nunca usa una fuente sólo para títulos", () => {
     for (const [id, t] of entries) expect(getFont(t.fonts.body).headingOnly ?? false, id).toBe(false);
   });
@@ -91,8 +103,15 @@ describe("presets: contraste WCAG 2.1", () => {
       expect(contrastRatio(c.primaryText, c.primary)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(c.primary, c.background)).toBeGreaterThanOrEqual(3);
     });
-    it(`${id}: el texto se lee sobre la banda secundaria (≥ 4.5:1)`, () => {
-      expect(contrastRatio(c.text, c.secondary)).toBeGreaterThanOrEqual(4.5);
+    it(`${id}: el texto y el texto secundario se leen sobre la banda secundaria (≥ 4.5:1)`, () => {
+      // La banda secundaria lleva la barra de anuncio y el hero sin foto (eyebrow, bajada).
+      expect(contrastRatio(c.text, c.secondary), "text/secondary").toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(c.textMuted, c.secondary), "textMuted/secondary").toBeGreaterThanOrEqual(4.5);
+    });
+    it(`${id}: el primario se distingue como botón sobre la superficie y la banda secundaria (≥ 3:1)`, () => {
+      // Hero sin foto (fondo secundario) y cards/drawer (superficie) llevan el botón primario.
+      expect(contrastRatio(c.primary, c.surface), "primary/surface").toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(c.primary, c.secondary), "primary/secondary").toBeGreaterThanOrEqual(3);
     });
     it(`${id}: acento y peligro son el mismo color o se distinguen a simple vista`, () => {
       // Dos rojos casi iguales (promo vs. error en el mismo drawer) se leen como un error de copia.

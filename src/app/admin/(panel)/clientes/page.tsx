@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -11,6 +12,7 @@ import { Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui/Tab
 import { requireAdmin } from "@/lib/auth";
 import { CUSTOMERS_PER_PAGE, listCustomers, parseCustomerFilters } from "@/lib/admin/customers";
 import { getStoreInfo } from "@/lib/admin/orders";
+import { waLink } from "@/lib/admin/whatsapp";
 import { formatMoney, formatNumber } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Clientes" };
@@ -20,6 +22,13 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
   const filters = parseCustomerFilters(await searchParams);
   const [{ rows, total }, store] = await Promise.all([listCustomers(supabase, active.id, filters), getStoreInfo(supabase, active.id)]);
   const filtered = Boolean(filters.q || filters.tag);
+  // Saludo listo para abrir el chat desde la fila (sin teléfono válido no hay botón).
+  const waByCustomer = new Map(
+    rows.map((c) => {
+      const first = (c.name ?? "").trim().split(/\s+/)[0];
+      return [c.id, waLink(c.phone, `${first ? `Hola ${first}` : "Hola"}, te escribimos de ${store.name}.`)] as const;
+    }),
+  );
 
   return (
     <>
@@ -37,11 +46,13 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
         <THead>
           <tr>
             <TH>Cliente</TH>
-            <TH>Teléfono</TH>
             <TH numeric>Pedidos</TH>
             <TH numeric>Total pagado</TH>
-            <TH>Último pedido</TH>
-            <TH>Etiquetas</TH>
+            <TH className="hidden md:table-cell">Último pedido</TH>
+            <TH className="hidden lg:table-cell">Etiquetas</TH>
+            <TH className="w-10">
+              <span className="sr-only">Escribirle por WhatsApp</span>
+            </TH>
           </tr>
         </THead>
         <TBody>
@@ -71,17 +82,14 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
                   <Link href={`/admin/clientes/${c.id}`} className="block truncate font-medium hover:underline">
                     {c.name || c.email || "Sin nombre"}
                   </Link>
-                  <div className="truncate text-xs text-adm-fg-muted">{c.email ?? "Sin email"}</div>
-                </TD>
-                <TD muted className="tnum whitespace-nowrap">
-                  {c.phone ?? "—"}
+                  <div className="tnum truncate text-xs text-adm-fg-muted">{[c.phone, c.email].filter(Boolean).join(" · ") || "Sin contacto"}</div>
                 </TD>
                 <TD numeric>{formatNumber(c.orders_count)}</TD>
                 <TD numeric>{formatMoney(Number(c.total_spent), { currency: store.currency })}</TD>
-                <TD muted className="whitespace-nowrap">
+                <TD muted className="hidden whitespace-nowrap md:table-cell">
                   {c.lastOrderAt ? <RelativeTime value={c.lastOrderAt} timeZone={store.timezone} /> : "—"}
                 </TD>
-                <TD>
+                <TD className="hidden lg:table-cell">
                   <div className="flex flex-wrap gap-1">
                     {c.tags.map((t) => (
                       <Link
@@ -93,6 +101,20 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
                       </Link>
                     ))}
                   </div>
+                </TD>
+                <TD className="w-10 pl-0 text-right">
+                  {waByCustomer.get(c.id) ? (
+                    <ButtonLink
+                      href={waByCustomer.get(c.id) ?? "#"}
+                      external
+                      variant="ghost"
+                      size="icon-sm"
+                      className="max-sm:size-11"
+                      aria-label={`Escribirle a ${c.name || "este cliente"} por WhatsApp`}
+                    >
+                      <MessageCircle />
+                    </ButtonLink>
+                  ) : null}
                 </TD>
               </TR>
             ))

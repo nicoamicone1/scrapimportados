@@ -17,7 +17,7 @@ import {
   type StoreSettingsInput,
 } from "@/lib/schemas/settings";
 
-import { HeaderSave, SaveBar } from "./SaveBar";
+import { SaveBar } from "./SaveBar";
 import { SettingsHeader } from "./SettingsHeader";
 import { useSettingsForm } from "./useSettingsForm";
 
@@ -45,7 +45,6 @@ export function StoreForm({ initial }: { initial: StoreSettingsInput }) {
       <SettingsHeader
         title="Tienda"
         description="Los datos que ven tus clientes en la tienda, los pedidos y los mensajes."
-        actions={<HeaderSave dirty={form.dirty} saving={form.saving} onSave={form.save} />}
       />
       <Card className="max-w-5xl px-5 md:px-6">
         <form

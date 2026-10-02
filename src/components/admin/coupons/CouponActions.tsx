@@ -9,6 +9,7 @@ import { toast } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DropdownItem, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
+import { Switch } from "@/components/ui/Switch";
 import { Tooltip } from "@/components/ui/Tooltip";
 
 export interface CouponActionsProps {
@@ -98,7 +99,7 @@ export function CouponActions({ id, code, isActive, usesCount, variant = "row" }
     <>
       <DropdownMenu
         trigger={
-          <Button size="icon-sm" variant="ghost" aria-label={`Acciones de ${code}`} disabled={pending}>
+          <Button size="icon-sm" variant="ghost" aria-label={`Acciones de ${code}`} disabled={pending} className="max-md:size-11">
             <MoreHorizontal aria-hidden />
           </Button>
         }
@@ -119,5 +120,30 @@ export function CouponActions({ id, code, isActive, usesCount, variant = "row" }
       </DropdownMenu>
       {dialog}
     </>
+  );
+}
+
+/** Pausar o activar un cupón en un toque, con Deshacer (ver `PromotionActiveSwitch`). */
+export function CouponActiveSwitch({ id, code, isActive }: { id: string; code: string; isActive: boolean }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const set = (next: boolean, quiet = false) =>
+    startTransition(async () => {
+      const res = await setCouponActive(id, next);
+      if (!res.ok) return void toast.error(res.error);
+      if (!quiet) {
+        toast.success(next ? `Cupón ${code} activado.` : `Cupón ${code} pausado.`, {
+          action: { label: "Deshacer", onClick: () => set(!next, true) },
+        });
+      }
+      router.refresh();
+    });
+  return (
+    <Switch
+      aria-label={isActive ? `Pausar el cupón ${code}` : `Activar el cupón ${code}`}
+      checked={isActive}
+      disabled={pending}
+      onCheckedChange={(v) => set(v)}
+    />
   );
 }

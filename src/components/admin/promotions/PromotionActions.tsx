@@ -9,6 +9,7 @@ import { toast } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DropdownItem, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
+import { Switch } from "@/components/ui/Switch";
 
 export interface PromotionActionsProps {
   id: string;
@@ -83,7 +84,7 @@ export function PromotionActions({ id, name, isActive, variant = "row" }: Promot
     <>
       <DropdownMenu
         trigger={
-          <Button size="icon-sm" variant="ghost" aria-label={`Acciones de ${name}`} disabled={pending}>
+          <Button size="icon-sm" variant="ghost" aria-label={`Acciones de ${name}`} disabled={pending} className="max-md:size-11">
             <MoreHorizontal aria-hidden />
           </Button>
         }
@@ -104,5 +105,33 @@ export function PromotionActions({ id, name, isActive, variant = "row" }: Promot
       </DropdownMenu>
       {dialog}
     </>
+  );
+}
+
+/**
+ * Pausar o activar en un toque, sin abrir el menú: es lo que se hace con
+ * apuro ("cortá la promo ya"). El toast avisa y deja volver atrás.
+ */
+export function PromotionActiveSwitch({ id, name, isActive }: { id: string; name: string; isActive: boolean }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const set = (next: boolean, quiet = false) =>
+    startTransition(async () => {
+      const res = await setPromotionActive(id, next);
+      if (!res.ok) return void toast.error(res.error);
+      if (!quiet) {
+        toast.success(next ? `«${name}» activada.` : `«${name}» pausada.`, {
+          action: { label: "Deshacer", onClick: () => set(!next, true) },
+        });
+      }
+      router.refresh();
+    });
+  return (
+    <Switch
+      aria-label={isActive ? `Pausar ${name}` : `Activar ${name}`}
+      checked={isActive}
+      disabled={pending}
+      onCheckedChange={(v) => set(v)}
+    />
   );
 }

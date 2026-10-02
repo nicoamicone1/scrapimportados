@@ -53,13 +53,13 @@ export function StoreSwitcher({ stores, active, impersonating }: StoreSwitcherPr
           type="button"
           aria-label={`Tienda activa: ${active.name}. Cambiar de tienda`}
           className={cn(
-            "inline-flex h-8 max-w-[200px] items-center gap-1.5 rounded-adm border border-adm-border bg-adm-surface px-2 text-[13px] font-medium text-adm-fg hover:bg-adm-surface-2",
+            "inline-flex h-8 w-full max-w-full min-w-0 items-center gap-1.5 rounded-adm border border-adm-border bg-adm-surface px-2 text-[13px] font-medium text-adm-fg transition-colors duration-[120ms] hover:bg-adm-surface-2 sm:w-auto sm:max-w-[220px] pointer-coarse:h-10 pointer-coarse:text-sm",
             pending && "opacity-60",
           )}
         >
           <Store className="size-3.5 shrink-0 text-adm-fg-muted" aria-hidden />
-          <span className="truncate">{active.name}</span>
-          {impersonating ? <span className="rounded-[3px] bg-adm-accent-2-soft px-1 text-[10px] text-adm-accent-2-ink">admin</span> : null}
+          <span className="min-w-0 flex-1 truncate text-left">{active.name}</span>
+          {impersonating ? <span className="rounded-adm-sm bg-adm-accent-2-soft px-1 text-[11px] text-adm-accent-2-ink">admin</span> : null}
           <ChevronsUpDown className="size-3.5 shrink-0 text-adm-fg-muted" aria-hidden />
         </button>
       }

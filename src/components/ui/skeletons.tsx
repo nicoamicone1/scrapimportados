@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { AdminSection } from "@/components/admin/nav";
+import { BrandMark } from "@/components/platform/brand";
 import { cn } from "@/lib/cn";
 
 import { Skeleton } from "./display";
@@ -372,7 +373,18 @@ export function PageSkeleton({ variant = "table", rows, cols, children, ...heade
         break;
       case "dashboard":
         body = (
+          // Inicio: "Para hacer" + últimos pedidos (8) | stock (4); abajo, números del período.
           <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-12">
+              <div className="min-w-0 space-y-4 lg:col-span-8">
+                <ListPanel rows={3} />
+                <ListPanel rows={5} />
+              </div>
+              <div className="min-w-0 space-y-4 lg:col-span-4">
+                <ListPanel rows={4} />
+              </div>
+            </div>
+            <Skeleton className="mt-2 h-5 w-48" />
             <StatsSkeleton />
             <div className={cn(panel, "p-4")}>
               <Skeleton className="h-4 w-48" />
@@ -382,7 +394,6 @@ export function PageSkeleton({ variant = "table", rows, cols, children, ...heade
                 ))}
               </div>
             </div>
-            <DetailSkeleton main={2} aside={2} />
           </div>
         );
         break;
@@ -417,9 +428,7 @@ export function AccountPageSkeleton({
     <SkeletonRegion className="min-h-dvh">
       <div className="border-b border-adm-border bg-adm-surface">
         <div className={cn("mx-auto flex h-14 items-center gap-6 px-4 sm:px-6", width)}>
-          <span className="inline-flex size-7 items-center justify-center rounded-[5px] bg-adm-sidebar-bg text-[14px] leading-none font-bold text-adm-accent-2">
-            e
-          </span>
+          <BrandMark size={28} />
           <Skeleton className="h-3.5 w-24" />
           <Skeleton className="h-3 w-16" />
           <Skeleton className="ml-auto h-7 w-14" />

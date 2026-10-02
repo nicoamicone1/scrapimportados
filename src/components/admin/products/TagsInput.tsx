@@ -104,7 +104,7 @@ export function ChipsInput({
         }}
         placeholder={value.length ? "" : placeholder}
         disabled={value.length >= max}
-        className="h-7 min-w-24 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-adm-fg-muted/70 focus-visible:shadow-none"
+        className="h-7 pointer-coarse:h-9 pointer-coarse:text-base min-w-24 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-adm-fg-muted/70 focus-visible:shadow-none"
       />
       {suggestions?.length ? (
         <datalist id={listId}>

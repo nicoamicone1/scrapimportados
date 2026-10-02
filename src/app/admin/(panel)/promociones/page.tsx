@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PromoStatusBadge, scopeSummary, windowSummary } from "@/components/admin/pricing/shared";
-import { PromotionActions } from "@/components/admin/promotions/PromotionActions";
+import { PromotionActions, PromotionActiveSwitch } from "@/components/admin/promotions/PromotionActions";
 import { LimitBanner } from "@/components/admin/LimitBanner";
 import { PlanGate } from "@/components/admin/PlanGate";
 import { Badge } from "@/components/ui/Badge";
@@ -94,19 +94,65 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
         ) : null}
       </div>
 
-      <Table>
+      {/* Mobile: una tarjeta por promoción, con pausar/activar en un toque. */}
+      <div className="rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
+        {rows.length === 0 ? (
+          <div className="px-4 py-6">
+            <p className="text-[15px] font-semibold text-adm-fg">No hay promociones con estos filtros.</p>
+            <div className="mt-3">
+              <ButtonLink href="/admin/promociones" size="sm">
+                Limpiar filtros
+              </ButtonLink>
+            </div>
+          </div>
+        ) : (
+          <ul>
+            {rows.map((p) => (
+              <li key={p.id} className="flex items-center border-b border-adm-border last:border-b-0">
+                <Link href={`/admin/promociones/${p.id}`} className="block min-h-16 min-w-0 flex-1 px-4 py-3">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-adm-fg">{p.name}</span>
+                    {p.badgeLabel ? (
+                      <Badge tone="accent" dot={false}>
+                        {p.badgeLabel}
+                      </Badge>
+                    ) : null}
+                  </span>
+                  <span className="tnum mt-0.5 block text-[13px] text-adm-fg">
+                    {promotionValueLabel(p)} · <span className="text-adm-fg-muted">{PROMOTION_TYPE_LABELS[p.type]}</span>
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs text-adm-fg-muted">
+                    {scopeSummary(p, categories)} · {windowSummary(p.startsAt, p.endsAt, tz)}
+                  </span>
+                  <span className="mt-1.5 inline-flex">
+                    {p.type === "unsupported" ? <Badge tone="neutral">No se aplica</Badge> : <PromoStatusBadge status={p.status} />}
+                  </span>
+                </Link>
+                <div className="flex shrink-0 items-center gap-2 pr-1">
+                  {p.type !== "unsupported" ? <PromotionActiveSwitch id={p.id} name={p.name} isActive={p.isActive} /> : null}
+                  <PromotionActions id={p.id} name={p.name} isActive={p.isActive} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <Table containerClassName="hidden md:block">
         <THead>
           <tr>
             <TH>Nombre</TH>
-            <TH>Tipo</TH>
+            <TH className="hidden lg:table-cell">Tipo</TH>
             <TH numeric>Descuento</TH>
             <TH>Alcance</TH>
             <TH>Vigencia</TH>
-            <TH numeric>Prioridad</TH>
-            <TH>Acumulable</TH>
+            <TH numeric className="hidden xl:table-cell">
+              Prioridad
+            </TH>
+            <TH className="hidden xl:table-cell">Acumulable</TH>
             <TH>Estado</TH>
-            <TH className="w-12">
-              <span className="sr-only">Acciones</span>
+            <TH className="w-24">
+              <span className="sr-only">Activa y acciones</span>
             </TH>
           </tr>
         </THead>
@@ -134,18 +180,23 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
                     ) : null}
                   </Link>
                 </TD>
-                <TD className="whitespace-nowrap text-adm-fg-muted">{PROMOTION_TYPE_LABELS[p.type]}</TD>
+                <TD className="hidden whitespace-nowrap text-adm-fg-muted lg:table-cell">{PROMOTION_TYPE_LABELS[p.type]}</TD>
                 <TD numeric className="whitespace-nowrap">{promotionValueLabel(p)}</TD>
                 <TD className="max-w-[240px] truncate text-adm-fg-muted">{scopeSummary(p, categories)}</TD>
                 <TD className="whitespace-nowrap text-adm-fg-muted">{windowSummary(p.startsAt, p.endsAt, tz)}</TD>
-                <TD numeric>{p.priority}</TD>
-                <TD className="text-adm-fg-muted">{p.stackable ? "Sí" : "No"}</TD>
+                <TD numeric className="hidden xl:table-cell">
+                  {p.priority}
+                </TD>
+                <TD className="hidden text-adm-fg-muted xl:table-cell">{p.stackable ? "Sí" : "No"}</TD>
                 <TD>
                   {/* Tipo que esta versión no conoce (o parámetros inválidos): el motor la ignora. */}
                   {p.type === "unsupported" ? <Badge tone="neutral">No se aplica</Badge> : <PromoStatusBadge status={p.status} />}
                 </TD>
-                <TD className="text-right">
-                  <PromotionActions id={p.id} name={p.name} isActive={p.isActive} />
+                <TD>
+                  <div className="flex items-center justify-end gap-2">
+                    {p.type !== "unsupported" ? <PromotionActiveSwitch id={p.id} name={p.name} isActive={p.isActive} /> : null}
+                    <PromotionActions id={p.id} name={p.name} isActive={p.isActive} />
+                  </div>
                 </TD>
               </TR>
             ))

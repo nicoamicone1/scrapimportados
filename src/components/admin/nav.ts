@@ -67,7 +67,7 @@ export const NAV: NavGroup[] = [
     section: "orders",
     items: [
       // B: dashboard
-      { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true, keywords: ["inicio", "resumen", "ventas"] },
+      { label: "Inicio", href: "/admin", icon: LayoutDashboard, exact: true, keywords: ["dashboard", "resumen", "ventas", "hoy", "pendientes"] },
       // B: pedidos (listado, detalle, pedido manual)
       { label: "Pedidos", href: "/admin/pedidos", icon: Receipt, keywords: ["ventas", "órdenes", "ordenes"] },
       { label: "Carritos abandonados", href: "/admin/pedidos/abandonados", icon: ShoppingCart, keywords: ["abandonados", "checkout", "recuperar", "carrito", "sin terminar"] },
@@ -87,6 +87,9 @@ export const NAV: NavGroup[] = [
       { label: "Inventario", href: "/admin/inventario", icon: Boxes, keywords: ["stock", "existencias", "movimientos", "stock bajo", "agotados"] },
       // Avisos de stock ("Avisame cuando haya stock", 0016)
       { label: "Avisos de stock", href: "/admin/inventario/avisos", icon: BellRing, keywords: ["avisame", "avísame", "sin stock", "agotados", "esperando", "notificar"] },
+      // G: importador / scraping. En Catálogo (no en Sistema): es cargar productos
+      // desde la lista del proveedor, una tarea de catálogo (UX audit admin-shell).
+      { label: "Importar", href: "/admin/importar", icon: Import, keywords: ["scraping", "catálogo", "csv", "proveedor", "lista", "woocommerce", "shopify"] },
     ],
   },
   {
@@ -121,8 +124,6 @@ export const NAV: NavGroup[] = [
     label: "Sistema",
     section: "system",
     items: [
-      // G: importador / scraping
-      { label: "Importar", href: "/admin/importar", icon: Import, keywords: ["scraping", "catálogo", "woocommerce", "shopify"] },
       // A — Apps: catálogo de apps extra (docs/modules/TALLER-3D.md §1.3)
       { label: "Apps", href: "/admin/apps", icon: Blocks, keywords: ["módulos", "modulos", "extensiones", "taller 3d", "impresión 3d", "activar"] },
       // M: plan de la tienda (uso, límites, cambio de plan)
@@ -134,7 +135,7 @@ export const NAV: NavGroup[] = [
       // H: auditoría
       { label: "Auditoría", href: "/admin/auditoria", icon: ShieldCheck, keywords: ["registro", "log", "historial"] },
       // H: changelog
-      { label: "Changelog", href: "/admin/changelog", icon: FileClock, keywords: ["versiones", "novedades"] },
+      { label: "Novedades", href: "/admin/changelog", icon: FileClock, keywords: ["changelog", "versiones", "novedades", "cambios"] },
       // Ayuda: centro de ayuda público (/ayuda, mismo host que el panel), en otra pestaña
       { label: "Ayuda", href: "/ayuda", icon: LifeBuoy, external: true, keywords: ["soporte", "cómo", "como", "tutorial", "preguntas"] },
     ],
@@ -207,6 +208,18 @@ export function navItemFor(pathname: string): { group: NavGroup; item: NavItem }
 export function sectionFor(pathname: string): AdminSection | null {
   return navItemFor(pathname)?.group.section ?? null;
 }
+
+/**
+ * Barra inferior del panel en mobile (BRAND §11: las tareas diarias a un
+ * toque del pulgar). Cuatro destinos + "Más" (abre el menú completo).
+ * Cada `href` tiene que existir en `NAV`.
+ */
+export const MOBILE_TABS: { href: string; label: string }[] = [
+  { href: "/admin", label: "Inicio" },
+  { href: "/admin/pedidos", label: "Pedidos" },
+  { href: "/admin/productos", label: "Productos" },
+  { href: "/admin/compartir", label: "Compartir" },
+];
 
 /** Cookie con el estado del sidebar ("collapsed" | "open"). */
 export const SIDEBAR_COOKIE = "adm-sidebar";

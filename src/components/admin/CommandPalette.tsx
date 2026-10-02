@@ -27,6 +27,7 @@ import type { ModuleCode } from "@/lib/modules/registry";
 import { formatMoney } from "@/lib/money";
 import { normalizeText } from "@/lib/slug";
 
+import { useOptionalAdminStore } from "./AdminStoreContext";
 import { buildNav } from "./nav";
 
 /**
@@ -47,7 +48,7 @@ const NO_MODULES: readonly ModuleCode[] = [];
 
 export function CommandPalette({ open, onOpenChange, modules = NO_MODULES }: CommandPaletteProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} size="lg" hideClose label="Buscar o ir a" className="mt-[15vh] mb-auto">
+    <Dialog open={open} onOpenChange={onOpenChange} size="lg" hideClose label="Buscar o ir a" className="mt-[8vh] mb-auto sm:mt-[15vh]">
       {open ? <PaletteBody modules={modules} onClose={() => onOpenChange(false)} /> : null}
     </Dialog>
   );
@@ -112,7 +113,7 @@ function useLiveSearch(query: string) {
 }
 
 const itemClass =
-  "flex h-9 cursor-pointer items-center gap-2.5 rounded-[4px] px-2.5 text-sm text-adm-fg data-[selected=true]:bg-adm-surface-2 data-[disabled=true]:opacity-50";
+  "flex h-9 cursor-pointer items-center gap-2.5 rounded-adm-sm px-2.5 text-sm pointer-coarse:h-11 text-adm-fg data-[selected=true]:bg-adm-surface-2 data-[disabled=true]:opacity-50";
 const groupClass =
   "[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:tracking-[0.06em] [&_[cmdk-group-heading]]:text-adm-fg-muted [&_[cmdk-group-heading]]:uppercase";
 
@@ -133,10 +134,13 @@ function PaletteBody({ modules, onClose }: { modules: readonly ModuleCode[]; onC
     return all.filter((i) => normalizeText([i.label, i.group, ...(i.keywords ?? [])].join(" ")).includes(q));
   }, [q, modules]);
 
+  // "Ver tienda" va a la tienda activa, no a "/" (que en el host del panel es la landing).
+  const storeHref = useOptionalAdminStore()?.store.href;
   const actions = useMemo(() => {
-    if (!q) return ACTIONS;
-    return ACTIONS.filter((a) => normalizeText([a.label, ...a.keywords].join(" ")).includes(q));
-  }, [q]);
+    const list = storeHref ? ACTIONS.map((a) => (a.id === "store" ? { ...a, href: storeHref } : a)) : ACTIONS;
+    if (!q) return list;
+    return list.filter((a) => normalizeText([a.label, ...a.keywords].join(" ")).includes(q));
+  }, [q, storeHref]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -163,7 +167,7 @@ function PaletteBody({ modules, onClose }: { modules: readonly ModuleCode[]; onC
           value={query}
           onValueChange={setQuery}
           placeholder="Buscar pedidos, productos o ir a…"
-          className="h-11 w-full bg-transparent text-sm text-adm-fg outline-none placeholder:text-adm-fg-muted focus-visible:shadow-none"
+          className="h-11 w-full bg-transparent text-sm text-adm-fg outline-none pointer-coarse:text-base placeholder:text-adm-fg-muted focus-visible:shadow-none"
         />
       </div>
       <Command.List className="adm-scroll max-h-[min(60vh,440px)] overflow-y-auto p-1.5">

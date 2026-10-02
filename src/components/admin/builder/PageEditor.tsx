@@ -3,7 +3,7 @@
 import { ArrowLeft, ExternalLink, FileText, History, Monitor, MoreHorizontal, Plus, Smartphone, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { discardDraft, savePage, setPageStatus, type SaveMode } from "@/app/admin/(panel)/paginas/actions";
 import { useAdminStore } from "@/components/admin/AdminStoreContext";
@@ -30,6 +30,7 @@ import { BlockList } from "./BlockList";
 import { BlockPalette } from "./BlockPalette";
 import { BlockSettings } from "./BlockSettings";
 import { BuilderPreview } from "./BuilderPreview";
+import { blocksWithExampleCopy } from "./example-copy";
 import { ImageField, Section } from "./fields";
 import { BuilderOptionsProvider, TagsDatalist, type BuilderOptions } from "./pickers";
 import type { BlockPreviewNode } from "./render-preview";
@@ -103,10 +104,13 @@ export function PageEditor({
   const [hasDraft, setHasDraft] = useState(Boolean(page.draft));
   const [draftAt, setDraftAt] = useState(page.draft?.updatedAt ?? null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  /** Pantallas angostas (< lg): un panel a la vez. En desktop se ven los tres. */
+  const [pane, setPane] = useState<"blocks" | "preview" | "settings">("blocks");
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
+  const [confirmExamples, setConfirmExamples] = useState(false);
+  const publishAnyway = useRef(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [saving, setSaving] = useState<SaveMode | null>(null);
   const [slugServerError, setSlugServerError] = useState<string | null>(null);
@@ -116,6 +120,8 @@ export function PageEditor({
   const currentJson = JSON.stringify(current);
   const dirty = currentJson !== saved;
   const selected = blocks.find((b) => b.id === selectedId) ?? null;
+  /** Bloques visibles que conservan copy de ejemplo (datos de otra tienda): se avisa antes de publicar. */
+  const exampleBlocks = useMemo(() => blocksWithExampleCopy(blocks), [blocks]);
   const slugError = slugServerError ?? pageSlugError(meta.slug, { isHome });
 
   // ------------------------------------------------------------ Borrador local
@@ -172,7 +178,14 @@ export function PageEditor({
       return next;
     });
     setSelectedId(block.id);
+    setPane("settings");
   };
+
+  /** Elegir un bloque (lista o vista previa): en el celular lleva directo a sus ajustes. */
+  const selectBlock = useCallback((id: string | null) => {
+    setSelectedId(id);
+    if (id) setPane("settings");
+  }, []);
 
   const duplicateBlock = useCallback((id: string) => {
     setBlocks((bs) => {
@@ -184,10 +197,26 @@ export function PageEditor({
     });
   }, []);
 
-  const deleteBlock = (id: string) => {
+  /**
+   * Borrar no pide confirmación: se deshace desde el aviso (BRAND.md §11,
+   * "prevenir antes que avisar"). Hasta guardar, nada llega a la tienda.
+   */
+  const deleteBlock = useCallback((id: string) => {
+    const index = blocks.findIndex((b) => b.id === id);
+    const removed = blocks[index];
+    if (!removed) return;
     setBlocks((bs) => bs.filter((b) => b.id !== id));
     if (selectedId === id) setSelectedId(null);
-  };
+    toast(`Borraste «${BLOCK_META[removed.type].label}»`, {
+      action: {
+        label: "Deshacer",
+        onClick: () => {
+          setBlocks((bs) => (bs.some((b) => b.id === removed.id) ? bs : [...bs.slice(0, index), removed, ...bs.slice(index)]));
+          setSelectedId(removed.id);
+        },
+      },
+    });
+  }, [blocks, selectedId]);
 
   const toggleHidden = useCallback(
     (id: string) =>
@@ -201,6 +230,7 @@ export function PageEditor({
       if (saving) return;
       if (slugError) {
         setSelectedId(null);
+        setPane("settings");
         toast.error(slugError);
         return;
       }
@@ -215,11 +245,12 @@ export function PageEditor({
         if (slugMsg) {
           setSlugServerError(slugMsg);
           setSelectedId(null);
+          setPane("settings");
         }
         const firstBlockError = Object.keys(r.fieldErrors ?? {}).find((k) => k.startsWith("blocks."));
         if (firstBlockError) {
           const idx = Number(firstBlockError.split(".")[1]);
-          if (blocks[idx]) setSelectedId(blocks[idx].id);
+          if (blocks[idx]) selectBlock(blocks[idx].id);
         }
         toast.error(r.error);
         return;
@@ -241,7 +272,7 @@ export function PageEditor({
       );
       router.refresh();
     },
-    [blocks, clearLocal, current, meta, page.id, router, saving, slugError, status],
+    [blocks, clearLocal, current, meta, page.id, router, saving, selectBlock, slugError, status],
   );
 
   // ------------------------------------------------------------ Atajos
@@ -259,18 +290,17 @@ export function PageEditor({
         duplicateBlock(selectedId);
       } else if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
         e.preventDefault();
-        setConfirmDelete(selectedId);
+        deleteBlock(selectedId);
       } else if (e.key === "Escape" && selectedId) {
         setSelectedId(null);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [duplicateBlock, save, selectedId]);
+  }, [deleteBlock, duplicateBlock, save, selectedId]);
 
   // "Ver en la tienda": URL de la tienda activa (`/s/<slug>/…` en modo fallback).
   const publicUrl = isHome ? storeRoot : `${storeRoot.replace(/\/+$/, "")}/${live.meta.slug}`;
-  const deleting = blocks.find((b) => b.id === confirmDelete);
 
   return (
     <BuilderOptionsProvider value={options}>
@@ -333,7 +363,13 @@ export function PageEditor({
                 </Button>
               }
             >
-              <DropdownItem icon={<FileText />} onSelect={() => setSelectedId(null)}>
+              <DropdownItem
+                icon={<FileText />}
+                onSelect={() => {
+                  setSelectedId(null);
+                  setPane("settings");
+                }}
+              >
                 Datos y SEO de la página
               </DropdownItem>
               {hasDraft ? (
@@ -355,7 +391,7 @@ export function PageEditor({
             </Button>
             <Button
               variant="primary"
-              onClick={() => void save("publish")}
+              onClick={() => (exampleBlocks.length ? setConfirmExamples(true) : void save("publish"))}
               loading={saving === "publish"}
               disabled={Boolean(saving) || (status === "published" && !dirty && !hasDraft)}
             >
@@ -397,12 +433,23 @@ export function PageEditor({
 
         <div className="flex min-h-0 flex-1">
           {/* Lista de bloques */}
-          <aside className="flex w-[272px] shrink-0 flex-col border-r border-adm-border bg-adm-surface" aria-label="Bloques">
+          <aside
+            className={cn("flex w-full shrink-0 flex-col border-adm-border bg-adm-surface lg:w-[272px] lg:border-r", pane !== "blocks" && "max-lg:hidden")}
+            aria-label="Bloques"
+          >
             <div className="flex items-center justify-between px-3 pt-3 pb-2">
               <h2 className="text-[13px] font-semibold text-adm-fg">
                 Bloques <span className="tnum font-normal text-adm-fg-muted">{blocks.length}</span>
               </h2>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)} aria-pressed={!selectedId}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSelectedId(null);
+                  setPane("settings");
+                }}
+                aria-pressed={!selectedId}
+              >
                 Página
               </Button>
             </div>
@@ -411,11 +458,11 @@ export function PageEditor({
                 <BlockList
                   blocks={blocks}
                   selectedId={selectedId}
-                  onSelect={setSelectedId}
+                  onSelect={selectBlock}
                   onReorder={setBlocks}
                   onToggleHidden={toggleHidden}
                   onDuplicate={duplicateBlock}
-                  onDelete={setConfirmDelete}
+                  onDelete={deleteBlock}
                 />
               ) : (
                 <p className="px-2 py-3 text-[13px] text-adm-fg-muted">Todavía no hay bloques. Empezá por una portada o un carrusel de productos.</p>
@@ -430,12 +477,18 @@ export function PageEditor({
           </aside>
 
           {/* Preview */}
-          <div className="adm-scroll min-w-0 flex-1 overflow-y-auto bg-adm-bg p-4">
-            <BuilderPreview blocks={blocks} theme={theme} device={device} selectedId={selectedId} onSelect={setSelectedId} initialNodes={initialNodes} />
+          <div className={cn("adm-scroll min-w-0 flex-1 overflow-y-auto bg-adm-bg p-4", pane !== "preview" && "max-lg:hidden")}>
+            <BuilderPreview blocks={blocks} theme={theme} device={device} selectedId={selectedId} onSelect={selectBlock} initialNodes={initialNodes} />
           </div>
 
           {/* Settings */}
-          <aside className="adm-scroll w-[340px] shrink-0 overflow-y-auto border-l border-adm-border bg-adm-surface" aria-label="Configuración">
+          <aside
+            className={cn(
+              "adm-scroll w-full shrink-0 overflow-y-auto border-adm-border bg-adm-surface lg:w-[340px] lg:border-l",
+              pane !== "settings" && "max-lg:hidden",
+            )}
+            aria-label="Configuración"
+          >
             {selected ? (
               <>
                 <div className="sticky top-0 z-10 flex h-11 items-center justify-between border-b border-adm-border bg-adm-surface pr-2 pl-4">
@@ -462,19 +515,51 @@ export function PageEditor({
             )}
           </aside>
         </div>
+
+        {/* Celular y tablet: un panel por vez, con la barra al alcance del pulgar. */}
+        <nav aria-label="Paneles del editor" className="grid shrink-0 grid-cols-3 border-t border-adm-border bg-adm-surface lg:hidden">
+          {(
+            [
+              { value: "blocks", label: `Bloques (${blocks.length})` },
+              { value: "preview", label: "Vista previa" },
+              { value: "settings", label: selected ? "Ajustes del bloque" : "Datos de la página" },
+            ] as const
+          ).map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              aria-pressed={pane === p.value}
+              onClick={() => setPane(p.value)}
+              className={cn(
+                "h-12 truncate border-t-2 px-2 text-[13px] font-medium",
+                pane === p.value ? "border-adm-accent text-adm-fg" : "border-transparent text-adm-fg-muted hover:text-adm-fg",
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       <BlockPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={addBlock} />
 
       <ConfirmDialog
-        open={Boolean(confirmDelete)}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-        title={deleting ? `¿Borrar el bloque «${BLOCK_META[deleting.type].label}»?` : "¿Borrar el bloque?"}
-        description="Lo podés recuperar sólo si no guardaste todavía (Descartar cambios)."
-        confirmLabel="Borrar bloque"
-        destructive
-        onConfirm={() => {
-          if (confirmDelete) deleteBlock(confirmDelete);
+        open={confirmExamples}
+        onOpenChange={(o) => {
+          setConfirmExamples(o);
+          // "Revisar": lleva al primer bloque con texto de ejemplo.
+          if (!o && !publishAnyway.current && exampleBlocks[0]) selectBlock(exampleBlocks[0].id);
+          if (!o) publishAnyway.current = false;
+        }}
+        title="¿Publicar con texto de ejemplo?"
+        description={`${listLabels(exampleBlocks.map((b) => `«${BLOCK_META[b.type].label}»`))} ${
+          exampleBlocks.length === 1 ? "tiene" : "tienen"
+        } el texto que trae el editor, con datos que no son de tu tienda (años, plazos de envío, descuentos). Si se publica así, tus clientes lo leen como cierto.`}
+        confirmLabel="Publicar igual"
+        cancelLabel="Revisar"
+        onConfirm={async () => {
+          publishAnyway.current = true;
+          await save("publish");
         }}
       />
       <ConfirmDialog
@@ -589,4 +674,9 @@ function PageSettings({
       </Section>
     </div>
   );
+}
+
+/** "«Portada», «Banners» y «Preguntas frecuentes»". */
+function listLabels(items: string[]): string {
+  return items.length > 1 ? `${items.slice(0, -1).join(", ")} y ${items[items.length - 1]}` : (items[0] ?? "");
 }

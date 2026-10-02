@@ -6,6 +6,7 @@ import { PRESETS } from "@/lib/theme/presets";
 import {
   announcementSchema,
   basePresetOf,
+  canHideCredit,
   CUSTOM_CSS_MAX_BYTES,
   isPresetAllowed,
   saveThemeSchema,
@@ -87,5 +88,26 @@ describe("tema vs. plan", () => {
     expect(themePlanViolation(pro, { ...PRESETS.neon, custom_css: "h1{color:red}" })).toBeNull();
     expect(isPresetAllowed(pro, "atelier")).toBe(true);
     expect(isPresetAllowed(free, "atelier")).toBe(false);
+  });
+});
+
+describe("crédito «Hecho con Ecommy» (BRAND.md §12)", () => {
+  it("obligatorio en Free, apagable desde Starter", () => {
+    expect(canHideCredit(defaultPlan("free"))).toBe(false);
+    expect(canHideCredit(defaultPlan("starter"))).toBe(true);
+    expect(canHideCredit(defaultPlan("pro"))).toBe(true);
+    expect(canHideCredit(null)).toBe(false);
+  });
+
+  it("apagarlo no cambia de qué preset sale el tema", () => {
+    const theme = { ...PRESETS.galpon, preset: "custom" as const, footer: { ...PRESETS.galpon.footer, showCredit: false } };
+    expect(basePresetOf(theme)).toBe("galpon");
+  });
+
+  it("los temas viejos sin el campo lo tienen prendido", () => {
+    const footer: Record<string, unknown> = { ...PRESETS.nordico.footer };
+    delete footer.showCredit;
+    const parsed = saveThemeSchema.parse({ ...PRESETS.nordico, footer });
+    expect(parsed.footer.showCredit).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DISPLAY, EYEBROW, TEXT_LINK } from "@/components/platform/brand";
 import { FaqList } from "@/components/platform/FaqList";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
 import { PlanCards, PlanComparison, PlanCtaLink } from "@/components/platform/PlanCards";
@@ -9,14 +10,18 @@ import { exampleStoreAddress } from "@/components/platform/site";
 import { getSession } from "@/lib/auth";
 import { billingEnabled } from "@/lib/billing/mercadopago";
 import type { PublicPlan } from "@/lib/plans/catalog";
+import { cn } from "@/lib/cn";
 import { yearlyOffer } from "@/lib/plans/yearly";
 
 import { plansOrEmpty } from "../_lib/public-site";
 
 export const metadata: Metadata = {
   title: "Planes",
-  description: "Free, Starter, Pro y Business: qué incluye cada plan de Ecommy y cuánto cuesta.",
+  description:
+    "Free, Starter, Pro y Business: qué incluye cada plan de Ecommy y cuánto cuesta. Sin comisión por venta y con 14 días de Pro gratis, sin tarjeta.",
+  alternates: { canonical: "/planes" },
 };
+
 export const dynamic = "force-dynamic";
 
 /** "Starter" · "Starter y Pro" · "Starter, Pro y Business". */
@@ -56,10 +61,18 @@ export default async function PlanesPage() {
   return (
     <PlatformPage signedIn={Boolean(user)}>
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
-        <h1 className="text-[30px] leading-tight font-semibold tracking-[-0.02em]">Planes</h1>
-        <p className="mt-2 max-w-[600px] text-[15px] text-adm-fg-muted">
-          Empezás con 14 días de Pro gratis. Precios finales en pesos, por mes y por tienda.
+        <p className={EYEBROW}>Planes</p>
+        <h1 className={cn(DISPLAY, "mt-3 max-w-[18ch] text-[36px] leading-[1.05] font-semibold tracking-[-0.03em] sm:text-[48px]")}>
+          Empezás con todo. Después elegís.
+        </h1>
+        <p className="mt-4 max-w-[60ch] text-[17px] leading-snug">
+          Toda tienda nueva arranca con 14 días de Pro, sin tarjeta. Si no elegís un plan pago, pasás a Free y no se borra nada.
         </p>
+        <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-adm-fg-muted">
+          <li>Sin comisión por venta</li>
+          <li>Precios finales en pesos, por mes y por tienda</li>
+          <li>Cambiás de plan cuando quieras</li>
+        </ul>
 
         {plans.length ? null : (
           <p role="status" className="mt-8 rounded-adm border border-adm-border bg-adm-surface px-4 py-3 text-[14px]">
@@ -72,15 +85,16 @@ export default async function PlanesPage() {
         )}
 
         <PlanCards
-          className="mt-8"
+          className="mt-10"
           plans={plans}
           highlight="pro"
+          highlightLabel="Incluido en la prueba"
           renderCta={(plan) =>
             plan.code === "business" ? (
               <PlanCtaLink href="/contacto#business">Hablemos</PlanCtaLink>
             ) : (
               <PlanCtaLink href={start} primary={plan.code === "pro"}>
-                {plan.code === "free" ? "Empezar gratis" : `Probar ${plan.name} 14 días`}
+                {plan.code === "pro" ? "Probar Pro 14 días gratis" : "Empezar gratis"}
               </PlanCtaLink>
             )
           }
@@ -88,7 +102,7 @@ export default async function PlanesPage() {
 
         {yearlyPlans.length ? <YearlyNote yearly={yearlyPlans} mercadoPago={mpEnabled} /> : null}
 
-        <h2 id="comparar" className={yearlyPlans.length ? "mt-8 text-[20px] font-semibold" : "mt-14 text-[20px] font-semibold"}>
+        <h2 id="comparar" className={cn(DISPLAY, "scroll-mt-20 text-[26px] font-semibold tracking-[-0.02em]", yearlyPlans.length ? "mt-8" : "mt-16")}>
           Comparación completa
         </h2>
         <div className="mt-4">
@@ -96,10 +110,10 @@ export default async function PlanesPage() {
         </div>
 
         <div className="mt-14 flex flex-wrap items-end justify-between gap-4">
-          <h2 id="preguntas" className="text-[20px] font-semibold">
+          <h2 id="preguntas" className={cn(DISPLAY, "scroll-mt-20 text-[26px] font-semibold tracking-[-0.02em]")}>
             Preguntas frecuentes
           </h2>
-          <Link href="/contacto" className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+          <Link href="/contacto" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
             Más preguntas y contacto
           </Link>
         </div>

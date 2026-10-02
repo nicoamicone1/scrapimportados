@@ -173,7 +173,7 @@ export function ImageManager({ productId, images, onChange, ensureProductId, use
             Subir imágenes
           </span>
           <span className="text-[13px] text-adm-fg-muted">
-            Arrastralas acá, pegalas con Ctrl+V o elegilas de tu compu. Se optimizan solas (WebP, máx. 1600 px).
+            Elegilas del celular o la compu, arrastralas acá o pegalas con Ctrl+V. Se optimizan solas (WebP, máx. 1600 px).
             {!productId ? " Al subir la primera se guarda el producto como borrador." : ""}
           </span>
         </button>
@@ -296,7 +296,7 @@ function SortableImage({
         <DropdownMenu
           width={200}
           trigger={
-            <Button variant="secondary" size="icon-sm" aria-label={`Opciones de la imagen ${index + 1}`} className="size-6">
+            <Button variant="secondary" size="icon-sm" aria-label={`Opciones de la imagen ${index + 1}`} className="size-6 max-md:size-9">
               <MoreHorizontal />
             </Button>
           }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { CTA_PRIMARY, DISPLAY, EYEBROW, H1, H2, TEXT_LINK } from "@/components/platform/brand";
 import { FaqList } from "@/components/platform/FaqList";
 import { LazyFontSheets } from "@/components/platform/LazyFontSheets";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
@@ -56,8 +57,8 @@ function steps(plans: readonly PlanLike[]): { title: string; text: ReactNode; ti
   return [
     {
       title: "Creás la tienda",
-      text: "Elegís nombre, dirección y rubro; el rubro define el estilo con el que arranca, y lo cambiás cuando quieras. Cargás el WhatsApp donde te llegan los pedidos y el alias o CBU para las transferencias.",
-      time: "Unos 5 minutos: son 3 pasos.",
+      text: "Nombre y rubro: el rubro define el estilo con el que arranca, y lo cambiás cuando quieras. Después, el WhatsApp donde te llegan los pedidos y tu alias para las transferencias.",
+      time: "Unos 5 minutos: son 2 pasos después de crear la cuenta.",
     },
     {
       title: "Cargás el catálogo",
@@ -66,7 +67,7 @@ function steps(plans: readonly PlanLike[]): { title: string; text: ReactNode; ti
     },
     {
       title: "Compartís el link y cobrás",
-      text: "Lo pegás en la bio de Instagram, en tus estados de WhatsApp o donde ya vendés. El cliente arma el carrito, elige envío o retiro y confirma: el pedido queda registrado con número y te llega por WhatsApp. Si paga por transferencia, ve tu alias y el descuento; vos lo marcás pagado cuando ves el comprobante.",
+      text: "Lo pegás en la bio de Instagram, en tus estados de WhatsApp o donde ya vendés. El cliente arma el carrito, elige envío o retiro y confirma: el pedido queda registrado con número y te llega por WhatsApp. Si paga por transferencia, ve tu alias y el descuento; lo marcás pagado cuando ves el comprobante.",
       time: "El mismo día que publicás.",
     },
   ];
@@ -147,6 +148,18 @@ const ORDER = {
   shipping: { label: "Envío CABA", price: 3200 },
 };
 
+/**
+ * Lo que hoy no hace (MARKETING §1, "A quién NO le sirve"). Decirlo antes
+ * de que se registren filtra a quien se va a ir en un mes y compra confianza.
+ */
+const NOT_YET = [
+  { title: "Cobro con tarjeta y cuotas dentro de la tienda", text: "No hay pasarela. Si la mayoría de tus ventas son con tarjeta online, hoy otra plataforma te sirve más." },
+  { title: "Etiquetas y cotización de correos", text: "No hay integración con OCA, Andreani ni Correo Argentino: el envío se cobra por zona y lo despachás vos." },
+  { title: "Sincronizar stock con Mercado Libre", text: "Si vendés fuerte ahí y necesitás el stock unificado, todavía no está." },
+  { title: "Factura electrónica por cada venta", text: "Seguís facturando con tu sistema; Ecommy registra el pedido y el pago." },
+  { title: "Precios mayoristas por cantidad", text: "El catálogo mayorista se muestra bien, pero los precios escalonados todavía no existen." },
+] as const;
+
 async function plansOrEmpty(): Promise<PublicPlan[]> {
   try {
     return await listPublicPlans();
@@ -176,8 +189,9 @@ export default async function LandingPage() {
   const freeNames = specimens.filter((_, i) => planLabels[i]?.startsWith("Incluido")).map((s) => s.presetName);
   // Fuentes de los presets (docs/DESIGN.md §8.19, excepción de la landing):
   // una hoja por preset, que `LazyFontSheets` inyecta cuando su elemento se
-  // acerca al viewport. Ninguna bloquea el render (el LCP es el h1, en la
-  // fuente del sistema); la del hero (Mercado) se precarga con prioridad baja.
+  // acerca al viewport. Ninguna bloquea el render (el LCP es el h1, en
+  // Archivo autohospedada con `display: swap`); la del hero (Mercado) se
+  // precarga con prioridad baja.
   const fontSheets = specimenFontSheets([
     { presetId: "mercado", texts: STOREFRONT_MOCK_TEXTS },
     ...specimens.map((s, i) => ({ presetId: s.presetId, texts: specimenTexts(s, planLabels[i]) })),
@@ -235,45 +249,37 @@ export default async function LandingPage() {
       {fontSheets.mercado ? <link rel="preload" as="style" href={fontSheets.mercado} fetchPriority="low" /> : null}
       <LazyFontSheets />
 
-      {/* Hero ----------------------------------------------------------- */}
+      {/* Hero: dolor + qué es + una acción ----------------------------- */}
       <section className="border-b border-adm-border bg-adm-surface">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-12 pb-14 sm:px-6 md:pt-16 md:pb-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-10 pb-14 sm:px-6 md:pt-16 md:pb-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="min-w-0">
-            <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Tiendas online para pymes argentinas</p>
-            <h1 className="mt-4 max-w-[12ch] text-[40px] leading-[1.02] font-semibold tracking-[-0.035em] sm:text-[52px] lg:text-[60px]">
-              Dejá de pasar precios por privado.
-            </h1>
-            <p className="mt-5 max-w-[34ch] text-[19px] leading-snug tracking-[-0.01em] sm:text-[21px]">
-              Tu tienda con catálogo, stock y carrito. El cliente confirma y el pedido te llega por WhatsApp con el total y la dirección.
-            </p>
-            <p className="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-adm-fg-muted">
-              Cobrás por transferencia o como lo acuerden: sin pasarela y sin comisión por venta. Empezás con 14 días de Pro gratis, sin
-              tarjeta.
+            <p className={EYEBROW}>Tienda online para los que venden por WhatsApp</p>
+            <h1 className={cn(H1, "mt-4 max-w-[12ch]")}>Dejá de pasar precios por privado.</h1>
+            <p className="mt-5 max-w-[34ch] text-[19px] leading-[1.3] tracking-[-0.01em] sm:text-[21px]">
+              Tu catálogo con precio, stock y carrito. El cliente confirma y el pedido te llega por WhatsApp con el total y la dirección.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <Link
-                href={start}
-                className="inline-flex h-11 items-center gap-2 rounded-adm bg-adm-accent px-5 text-[15px] font-medium text-adm-accent-fg transition-colors hover:bg-adm-accent-hover"
-              >
-                Crear tu tienda gratis
+              <Link href={start} className={CTA_PRIMARY}>
+                {signedIn ? "Crear una tienda" : "Crear tu tienda gratis"}
                 <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
               </Link>
-              <Link href={demo} className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+              <Link href={demo} className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
                 Ver la tienda demo
               </Link>
             </div>
+            <p className="mt-3 text-[13px] text-adm-fg-muted">14 días de Pro, sin tarjeta. Después seguís en Free si querés.</p>
             <dl className="mt-10 grid max-w-[500px] grid-cols-3 border-t border-adm-border pt-5 text-[13px]">
               <div className="pr-3">
-                <dt className="text-adm-fg-muted">Plan Free</dt>
-                <dd className="tnum mt-0.5 text-[17px] font-semibold">{formatMoney(0)}</dd>
+                <dt className="text-adm-fg-muted">Comisión por venta</dt>
+                <dd className={cn(DISPLAY, "tnum mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em]")}>0 %</dd>
               </div>
               <div className="border-l border-adm-border px-3 sm:px-4">
-                <dt className="text-adm-fg-muted">Comisión por venta</dt>
-                <dd className="tnum mt-0.5 text-[17px] font-semibold">0 %</dd>
+                <dt className="text-adm-fg-muted">Prueba de Pro</dt>
+                <dd className={cn(DISPLAY, "tnum mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em]")}>14 días</dd>
               </div>
               <div className="border-l border-adm-border pl-3 sm:pl-4">
                 <dt className="text-adm-fg-muted">Estilos por rubro</dt>
-                <dd className="tnum mt-0.5 text-[17px] font-semibold">{specimens.length}</dd>
+                <dd className={cn(DISPLAY, "tnum mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em]")}>{specimens.length}</dd>
               </div>
             </dl>
           </div>
@@ -286,26 +292,30 @@ export default async function LandingPage() {
       </section>
 
       {/* Cómo funciona -------------------------------------------------- */}
-      <section id="como-funciona" aria-labelledby="como-funciona-t" className="scroll-mt-4">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+      <section id="como-funciona" aria-labelledby="como-funciona-t" className="scroll-mt-20">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 pt-16 pb-14 sm:px-6 md:pt-24 md:pb-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
           <div>
-            <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Cómo funciona</p>
-            <h2 id="como-funciona-t" className="mt-3 max-w-[16ch] text-[30px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[36px]">
+            <p className={EYEBROW}>Cómo funciona</p>
+            <h2 id="como-funciona-t" className={cn(H2, "mt-3 max-w-[16ch]")}>
               De cero a tu primer pedido, en una tarde.
             </h2>
             <p className="mt-4 max-w-[40ch] text-[15px] leading-relaxed text-adm-fg-muted">
               Con un catálogo chico, sin diseñador ni programador. Lo que necesitás tener a mano: fotos, precios, talles y tu alias.
             </p>
+            <Link href={start} className={cn(TEXT_LINK, "mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm")}>
+              Empezar ahora
+              <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
+            </Link>
           </div>
           <ol className="border-b border-adm-border">
             {steps(plans).map((step, i) => (
               <li key={step.title} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 border-t border-adm-border py-6 sm:grid-cols-[3.5rem_minmax(0,1fr)]">
-                <span className="tnum text-[28px] leading-none font-light tracking-[-0.03em] text-adm-accent sm:text-[36px]" aria-hidden>
+                <span className={cn(DISPLAY, "tnum text-[28px] leading-none font-medium tracking-[-0.03em] text-adm-accent sm:text-[36px]")} aria-hidden>
                   {i + 1}
                 </span>
                 <div>
                   <h3 className="text-[18px] leading-snug font-semibold tracking-[-0.01em]">{step.title}</h3>
-                  <p className="mt-2 max-w-[62ch] text-[14px] leading-relaxed text-adm-fg-muted">{step.text}</p>
+                  <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-adm-fg-muted">{step.text}</p>
                   <p className="mt-3 text-[13px]">
                     <span className="font-medium">Lleva:</span> {step.time}
                   </p>
@@ -316,80 +326,12 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Para quién ----------------------------------------------------- */}
-      <section id="rubros" aria-labelledby="rubros-t" className="scroll-mt-4 border-y border-adm-border bg-adm-surface">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-16">
-            <div>
-              <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Para quién</p>
-              <h2 id="rubros-t" className="mt-3 max-w-[20ch] text-[30px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[36px]">
-                Un estilo para cada rubro, no una plantilla para todos.
-              </h2>
-            </div>
-            <p className="max-w-[48ch] text-[15px] leading-relaxed text-adm-fg-muted">
-              Al crear la tienda elegís el rubro y arranca con su estilo: tipografías, colores, forma de las fotos, densidad de la grilla y
-              botones. Estas muestras están dibujadas con los estilos reales.
-              {freeNames.length ? ` Free incluye ${listNames(freeNames)}; en la prueba de 14 días usás los ${specimens.length}.` : null}
-            </p>
-          </div>
-          <PresetSpecimens className="mt-10" specimens={specimens} plans={plans} fontSheets={fontSheets} />
-          <p className="mt-5 text-[13px] text-adm-fg-muted">
-            ¿Tu rubro no está? Arrancás con Nórdico, el más neutro, y ajustás colores y tipografías desde el panel.{" "}
-            <Link href={demo} className="font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
-              Ver una tienda funcionando
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      {/* Features ------------------------------------------------------- */}
-      <section aria-labelledby="panel-t">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
-          <h2 id="panel-t" className="max-w-[22ch] text-[30px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[36px]">
-            Lo que hacés todos los días, en un panel pensado para eso.
-          </h2>
-          <div className="mt-12 space-y-14 md:space-y-16">
-            {features(plans).map((f, i) => (
-              <div key={f.title} className="grid items-center gap-6 md:grid-cols-2 md:gap-12">
-                <div className={cn("min-w-0", i % 2 && "md:order-2")}>
-                  <h3 className="flex items-center gap-2.5 text-[18px] font-semibold tracking-[-0.01em]">
-                    <span className="text-adm-accent">{f.icon}</span>
-                    {f.title}
-                  </h3>
-                  <p className="mt-2 max-w-[48ch] text-[14px] leading-relaxed text-adm-fg-muted">{f.text}</p>
-                  <p className="mt-3 text-[12px] text-adm-fg-muted">{f.plans}</p>
-                </div>
-                <div className={cn("min-w-0", i % 2 && "md:order-1")}>{f.mock}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-20 grid gap-8 border-t-2 border-adm-fg pt-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
-            <h3 className="text-[22px] leading-tight font-semibold tracking-[-0.02em]">Y lo que no se ve, también.</h3>
-            <dl>
-              {also(plans).map((a) => (
-                <div
-                  key={a.title}
-                  className="grid gap-x-8 gap-y-1 border-b border-adm-border py-4 first:pt-0 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"
-                >
-                  <dt className="text-[14px] font-semibold">{a.title}</dt>
-                  <dd className="text-[14px] leading-relaxed text-adm-fg-muted">
-                    {a.text}
-                    <span className="mt-1 block text-[12px]">{a.plans}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
-      </section>
-
-      {/* Sin comisiones ------------------------------------------------- */}
+      {/* Sin comisiones: el diferencial, temprano (única banda tinta) ---- */}
       <section aria-labelledby="comision-t" className="bg-adm-sidebar-bg text-adm-sidebar-fg">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
           <div>
             <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2 uppercase">Sin pasarela, sin comisión</p>
-            <h2 id="comision-t" className="mt-3 max-w-[18ch] text-[30px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[40px]">
+            <h2 id="comision-t" className={cn(H2, "mt-3 max-w-[18ch] text-white sm:text-[40px]")}>
               Te pagan a vos. Ecommy no toca la plata.
             </h2>
             <p className="mt-5 max-w-[56ch] text-[15px] leading-relaxed text-adm-sidebar-fg">
@@ -397,7 +339,7 @@ export default async function LandingPage() {
               cliente te transfiere a tu cuenta o lo arreglan por WhatsApp, y Ecommy no cobra nada por venta. Tu costo es el plan, fijo por
               mes.
             </p>
-            <h3 className="mt-10 text-[14px] font-semibold">Lo que tenés que saber</h3>
+            <h3 className="mt-10 text-[14px] font-semibold text-white">Lo que tenés que saber</h3>
             <ul className="mt-3 max-w-[56ch] space-y-3 text-[14px] leading-relaxed text-adm-sidebar-muted">
               <li className="border-l-2 border-adm-sidebar-border pl-4">
                 No hay cobro con tarjeta dentro de la tienda. Si alguien quiere pagar así, le mandás un link de pago de tu billetera por
@@ -418,7 +360,7 @@ export default async function LandingPage() {
               <span className="text-[14px] font-semibold">Pedido #1042</span>
               <span className="text-[12px] text-adm-fg-muted">Pago por transferencia</span>
             </figcaption>
-            <table className="mt-3 w-full text-[13px]">
+            <table className="tnum mt-3 w-full text-[13px]">
               <caption className="sr-only">Ejemplo de un pedido pagado por transferencia</caption>
               <tbody>
                 {ORDER.items.map((item) => (
@@ -463,7 +405,7 @@ export default async function LandingPage() {
                   <th scope="row" className="pt-2.5 pr-3 text-left text-[15px] font-semibold">
                     Llega a tu cuenta
                   </th>
-                  <td className="pt-2.5 text-right text-[18px] font-semibold tracking-[-0.01em]">{formatMoney(total)}</td>
+                  <td className={cn(DISPLAY, "pt-2.5 text-right text-[20px] font-semibold tracking-[-0.01em]")}>{formatMoney(total)}</td>
                 </tr>
               </tbody>
             </table>
@@ -478,21 +420,91 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Features ------------------------------------------------------- */}
+      <section aria-labelledby="panel-t">
+        <div className="mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-6 md:pt-28 md:pb-24">
+          <p className={EYEBROW}>El panel</p>
+          <h2 id="panel-t" className={cn(H2, "mt-3 max-w-[22ch]")}>
+            Lo que hacés todos los días, en un panel pensado para eso.
+          </h2>
+          <div className="mt-12 space-y-14 md:space-y-16">
+            {features(plans).map((f, i) => (
+              <div key={f.title} className="grid items-center gap-6 md:grid-cols-2 md:gap-12">
+                <div className={cn("min-w-0", i % 2 && "md:order-2")}>
+                  <h3 className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-0.01em]">
+                    <span className="text-adm-accent">{f.icon}</span>
+                    {f.title}
+                  </h3>
+                  <p className="mt-2 max-w-[48ch] text-[15px] leading-relaxed text-adm-fg-muted">{f.text}</p>
+                  <p className="mt-3 text-[12px] text-adm-fg-muted">{f.plans}</p>
+                </div>
+                <div className={cn("min-w-0", i % 2 && "md:order-1")}>{f.mock}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-20 grid gap-8 border-t-2 border-adm-fg pt-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+            <h3 className={cn(DISPLAY, "text-[24px] leading-tight font-semibold tracking-[-0.02em]")}>Y lo que no se ve, también.</h3>
+            <dl>
+              {also(plans).map((a) => (
+                <div
+                  key={a.title}
+                  className="grid gap-x-8 gap-y-1 border-b border-adm-border py-4 first:pt-0 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"
+                >
+                  <dt className="text-[14px] font-semibold">{a.title}</dt>
+                  <dd className="text-[14px] leading-relaxed text-adm-fg-muted">
+                    {a.text}
+                    <span className="mt-1 block text-[12px]">{a.plans}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* Para quién: estilos por rubro --------------------------------- */}
+      <section id="rubros" aria-labelledby="rubros-t" className="scroll-mt-20 border-y border-adm-border bg-adm-surface">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-16">
+            <div>
+              <p className={EYEBROW}>Con tu marca</p>
+              <h2 id="rubros-t" className={cn(H2, "mt-3 max-w-[20ch]")}>
+                Un estilo para cada rubro, no una plantilla para todos.
+              </h2>
+            </div>
+            <p className="max-w-[48ch] text-[15px] leading-relaxed text-adm-fg-muted">
+              Al crear la tienda elegís el rubro y arranca con su estilo: tipografías, colores, forma de las fotos, densidad de la grilla y
+              botones. Estas muestras están dibujadas con los estilos reales.
+              {freeNames.length ? ` Free incluye ${listNames(freeNames)}; en la prueba de 14 días usás los ${specimens.length}.` : null}
+            </p>
+          </div>
+          <PresetSpecimens className="mt-10" specimens={specimens} plans={plans} fontSheets={fontSheets} />
+          <p className="mt-5 text-[13px] text-adm-fg-muted">
+            ¿Tu rubro no está? Arrancás con Nórdico, el más neutro, y ajustás colores y tipografías desde el panel.{" "}
+            <Link href={demo} className={TEXT_LINK}>
+              Ver una tienda funcionando
+            </Link>
+          </p>
+        </div>
+      </section>
+
       {/* Planes --------------------------------------------------------- */}
       {plans.length ? (
-        <section id="planes" aria-labelledby="planes-t" className="scroll-mt-4 bg-adm-surface-2/60">
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+        <section id="planes" aria-labelledby="planes-t" className="scroll-mt-20 bg-adm-surface-2">
+          <div className="mx-auto max-w-6xl px-4 pt-16 pb-14 sm:px-6 md:pt-20 md:pb-16">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h2 id="planes-t" className="text-[30px] leading-tight font-semibold tracking-[-0.025em]">
-                  Planes
+                <p className={EYEBROW}>Planes</p>
+                <h2 id="planes-t" className={cn(H2, "mt-3")}>
+                  Empezás con todo. Después elegís.
                 </h2>
-                <p className="mt-2 max-w-[56ch] text-[14px] leading-relaxed text-adm-fg-muted">
-                  Toda tienda nueva arranca con 14 días de Pro. Después elegís: si no pagás nada, pasás a Free sin perder tus datos. Precios
-                  finales en pesos, por mes y por tienda.
+                <p className="mt-3 max-w-[60ch] text-[15px] leading-relaxed text-adm-fg-muted">
+                  Toda tienda nueva arranca con 14 días de Pro. Si no elegís un plan pago, pasás a Free y no se borra nada. Precios finales en
+                  pesos, por mes y por tienda.
                 </p>
               </div>
-              <Link href="/planes#comparar" className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+              <Link href="/planes#comparar" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
                 Comparar todo en detalle
               </Link>
             </div>
@@ -500,12 +512,13 @@ export default async function LandingPage() {
               className="mt-8"
               plans={plans}
               highlight="pro"
+              highlightLabel="Incluido en la prueba"
               renderCta={(plan) =>
                 plan.code === "business" ? (
-                  <PlanCtaLink href="/contacto">Hablemos</PlanCtaLink>
+                  <PlanCtaLink href="/contacto#business">Hablemos</PlanCtaLink>
                 ) : (
                   <PlanCtaLink href={start} primary={plan.code === "pro"}>
-                    {plan.code === "free" ? "Empezar gratis" : `Probar ${plan.name} 14 días`}
+                    {plan.code === "pro" ? "Probar Pro 14 días gratis" : "Empezar gratis"}
                   </PlanCtaLink>
                 )
               }
@@ -514,14 +527,37 @@ export default async function LandingPage() {
         </section>
       ) : null}
 
+      {/* Lo que hoy no hace: honestidad antes del registro -------------- */}
+      <section aria-labelledby="no-hace-t" className="border-t border-adm-border">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-16 pb-12 sm:px-6 md:pt-20 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <div>
+            <p className={EYEBROW}>Antes de empezar</p>
+            <h2 id="no-hace-t" className={cn(DISPLAY, "mt-3 text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[30px]")}>
+              Lo que hoy Ecommy no hace.
+            </h2>
+            <p className="mt-3 max-w-[40ch] text-[14px] leading-relaxed text-adm-fg-muted">
+              Si alguna de estas es imprescindible para tu negocio, mejor saberlo ahora que en un mes.
+            </p>
+          </div>
+          <dl className="grid gap-x-10 sm:grid-cols-2">
+            {NOT_YET.map((item) => (
+              <div key={item.title} className="border-t border-adm-border py-4">
+                <dt className="text-[14px] font-semibold">{item.title}</dt>
+                <dd className="mt-1 text-[14px] leading-relaxed text-adm-fg-muted">{item.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       {/* Preguntas ------------------------------------------------------ */}
-      <section id="preguntas" aria-labelledby="preguntas-t" className="scroll-mt-4 border-t border-adm-border">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+      <section id="preguntas" aria-labelledby="preguntas-t" className="scroll-mt-20">
+        <div className="mx-auto max-w-6xl px-4 pt-8 pb-16 sm:px-6 md:pb-20">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 id="preguntas-t" className="text-[30px] leading-tight font-semibold tracking-[-0.025em]">
+            <h2 id="preguntas-t" className={cn(DISPLAY, "text-[26px] leading-tight font-semibold tracking-[-0.02em] sm:text-[30px]")}>
               Preguntas frecuentes
             </h2>
-            <Link href="/contacto" className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+            <Link href="/contacto" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
               Más preguntas y contacto
             </Link>
           </div>
@@ -531,19 +567,14 @@ export default async function LandingPage() {
 
       {/* CTA final ------------------------------------------------------ */}
       <section className="border-t border-adm-border bg-adm-surface">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 md:py-20 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:items-end">
-          <p className="max-w-[24ch] text-[28px] leading-[1.1] font-semibold tracking-[-0.025em] sm:text-[36px]">
-            La tienda la armás hoy. Lo que falta es tu primera venta.
-          </p>
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:items-end">
+          <p className={cn(H2, "max-w-[22ch] sm:text-[40px]")}>La tienda la armás hoy. Lo que falta es tu primera venta.</p>
           <div>
-            <Link
-              href={start}
-              className="inline-flex h-11 items-center gap-2 rounded-adm bg-adm-accent px-5 text-[15px] font-medium text-adm-accent-fg transition-colors hover:bg-adm-accent-hover"
-            >
-              Crear tu tienda gratis
+            <Link href={start} className={CTA_PRIMARY}>
+              {signedIn ? "Crear una tienda" : "Crear tu tienda gratis"}
               <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
             </Link>
-            <p className="mt-3 text-[13px] text-adm-fg-muted">14 días de Pro gratis, sin tarjeta. Después seguís en Free si querés.</p>
+            <p className="mt-3 text-[13px] text-adm-fg-muted">14 días de Pro gratis, sin tarjeta. Sin comisión por venta.</p>
           </div>
         </div>
       </section>

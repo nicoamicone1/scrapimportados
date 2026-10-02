@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildNav, isNavActive, NAV, navItemFor, sectionFor } from "./nav";
+import { buildNav, isNavActive, MOBILE_TABS, NAV, navItemFor, sectionFor } from "./nav";
 
 const find = (href: string) => NAV.flatMap((g) => g.items).find((i) => i.href === href)!;
 
@@ -57,5 +57,16 @@ describe("buildNav", () => {
     expect(navItemFor("/admin/taller-3d")?.group.label).toBe("Apps");
     expect(sectionFor("/admin/taller-3d/configuracion")).toBe("store");
     expect(navItemFor("/admin/taller-3dx")).toBeNull();
+  });
+});
+
+describe("MOBILE_TABS", () => {
+  it("cada pestaña de la barra inferior existe en el menú", () => {
+    for (const tab of MOBILE_TABS) expect(find(tab.href)).toBeTruthy();
+    expect(MOBILE_TABS.length).toBeLessThanOrEqual(4);
+  });
+
+  it("importar vive en Catálogo", () => {
+    expect(navItemFor("/admin/importar")?.group.section).toBe("catalog");
   });
 });

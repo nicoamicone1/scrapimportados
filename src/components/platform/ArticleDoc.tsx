@@ -5,6 +5,8 @@ import { cn } from "@/lib/cn";
 
 import type { Heading } from "@/content/text";
 
+import { DISPLAY } from "./brand";
+
 /*
  * Página de artículo (centro de ayuda y guías): medida de 68ch, índice
  * lateral fijo en desktop desde los h2 y plegable arriba en mobile, igual
@@ -83,6 +85,7 @@ export function ArticleDoc({
         </nav>
         <h1
           className={cn(
+            DISPLAY,
             "mt-3 font-semibold text-balance",
             guide
               ? "text-[32px] leading-[1.08] tracking-[-0.03em] sm:text-[42px]"

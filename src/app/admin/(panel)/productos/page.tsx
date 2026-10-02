@@ -1,5 +1,6 @@
 import { Import, Plus } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LimitBanner } from "@/components/admin/LimitBanner";
 import { ProductsTable } from "@/components/admin/products/ProductsTable";
@@ -86,7 +87,19 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
     <>
       <PageHeader
         title="Productos"
-        description={`${formatNumber(counts.active)} activos · ${formatNumber(counts.draft)} en borrador · ${formatNumber(counts.outOfStock)} sin stock`}
+        description={
+          <>
+            {formatNumber(counts.active)} activos · {formatNumber(counts.draft)} en borrador ·{" "}
+            {counts.outOfStock ? (
+              // Atajo: de "8 sin stock" a la lista de esos 8 en un toque.
+              <Link href={hrefWith(params, { stock: "sin" })} className="text-adm-accent underline underline-offset-2">
+                {formatNumber(counts.outOfStock)} sin stock
+              </Link>
+            ) : (
+              "0 sin stock"
+            )}
+          </>
+        }
         actions={actions}
       >
         <TabsNav

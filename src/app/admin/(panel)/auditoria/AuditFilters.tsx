@@ -47,7 +47,7 @@ export function AuditFilters({ facets }: { facets: { actors: { id: string; label
         value={get("usuario")}
         onChange={(e) => setParam("usuario", e.target.value)}
         options={[{ value: "", label: "Todos los usuarios" }, ...facets.actors.map((a) => ({ value: a.id, label: a.label }))]}
-        className="w-52"
+        className="sm:w-52 max-sm:w-full"
       />
       <Select
         size="sm"
@@ -58,7 +58,7 @@ export function AuditFilters({ facets }: { facets: { actors: { id: string; label
           { value: "", label: "Todas las acciones" },
           ...facets.actions.map((a) => ({ value: a, label: ACTION_LABELS[a] ? `${ACTION_LABELS[a]} (${a}.*)` : `${a}.*` })),
         ]}
-        className="w-48"
+        className="sm:w-48 max-sm:w-full"
       />
       <Select
         size="sm"
@@ -66,7 +66,7 @@ export function AuditFilters({ facets }: { facets: { actors: { id: string; label
         value={get("entidad")}
         onChange={(e) => setParam("entidad", e.target.value)}
         options={[{ value: "", label: "Todas las entidades" }, ...facets.entities.map((e) => ({ value: e, label: e }))]}
-        className="w-44"
+        className="sm:w-44 max-sm:w-full"
       />
       <label className="flex items-center gap-1.5 text-[13px] text-adm-fg-muted">
         Desde

@@ -3,7 +3,6 @@
 import {
   Archive,
   ArchiveRestore,
-  Check,
   Copy,
   Eye,
   ExternalLink,
@@ -11,16 +10,18 @@ import {
   FolderMinus,
   FolderPlus,
   Link2,
+  ListFilter,
   Loader2,
   MoreHorizontal,
   Pencil,
   Send,
+  Tags,
   Trash2,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { useAdminStore } from "@/components/admin/AdminStoreContext";
@@ -30,17 +31,19 @@ import { Dialog } from "@/components/ui/Dialog";
 import { DropdownItem, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
 import { Checkbox, Select } from "@/components/ui/Input";
 import { Pagination } from "@/components/ui/Pagination";
+import { PendingOverlay } from "@/components/ui/PendingOverlay";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatRelative } from "@/lib/dates";
-import { formatMoney, formatNumber, parseMoney } from "@/lib/money";
+import { formatMoney, formatNumber } from "@/lib/money";
 import type { ProductListItem } from "@/lib/admin/products";
 import type { BulkProductAction } from "@/lib/schemas/product";
 
 import { bulkProducts, inlineUpdateVariant } from "@/app/admin/(panel)/productos/actions";
 
 import { DeleteProductDialog, DuplicateProductDialog } from "./ProductDialogs";
+import { InlineNumber } from "./InlineNumber";
 import { Thumb } from "./Thumb";
 import { UrlSelect, useUrlFilters } from "./url-filters";
 
@@ -61,7 +64,9 @@ interface Props {
 
 export function ProductsTable({ items, total, page, perPage, categories, hasFilters }: Props) {
   const router = useRouter();
-  const { clear } = useUrlFilters();
+  const { clear, get } = useUrlFilters();
+  // La tabla se remonta al cambiar un filtro: si hay alguno activo, el panel sigue abierto.
+  const [filtersOpen, setFiltersOpen] = useState(() => ["categoria", "stock", "origen", "orden"].some((k) => get(k)));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkPending, startBulk] = useTransition();
   const [categoryDialog, setCategoryDialog] = useState<"add_category" | "remove_category" | null>(null);
@@ -81,8 +86,10 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
       return next;
     });
 
-  const runBulk = (action: BulkProductAction, targetIds: string[], categoryId?: string, silent = false) =>
-    new Promise<boolean>((resolve) => {
+  const runBulk = (action: BulkProductAction, targetIds: string[], categoryId?: string, silent = false) => {
+    // Estado de cada producto antes de la acción: es lo que restaura "Deshacer".
+    const previous = new Map(items.map((i) => [i.id, i.status]));
+    return new Promise<boolean>((resolve) => {
       startBulk(async () => {
         const res = await bulkProducts({ ids: targetIds, action, categoryId });
         if (!res.ok) {
@@ -101,20 +108,24 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
             add_category: `Categoría asignada a ${n} producto${plural}`,
             remove_category: `Categoría quitada de ${n} producto${plural}`,
           };
-          if (action === "archive") {
+          const statusAction = action === "publish" || action === "draft" || action === "archive" || action === "restore";
+          if (statusAction) {
             toast.success(messages[action], {
-              duration: 6000,
+              duration: 8000,
               action: {
                 label: "Deshacer",
                 onClick: () => {
-                  // Vuelve cada producto a su estado anterior.
-                  const prev = new Map(items.map((i) => [i.id, i.status]));
-                  const active = targetIds.filter((id) => prev.get(id) === "active");
-                  const rest = targetIds.filter((id) => prev.get(id) !== "active");
+                  // Cada producto vuelve a su estado anterior.
+                  const byStatus = { active: [] as string[], draft: [] as string[], archived: [] as string[] };
+                  for (const id of targetIds) {
+                    const st = previous.get(id);
+                    if (st === "active" || st === "draft" || st === "archived") byStatus[st].push(id);
+                  }
                   void (async () => {
-                    if (active.length) await runBulk("publish", active, undefined, true);
-                    if (rest.length) await runBulk("restore", rest, undefined, true);
-                    toast.success("Listo, se deshizo el archivado");
+                    if (byStatus.active.length) await runBulk("publish", byStatus.active, undefined, true);
+                    if (byStatus.draft.length) await runBulk("draft", byStatus.draft, undefined, true);
+                    if (byStatus.archived.length) await runBulk("archive", byStatus.archived, undefined, true);
+                    toast.success("Listo, se deshizo el cambio");
                   })();
                 },
               },
@@ -126,94 +137,187 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
         resolve(true);
       });
     });
+  };
 
   const selectedIds = [...selected];
   const colSpan = 8;
+  const activeFilterCount = ["categoria", "stock", "origen", "orden"].filter((k) => get(k)).length;
+  const emptyTitle = hasFilters ? "No hay productos con estos filtros." : "Todavía no hay productos acá.";
+  const emptyDescription = hasFilters ? "Probá con otra búsqueda o sacá algún filtro." : undefined;
+  const emptyAction = hasFilters ? (
+    <Button size="sm" onClick={() => clear()}>
+      Limpiar filtros
+    </Button>
+  ) : (
+    <ButtonLink size="sm" variant="primary" href="/admin/productos/nuevo">
+      Nuevo producto
+    </ButtonLink>
+  );
+  const rowProps = (p: ProductListItem) => ({
+    product: p,
+    selected: selected.has(p.id),
+    onToggle: () => toggle(p.id),
+    onDuplicate: () => setDuplicate({ id: p.id, name: p.name }),
+    onDelete: () => setToDelete({ id: p.id, name: p.name }),
+    onStatus: (action: BulkProductAction) => void runBulk(action, [p.id]),
+  });
+
+  const bulkButtons = (
+    <>
+      <span className="tnum px-1 text-[13px] font-medium" aria-live="polite">
+        {selected.size} seleccionado{selected.size === 1 ? "" : "s"}
+      </span>
+      <span aria-hidden className="h-4 w-px bg-adm-border" />
+      <Button size="sm" variant="ghost" icon={<Send />} disabled={bulkPending} onClick={() => runBulk("publish", selectedIds)} className="max-md:h-10">
+        Publicar
+      </Button>
+      <Button size="sm" variant="ghost" icon={<FileEdit />} disabled={bulkPending} onClick={() => runBulk("draft", selectedIds)} className="max-md:h-10">
+        Pasar a borrador
+      </Button>
+      <Button size="sm" variant="ghost" icon={<Archive />} disabled={bulkPending} onClick={() => runBulk("archive", selectedIds)} className="max-md:h-10">
+        Archivar
+      </Button>
+      <DropdownMenu
+        width={224}
+        align="start"
+        trigger={
+          <Button size="sm" variant="ghost" icon={<FolderPlus />} disabled={bulkPending} className="max-md:h-10">
+            Categoría
+          </Button>
+        }
+      >
+        <DropdownItem icon={<FolderPlus />} onSelect={() => setCategoryDialog("add_category")}>
+          Asignar categoría…
+        </DropdownItem>
+        <DropdownItem icon={<FolderMinus />} onSelect={() => setCategoryDialog("remove_category")}>
+          Quitar categoría…
+        </DropdownItem>
+      </DropdownMenu>
+      {/* Atajo a la tarea más frecuente después de seleccionar: tocar precios. */}
+      <ButtonLink
+        size="sm"
+        variant="ghost"
+        icon={<Tags />}
+        href={`/admin/precios?productos=${selectedIds.join(",")}`}
+        className="max-md:h-10"
+      >
+        Cambiar precios
+      </ButtonLink>
+      <span className="flex-1" />
+      {bulkPending ? <Loader2 className="size-4 animate-spin text-adm-fg-muted" aria-label="Aplicando" /> : null}
+      <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} className="max-md:h-10">
+        Deseleccionar
+      </Button>
+    </>
+  );
+  const toolbarClass = "flex w-full flex-wrap items-center gap-1.5 rounded-adm border border-adm-border bg-adm-surface-2 px-2 py-1 max-md:py-2";
 
   return (
     <>
       {/* Barra de filtros o de acciones masivas */}
       <div className="mb-3 flex min-h-8 flex-wrap items-center gap-2">
         {someSelected ? (
-          <div className="flex w-full flex-wrap items-center gap-2 rounded-adm border border-adm-border bg-adm-surface-2 px-2 py-1">
-            <span className="tnum px-1 text-[13px] font-medium">
-              {selected.size} seleccionado{selected.size === 1 ? "" : "s"}
-            </span>
-            <span aria-hidden className="h-4 w-px bg-adm-border" />
-            <Button size="sm" variant="ghost" icon={<Send />} disabled={bulkPending} onClick={() => runBulk("publish", selectedIds)}>
-              Publicar
+          <div role="toolbar" aria-label="Acciones sobre los productos seleccionados" className={cn(toolbarClass, "hidden md:flex")}>
+            {bulkButtons}
+          </div>
+        ) : null}
+        {/* Filtros: siempre en celular; en escritorio los reemplaza la barra de acciones. */}
+        <div className={cn("flex w-full gap-2 sm:w-auto", someSelected && "md:hidden")}>
+          <SearchInput placeholder="Buscar por nombre, SKU o marca" className="min-w-0 flex-1 sm:w-[280px] sm:flex-none" />
+          <Button
+            className="md:hidden"
+            icon={<ListFilter />}
+            aria-expanded={filtersOpen}
+            aria-controls="product-filters"
+            onClick={() => setFiltersOpen((o) => !o)}
+          >
+            Filtros{activeFilterCount ? ` (${activeFilterCount})` : ""}
+          </Button>
+        </div>
+        <div
+          id="product-filters"
+          className={cn(filtersOpen ? "flex" : "hidden", "w-full flex-wrap items-center gap-2", someSelected ? "md:hidden" : "md:contents")}
+        >
+          <UrlSelect
+            param="categoria"
+            label="Categoría"
+            placeholder="Todas las categorías"
+            options={categories.map((c) => ({ value: c.id, label: c.path }))}
+            className="sm:max-w-56"
+          />
+          <UrlSelect
+            param="stock"
+            label="Stock"
+            placeholder="Cualquier stock"
+            options={[
+              { value: "con", label: "Con stock" },
+              { value: "bajo", label: "Stock bajo" },
+              { value: "sin", label: "Sin stock" },
+            ]}
+          />
+          <UrlSelect
+            param="origen"
+            label="Origen"
+            placeholder="Cualquier origen"
+            options={[
+              { value: "manual", label: "Carga manual" },
+              { value: "import", label: "Importados" },
+              { value: "scrape", label: "Scraping" },
+            ]}
+          />
+          <UrlSelect
+            param="orden"
+            label="Ordenar"
+            placeholder="Últimos editados"
+            options={[
+              { value: "nombre", label: "Nombre (A-Z)" },
+              { value: "nuevos", label: "Más nuevos" },
+              { value: "precio", label: "Precio: menor a mayor" },
+              { value: "precio-desc", label: "Precio: mayor a menor" },
+              { value: "stock", label: "Stock: menor a mayor" },
+              { value: "stock-desc", label: "Stock: mayor a menor" },
+            ]}
+          />
+          {hasFilters ? (
+            <Button size="sm" variant="ghost" icon={<X />} onClick={() => clear(["estado"])}>
+              Limpiar filtros
             </Button>
-            <Button size="sm" variant="ghost" icon={<FileEdit />} disabled={bulkPending} onClick={() => runBulk("draft", selectedIds)}>
-              Pasar a borrador
-            </Button>
-            <Button size="sm" variant="ghost" icon={<Archive />} disabled={bulkPending} onClick={() => runBulk("archive", selectedIds)}>
-              Archivar
-            </Button>
-            <Button size="sm" variant="ghost" icon={<FolderPlus />} disabled={bulkPending} onClick={() => setCategoryDialog("add_category")}>
-              Asignar categoría
-            </Button>
-            <Button size="sm" variant="ghost" icon={<FolderMinus />} disabled={bulkPending} onClick={() => setCategoryDialog("remove_category")}>
-              Quitar categoría
-            </Button>
-            <span className="flex-1" />
-            {bulkPending ? <Loader2 className="size-4 animate-spin text-adm-fg-muted" aria-label="Aplicando" /> : null}
-            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-              Deseleccionar
-            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Mobile: lista de tarjetas (la tabla de 8 columnas no entra a 360 px). */}
+      <div className="relative rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
+        {items.length === 0 ? (
+          <div className="px-4 py-6">
+            <p className="text-[15px] font-semibold text-adm-fg">{emptyTitle}</p>
+            {emptyDescription ? <p className="mt-1 text-[13px] text-adm-fg-muted">{emptyDescription}</p> : null}
+            <div className="mt-3 flex gap-2">{emptyAction}</div>
           </div>
         ) : (
           <>
-            <SearchInput placeholder="Buscar por nombre, SKU o marca" className="sm:w-[280px]" />
-            <UrlSelect
-              param="categoria"
-              label="Categoría"
-              placeholder="Todas las categorías"
-              options={categories.map((c) => ({ value: c.id, label: c.path }))}
-              className="sm:max-w-56"
-            />
-            <UrlSelect
-              param="stock"
-              label="Stock"
-              placeholder="Cualquier stock"
-              options={[
-                { value: "con", label: "Con stock" },
-                { value: "bajo", label: "Stock bajo" },
-                { value: "sin", label: "Sin stock" },
-              ]}
-            />
-            <UrlSelect
-              param="origen"
-              label="Origen"
-              placeholder="Cualquier origen"
-              options={[
-                { value: "manual", label: "Carga manual" },
-                { value: "import", label: "Importados" },
-                { value: "scrape", label: "Scraping" },
-              ]}
-            />
-            <UrlSelect
-              param="orden"
-              label="Ordenar"
-              placeholder="Últimos editados"
-              options={[
-                { value: "nombre", label: "Nombre (A-Z)" },
-                { value: "nuevos", label: "Más nuevos" },
-                { value: "precio", label: "Precio: menor a mayor" },
-                { value: "precio-desc", label: "Precio: mayor a menor" },
-                { value: "stock", label: "Stock: menor a mayor" },
-                { value: "stock-desc", label: "Stock: mayor a menor" },
-              ]}
-            />
-            {hasFilters ? (
-              <Button size="sm" variant="ghost" icon={<X />} onClick={() => clear(["estado"])}>
-                Limpiar filtros
-              </Button>
-            ) : null}
+            <label className="flex h-11 cursor-pointer items-center gap-3 border-b border-adm-border bg-adm-table-head px-3.5 text-[13px] text-adm-fg-muted">
+              <Checkbox
+                aria-label="Seleccionar todos los de esta página"
+                checked={allSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = someSelected && !allSelected;
+                }}
+                onChange={() => setSelected(allSelected ? new Set() : new Set(ids))}
+              />
+              Seleccionar los {formatNumber(items.length)} de esta página
+            </label>
+            <ul>
+              {items.map((p) => (
+                <ProductMobileItem key={p.id} {...rowProps(p)} />
+              ))}
+            </ul>
           </>
         )}
+        <PendingOverlay pending={bulkPending || undefined} />
       </div>
 
-      <Table containerClassName="max-h-[calc(100dvh-15rem)] min-h-40" pending={bulkPending || undefined}>
+      <Table containerClassName="hidden max-h-[calc(100dvh-15rem)] min-h-40 md:block" pending={bulkPending || undefined}>
         <THead>
           <tr>
             <TH className="w-10 pr-0">
@@ -227,7 +331,7 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
               />
             </TH>
             <TH>Producto</TH>
-            <TH className="hidden md:table-cell">Estado</TH>
+            <TH>Estado</TH>
             <TH className="hidden lg:table-cell">Categorías</TH>
             <TH numeric>Precio</TH>
             <TH numeric>Stock</TH>
@@ -239,39 +343,31 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
         </THead>
         <TBody>
           {items.length === 0 ? (
-            <TableEmpty
-              colSpan={colSpan}
-              title={hasFilters ? "No hay productos con estos filtros." : "Todavía no hay productos acá."}
-              description={hasFilters ? "Probá con otra búsqueda o sacá algún filtro." : undefined}
-              action={
-                hasFilters ? (
-                  <Button size="sm" onClick={() => clear()}>
-                    Limpiar filtros
-                  </Button>
-                ) : (
-                  <ButtonLink size="sm" variant="primary" href="/admin/productos/nuevo">
-                    Nuevo producto
-                  </ButtonLink>
-                )
-              }
-            />
+            <TableEmpty colSpan={colSpan} title={emptyTitle} description={emptyDescription} action={emptyAction} />
           ) : (
             items.map((p) => (
               <ProductRow
                 key={p.id}
-                product={p}
-                selected={selected.has(p.id)}
-                onToggle={() => toggle(p.id)}
+                {...rowProps(p)}
                 categoryNames={p.category_ids.map((id) => catName.get(id)).filter((n): n is string => Boolean(n))}
-                onDuplicate={() => setDuplicate({ id: p.id, name: p.name })}
-                onDelete={() => setToDelete({ id: p.id, name: p.name })}
-                onStatus={(action) => runBulk(action, [p.id])}
               />
             ))
           )}
         </TBody>
       </Table>
       {total > 0 ? <Pagination page={page} perPage={perPage} total={total} /> : null}
+
+      {/* Celular: las acciones quedan fijas abajo, al alcance del pulgar, mientras se sigue tildando. */}
+      {someSelected ? (
+        <div
+          data-adm-bottom-bar=""
+          role="toolbar"
+          aria-label="Acciones sobre los productos seleccionados"
+          className="sticky bottom-0 z-20 -mx-4 mt-3 flex flex-wrap items-center gap-1.5 border-t border-adm-border bg-adm-surface px-3 py-2 shadow-[var(--adm-shadow)] md:hidden"
+        >
+          {bulkButtons}
+        </div>
+      ) : null}
 
       <CategoryBulkDialog
         mode={categoryDialog}
@@ -293,43 +389,25 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
 
 // ---------------------------------------------------------------------------
 
-function ProductRow({
-  product: p,
-  selected,
-  onToggle,
-  categoryNames,
-  onDuplicate,
-  onDelete,
-  onStatus,
-}: {
+interface RowProps {
   product: ProductListItem;
   selected: boolean;
   onToggle: () => void;
-  categoryNames: string[];
   onDuplicate: () => void;
   onDelete: () => void;
   onStatus: (action: BulkProductAction) => void;
-}) {
-  // Copia local para reflejar la edición inline; se resincroniza si el server manda otro valor.
+}
+
+/** Variante única editable en línea (precio y stock) + su guardado. */
+function useSingleVariant(p: ProductListItem) {
   const router = useRouter();
+  // Copia local para reflejar la edición inline; se resincroniza si el server manda otro valor.
   const [single, setSingle] = useState(p.single);
   const [serverSingle, setServerSingle] = useState(p.single);
   if (p.single !== serverSingle) {
     setServerSingle(p.single);
     setSingle(p.single);
   }
-
-  const { store } = useAdminStore();
-  const productPath = `/producto/${p.slug}`;
-  const storeUrl = `${store.href}${productPath}`;
-  const previewUrl = `${storeUrl}?preview=1`;
-  const price =
-    p.min_price === null
-      ? "—"
-      : p.max_price !== null && p.max_price !== p.min_price
-        ? `${formatMoney(p.min_price)} – ${formatMoney(p.max_price)}`
-        : formatMoney(p.min_price);
-  const firstSku = p.skus.trim().split(/\s+/)[0];
 
   const save = async (patch: { price?: number; stock?: number }) => {
     if (!single) return false;
@@ -347,6 +425,96 @@ function ProductRow({
     router.refresh(); // actualiza el estado de stock (badge) y "Actualizado"
     return true;
   };
+
+  return { single, save };
+}
+
+function priceLabel(p: ProductListItem) {
+  if (p.min_price === null) return "—";
+  return p.max_price !== null && p.max_price !== p.min_price
+    ? `${formatMoney(p.min_price)} – ${formatMoney(p.max_price)}`
+    : formatMoney(p.min_price);
+}
+
+function ProductMenu({ product: p, onDuplicate, onDelete, onStatus }: Omit<RowProps, "selected" | "onToggle">) {
+  const { store } = useAdminStore();
+  const productPath = `/producto/${p.slug}`;
+  const storeUrl = `${store.href}${productPath}`;
+  const previewUrl = `${storeUrl}?preview=1`;
+  return (
+    <DropdownMenu
+      width={224}
+      trigger={
+        <Button variant="ghost" size="icon-sm" aria-label={`Acciones de ${p.name}`} className="max-md:size-11">
+          <MoreHorizontal />
+        </Button>
+      }
+    >
+      <DropdownItem icon={<Pencil />} href={`/admin/productos/${p.id}`}>
+        Editar
+      </DropdownItem>
+      <DropdownItem icon={<Copy />} onSelect={onDuplicate}>
+        Duplicar
+      </DropdownItem>
+      {p.status === "active" ? (
+        <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(storeUrl, "_blank", "noopener")}>
+          Ver en la tienda
+        </DropdownItem>
+      ) : (
+        <DropdownItem icon={<Eye />} onSelect={() => window.open(previewUrl, "_blank", "noopener")}>
+          Vista previa
+        </DropdownItem>
+      )}
+      <DropdownItem
+        icon={<Link2 />}
+        onSelect={() => {
+          void navigator.clipboard
+            .writeText(`${store.url}${productPath}`)
+            .then(() => toast.success("Link copiado"))
+            .catch(() => toast.error("No se pudo copiar el link"));
+        }}
+      >
+        Copiar link
+      </DropdownItem>
+      <DropdownSeparator />
+      {p.status === "archived" ? (
+        <>
+          <DropdownItem icon={<ArchiveRestore />} onSelect={() => onStatus("restore")}>
+            Restaurar como borrador
+          </DropdownItem>
+          <DropdownItem icon={<Trash2 />} danger onSelect={onDelete}>
+            Eliminar definitivamente
+          </DropdownItem>
+        </>
+      ) : (
+        <>
+          {p.status === "draft" ? (
+            <DropdownItem icon={<Send />} onSelect={() => onStatus("publish")}>
+              Publicar
+            </DropdownItem>
+          ) : (
+            <DropdownItem icon={<FileEdit />} onSelect={() => onStatus("draft")}>
+              Pasar a borrador
+            </DropdownItem>
+          )}
+          <DropdownItem icon={<Archive />} onSelect={() => onStatus("archive")}>
+            Archivar
+          </DropdownItem>
+        </>
+      )}
+    </DropdownMenu>
+  );
+}
+
+function ProductRow({
+  categoryNames,
+  ...rest
+}: RowProps & {
+  categoryNames: string[];
+}) {
+  const { product: p, selected, onToggle } = rest;
+  const { single, save } = useSingleVariant(p);
+  const firstSku = p.skus.trim().split(/\s+/)[0];
 
   return (
     <TR selected={selected}>
@@ -367,12 +535,11 @@ function ProductRow({
             <p className="truncate text-xs text-adm-fg-muted">
               {p.variant_count > 1 ? `${p.variant_count} variantes` : firstSku ? <span className="font-mono">{firstSku}</span> : "Sin SKU"}
               {p.featured ? " · Destacado" : ""}
-              <span className="md:hidden"> · {p.status === "active" ? "Activo" : p.status === "draft" ? "Borrador" : "Archivado"}</span>
             </p>
           </div>
         </div>
       </TD>
-      <TD className="hidden md:table-cell">
+      <TD>
         <StatusBadge kind="product" value={p.status} />
       </TD>
       <TD className="hidden max-w-48 lg:table-cell" muted>
@@ -390,7 +557,7 @@ function ProductRow({
             onSave={(v) => save({ price: v })}
           />
         ) : (
-          price
+          priceLabel(p)
         )}
       </TD>
       <TD numeric>
@@ -418,165 +585,77 @@ function ProductRow({
         </time>
       </TD>
       <TD className="w-10 pl-0 text-right">
-        <DropdownMenu
-          width={224}
-          trigger={
-            <Button variant="ghost" size="icon-sm" aria-label={`Acciones de ${p.name}`}>
-              <MoreHorizontal />
-            </Button>
-          }
-        >
-          <DropdownItem icon={<Pencil />} href={`/admin/productos/${p.id}`}>
-            Editar
-          </DropdownItem>
-          <DropdownItem icon={<Copy />} onSelect={onDuplicate}>
-            Duplicar
-          </DropdownItem>
-          {p.status === "active" ? (
-            <DropdownItem icon={<ExternalLink />} onSelect={() => window.open(storeUrl, "_blank", "noopener")}>
-              Ver en la tienda
-            </DropdownItem>
-          ) : (
-            <DropdownItem icon={<Eye />} onSelect={() => window.open(previewUrl, "_blank", "noopener")}>
-              Vista previa
-            </DropdownItem>
-          )}
-          <DropdownItem
-            icon={<Link2 />}
-            onSelect={() => {
-              void navigator.clipboard
-                .writeText(`${store.url}${productPath}`)
-                .then(() => toast.success("Link copiado"))
-                .catch(() => toast.error("No se pudo copiar el link"));
-            }}
-          >
-            Copiar link
-          </DropdownItem>
-          <DropdownSeparator />
-          {p.status === "archived" ? (
-            <>
-              <DropdownItem icon={<ArchiveRestore />} onSelect={() => onStatus("restore")}>
-                Restaurar como borrador
-              </DropdownItem>
-              <DropdownItem icon={<Trash2 />} danger onSelect={onDelete}>
-                Eliminar definitivamente
-              </DropdownItem>
-            </>
-          ) : (
-            <>
-              {p.status === "draft" ? (
-                <DropdownItem icon={<Send />} onSelect={() => onStatus("publish")}>
-                  Publicar
-                </DropdownItem>
-              ) : (
-                <DropdownItem icon={<FileEdit />} onSelect={() => onStatus("draft")}>
-                  Pasar a borrador
-                </DropdownItem>
-              )}
-              <DropdownItem icon={<Archive />} onSelect={() => onStatus("archive")}>
-                Archivar
-              </DropdownItem>
-            </>
-          )}
-        </DropdownMenu>
+        <ProductMenu {...rest} />
       </TD>
     </TR>
   );
 }
 
 /**
- * Número editable en la celda: click → input; Enter o salir del campo guarda,
- * Esc cancela. Muestra spinner y un check al guardar.
+ * Tarjeta de producto para celular: identidad arriba (toca para editar), y
+ * debajo precio y stock como botones de 44 px que se editan en el lugar.
  */
-function InlineNumber({
-  label,
-  value,
-  display,
-  money,
-  onSave,
-}: {
-  label: string;
-  value: number;
-  display: string;
-  money?: boolean;
-  onSave: (value: number) => Promise<boolean>;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState("");
-  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const cancelled = useRef(false);
+function ProductMobileItem(props: RowProps) {
+  const { product: p, selected, onToggle } = props;
+  const { single, save } = useSingleVariant(p);
+  const firstSku = p.skus.trim().split(/\s+/)[0];
 
-  useEffect(() => {
-    if (editing) inputRef.current?.select();
-  }, [editing]);
-
-  useEffect(() => {
-    if (state !== "saved") return;
-    const t = setTimeout(() => setState("idle"), 1500);
-    return () => clearTimeout(t);
-  }, [state]);
-
-  const start = () => {
-    cancelled.current = false;
-    setText(money ? String(value).replace(".", ",") : String(value));
-    setEditing(true);
-  };
-
-  const commit = async () => {
-    if (cancelled.current) return;
-    const parsed = money ? parseMoney(text) : Number.parseInt(text, 10);
-    setEditing(false);
-    if (!Number.isFinite(parsed) || text.trim() === "") {
-      toast.error(money ? "Ingresá un precio válido." : "Ingresá un número entero.");
-      return;
-    }
-    if (parsed === value) return;
-    setState("saving");
-    const okSave = await onSave(parsed);
-    setState(okSave ? "saved" : "error");
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      void commit();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      cancelled.current = true;
-      setEditing(false);
-    }
-  };
-
-  if (editing) {
-    return (
-      <input
-        ref={inputRef}
-        aria-label={label}
-        inputMode={money ? "decimal" : "numeric"}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={onKeyDown}
-        onBlur={() => void commit()}
-        className="tnum h-7 w-24 rounded-adm border border-adm-accent bg-adm-surface px-2 text-right text-[13px] outline-none"
-      />
-    );
-  }
   return (
-    <button
-      type="button"
-      onClick={start}
-      title="Click para editar"
-      aria-label={`${label}: ${display}. Editar`}
-      className={cn(
-        "tnum -mr-1.5 inline-flex h-7 items-center gap-1 rounded-adm px-1.5 hover:bg-adm-surface-2 hover:ring-1 hover:ring-adm-input-border",
-        state === "error" && "text-adm-danger",
-      )}
-    >
-      {state === "saving" ? <Loader2 className="size-3.5 animate-spin text-adm-fg-muted" aria-hidden /> : null}
-      {state === "saved" ? <Check className="size-3.5 text-adm-success" aria-hidden /> : null}
-      {display}
-    </button>
+    <li className={cn("flex items-start border-b border-adm-border last:border-b-0", selected && "bg-adm-accent-2-soft/60")}>
+      <label className="flex h-14 w-12 shrink-0 cursor-pointer items-center justify-center">
+        <Checkbox aria-label={`Seleccionar ${p.name}`} checked={selected} onChange={onToggle} />
+      </label>
+      <div className="min-w-0 flex-1 py-2">
+        <Link href={`/admin/productos/${p.id}`} className="flex min-h-11 items-center gap-3 pr-1">
+          <Thumb url={p.image_url} size={44} />
+          <span className="min-w-0">
+            <span className="line-clamp-2 text-sm font-medium text-adm-fg">{p.name}</span>
+            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-adm-fg-muted">
+              <StatusBadge kind="product" value={p.status} />
+              {p.stock_state === "out" ? <StatusBadge kind="stock" value="out" /> : p.stock_state === "low" ? <StatusBadge kind="stock" value="low" /> : null}
+              {p.variant_count > 1 ? <span>{p.variant_count} variantes</span> : firstSku ? <span className="font-mono">{firstSku}</span> : null}
+            </span>
+          </span>
+        </Link>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {single ? (
+            <InlineNumber
+              chip="Precio"
+              label={`Precio de ${p.name}`}
+              value={single.price}
+              display={formatMoney(single.price)}
+              money
+              onSave={(v) => save({ price: v })}
+            />
+          ) : (
+            <ReadonlyChip label="Precio" value={priceLabel(p)} />
+          )}
+          {single && single.tracked ? (
+            <InlineNumber
+              chip="Stock"
+              label={`Stock de ${p.name}`}
+              value={single.stock}
+              display={formatNumber(single.stock)}
+              onSave={(v) => save({ stock: v })}
+            />
+          ) : (
+            <ReadonlyChip label="Stock" value={p.tracked ? formatNumber(p.total_stock) : "Sin control"} />
+          )}
+        </div>
+      </div>
+      <div className="flex h-14 w-12 shrink-0 items-center justify-center">
+        <ProductMenu {...props} />
+      </div>
+    </li>
+  );
+}
+
+function ReadonlyChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="tnum flex h-11 items-center justify-between gap-2 rounded-adm bg-adm-surface-2 px-3 text-sm">
+      <span className="text-xs text-adm-fg-muted">{label}</span>
+      <span>{value}</span>
+    </div>
   );
 }
 

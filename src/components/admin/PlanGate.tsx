@@ -65,13 +65,13 @@ export function PlanGate({ feature, children, mode = "block", label, description
 
   const note = (
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-adm-border bg-adm-surface text-adm-fg-muted">
+      <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-adm border border-adm-border bg-adm-surface text-adm-accent-2-ink">
         <Lock className="size-3.5" strokeWidth={1.75} aria-hidden />
       </span>
       <div className="min-w-0 text-sm">
         <p className="font-medium text-adm-fg">Disponible en {planName}</p>
         {description ? <p className="mt-0.5 text-adm-fg-muted">{description}</p> : null}
-        <Link href={PLAN_PAGE} className="mt-1 inline-block text-[13px] font-medium text-adm-accent underline-offset-2 hover:underline">
+        <Link href={PLAN_PAGE} className="mt-1 inline-block text-[13px] font-medium text-adm-accent underline underline-offset-2 hover:no-underline">
           Ver planes
         </Link>
       </div>

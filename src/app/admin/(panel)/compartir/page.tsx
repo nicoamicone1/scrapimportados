@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
 
-import { CopyButton, ShareOnboarding, WhatsAppShareLink } from "@/components/admin/share/CopyButton";
+import { CopyButton, NativeShareButton, ShareOnboarding, WhatsAppShareLink } from "@/components/admin/share/CopyButton";
 import { INSTAGRAM_BIO_MAX, shareMessages } from "@/components/admin/share/messages";
 import { ShareTargetPicker } from "@/components/admin/share/ShareTargetPicker";
 import { buttonClass, ButtonLink } from "@/components/ui/Button";
@@ -42,7 +42,7 @@ export default async function SharePage() {
     type: "svg",
     margin: 0,
     errorCorrectionLevel: "M",
-    color: { dark: "#1C1917", light: "#FFFFFF" },
+    color: { dark: "#1A2320", light: "#FFFFFF" },
   });
 
   const messages = shareMessages({
@@ -108,10 +108,11 @@ export default async function SharePage() {
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <CopyButton text={url} label="Copiar link" ariaLabel="Copiar link de la tienda" variant="primary" size="md" />
-            <ButtonLink href={storeHref(ctx.store)} external icon={<ExternalLink />}>
+            <WhatsAppShareLink text={reply} size="md" />
+            <NativeShareButton url={url} text={ctx.store.name} title={ctx.store.name} />
+            <ButtonLink href={storeHref(ctx.store)} external icon={<ExternalLink />} variant="ghost" className="max-sm:h-11">
               Abrir tienda
             </ButtonLink>
-            <WhatsAppShareLink text={reply} size="md" />
           </div>
         </div>
         <div className="flex gap-4 border-t border-adm-border p-5 md:flex-col md:items-center md:border-t-0 md:border-l">
@@ -122,7 +123,7 @@ export default async function SharePage() {
             dangerouslySetInnerHTML={{ __html: qrSvg }}
           />
           <div className="min-w-0 md:w-[168px]">
-            <a href="/admin/compartir/qr" download className={buttonClass("secondary", "sm", "w-full")}>
+            <a href="/admin/compartir/qr" download className={buttonClass("secondary", "sm", "w-full max-sm:h-11")}>
               <Download aria-hidden strokeWidth={1.5} />
               Descargar PNG
             </a>

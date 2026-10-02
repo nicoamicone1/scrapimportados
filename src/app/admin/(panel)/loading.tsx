@@ -1,8 +1,6 @@
 import { PageSkeleton } from "@/components/ui/skeletons";
 
-/* Dashboard: saludo + franja de números + gráfico + listas. */
+/* Inicio: título + resumen, "Para hacer", últimos pedidos, stock y números del período. */
 export default function Loading() {
-  return (
-    <PageSkeleton variant="dashboard" tabs={3} actions={2} />
-  );
+  return <PageSkeleton variant="dashboard" actions={2} />;
 }

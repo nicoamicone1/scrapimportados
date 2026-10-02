@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import type { ModuleCode } from "@/lib/modules/registry";
 
 import { CommandPalette } from "./CommandPalette";
+import { MobileTabBar } from "./MobileTabBar";
 import { SIDEBAR_COOKIE } from "./nav";
 import { Sidebar } from "./Sidebar";
 import { Topbar, type TopbarUser } from "./Topbar";
@@ -42,8 +43,9 @@ function useIsMac() {
 }
 
 /**
- * Shell del admin: sidebar oscuro colapsable (desktop), drawer (mobile),
- * topbar, command palette con Ctrl/⌘ K, barra de progreso de navegación y
+ * Shell del admin: sidebar oscuro colapsable (desktop); en mobile, barra
+ * inferior con lo diario (`MobileTabBar`) y el menú completo en un drawer.
+ * Topbar, command palette con Ctrl/⌘ K, barra de progreso de navegación y
  * `UrlPendingScope` (los filtros de la página y sus tablas comparten el
  * estado "cargando").
  */
@@ -74,10 +76,16 @@ export function AdminShell({ storeName, user, isOwner, modules, initialCollapsed
 
   return (
     <div className="flex min-h-dvh">
+      <a
+        href="#contenido"
+        className="sr-only z-50 rounded-adm bg-adm-surface px-3 py-2 text-sm font-medium text-adm-fg shadow-[var(--adm-shadow)] focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        Saltar al contenido
+      </a>
       <NavigationProgress />
       <aside
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 bg-adm-sidebar-bg transition-[width] duration-150 md:block",
+          "sticky top-0 hidden h-dvh shrink-0 bg-adm-sidebar-bg transition-[width] duration-200 ease-eco-out md:block",
           collapsed ? "w-14" : "w-[232px]",
         )}
       >
@@ -95,7 +103,7 @@ export function AdminShell({ storeName, user, isOwner, modules, initialCollapsed
         open={mobileOpen}
         onOpenChange={setMobileOpen}
         side="left"
-        width="w-[264px]"
+        width="w-[min(288px,85vw)]"
         hideClose
         label="Menú"
         className="bg-adm-sidebar-bg md:hidden"
@@ -106,17 +114,21 @@ export function AdminShell({ storeName, user, isOwner, modules, initialCollapsed
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           user={user}
-          onOpenMenu={() => setMobileOpen(true)}
           onOpenPalette={() => setPaletteOpen(true)}
           shortcutLabel={isMac ? "⌘" : "Ctrl"}
           storeSwitcher={storeSwitcher}
           storeHref={storeHref}
         />
-        <main id="contenido" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 md:px-6 md:py-6">
+        <main
+          id="contenido"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-[1400px] flex-1 px-4 pt-4 pb-[calc(var(--adm-bottom-nav-h)+24px)] outline-none md:px-6 md:py-6 focus-visible:shadow-none"
+        >
           <UrlPendingScope>{children}</UrlPendingScope>
         </main>
       </div>
 
+      <MobileTabBar onOpenMenu={() => setMobileOpen(true)} menuOpen={mobileOpen} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} modules={modules} />
     </div>
   );

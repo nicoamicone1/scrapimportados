@@ -2,6 +2,7 @@ import { Mail, MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DISPLAY } from "@/components/platform/brand";
 import { FaqList } from "@/components/platform/FaqList";
 import { platformFaq } from "@/components/platform/faq";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
@@ -46,7 +47,7 @@ export default async function ContactoPage() {
       <section className="border-b border-adm-border bg-adm-surface">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-12 sm:px-6 md:py-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
           <div className="min-w-0">
-            <h1 className="text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[36px]">Contacto</h1>
+            <h1 className={`${DISPLAY} text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[36px]`}>Contacto</h1>
             <p className="mt-3 max-w-[46ch] text-[17px] leading-snug">Escribinos: respondemos en horario hábil, de lunes a viernes.</p>
             <p className="mt-3 max-w-[56ch] text-[14px] leading-relaxed text-adm-fg-muted">
               Si ya tenés una tienda, contanos su dirección (del estilo {exampleStoreAddress("taller-luna")}) y qué pasó o qué querés hacer. Con

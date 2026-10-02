@@ -81,7 +81,7 @@ export function PaymentsCard(props: PaymentsCardProps) {
                   Marcar pagado
                 </Button>
               ) : null}
-              <Button size="sm" variant="primary" icon={<Plus />} onClick={() => setOpen(true)}>
+              <Button size="sm" icon={<Plus />} onClick={() => setOpen(true)}>
                 Registrar pago
               </Button>
             </>

@@ -142,6 +142,13 @@ export function themeVars(theme: Theme): Record<string, string> {
     "--border": c.border,
     "--success": c.success,
     "--danger": c.danger,
+    // Copias fijas de los tokens de texto: las bandas de color de los bloques
+    // (`.blk-bg-primary`, `.blk-bg-custom`) re-derivan --fg/--accent y las
+    // tarjetas con panel (--surface) adentro de la banda vuelven a éstas.
+    "--theme-fg": c.text,
+    "--theme-fg-muted": c.textMuted,
+    "--theme-accent": c.accent,
+    "--theme-border": c.border,
     // 50 %: al 38 % ningún preset llegaba a 3:1 (WCAG 1.4.11) sobre su fondo.
     "--border-strong": "color-mix(in oklab, var(--fg) 50%, var(--bg))",
     "--primary-hover": "color-mix(in oklab, var(--primary) 86%, var(--fg))",

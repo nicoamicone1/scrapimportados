@@ -6,8 +6,9 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { previewPromotion, savePromotion, type PromotionPreview } from "@/app/admin/(panel)/promociones/actions";
 import { CategoryMultiSelect } from "@/components/admin/pricing/CategoryMultiSelect";
+import { CollapsibleCard } from "@/components/admin/products/CollapsibleCard";
 import { ProductMultiPicker } from "@/components/admin/pricing/ProductMultiPicker";
-import { discountLabel, parseNumberInput, Thumb } from "@/components/admin/pricing/shared";
+import { discountLabel, parseNumberInput, scopeSummary, Thumb } from "@/components/admin/pricing/shared";
 import { toast } from "@/components/ui";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -77,9 +78,10 @@ function toDraft(v: PromotionValues, products: PickerProduct[]): Draft {
   };
 }
 
-function toInput(d: Draft) {
+function toInput(d: Draft, fallbackName = "") {
   return {
-    name: d.name,
+    // Sin nombre se usa uno armado con la regla ("-20 % · Hogar"): el nombre es sólo para vos.
+    name: d.name.trim() || fallbackName,
     type: d.type,
     // "Llevá X, pagá Y" no usa valor; los campos de cantidad sólo viajan con su tipo.
     value: d.type === "bxgy" ? 0 : parseNumberInput(d.value),
@@ -101,13 +103,27 @@ function toInput(d: Draft) {
 export function PromotionForm({ id, initial, initialProducts, categories, timezone }: PromotionFormProps) {
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>(() => toDraft(initial, initialProducts));
-  const [baseline, setBaseline] = useState(() => JSON.stringify(toInput(toDraft(initial, initialProducts))));
+  const [baseline, setBaseline] = useState(() => JSON.stringify(toInput(toDraft(initial, initialProducts), initial.name)));
   const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({});
   const [saving, startSaving] = useTransition();
   const [preview, setPreview] = useState<{ key: string; data: PromotionPreview | null; error: string | null } | null>(null);
   const reqId = useRef(0);
 
-  const input = useMemo(() => toInput(draft), [draft]);
+  const suggestedName = useMemo(() => {
+    const n = parseNumberInput(draft.value);
+    const rule =
+      draft.type === "bxgy"
+        ? `${draft.buy}x${draft.pay}`
+        : draft.type === "nth_unit_percent"
+          ? `${draft.nth}.ª al ${n ?? "…"} %`
+          : n != null
+            ? discountLabel(draft.type, n)
+            : "";
+    const where = scopeSummary({ scope: draft.scope, categoryIds: draft.categoryIds, productIds: draft.products.map((p) => p.id) }, categories);
+    return [rule, where].filter(Boolean).join(" · ").slice(0, 80);
+  }, [draft.type, draft.value, draft.buy, draft.pay, draft.nth, draft.scope, draft.categoryIds, draft.products, categories]);
+
+  const input = useMemo(() => toInput(draft, suggestedName), [draft, suggestedName]);
   const inputKey = JSON.stringify(input);
   const dirty = inputKey !== baseline;
   const parsed = useMemo(() => promotionSchema.safeParse(input), [input]);
@@ -219,12 +235,16 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
 
   return (
     <div>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="space-y-5">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeader title="Descuento" />
             <CardBody className="space-y-4">
-              <Field label="Nombre" required error={err("name")} hint="Sólo lo ves vos en el admin.">
+              <Field
+                label="Nombre"
+                error={err("name")}
+                hint={`Sólo lo ves vos. Si lo dejás vacío se llama «${suggestedName || "…"}».`}
+              >
                 <Input value={draft.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Ej.: Semana del Hogar" maxLength={80} />
               </Field>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -322,7 +342,7 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
                   <label
                     key={s}
                     className={cn(
-                      "inline-flex h-8 cursor-pointer items-center rounded-adm border px-3 text-sm",
+                      "inline-flex h-8 cursor-pointer items-center rounded-adm border px-3 text-sm max-md:h-11 has-[:focus-visible]:shadow-[var(--adm-focus)]",
                       draft.scope === s
                         ? "border-adm-accent bg-adm-accent-soft font-medium text-adm-accent"
                         : "border-adm-input-border bg-adm-surface hover:bg-adm-hover",
@@ -349,76 +369,9 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
               ) : null}
             </CardBody>
           </Card>
-
-          <Card>
-            <CardHeader title="Vigencia" description={`Hora de la tienda (${timezone.replace(/_/g, " ")}). Vacío = sin límite.`} />
-            <CardBody className="grid gap-3 sm:grid-cols-2">
-              <Field label="Empieza" error={err("startsAt")}>
-                <Input type="datetime-local" value={draft.startsAt} onChange={(e) => patch({ startsAt: e.target.value })} />
-              </Field>
-              <Field label="Termina" error={err("endsAt")}>
-                <Input type="datetime-local" value={draft.endsAt} onChange={(e) => patch({ endsAt: e.target.value })} />
-              </Field>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Prioridad y combinación" />
-            <CardBody className="space-y-4">
-              <Field
-                label="Prioridad"
-                error={err("priority")}
-                hint="Si un producto tiene varias promos, gana la de mayor prioridad (a igual prioridad, la que más descuenta). Si las dos son acumulables, se suman: el 3x2 se calcula sobre el precio ya rebajado."
-              >
-                <Input
-                  type="number"
-                  step="1"
-                  value={draft.priority}
-                  onChange={(e) => patch({ priority: e.target.value })}
-                  className="max-w-32"
-                />
-              </Field>
-              <Switch
-                label="Acumulable"
-                description="Se suma a otras promos acumulables del mismo producto."
-                checked={draft.stackable}
-                onCheckedChange={(v) => patch({ stackable: v })}
-              />
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Etiqueta y estado" />
-            <CardBody className="space-y-4">
-              <Field
-                label="Etiqueta"
-                error={err("badgeLabel")}
-                aside={`${draft.badgeLabel.length}/${BADGE_MAX}`}
-                hint={
-                  isQuantity
-                    ? `Se muestra sobre la foto del producto. Si la dejás vacía se muestra "${autoBadge || "3x2"}".`
-                    : `Se muestra sobre la foto del producto, ej. "Ciber Lunes". Si la dejás vacía se muestra el % de descuento.`
-                }
-              >
-                <Input
-                  value={draft.badgeLabel}
-                  onChange={(e) => patch({ badgeLabel: e.target.value })}
-                  maxLength={BADGE_MAX}
-                  placeholder={autoBadge || "Ciber Lunes"}
-                  className="max-w-xs"
-                />
-              </Field>
-              <Switch
-                label="Activa"
-                description="Pausala para cortarla sin borrarla. Si tiene fechas, sólo aplica dentro de la vigencia."
-                checked={draft.isActive}
-                onCheckedChange={(v) => patch({ isActive: v })}
-              />
-            </CardBody>
-          </Card>
         </div>
 
-        <div className="lg:sticky lg:top-4 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-4 lg:row-span-2 lg:self-start">
           <Card>
             <CardHeader
               title="Vista previa"
@@ -521,6 +474,86 @@ export function PromotionForm({ id, initial, initialProducts, categories, timezo
               </Badge>
             </p>
           ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-5">
+          <Card>
+            <CardHeader title="Vigencia y estado" description={`Hora de la tienda (${timezone.replace(/_/g, " ")}). Vacío = sin límite.`} />
+            <CardBody className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Empieza" error={err("startsAt")}>
+                  <Input type="datetime-local" value={draft.startsAt} onChange={(e) => patch({ startsAt: e.target.value })} />
+                </Field>
+                <Field label="Termina" error={err("endsAt")}>
+                  <Input type="datetime-local" value={draft.endsAt} onChange={(e) => patch({ endsAt: e.target.value })} />
+                </Field>
+              </div>
+              <Switch
+                label="Activa"
+                description="Pausala para cortarla sin borrarla. Si tiene fechas, sólo aplica dentro de la vigencia."
+                checked={draft.isActive}
+                onCheckedChange={(v) => patch({ isActive: v })}
+              />
+            </CardBody>
+          </Card>
+
+          <CollapsibleCard
+            title="Más opciones"
+            description="Prioridad, combinación con otras promociones y etiqueta sobre la foto."
+            summary={
+              draft.badgeLabel || draft.stackable || (parseNumberInput(draft.priority) ?? 0) !== 0
+                ? [
+                    (parseNumberInput(draft.priority) ?? 0) !== 0 ? `Prioridad ${draft.priority}` : null,
+                    draft.stackable ? "Acumulable" : null,
+                    draft.badgeLabel ? "Con etiqueta" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : "Valores por defecto"
+            }
+            defaultOpen={Boolean(draft.badgeLabel || draft.stackable || (parseNumberInput(draft.priority) ?? 0) !== 0)}
+            forceOpen={Boolean(err("priority") || err("badgeLabel"))}
+          >
+            <div className="space-y-4">
+              <Field
+                label="Prioridad"
+                error={err("priority")}
+                hint="Si un producto tiene varias promos, gana la de mayor prioridad (a igual prioridad, la que más descuenta). Si las dos son acumulables, se suman: el 3x2 se calcula sobre el precio ya rebajado."
+              >
+                <Input
+                  type="number"
+                  step="1"
+                  value={draft.priority}
+                  onChange={(e) => patch({ priority: e.target.value })}
+                  className="max-w-32"
+                />
+              </Field>
+              <Switch
+                label="Acumulable"
+                description="Se suma a otras promos acumulables del mismo producto."
+                checked={draft.stackable}
+                onCheckedChange={(v) => patch({ stackable: v })}
+              />
+              <Field
+                label="Etiqueta"
+                error={err("badgeLabel")}
+                aside={`${draft.badgeLabel.length}/${BADGE_MAX}`}
+                hint={
+                  isQuantity
+                    ? `Se muestra sobre la foto del producto. Si la dejás vacía se muestra "${autoBadge || "3x2"}".`
+                    : `Se muestra sobre la foto del producto, ej. "Ciber Lunes". Si la dejás vacía se muestra el % de descuento.`
+                }
+              >
+                <Input
+                  value={draft.badgeLabel}
+                  onChange={(e) => patch({ badgeLabel: e.target.value })}
+                  maxLength={BADGE_MAX}
+                  placeholder={autoBadge || "Ciber Lunes"}
+                  className="max-w-xs"
+                />
+              </Field>
+            </div>
+          </CollapsibleCard>
         </div>
       </div>
 
