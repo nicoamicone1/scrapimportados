@@ -21,7 +21,7 @@ import { Swatch } from "./bits";
 export function OrdersToProduce({ orders, catalog }: { orders: OrderToProduce[]; catalog: CatalogRef }) {
   if (!orders.length) return null;
   return (
-    <section aria-labelledby="to-produce" className="mb-5 rounded-adm border border-adm-border bg-adm-surface shadow-adm-card">
+    <section aria-labelledby="to-produce" className="mb-5 rounded-adm-lg border border-adm-border bg-adm-surface">
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-adm-border px-4 py-3">
         <h2 id="to-produce" className="text-[15px] font-semibold">
           Pedidos por producir
@@ -61,7 +61,7 @@ function OrderRow({ order, catalog }: { order: OrderToProduce; catalog: CatalogR
     <li className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <Link href={`/admin/pedidos/${order.id}`} className="tnum font-semibold text-adm-accent hover:underline">
+          <Link href={`/admin/pedidos/${order.id}`} className="tnum font-semibold text-adm-link hover:underline">
             #{order.number}
           </Link>
           <span className="truncate">{order.customer_name}</span>

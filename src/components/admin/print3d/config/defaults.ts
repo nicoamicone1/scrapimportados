@@ -139,5 +139,5 @@ export const SEED_PRINTER = {
   lifetime_hours: 5000,
   hours_used: 0,
   status: "active" as const,
-  color: "#E86A33",
+  color: "#B02C14", // = PRINTER_TINTS[0]
 };

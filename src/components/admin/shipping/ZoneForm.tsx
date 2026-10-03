@@ -221,7 +221,7 @@ export function ZoneForm({
                       key={opt.value}
                       className={cn(
                         "flex cursor-pointer gap-2.5 rounded-adm border p-3 transition-colors has-[:focus-visible]:shadow-[var(--adm-focus)]",
-                        active ? "border-adm-accent bg-adm-accent-soft" : "border-adm-border bg-adm-surface hover:bg-adm-hover",
+                        active ? "border-adm-link bg-adm-accent-soft" : "border-adm-border bg-adm-surface hover:bg-adm-hover",
                       )}
                     >
                       <input
@@ -232,7 +232,7 @@ export function ZoneForm({
                         onChange={() => set("type", opt.value)}
                         className="sr-only"
                       />
-                      <span className={cn("mt-0.5 [&_svg]:size-4", active ? "text-adm-accent" : "text-adm-fg-muted")}>{opt.icon}</span>
+                      <span className={cn("mt-0.5 [&_svg]:size-4", active ? "text-adm-link" : "text-adm-fg-muted")}>{opt.icon}</span>
                       <span className="min-w-0">
                         <span className="block text-sm font-medium text-adm-fg">{ZONE_TYPE_LABELS[opt.value]}</span>
                         <span className="mt-0.5 block text-xs text-adm-fg-muted">{opt.description}</span>

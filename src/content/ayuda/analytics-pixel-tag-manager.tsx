@@ -54,7 +54,7 @@ export const body = (
     </p>
     <Callout tone="aviso">
       <p>
-        Como la tienda no cobra con tarjeta, «compra» quiere decir <strong>pedido confirmado</strong>, no pagado. Si un cliente no te transfiere
+        Si el cliente paga por transferencia o por WhatsApp, «compra» quiere decir <strong>pedido confirmado</strong>, no pagado. Si un cliente no te transfiere
         y el pedido vence, en Analytics igual figura. Para tus números reales de ventas, mirá el Dashboard, que cuenta los pedidos no
         cancelados.
       </p>

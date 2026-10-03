@@ -86,7 +86,7 @@ export function InlineNumber({
         onKeyDown={onKeyDown}
         onBlur={() => void commit()}
         className={cn(
-          "tnum rounded-adm border border-adm-accent bg-adm-surface text-right outline-none",
+          "tnum rounded-adm border border-adm-link bg-adm-surface text-right outline-none",
           chip ? "h-11 w-full px-3 text-base" : "h-7 w-24 px-2 text-[13px] pointer-coarse:h-11 pointer-coarse:text-base",
         )}
       />

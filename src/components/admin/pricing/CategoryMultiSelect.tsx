@@ -70,7 +70,7 @@ export function CategoryMultiSelect({ categories, value, onChange, cascade = fal
               >
                 <input
                   type="checkbox"
-                  className="size-4 shrink-0 cursor-pointer accent-[var(--adm-accent)]"
+                  className="size-4 shrink-0 cursor-pointer accent-[var(--adm-select)]"
                   checked={selected.has(row.id)}
                   onChange={(e) => toggle(row.id, e.target.checked)}
                 />

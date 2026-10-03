@@ -169,7 +169,7 @@ export function CategoriesManager({ categories: initial }: { categories: AdminCa
           }
         />
       ) : (
-        <div className="rounded-adm border border-adm-border bg-adm-surface shadow-adm-card">
+        <div className="rounded-adm-lg border border-adm-border bg-adm-surface">
           <div className="flex h-9 items-center gap-3 border-b border-adm-border bg-adm-surface-2 px-3 text-xs font-medium text-adm-fg-muted">
             <span className="w-7" />
             <span className="flex-1">Nombre</span>

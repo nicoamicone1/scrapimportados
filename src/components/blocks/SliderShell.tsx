@@ -17,6 +17,7 @@ export function SliderShell({
   arrow,
   perView,
   mobilePeek,
+  highlight,
   children,
 }: {
   title?: string;
@@ -25,6 +26,8 @@ export function SliderShell({
   arrow?: boolean;
   perView: number;
   mobilePeek: number;
+  /** El primer ítem al doble de ancho. */
+  highlight?: boolean;
   children: ReactNode;
 }) {
   const track = useRef<HTMLDivElement>(null);
@@ -74,7 +77,8 @@ export function SliderShell({
       <SectionTitle title={title} subtitle={subtitle} href={href} arrow={arrow} aside={arrows} />
       <div
         ref={track}
-        className="blk-track"
+        className="blk-track st-stagger"
+        data-highlight={highlight ? "" : undefined}
         role="region"
         aria-label={title || "Productos"}
         tabIndex={0}

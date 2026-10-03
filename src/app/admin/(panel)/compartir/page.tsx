@@ -1,4 +1,6 @@
 import { Download, ExternalLink, Share2 } from "lucide-react";
+
+import { BRAND_INK } from "@/app/_brand/glyph";
 import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -7,7 +9,7 @@ import { CopyButton, NativeShareButton, ShareOnboarding, WhatsAppShareLink } fro
 import { INSTAGRAM_BIO_MAX, shareMessages } from "@/components/admin/share/messages";
 import { ShareTargetPicker } from "@/components/admin/share/ShareTargetPicker";
 import { buttonClass, ButtonLink } from "@/components/ui/Button";
-import { Card, CardHeader, Eyebrow } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/display";
 import { requireAdmin } from "@/lib/auth";
 import { formatMoney, formatPercent } from "@/lib/money";
@@ -42,7 +44,8 @@ export default async function SharePage() {
     type: "svg",
     margin: 0,
     errorCorrectionLevel: "M",
-    color: { dark: "#1A2320", light: "#FFFFFF" },
+    // Tinta de la marca sobre blanco (el PNG para imprimir sale en negro puro).
+    color: { dark: BRAND_INK, light: "#ffffff" },
   });
 
   const messages = shareMessages({
@@ -69,7 +72,7 @@ export default async function SharePage() {
       />
 
       {noProducts || d.maintenance ? (
-        <div role="status" className="mb-4 rounded-adm border border-adm-accent-2/60 bg-adm-accent-2-soft px-4 py-3 text-[13px]">
+        <div role="status" className="mb-4 rounded-adm-lg bg-adm-accent-2-soft px-4 py-3 text-[13px] text-adm-fg">
           {noProducts ? (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <p className="min-w-0 flex-1">
@@ -89,7 +92,7 @@ export default async function SharePage() {
           {d.maintenance ? (
             <p className={noProducts ? "mt-2 border-t border-adm-accent-2/40 pt-2" : undefined}>
               <span className="font-medium">Tu tienda está en modo mantenimiento:</span> quien entre ve el aviso en lugar del catálogo.{" "}
-              <Link href="/admin/configuracion/seo#mantenimiento" className="font-medium text-adm-accent underline-offset-2 hover:underline">
+              <Link href="/admin/configuracion/seo#mantenimiento" className="font-medium text-adm-link underline-offset-2 hover:underline">
                 Desactivar mantenimiento
               </Link>
             </p>
@@ -98,15 +101,20 @@ export default async function SharePage() {
       ) : null}
 
       {/* Tu link + QR: lo principal de la pantalla. */}
-      <Card className="grid md:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="min-w-0 p-5">
-          <Eyebrow>Tu link</Eyebrow>
-          <p className="mt-1 text-[22px] leading-8 font-semibold tracking-[-0.01em] break-all text-adm-fg">{host}</p>
-          <p className="mt-1 max-w-[56ch] text-[13px] text-adm-fg-muted">
+      <section
+        aria-labelledby="tu-link"
+        className="relative isolate grid overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface shadow-adm-card md:grid-cols-[minmax(0,1fr)_auto]"
+      >
+        <div className="min-w-0 p-5 sm:p-6">
+          <p id="tu-link" className="text-[11px] font-semibold tracking-[0.1em] text-adm-accent-2-ink uppercase">
+            Tu link
+          </p>
+          <p className="eco-display mt-2 text-[24px] leading-[1.1] break-all text-adm-fg sm:text-[30px]">{host}</p>
+          <p className="mt-2.5 max-w-[56ch] text-[13px] text-adm-fg-muted">
             Es la dirección de tu tienda. Quien la abre ve el catálogo con precios y stock, y el pedido te llega registrado aunque lo
             cierren por WhatsApp.
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-5 flex flex-wrap items-center gap-2">
             <CopyButton text={url} label="Copiar link" ariaLabel="Copiar link de la tienda" variant="primary" size="md" />
             <WhatsAppShareLink text={reply} size="md" />
             <NativeShareButton url={url} text={ctx.store.name} title={ctx.store.name} />
@@ -114,25 +122,43 @@ export default async function SharePage() {
               Abrir tienda
             </ButtonLink>
           </div>
+          {/* Cómo le llega al cliente: la respuesta lista, como mensaje (BRAND §7.2, la burbuja que habla). */}
+          <figure className="mt-6 hidden border-t border-adm-border pt-5 sm:block">
+            <figcaption className="text-xs text-adm-fg-muted">Así le llega a tu cliente cuando le mandás la respuesta lista:</figcaption>
+            <div className="mt-2.5 flex justify-end">
+              <p className="eco-bubble-r max-w-[46ch] bg-adm-accent-2-soft px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-line text-adm-fg [--eco-bubble-r:18px]">
+                {reply.split(url).map((part, i, all) => (
+                  <span key={i}>
+                    {part}
+                    {i < all.length - 1 ? <span className="text-adm-link underline underline-offset-2">{url}</span> : null}
+                  </span>
+                ))}
+              </p>
+            </div>
+          </figure>
         </div>
-        <div className="flex gap-4 border-t border-adm-border p-5 md:flex-col md:items-center md:border-t-0 md:border-l">
+        {/* El QR en burbuja, sobre un arco durazno (BRAND §7.2). */}
+        <div className="relative flex items-center gap-4 overflow-hidden border-t border-adm-border bg-eco-niebla-2 p-5 sm:p-6 md:w-[300px] md:flex-col md:items-center md:justify-center md:border-t-0 md:border-l">
+          <svg aria-hidden viewBox="0 0 200 200" className="absolute -right-20 -bottom-24 -z-0 size-64 text-eco-durazno">
+            <circle cx="100" cy="100" r="74" fill="none" stroke="currentColor" strokeWidth="30" />
+          </svg>
           <div
             role="img"
             aria-label={`Código QR de ${host}`}
-            className="size-[136px] shrink-0 rounded-adm border border-adm-border bg-white p-2.5 md:size-[168px] [&_svg]:size-full"
+            className="eco-bubble relative size-[132px] shrink-0 bg-white p-3 shadow-[0_16px_34px_-20px_rgb(16_22_47/0.5)] [--eco-bubble-r:22px] md:size-[184px] md:p-4 [&_svg]:size-full"
             dangerouslySetInnerHTML={{ __html: qrSvg }}
           />
-          <div className="min-w-0 md:w-[168px]">
+          <div className="relative min-w-0 md:w-[184px]">
             <a href="/admin/compartir/qr" download className={buttonClass("secondary", "sm", "w-full max-sm:h-11")}>
-              <Download aria-hidden strokeWidth={1.5} />
+              <Download aria-hidden strokeWidth={1.75} />
               Descargar PNG
             </a>
             <p className="mt-2 text-[12px] leading-snug text-adm-fg-muted">
-              1024 px, listo para imprimir. Imprimilo y pegalo en el mostrador o en el packaging.
+              1024 px, listo para imprimir. Pegalo en el mostrador, la vidriera o el packaging.
             </p>
           </div>
         </div>
-      </Card>
+      </section>
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-12">
         <div className="min-w-0 space-y-4 lg:col-span-8">
@@ -145,11 +171,11 @@ export default async function SharePage() {
                 ) : (
                   <>
                     Si ofrecés descuento por transferencia (
-                    <Link href="/admin/configuracion/pagos" className="text-adm-accent underline-offset-2 hover:underline">
+                    <Link href="/admin/configuracion/pagos" className="text-adm-link underline-offset-2 hover:underline">
                       Pagos
                     </Link>
                     ) o envío gratis desde un monto (
-                    <Link href="/admin/envios" className="text-adm-accent underline-offset-2 hover:underline">
+                    <Link href="/admin/envios" className="text-adm-link underline-offset-2 hover:underline">
                       Envíos
                     </Link>
                     ), lo sumamos a los mensajes: es lo que más convence.
@@ -165,7 +191,7 @@ export default async function SharePage() {
                     <p className="mt-0.5 text-[12px] leading-snug text-adm-fg-muted">{m.hint}</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-2 text-[13px] leading-relaxed break-words whitespace-pre-line text-adm-fg">
+                    <p className="eco-bubble bg-adm-surface-2 px-4 py-3 text-[13px] leading-relaxed break-words whitespace-pre-line text-adm-fg [--eco-bubble-r:18px]">
                       {m.text}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -208,10 +234,20 @@ export default async function SharePage() {
             Dónde poner el link
           </h2>
           <p className="mt-0.5 text-[13px] text-adm-fg-muted">Seis lugares donde tus clientes ya te buscan.</p>
-          <ol className="mt-3 space-y-3 border-l-2 border-adm-border pl-4">
-            {TIPS.map((t) => (
-              <li key={t.title} className="text-[13px] leading-relaxed">
-                <span className="font-medium text-adm-fg">{t.title}.</span> <span className="text-adm-fg-muted">{t.body}</span>
+          <ol className="mt-4 space-y-0">
+            {TIPS.map((t, i) => (
+              <li key={t.title} className="relative flex gap-3 pb-4 text-[13px] leading-relaxed last:pb-0">
+                {i < TIPS.length - 1 ? <span aria-hidden className="absolute top-7 bottom-1 left-[13px] w-0.5 rounded-full bg-eco-durazno" /> : null}
+                <span
+                  aria-hidden
+                  className="eco-num relative inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-eco-durazno text-[12px] text-adm-fg"
+                >
+                  {i + 1}
+                </span>
+                <span className="pt-0.5">
+                  <span className="block font-semibold text-adm-fg">{t.title}</span>
+                  <span className="text-adm-fg-muted">{t.body}</span>
+                </span>
               </li>
             ))}
           </ol>

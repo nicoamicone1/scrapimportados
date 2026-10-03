@@ -26,18 +26,23 @@ export interface SaveBarProps {
   discardDisabled?: boolean;
   /** Contenido extra entre el mensaje y los botones. */
   children?: ReactNode;
-  /** Sangra hasta el borde del contenido del shell (default true). */
+  /**
+   * Compatibilidad: antes la barra iba de borde a borde del contenido. Ahora
+   * siempre es una pastilla flotante centrada; `bleed={false}` la alinea a la
+   * izquierda del contenedor en lugar de centrarla.
+   */
   bleed?: boolean;
   className?: string;
 }
 
-const ghostOnDark =
-  "border border-white/20 text-adm-sidebar-fg hover:border-white/35 hover:bg-white/10 hover:text-white";
+const ghostOnDark = "text-eco-mist hover:bg-white/10 hover:text-white";
 
 /**
- * Barra sticky inferior de guardado (spec §14.6): fondo `--adm-sidebar-bg`,
- * texto claro, "Descartar" + "Guardar" (ámbar). Reemplaza a las barras
- * blancas de cada formulario.
+ * Barra de guardado (BRAND §10): pastilla tinta flotante, centrada abajo,
+ * que sube con un rebote corto al aparecer: "● Cambios sin guardar ·
+ * Descartar · Guardar" (pomelo). Lleva `data-adm-bottom-bar` (oculta la
+ * barra inferior mobile y sube los toasts). En mobile ocupa el ancho con
+ * margen de 12 px y los botones se reparten el ancho.
  */
 export function SaveBar({
   visible = true,
@@ -61,24 +66,30 @@ export function SaveBar({
     <div
       data-adm-bottom-bar=""
       className={cn(
-        "adm-dark sticky bottom-0 z-40 mt-6 bg-adm-sidebar-bg px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] text-adm-sidebar-fg shadow-[0_-1px_0_rgb(0_0_0/0.08),0_-8px_24px_-12px_rgb(26_35_32/0.35)] md:px-6 md:pb-2.5",
-        bleed ? "-mx-4 md:-mx-6" : "rounded-adm",
+        "pointer-events-none sticky bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 mt-6 flex",
+        bleed ? "justify-center" : "justify-start",
         className,
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <p role="status" className={cn("flex items-center gap-2 text-sm", error ? "text-adm-danger-on-dark" : "text-adm-sidebar-fg")}>
-          <span aria-hidden className={cn("size-1.5 rounded-full", error ? "bg-adm-danger-on-dark" : "bg-adm-accent-2")} />
-          {message}
+      <div
+        className={cn(
+          "adm-dark adm-rise-in pointer-events-auto flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[22px] bg-eco-ink py-2 pr-2 pl-5 text-eco-mist shadow-[0_18px_44px_-14px_rgb(16_22_47/0.6)] sm:w-auto sm:max-w-full",
+          // Con contenido extra (ej. opciones de publicación) puede ocupar dos líneas.
+          children ? "sm:rounded-[22px]" : "sm:flex-nowrap sm:rounded-full",
+        )}
+      >
+        <p role="status" className={cn("flex min-w-0 items-center gap-2.5 text-sm", error ? "text-adm-danger-on-dark" : "text-eco-mist")}>
+          <span aria-hidden className={cn("size-2 shrink-0 rounded-full", error ? "bg-adm-danger-on-dark" : "bg-eco-pomelo")} />
+          <span className="truncate">{message}</span>
         </p>
         {children}
-        <div className="flex items-center gap-2 max-sm:w-full max-sm:[&>*]:flex-1">
+        <div className="flex items-center gap-1.5 max-sm:w-full max-sm:[&>*]:flex-1">
           {discardHref ? (
-            <ButtonLink href={discardHref} variant="ghost" className={ghostOnDark}>
+            <ButtonLink href={discardHref} variant="ghost" className={cn(ghostOnDark, "rounded-full")}>
               {discardLabel}
             </ButtonLink>
           ) : onDiscard ? (
-            <Button variant="ghost" onClick={onDiscard} disabled={saving || discardDisabled} className={ghostOnDark}>
+            <Button variant="ghost" onClick={onDiscard} disabled={saving || discardDisabled} className={cn(ghostOnDark, "rounded-full")}>
               {discardLabel}
             </Button>
           ) : null}
@@ -89,6 +100,7 @@ export function SaveBar({
             loading={saving}
             loadingText={savingLabel}
             disabled={saveDisabled}
+            className="rounded-full px-4"
           >
             {saveLabel}
           </Button>

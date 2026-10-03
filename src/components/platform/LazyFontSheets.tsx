@@ -12,6 +12,15 @@ function hasSheet(href: string): boolean {
   return false;
 }
 
+/**
+ * Pide una hoja de fuentes una sola vez (sin bloquear el render). La usan
+ * también las demos de la landing que cambian de estilo en vivo.
+ */
+export function injectFontSheet(href: string | null | undefined) {
+  if (!href || typeof document === "undefined") return;
+  injectSheet(href);
+}
+
 function injectSheet(href: string) {
   if (hasSheet(href)) return;
   const link = document.createElement("link");

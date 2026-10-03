@@ -7,7 +7,7 @@ export default function Loading() {
     <PageSkeleton title="Filamento" actions={2}>
       <div className="space-y-4">
         {Array.from({ length: 2 }, (_, i) => (
-          <div key={i} className="rounded-adm border border-adm-border bg-adm-surface shadow-adm-card">
+          <div key={i} className="rounded-adm-lg border border-adm-border bg-adm-surface">
             <div className="flex items-center gap-3 border-b border-adm-border px-4 py-3">
               <Skeleton className="h-5 w-10" />
               <Skeleton className="h-4 w-32" />

@@ -7,7 +7,6 @@ import { toast } from "sonner";
 
 import { changeOrderStatus, markOrdersPaid, updateOrderTracking } from "@/app/admin/(panel)/pedidos/actions";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
 import {
   canTransition,
@@ -293,7 +292,7 @@ interface Step {
  * "Siguiente paso": lo que el comerciante tiene que hacer ahora con este
  * pedido, con su botón. Es la única acción primaria de la vista.
  */
-export function OrderNextStep({ expiryLabel }: { expiryLabel?: string | null }) {
+export function OrderNextStep({ expiryLabel, journey }: { expiryLabel?: string | null; /** Recorrido del pedido (`OrderJourney`), arriba del paso. */ journey?: ReactNode }) {
   const a = useOrderActions();
   const { status, fulfillment, paymentStatus, paymentMethodCode, balance, currency } = a.props;
   const money = formatMoney(balance, { currency });
@@ -359,29 +358,34 @@ export function OrderNextStep({ expiryLabel }: { expiryLabel?: string | null }) 
       primary: { label: "Marcar pagado", onClick: () => void a.markPaid() },
     };
   }
-  if (!step) return null;
+  if (!step && !journey) return null;
 
   return (
-    <Card className="mb-4 border-l-[3px] border-l-adm-accent" aria-label="Siguiente paso">
-      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-[0.06em] text-adm-fg-muted uppercase">Siguiente paso</p>
-          <p className="text-[15px] font-semibold text-adm-fg">{step.title}</p>
-          <p className="mt-0.5 max-w-prose text-[13px] text-adm-fg-muted">{step.text}</p>
+    <section aria-label={step ? "Siguiente paso" : "Recorrido del pedido"} className="mb-4 overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface shadow-adm-card">
+      {journey ? <div className="adm-scroll overflow-x-auto px-3 pt-4 pb-3 sm:px-5">{journey}</div> : null}
+      {step ? (
+        <div className={journey ? "px-2 pb-2 sm:px-3 sm:pb-3" : "p-2 sm:p-3"}>
+          <div className="eco-bubble flex flex-col gap-3 bg-adm-surface-2 p-4 [--eco-bubble-r:20px] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold tracking-[0.1em] text-adm-accent-2-ink uppercase">Siguiente paso</p>
+              <p className="eco-display mt-1 text-[19px] leading-6 text-adm-fg">{step.title}</p>
+              <p className="mt-1 max-w-prose text-[13px] text-adm-fg-muted">{step.text}</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:shrink-0 sm:flex-row-reverse sm:items-center">
+              {step.primary ? (
+                <Button variant="primary" size="lg" className="h-11 px-5 text-[15px]" loading={a.loading} onClick={step.primary.onClick}>
+                  {step.primary.label}
+                </Button>
+              ) : null}
+              {step.secondary ? (
+                <Button size="lg" className="max-sm:h-11" icon={step.secondary.icon} disabled={a.loading} onClick={step.secondary.onClick}>
+                  {step.secondary.label}
+                </Button>
+              ) : null}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-2 sm:shrink-0 sm:flex-row-reverse sm:items-center">
-          {step.primary ? (
-            <Button variant="primary" size="lg" className="max-sm:h-11" loading={a.loading} onClick={step.primary.onClick}>
-              {step.primary.label}
-            </Button>
-          ) : null}
-          {step.secondary ? (
-            <Button size="lg" className="max-sm:h-11" icon={step.secondary.icon} disabled={a.loading} onClick={step.secondary.onClick}>
-              {step.secondary.label}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </Card>
+      ) : null}
+    </section>
   );
 }

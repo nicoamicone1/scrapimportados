@@ -80,6 +80,43 @@ describe("presets: catálogo", () => {
     expect(PRESETS.galpon.effects.dividers).toBe(true);
   });
 
+  it("cada preset tiene su disposición: difiere de cualquier otro en al menos 4 de 10 ejes", () => {
+    // Rediseño 2026-10 (DESIGN.md §4): dos presets no pueden ser "el mismo sitio con otro skin".
+    const axes = (t: (typeof PRESETS)[keyof typeof PRESETS]) => [
+      t.header.layout,
+      t.footer.style,
+      t.style.hero,
+      t.style.titles,
+      t.style.shape,
+      t.style.card,
+      t.style.motion,
+      t.style.grid,
+      t.style.filters,
+      t.style.gallery,
+    ];
+    for (let i = 0; i < entries.length; i++) {
+      for (let j = i + 1; j < entries.length; j++) {
+        const [a, b] = [axes(entries[i][1]), axes(entries[j][1])];
+        const diff = a.filter((v, k) => v !== b[k]).length;
+        expect(diff, `${entries[i][0]} vs ${entries[j][0]}`).toBeGreaterThanOrEqual(4);
+      }
+    }
+  });
+
+  it("cada disposición de header, tarjeta y pie la usa al menos un preset", () => {
+    const used = (pick: (t: (typeof PRESETS)[keyof typeof PRESETS]) => string) => new Set(entries.map(([, t]) => pick(t)));
+    expect([...used((t) => t.header.layout)].sort()).toEqual(["double", "logo-center", "logo-left", "minimal", "pill", "stacked"]);
+    expect([...used((t) => t.style.card)].sort()).toEqual(["boxed", "overlay", "row", "stack", "tile"]);
+    expect([...used((t) => t.footer.style)].sort()).toEqual(["band", "columns", "minimal", "simple", "statement"]);
+    expect([...used((t) => t.style.gallery)].sort()).toEqual(["carousel", "grid", "stack", "thumbs"]);
+  });
+
+  it("los tres crema-y-serif de antes ya no comparten fondo ni familia de títulos", () => {
+    const { atelier, mercado, lapacho } = PRESETS;
+    expect(new Set([atelier.colors.background, mercado.colors.background, lapacho.colors.background]).size).toBe(3);
+    expect(getFont(lapacho.fonts.heading).category).not.toBe("serif");
+  });
+
   it("el cuerpo nunca usa una fuente sólo para títulos", () => {
     for (const [id, t] of entries) expect(getFont(t.fonts.body).headingOnly ?? false, id).toBe(false);
   });

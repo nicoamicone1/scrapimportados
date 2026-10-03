@@ -260,7 +260,7 @@ function FinishDialog({
             elapsed ? (
               <>
                 Estimado: {formatMinutes(job.est_minutes)} · desde que empezó: {formatMinutes(elapsed)}{" "}
-                <button type="button" className="font-medium text-adm-accent hover:underline" onClick={() => setMinutes(String(elapsed))}>
+                <button type="button" className="font-medium text-adm-link hover:underline" onClick={() => setMinutes(String(elapsed))}>
                   Usar
                 </button>
               </>
@@ -340,7 +340,7 @@ function FailDialog({ job, now, onOpenChange, onDone }: { job: Job; now: Date; o
               key={r}
               className={cn(
                 "flex min-h-10 cursor-pointer items-center gap-2 rounded-adm border px-3 py-2 text-[13px]",
-                reason === r ? "border-adm-accent bg-adm-accent-soft" : "border-adm-border hover:bg-adm-row-hover",
+                reason === r ? "border-adm-link bg-adm-accent-soft" : "border-adm-border hover:bg-adm-row-hover",
               )}
             >
               <input
@@ -349,7 +349,7 @@ function FailDialog({ job, now, onOpenChange, onDone }: { job: Job; now: Date; o
                 value={r}
                 checked={reason === r}
                 onChange={() => setReason(r)}
-                className="accent-[var(--adm-accent)]"
+                className="accent-[var(--adm-select)]"
               />
               {FAILURE_REASON_LABELS[r]}
             </label>

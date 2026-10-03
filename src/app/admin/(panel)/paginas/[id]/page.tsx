@@ -6,6 +6,7 @@ import { renderBlockPreviews } from "@/components/admin/builder/render-preview";
 import type { LinkSuggestion } from "@/components/admin/builder/fields";
 import { getAdminPage, isUuidLike, listCategoryOptions, listPageOptions, listProductTags } from "@/lib/admin/pages";
 import { requireAdmin } from "@/lib/auth";
+import { getStoreDisplay } from "@/lib/store/display";
 import { getSettings } from "@/lib/store/settings";
 import { storeUrl } from "@/lib/tenant/urls";
 
@@ -26,12 +27,13 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
   const { id } = await params;
   if (!isUuidLike(id)) notFound();
   const ctx = await requireAdmin();
-  const [page, settings, categories, pages, tags] = await Promise.all([
+  const [page, settings, categories, pages, tags, display] = await Promise.all([
     getAdminPage(id),
     getSettings(ctx.store.id),
     listCategoryOptions(ctx),
     listPageOptions(ctx),
     listProductTags(ctx),
+    getStoreDisplay(ctx.store.id),
   ]);
   if (!page) notFound();
 
@@ -49,7 +51,14 @@ export default async function EditPagePage({ params }: PageProps<"/admin/paginas
     <PageEditor
       page={page}
       theme={settings.theme}
-      options={{ categories, tags, links, timezone: settings.timezone, modules: ctx.modules }}
+      options={{
+        categories,
+        tags,
+        links,
+        timezone: settings.timezone,
+        modules: ctx.modules,
+        starter: { transferDiscount: display.card.transferPercent, whatsapp: Boolean(display.card.whatsappPhone) },
+      }}
       siteUrl={storeUrl(ctx.store)}
       storeName={settings.name}
       initialNodes={initialNodes}

@@ -133,7 +133,7 @@ export function WithdrawalsTable({ rows, timeZone, empty }: { rows: WithdrawalVi
                           />
                         </div>
                       ) : (
-                        <button type="button" className="mt-1 text-xs text-adm-accent hover:underline" onClick={() => setOpen(w.id)}>
+                        <button type="button" className="mt-1 text-xs text-adm-link hover:underline" onClick={() => setOpen(w.id)}>
                           {w.admin_notes ? `Nota: ${w.admin_notes}` : "Agregar nota"}
                         </button>
                       )}

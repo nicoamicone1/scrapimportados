@@ -259,7 +259,7 @@ function SingleVariantFields({
           aria-expanded={showAdvanced}
           aria-controls="variant-advanced"
           onClick={() => setOpen(!showAdvanced)}
-          className="inline-flex h-8 items-center gap-1.5 rounded-adm px-1 text-[13px] font-medium text-adm-accent hover:underline max-md:h-11"
+          className="inline-flex h-8 items-center gap-1.5 rounded-adm px-1 text-[13px] font-medium text-adm-link hover:underline max-md:h-11"
         >
           <ChevronRight className={cn("size-4 transition-transform duration-100", showAdvanced && "rotate-90")} aria-hidden />
           Más datos: costo, SKU, código de barras, peso y control de stock
@@ -582,7 +582,7 @@ function VariantCards({
             </Field>
           </div>
           <details className="group mt-2" open={ADVANCED_FIELDS.concat("compare_at_price").some((f) => err(i, f)) || undefined}>
-            <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-adm-accent [&::-webkit-details-marker]:hidden">
+            <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-adm-link [&::-webkit-details-marker]:hidden">
               <ChevronRight className="size-4 transition-transform group-open:rotate-90" aria-hidden />
               Más datos
             </summary>

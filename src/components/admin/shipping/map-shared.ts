@@ -28,12 +28,16 @@ export async function fetchPlaces(query: string): Promise<PlaceResult[]> {
   return body?.results ?? [];
 }
 
-/** Colores fijos de los mapas (tokens del admin; Leaflet necesita valores literales). */
+/**
+ * Colores fijos de los mapas (Leaflet necesita valores literales): espejo de
+ * los tokens del admin (BRAND §5). Zonas en tinta, la seleccionada en azul de
+ * interacción, el trazo en curso en `--adm-warning`.
+ */
 export const MAP_COLORS = {
-  accent: "#2e4a3f",
-  accentFill: "#2e4a3f",
-  muted: "#6b6860",
-  selected: "#2b5a84",
-  draft: "#9a5b00",
-  inactive: "#8a867d",
+  accent: "#10162f", // --eco-ink
+  accentFill: "#10162f",
+  muted: "#5b627a", // --eco-text-muted
+  selected: "#2f4bff", // --eco-azul
+  draft: "#9a5b00", // --adm-warning
+  inactive: "#8a90a6",
 } as const;

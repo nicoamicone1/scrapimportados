@@ -28,8 +28,12 @@ export const PRINTER_PRESETS: PrinterPreset[] = [
   { id: "kobra-3", brand: "Anycubic", model: "Kobra 3", bed: [250, 250, 250], watts: 120, materials: ["PLA", "PETG", "TPU"] },
 ];
 
-/** Tintas para identificar cada impresora en la cola (contrastan con texto blanco). */
-export const PRINTER_TINTS = ["#E86A33", "#2E4A3F", "#3D5A80", "#8A5A12", "#9E4520", "#5A3C82", "#1C5C55", "#7A2E3B"] as const;
+/**
+ * Tintas para identificar cada impresora en la cola (todas ≥ 4,5:1 con texto
+ * blanco). Derivadas de la paleta del panel (BRAND §5): pomelo-ink, tinta,
+ * azul, petróleo, magenta, violeta, verde y ámbar oscuros.
+ */
+export const PRINTER_TINTS = ["#B02C14", "#10162F", "#2238D9", "#0B6366", "#A01C64", "#5B2E9E", "#17683F", "#8A4B00"] as const;
 
 export const PRINTER_STATUSES = ["active", "maintenance", "inactive"] as const;
 export type PrinterStatus = (typeof PRINTER_STATUSES)[number];

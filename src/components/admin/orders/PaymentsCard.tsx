@@ -108,7 +108,7 @@ export function PaymentsCard(props: PaymentsCardProps) {
                     href={p.receiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-adm-accent hover:underline"
+                    className="mt-1 inline-flex items-center gap-1 text-adm-link hover:underline"
                   >
                     <Paperclip className="size-3.5" aria-hidden />
                     Ver comprobante

@@ -12,6 +12,7 @@
  * BASE=http://localhost:3000 por defecto. En Git Bash anteponé MSYS_NO_PATHCONV=1
  * (si no, convierte "/admin" en una ruta de Windows).
  */
+/* eslint-disable @typescript-eslint/no-require-imports -- script de Node en CommonJS */
 const fs = require("node:fs");
 const { chromium } = require("@playwright/test");
 

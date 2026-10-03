@@ -34,7 +34,7 @@ export function CategoryTreeSelect({
     return (
       <p className="text-[13px] text-adm-fg-muted">
         Todavía no hay categorías.{" "}
-        <Link href="/admin/categorias" className="text-adm-accent underline underline-offset-2">
+        <Link href="/admin/categorias" className="text-adm-link underline underline-offset-2">
           Crear la primera
         </Link>
       </p>

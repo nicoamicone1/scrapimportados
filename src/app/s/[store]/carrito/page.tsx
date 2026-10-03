@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
+import { PageHead } from "@/components/store/PageHead";
 import { ProductCard } from "@/components/store/ProductCard";
 import { requireStore } from "@/lib/store/context";
 import { getStoreDisplay } from "@/lib/store/display";
@@ -32,7 +33,7 @@ export default async function CartPage({ params }: PageProps<"/s/[store]/carrito
 
   return (
     <div className="store-container py-[var(--space-section-sm)]">
-      <h1 className="h-page">Tu carrito</h1>
+      <PageHead title="Tu carrito" eyebrow={settings.name} />
       {unsubscribeToken ? <CartUnsubscribe token={unsubscribeToken} storeName={settings.name} /> : null}
       {recoverToken && !unsubscribeToken ? <CartRecovery token={recoverToken} /> : null}
       <CartView
@@ -46,13 +47,12 @@ export default async function CartPage({ params }: PageProps<"/s/[store]/carrito
         empty={
           picks.length ? (
             <section className="mt-[var(--space-section-sm)]" aria-labelledby="cart-picks">
-              <h2 id="cart-picks" className="h-section mb-4">
-                {featured.length ? "Destacados" : "Lo más nuevo"}
-              </h2>
-              <div className="store-grid" style={{ "--cols": 4 } as React.CSSProperties}>
-                {picks.map((p) => (
+              <PageHead as="h2" id="cart-picks" className="mb-4" title={featured.length ? "Destacados" : "Lo más nuevo"} />
+              <div className="store-grid st-stagger" data-layout="uniform" style={{ "--cols": 4 } as React.CSSProperties}>
+                {picks.map((p, i) => (
                   <ProductCard
                     key={p.id}
+                    style={{ "--i": i } as React.CSSProperties}
                     product={p}
                     promotions={card.promotions}
                     cards={card.cards}

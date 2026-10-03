@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/store/Breadcrumbs";
 import { JsonLd } from "@/components/store/JsonLd";
 import { ProductCard } from "@/components/store/ProductCard";
+import { PageHead } from "@/components/store/PageHead";
 import { DetailSection, ProductView } from "@/components/store/ProductView";
 import { StoreLink } from "@/components/store/StoreLink";
 import { TrackEvent } from "@/components/store/Track";
@@ -257,6 +258,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
           whatsappHref={whatsappHref}
           contain={contain}
           madeToOrder={madeToOrder}
+          gallery={theme.style.gallery}
         >
           <DeliveryNote display={display} />
           {product.shortDescription ? <p className="mt-6 text-fg-muted">{product.shortDescription}</p> : null}
@@ -291,12 +293,11 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
       {related.length ? (
         <section className="store-container pt-[var(--space-section-md)]" aria-labelledby="relacionados">
-          <h2 id="relacionados" className="h-section mb-[calc(var(--gap-grid)*0.75+8px)]">
-            También te puede interesar
-          </h2>
-          <div className="snap-row">
-            {related.map((p) => (
+          <PageHead as="h2" id="relacionados" title="También te puede interesar" className="mb-[calc(var(--gap-grid)*0.75+8px)]" />
+          <div className="snap-row st-stagger">
+            {related.map((p, i) => (
               <ProductCard
+                style={{ "--i": i } as React.CSSProperties}
                 key={p.id}
                 product={p}
                 promotions={card.promotions}

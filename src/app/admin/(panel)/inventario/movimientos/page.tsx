@@ -110,7 +110,7 @@ export default async function MovementsPage({ searchParams }: PageProps<"/admin/
                 </TD>
                 <TD className="hidden md:table-cell">
                   {m.order ? (
-                    <Link href={`/admin/pedidos/${m.order.id}`} className="tnum text-adm-accent hover:underline">
+                    <Link href={`/admin/pedidos/${m.order.id}`} className="tnum text-adm-link hover:underline">
                       #{m.order.number}
                     </Link>
                   ) : (

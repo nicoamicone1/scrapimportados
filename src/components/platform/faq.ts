@@ -77,12 +77,12 @@ export function platformFaq({ storeAddress, plans = [], mpEnabled = false }: Faq
     {
       id: "comision",
       q: "¿Cobran comisión por venta?",
-      a: "No. Pagás el plan y nada más. Tus clientes te pagan por transferencia o lo acuerdan con vos por WhatsApp: la plata va directo a tu cuenta y no pasa por Ecommy.",
+      a: "No. Pagás el plan y nada más. Por transferencia o acordando por WhatsApp, la plata va directo a tu cuenta y no pasa por Ecommy. Si conectás tu Mercado Pago para cobrar con tarjeta, también entra directo a tu cuenta: ahí sólo pagás la comisión de Mercado Pago.",
     },
     {
       id: "tarjeta",
       q: "¿Mis clientes pueden pagar con tarjeta?",
-      a: "No dentro de la tienda: Ecommy no tiene pasarela de pago. Si alguien quiere pagar con tarjeta, lo acuerdan por WhatsApp (por ejemplo, le mandás un link de pago de tu billetera). El pedido ya quedó registrado en tu panel y lo marcás como pagado cuando se acredita.",
+      a: "Sí, si conectás tu cuenta de Mercado Pago en Configuración › Pagos y checkout: pagan con crédito, débito o dinero en cuenta, en cuotas, y podés ofrecer cuotas sin interés. La plata entra directo a tu cuenta y el pedido se marca como pagado solo. Si no la conectás, cobrás por transferencia o lo acordás por WhatsApp.",
     },
     {
       id: "prueba",

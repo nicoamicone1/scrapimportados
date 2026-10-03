@@ -8,12 +8,12 @@ export default function Loading() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <div className="space-y-4">
           {Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="rounded-adm border border-adm-border bg-adm-surface p-4 shadow-adm-card">
+            <div key={i} className="rounded-adm-lg border border-adm-border bg-adm-surface p-4">
               <FieldsSkeleton fields={i === 1 ? 3 : 4} />
             </div>
           ))}
         </div>
-        <div className="rounded-adm border border-adm-border bg-adm-surface p-4 shadow-adm-card">
+        <div className="rounded-adm-lg border border-adm-border bg-adm-surface p-4">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="mt-3 h-8 w-32" />
           <Skeleton className="mt-2 h-3 w-40" />

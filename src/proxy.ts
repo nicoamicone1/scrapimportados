@@ -38,15 +38,43 @@ function needsSession(pathname: string) {
   return PROTECTED_PREFIXES.some((p) => startsWithSegment(pathname, p));
 }
 
+/*
+ * Vista previa de estilos en la tienda demo (docs/DESIGN.md §4): `?estilo=<preset>`
+ * la muestra con ese preset sin tocar la base. El proxy lo pasa al server en
+ * `x-store-preview-style` (lo lee `getStoreDisplay`) y lo guarda en una cookie de
+ * sesión para que la navegación interna lo conserve; `?estilo=original` lo borra.
+ * Sólo para la tienda `demo`: en cualquier otra el header se descarta.
+ */
+const PREVIEW_STORE = "demo";
+const PREVIEW_COOKIE = "ecommy_estilo";
+const PREVIEW_HEADER = "x-store-preview-style";
+
+function previewStyle(request: NextRequest, tenant: { slug: string } | null): { value: string | null; param: string | null } {
+  if (tenant?.slug !== PREVIEW_STORE) return { value: null, param: null };
+  const raw = request.nextUrl.searchParams.get("estilo");
+  const param = raw === null ? null : /^[a-z]{3,20}$/.test(raw) ? raw : "original";
+  const value = param ?? request.cookies.get(PREVIEW_COOKIE)?.value ?? null;
+  return { value: value && value !== "original" ? value : null, param };
+}
+
+function withPreviewCookie(response: NextResponse, param: string | null): NextResponse {
+  if (param === "original") response.cookies.delete(PREVIEW_COOKIE);
+  else if (param) response.cookies.set(PREVIEW_COOKIE, param, { path: "/", sameSite: "lax", httpOnly: true });
+  return response;
+}
+
 function tenantHeaders(request: NextRequest, tenant: { slug: string; base: string } | null): Headers {
   const headers = new Headers(request.headers);
   headers.delete("x-site");
   headers.delete("x-store-slug");
   headers.delete("x-store-base");
+  headers.delete(PREVIEW_HEADER);
   if (tenant) {
     headers.set("x-site", "store");
     headers.set("x-store-slug", tenant.slug);
     headers.set("x-store-base", tenant.base);
+    const preview = previewStyle(request, tenant).value;
+    if (preview) headers.set(PREVIEW_HEADER, preview);
   } else {
     headers.set("x-site", "platform");
   }
@@ -78,7 +106,7 @@ export async function proxy(request: NextRequest) {
     const { response } = await refreshSession(request, () =>
       NextResponse.rewrite(rewriteUrl, { request: { headers: tenantHeaders(request, tenant) } }),
     );
-    return response;
+    return withPreviewCookie(response, previewStyle(request, tenant).param);
   }
 
   // ---------- Host de plataforma ----------
@@ -99,7 +127,7 @@ export async function proxy(request: NextRequest) {
     return redirect;
   }
 
-  return response;
+  return withPreviewCookie(response, previewStyle(request, tenant).param);
 }
 
 export const config = {

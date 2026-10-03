@@ -1,11 +1,16 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DISPLAY } from "@/components/platform/brand";
+import { DISPLAY, EYEBROW, NUM, TEXT_LINK } from "@/components/platform/brand";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
 import { GUIDES } from "@/content/guias";
+import { cn } from "@/lib/cn";
 import { APP_NAME } from "@/lib/version";
+
+import { CornerArc, Rings } from "../site-shapes";
+import "../site.css";
 
 const TITLE = "Guías para vender online en Argentina";
 const DESCRIPTION =
@@ -22,10 +27,10 @@ export const metadata: Metadata = {
  * lleva directo a /app). Se sirve desde la CDN sin pasar por Supabase.
  */
 
-function Dateline({ iso, minutes }: { iso: string; minutes: number }) {
+function Dateline({ iso, minutes, className }: { iso: string; minutes: number; className?: string }) {
   return (
-    <p className="text-[13px] text-adm-fg-muted">
-      <time dateTime={iso}>{formatLegalDate(iso)}</time> · {minutes} min de lectura
+    <p className={cn("text-[13px]", className)}>
+      Revisada el <time dateTime={iso}>{formatLegalDate(iso)}</time> · {minutes} min de lectura
     </p>
   );
 }
@@ -35,65 +40,66 @@ export default function GuiasPage() {
 
   return (
     <PlatformPage signedIn={false}>
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
-        <header className="max-w-[62ch]">
-          <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Guías</p>
-          <h1 className={`${DISPLAY} mt-3 text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[38px]`}>{TITLE}</h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">
-            Lo que conviene saber antes de abrir o mudar una tienda: qué pide la ley, cómo ordenar las ventas y cómo cuidar lo que ya ganaste en
-            Google. Sin relleno y con la fecha de la última revisión.
-          </p>
-        </header>
+      <div className="relative overflow-hidden">
+        <CornerArc corner="tr" size={520} className="hidden bg-eco-durazno/70 md:block" />
+        <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-20 sm:px-6 md:pt-20">
+          <header className="eco-pop max-w-[62ch]">
+            <p className={EYEBROW}>Guías</p>
+            <h1 className={cn(DISPLAY, "mt-4 max-w-[16ch] text-[40px] leading-[0.98] text-balance sm:text-[56px]")}>Vender online en Argentina, sin vueltas</h1>
+            <p className="mt-5 text-[17px] leading-relaxed text-adm-fg-muted">
+              Lo que conviene saber antes de abrir o mudar una tienda: qué pide la ley, cómo ordenar las ventas y cómo cuidar lo que ya ganaste en
+              Google. Sin relleno y con la fecha de la última revisión.
+            </p>
+          </header>
 
-        <div className="mt-10 grid gap-10 border-t border-adm-border pt-10 lg:grid-cols-12 lg:gap-14">
-          {featured ? (
-            <article className="min-w-0 lg:col-span-7">
-              <p className="text-[12px] font-medium tracking-[0.07em] text-adm-fg-muted uppercase">{featured.section}</p>
-              <h2 className="mt-2 text-[28px] leading-[1.1] font-semibold tracking-[-0.025em] text-balance sm:text-[36px]">
-                <Link href={`/guias/${featured.slug}`} className="underline-offset-[6px] hover:text-adm-accent hover:underline">
-                  {featured.title}
-                </Link>
-              </h2>
-              <p className="mt-4 max-w-[52ch] text-[17px] leading-snug">{featured.description}</p>
-              <div className="mt-4">
-                <Dateline iso={featured.updatedAt} minutes={featured.readingMinutes} />
-              </div>
+          <div className="mt-14 grid gap-6 lg:grid-cols-12">
+            {featured ? (
               <Link
                 href={`/guias/${featured.slug}`}
-                className="mt-6 inline-flex h-10 items-center rounded-adm bg-adm-accent px-4 text-sm font-medium text-adm-accent-fg transition-colors hover:bg-adm-accent-hover"
+                className="eco-bubble group relative flex min-h-[420px] flex-col justify-between overflow-hidden bg-eco-ink p-7 text-white [--eco-bubble-r:36px] sm:p-10 lg:col-span-7"
               >
-                Leer la guía
+                <Rings size={640} count={6} className="-right-56 -bottom-72 text-eco-ink-3" />
+                <span className="relative">
+                  <span className="inline-flex rounded-full bg-eco-pomelo px-3 py-1 text-[12px] font-semibold text-eco-ink">{featured.section}</span>
+                  <span className={cn(DISPLAY, "mt-6 block max-w-[18ch] text-[32px] leading-[1.02] text-balance sm:text-[44px]")}>{featured.title}</span>
+                  <span className="mt-5 block max-w-[48ch] text-[17px] leading-snug text-eco-mist">{featured.description}</span>
+                </span>
+                <span className="relative mt-10 flex flex-wrap items-end justify-between gap-4">
+                  <Dateline iso={featured.updatedAt} minutes={featured.readingMinutes} className="text-eco-bruma" />
+                  <span className="inline-flex h-12 items-center gap-3 rounded-full bg-eco-pomelo pr-1.5 pl-5 text-[15px] font-semibold text-eco-ink">
+                    Leer la guía
+                    <span aria-hidden className="site-arrow flex size-9 items-center justify-center rounded-full bg-eco-ink text-white">
+                      <ArrowRight className="size-4" strokeWidth={2} />
+                    </span>
+                  </span>
+                </span>
               </Link>
-            </article>
-          ) : null}
+            ) : null}
 
-          <ol className="min-w-0 border-b border-adm-border lg:col-span-5">
-            {rest.map((g) => (
-              <li key={g.slug} className="border-t border-adm-border py-5 first:border-t-0 first:pt-0">
-                <article>
-                  <p className="text-[12px] font-medium tracking-[0.07em] text-adm-fg-muted uppercase">{g.section}</p>
-                  <h2 className="mt-1.5 text-[19px] leading-snug font-semibold tracking-[-0.01em]">
-                    <Link href={`/guias/${g.slug}`} className="underline-offset-4 hover:text-adm-accent hover:underline">
-                      {g.title}
-                    </Link>
-                  </h2>
-                  <p className="mt-1.5 text-[14px] leading-relaxed text-adm-fg-muted">{g.description}</p>
-                  <div className="mt-2">
-                    <Dateline iso={g.updatedAt} minutes={g.readingMinutes} />
-                  </div>
-                </article>
-              </li>
-            ))}
-          </ol>
+            <ol className="grid gap-4 lg:col-span-5">
+              {rest.map((g, i) => (
+                <li key={g.slug} className="eco-pop" style={{ ["--i" as string]: i + 1 }}>
+                  <Link href={`/guias/${g.slug}`} className="site-lift group flex h-full gap-5 border border-eco-line bg-adm-surface p-6">
+                    <span className={cn(NUM, "text-[28px] leading-none text-eco-pomelo-ink")}>{String(i + 2).padStart(2, "0")}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12px] font-semibold tracking-[0.06em] text-adm-fg-muted uppercase">{g.section}</span>
+                      <span className="mt-1.5 block text-[18px] leading-snug font-semibold text-balance underline-offset-4 group-hover:underline">{g.title}</span>
+                      <Dateline iso={g.updatedAt} minutes={g.readingMinutes} className="mt-2 text-adm-fg-muted" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <p className="mt-14 max-w-[68ch] text-[15px] leading-relaxed text-adm-fg-muted">
+            ¿Ya tenés tu tienda y buscás cómo hacer algo puntual? Está en el{" "}
+            <Link href="/ayuda" className={TEXT_LINK}>
+              centro de ayuda
+            </Link>
+            .
+          </p>
         </div>
-
-        <p className="mt-12 max-w-[68ch] text-[14px] leading-relaxed text-adm-fg-muted">
-          ¿Ya tenés tu tienda y buscás cómo hacer algo puntual? Está en el{" "}
-          <Link href="/ayuda" className="text-adm-accent underline underline-offset-2">
-            centro de ayuda
-          </Link>
-          .
-        </p>
       </div>
     </PlatformPage>
   );

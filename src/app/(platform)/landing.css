@@ -1,0 +1,265 @@
+/*
+ * Landing y chrome del sitio público (header, footer). docs/BRAND.md §7 y §9.
+ * Sólo lo que no se resuelve con utilidades: estados del header, la hoja que
+ * se apila, el ticket, el arco que se dibuja y los detalles de las demos.
+ * El movimiento usa las curvas `--eco-ease-*` y el repertorio de globals.css;
+ * con `prefers-reduced-motion` la regla global lo corta y todo queda en su
+ * estado final (nada depende de una animación para leerse).
+ */
+
+/* ------------------------------------------------------------------ */
+/* Header: barra que se compacta en una pastilla flotante al scrollear  */
+/* ------------------------------------------------------------------ */
+
+.lp-header-bar {
+  transition:
+    background-color var(--eco-dur-3) var(--eco-ease-out),
+    box-shadow var(--eco-dur-3) var(--eco-ease-out),
+    max-width var(--eco-dur-4) var(--eco-ease-out),
+    padding var(--eco-dur-3) var(--eco-ease-out),
+    height var(--eco-dur-3) var(--eco-ease-out);
+  max-width: 80rem;
+  height: 72px;
+}
+.lp-header[data-scrolled] .lp-header-bar {
+  max-width: 66rem;
+  height: 60px;
+  background: rgb(255 255 255 / 0.96);
+  box-shadow:
+    0 0 0 1px var(--eco-line),
+    0 18px 40px -22px rgb(16 22 47 / 0.35);
+  padding-inline: 10px 8px;
+}
+.lp-header-nav {
+  transition: background-color var(--eco-dur-3) var(--eco-ease-out), box-shadow var(--eco-dur-3) var(--eco-ease-out);
+}
+.lp-header[data-scrolled] .lp-header-nav {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Menú del celular: hoja que baja con rebote corto. */
+.lp-menu-sheet {
+  animation: lp-menu-in var(--eco-dur-3) var(--eco-ease-spring) both;
+  transform-origin: top right;
+}
+@keyframes lp-menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0) scale(0.97);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* La hoja: bandas con esquinas superiores de 32 px que se apilan        */
+/* ------------------------------------------------------------------ */
+
+.lp-sheet {
+  position: relative;
+  border-start-start-radius: var(--eco-radius-xl);
+  border-start-end-radius: var(--eco-radius-xl);
+  margin-top: calc(var(--eco-radius-xl) * -1);
+}
+/* La sección anterior deja lugar para que la hoja "entre" sin tapar contenido. */
+.lp-under-sheet {
+  padding-bottom: calc(var(--lp-pb, 96px) + var(--eco-radius-xl));
+}
+
+/* Arcos nítidos (BRAND §7.2): anillos concéntricos de trazo fino. */
+.lp-rings {
+  background: repeating-radial-gradient(circle at var(--lp-rings-at, 100% 0%), transparent 0 46px, var(--lp-ring, rgb(16 22 47 / 0.07)) 46px 47px);
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero                                                                 */
+/* ------------------------------------------------------------------ */
+
+/* Arco pomelo que subraya una palabra del titular y se dibuja al cargar. */
+.lp-mark {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.lp-mark > svg {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  bottom: -0.16em;
+  width: 104%;
+  height: 0.32em;
+  overflow: visible;
+}
+.lp-mark path {
+  animation-delay: 0.55s;
+  animation-duration: 0.9s;
+}
+
+/* Puntos de "escribiendo…" del chat (sólo mientras no llega el pedido). */
+.lp-typing > span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.35;
+  animation: lp-typing 1s var(--eco-ease-in-out) infinite;
+}
+.lp-typing > span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.lp-typing > span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes lp-typing {
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+/* El "escribiendo" se va cuando llega la primera burbuja. */
+.lp-typing-out {
+  animation: lp-fade-out var(--eco-dur-2) var(--eco-ease-out) 1.25s both;
+}
+@keyframes lp-fade-out {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+    visibility: hidden;
+  }
+}
+
+/* Capturas en marcos con curva, apenas inclinadas. */
+.lp-tilt-l {
+  transform: rotate(-1.6deg);
+}
+.lp-tilt-r {
+  transform: rotate(1.4deg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Ticket: recibo con borde dentado abajo                               */
+/* ------------------------------------------------------------------ */
+
+.lp-ticket {
+  --tooth: 10px;
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(var(--tooth) * 2) 100%;
+  padding-bottom: calc(var(--tooth) + 20px);
+}
+.lp-ticket-rule {
+  border-top: 2px dashed var(--eco-line);
+}
+
+/* ------------------------------------------------------------------ */
+/* Demos                                                                */
+/* ------------------------------------------------------------------ */
+
+/* Fila que acaba de cambiar: parpadeo suave de fondo (BRAND §9, panel). */
+.lp-flash {
+  animation: lp-flash 900ms var(--eco-ease-out);
+}
+@keyframes lp-flash {
+  from {
+    background-color: var(--eco-pomelo-soft);
+  }
+}
+
+/* Slider de marca: pista niebla, relleno pomelo hasta el valor, pulgar tinta. */
+.lp-range {
+  --lp-fill: 50%;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.lp-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--eco-pomelo) var(--lp-fill), var(--lp-track, var(--eco-ink-3)) var(--lp-fill));
+}
+.lp-range::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--eco-pomelo) var(--lp-fill), var(--lp-track, var(--eco-ink-3)) var(--lp-fill));
+}
+.lp-range::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--eco-paper);
+  border: 3px solid var(--eco-pomelo);
+  box-shadow: 0 4px 12px -4px rgb(16 22 47 / 0.5);
+  transition: transform var(--eco-dur-2) var(--eco-ease-spring);
+}
+.lp-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--eco-paper);
+  border: 3px solid var(--eco-pomelo);
+}
+.lp-range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.lp-range:focus-visible {
+  outline: 2px solid var(--lp-focus, var(--eco-azul));
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+
+/* Muestra de la tienda del visitante: cambia de estilo con un fundido corto. */
+.lp-restyle {
+  animation: lp-restyle var(--eco-dur-3) var(--eco-ease-out);
+}
+@keyframes lp-restyle {
+  from {
+    opacity: 0.35;
+    transform: scale(0.985);
+  }
+}
+
+/* Mapa de zonas: cada zona es un botón SVG. */
+.lp-zone {
+  cursor: pointer;
+  transition: fill var(--eco-dur-2) var(--eco-ease-out), stroke-width var(--eco-dur-2) var(--eco-ease-out);
+}
+.lp-zone:focus-visible {
+  outline: none;
+  stroke: var(--eco-azul);
+  stroke-width: 3;
+}
+
+/* Card con hover de marca: sube y una esquina pasa a burbuja (BRAND §9). */
+.lp-card {
+  transition:
+    transform var(--eco-dur-3) var(--eco-ease-out),
+    border-radius var(--eco-dur-3) var(--eco-ease-out),
+    box-shadow var(--eco-dur-3) var(--eco-ease-out);
+}
+@media (hover: hover) {
+  .lp-card:hover {
+    transform: translateY(-3px);
+    border-end-start-radius: 6px;
+  }
+}
+
+/* Wordmark gigante del pie, cortado por el borde de abajo. */
+.lp-footer-word {
+  font-size: clamp(88px, 21vw, 300px);
+  line-height: 0.78;
+  letter-spacing: -0.05em;
+}
+
+/*
+ * Entradas al scrollear sin relleno hacia atrás: antes de entrar al viewport
+ * el elemento se ve normal (la animación arranca en "entry 0 %", cuando
+ * todavía está debajo del borde, así que no hay salto visible). Así nada
+ * queda invisible si el navegador no recorre la línea de tiempo (captura de
+ * página completa, imprimir, lectores que no scrollean).
+ */
+.lp-page :is(.eco-reveal, .eco-reveal-left, .eco-reveal-right, .eco-reveal-scale) {
+  animation-fill-mode: forwards;
+}

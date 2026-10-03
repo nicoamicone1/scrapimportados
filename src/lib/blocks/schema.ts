@@ -40,10 +40,26 @@ export type ProductSource = z.infer<typeof productSourceSchema>;
 
 const base = { id: z.string().min(1), style: blockStyleSchema };
 
+/**
+ * Disposiciones de la portada (DESIGN.md §6.5). `auto` = la del estilo del
+ * tema (`theme.style.hero`); el resto la fija el dueño para este bloque.
+ */
+export const HERO_LAYOUTS = ["auto", "cover", "split", "framed", "poster", "stack"] as const;
+export type HeroLayout = (typeof HERO_LAYOUTS)[number];
+
 export const heroBlockSchema = z.object({
   ...base,
   type: z.literal("hero"),
   settings: z.object({
+    /** Disposición (2026-10). Default `auto`: las portadas guardadas antes siguen el estilo del tema. */
+    layout: z.enum(HERO_LAYOUTS).default("auto"),
+    /**
+     * Productos que acompañan la portada: tira debajo en `stack`, collage
+     * cuando no hay foto en `split`/`framed`/`poster`. `null` = sin productos.
+     * Default (portadas guardadas antes de 2026-10): los 4 más nuevos, así una
+     * portada sin foto muestra el catálogo en vez de un hueco.
+     */
+    products: productSourceSchema.nullable().default({ kind: "newest", limit: 4 }),
     /** Línea chica arriba del título (opcional, DESIGN.md §6.5). Agregado por E. */
     eyebrow: z.string().max(120).optional(),
     title: z.string().max(200),
@@ -73,6 +89,8 @@ export const productSliderBlockSchema = z.object({
   settings: z.object({
     ...productListSettings,
     cardsPerView: z.number().int().min(2).max(6).default(4),
+    /** `first`: el primer producto ocupa el doble de ancho (vidriera con protagonista). */
+    highlight: z.enum(["none", "first"]).default("none"),
   }),
 });
 
@@ -83,6 +101,8 @@ export const productGridBlockSchema = z.object({
     ...productListSettings,
     columns: z.number().int().min(2).max(5).default(4),
     rows: z.number().int().min(1).max(12).optional(),
+    /** `first`: el primer producto ocupa 2 × 2 celdas en computadora. */
+    highlight: z.enum(["none", "first"]).default("none"),
   }),
 });
 
@@ -137,11 +157,16 @@ export const imageTextBlockSchema = z.object({
   settings: z.object({
     imageUrl: z.string(),
     imagePosition: z.enum(["left", "right"]).default("left"),
+    /** `split`: 7/12 + 5/12. `overlap`: foto grande y el texto en una tarjeta que la pisa. */
+    layout: z.enum(["split", "overlap"]).default("split"),
+    eyebrow: z.string().max(120).optional(),
     title: z.string().max(200),
     html: z.string().max(50_000),
     cta: ctaSchema.optional(),
   }),
 });
+
+export const CATEGORY_LIST_STYLES = ["cards", "chips", "circles", "list"] as const;
 
 export const categoryListBlockSchema = z.object({
   ...base,
@@ -149,7 +174,8 @@ export const categoryListBlockSchema = z.object({
   settings: z.object({
     title: z.string().max(200).optional(),
     categoryIds: z.union([z.array(z.string().uuid()), z.literal("all")]),
-    style: z.enum(["cards", "chips", "circles"]).default("cards"),
+    /** Tarjetas con foto, pastillas, círculos con foto o lista tipográfica grande. */
+    style: z.enum(CATEGORY_LIST_STYLES).default("cards"),
     columns: z.number().int().min(2).max(8).default(4),
   }),
 });
@@ -169,6 +195,8 @@ export const featuresBlockSchema = z.object({
       )
       .max(12),
     columns: z.number().int().min(2).max(4).default(3),
+    /** `row`: fila de texto · `cards`: tarjetas con número · `strip`: tira con separadores. */
+    layout: z.enum(["row", "cards", "strip"]).default("row"),
   }),
 });
 
@@ -178,6 +206,8 @@ export const faqBlockSchema = z.object({
   settings: z.object({
     title: z.string().max(200).optional(),
     items: z.array(z.object({ q: z.string().max(300), a: z.string().max(5000) })).max(50),
+    /** `list`: título arriba · `split`: título a la izquierda y preguntas a la derecha. */
+    layout: z.enum(["list", "split"]).default("list"),
   }),
 });
 
@@ -192,6 +222,8 @@ export const countdownBlockSchema = z.object({
     /** Texto que se muestra cuando la cuenta llega a cero (vacío = el bloque se oculta). Agregado por E. */
     expiredText: z.string().max(500).optional(),
     cta: ctaSchema.optional(),
+    /** `inline`: título y números a la izquierda · `banner`: números gigantes a lo ancho. */
+    layout: z.enum(["inline", "banner"]).default("inline"),
   }),
 });
 
@@ -208,6 +240,38 @@ export const testimonialsBlockSchema = z.object({
         }),
       )
       .max(24),
+    /** `cards`: varias reseñas en columnas · `quote`: una cita grande a la vez (las demás debajo, más chicas). */
+    layout: z.enum(["cards", "quote"]).default("cards"),
+  }),
+});
+
+/** Tira de texto en movimiento (envíos, cuotas, promo). Con `motion: none` queda quieta. */
+export const marqueeBlockSchema = z.object({
+  ...base,
+  type: z.literal("marquee"),
+  settings: z.object({
+    items: z.array(z.string().max(120)).max(12),
+    /** `sm`: tira chica de datos · `lg`: titular gigante que corre. */
+    size: z.enum(["sm", "lg"]).default("sm"),
+    speed: z.enum(["slow", "normal"]).default("normal"),
+    /** Link opcional de toda la tira. */
+    href: z.string().max(500).optional(),
+  }),
+});
+
+/** Colección destacada: una foto grande y 2–4 productos al lado (editorial, moda, muebles). */
+export const lookbookBlockSchema = z.object({
+  ...base,
+  type: z.literal("lookbook"),
+  settings: z.object({
+    eyebrow: z.string().max(120).optional(),
+    title: z.string().max(200),
+    text: z.string().max(500).default(""),
+    imageUrl: z.string().default(""),
+    imageAlt: z.string().max(200).optional(),
+    imagePosition: z.enum(["left", "right"]).default("left"),
+    source: productSourceSchema,
+    cta: ctaSchema.optional(),
   }),
 });
 
@@ -262,6 +326,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   videoBlockSchema,
   dividerBlockSchema,
   print3dCtaBlockSchema,
+  marqueeBlockSchema,
+  lookbookBlockSchema,
 ]);
 
 export const blocksSchema = z.array(blockSchema);
@@ -286,6 +352,8 @@ export const BLOCK_TYPES = [
   "video",
   "divider",
   "print3d_cta",
+  "marquee",
+  "lookbook",
 ] as const satisfies readonly BlockType[];
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
@@ -304,6 +372,8 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   video: "Video",
   divider: "Separador",
   print3d_cta: "Cotizador 3D",
+  marquee: "Marquesina",
+  lookbook: "Colección destacada",
 };
 
 export const DEFAULT_BLOCK_STYLE: BlockStyle = {
@@ -320,6 +390,8 @@ const FACTORIES: BlockFactories = {
     type: "hero",
     style: { ...style, container: "full", paddingY: "none" },
     settings: {
+      layout: "auto",
+      products: { kind: "newest", limit: 4 },
       title: "Título principal",
       subtitle: "Una bajada corta que explique la propuesta.",
       imageUrl: "",
@@ -338,13 +410,14 @@ const FACTORIES: BlockFactories = {
       source: { kind: "newest", limit: 12 },
       viewAllHref: "/productos",
       cardsPerView: 4,
+      highlight: "none",
     },
   }),
   product_grid: (id, style) => ({
     id,
     type: "product_grid",
     style,
-    settings: { title: "Destacados", source: { kind: "featured", limit: 8 }, columns: 4 },
+    settings: { title: "Destacados", source: { kind: "featured", limit: 8 }, columns: 4, highlight: "none" },
   }),
   banner_grid: (id, style) => ({
     id,
@@ -379,6 +452,7 @@ const FACTORIES: BlockFactories = {
     settings: {
       imageUrl: "",
       imagePosition: "left",
+      layout: "split",
       title: "Nuestra historia",
       html: "<p>Contá quiénes son.</p>",
     },
@@ -395,6 +469,7 @@ const FACTORIES: BlockFactories = {
     style,
     settings: {
       columns: 3,
+      layout: "row",
       items: [
         { icon: "Truck", title: "Envíos", text: "Llegamos a todo el país." },
         { icon: "Landmark", title: "Transferencia", text: "Descuento pagando por transferencia." },
@@ -409,6 +484,7 @@ const FACTORIES: BlockFactories = {
     settings: {
       title: "Preguntas frecuentes",
       items: [{ q: "¿Hacen envíos?", a: "Sí, a todo el país." }],
+      layout: "list",
     },
   }),
   countdown: (id, style) => ({
@@ -418,6 +494,7 @@ const FACTORIES: BlockFactories = {
     settings: {
       title: "Termina pronto",
       endsAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      layout: "inline",
     },
   }),
   testimonials: (id, style) => ({
@@ -425,7 +502,7 @@ const FACTORIES: BlockFactories = {
     type: "testimonials",
     style,
     // Nace vacío: nunca reseñas inventadas (DESIGN.md §1.1).
-    settings: { items: [] },
+    settings: { items: [], layout: "cards" },
   }),
   video: (id, style) => ({ id, type: "video", style, settings: { url: "", ratio: "16:9" } }),
   divider: (id, style) => ({ id, type: "divider", style, settings: { style: "line", size: "md" } }),
@@ -439,6 +516,18 @@ const FACTORIES: BlockFactories = {
       text: "Subí el STL o 3MF y ves al instante cuánto sale y cuándo la tenés.",
       cta: { label: "Cotizar mi pieza", href: "/impresion-3d" },
     },
+  }),
+  marquee: (id, style) => ({
+    id,
+    type: "marquee",
+    style: { ...style, paddingY: "none", container: "full" },
+    settings: { items: ["Envíos a todo el país", "Pagá por transferencia"], size: "sm", speed: "normal" },
+  }),
+  lookbook: (id, style) => ({
+    id,
+    type: "lookbook",
+    style,
+    settings: { title: "Colección", text: "", imageUrl: "", imagePosition: "left", source: { kind: "newest", limit: 4 } },
   }),
 };
 

@@ -1,26 +1,25 @@
-import { ArrowRight, Landmark, Layers, MapPinned, Tags } from "lucide-react";
+import { ArrowRight, Minus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { CTA_PRIMARY, DISPLAY, EYEBROW, H1, H2, TEXT_LINK } from "@/components/platform/brand";
-import { FaqList } from "@/components/platform/FaqList";
+import { BrandGlyph, bubbleRadii } from "@/app/_brand/glyph";
+import { DISPLAY, EYEBROW, H2, TEXT_LINK } from "@/components/platform/brand";
+import { FaqAccordion } from "@/components/platform/faq-accordion";
 import { LazyFontSheets } from "@/components/platform/LazyFontSheets";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
-import {
-  CatalogMock,
-  CheckoutMock,
-  PricesMock,
-  ShippingMock,
-  STOREFRONT_MOCK_TEXTS,
-  StorefrontMock,
-} from "@/components/platform/LandingMocks";
+import { CommissionCalc } from "@/components/platform/landing/CommissionCalc";
+import { BrowserFrame, PhoneShot } from "@/components/platform/landing/Frames";
+import { Hero, SAMPLE_ORDER, sampleTotals } from "@/components/platform/landing/Hero";
+import { CatalogDemo, CheckoutDemo, PricesDemo, ZonesDemo } from "@/components/platform/landing/PanelDemos";
+import { SHOTS } from "@/components/platform/landing/shots";
+import { Steps, type StepCopy } from "@/components/platform/landing/Steps";
+import { StoreDemo, type DemoKind } from "@/components/platform/landing/StoreDemo";
 import { PlanCards, PlanCtaLink } from "@/components/platform/PlanCards";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
-import { PresetSpecimens, specimenPlanLabel } from "@/components/platform/PresetSpecimens";
 import { landingPlanLines, type PlanLike } from "@/components/platform/plan-notes";
 import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site";
-import { presetSpecimens, specimenFontSheets, specimenTexts } from "@/components/platform/specimens";
+import { presetSpecimens, SPECIMEN_SCENES, specimenPlanLabel } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSession } from "@/lib/auth";
 import { billingEnabled } from "@/lib/billing/mercadopago";
@@ -28,11 +27,12 @@ import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { listPublicPlans, type PublicPlan } from "@/lib/plans/catalog";
 import { platformOrigin, storeHref } from "@/lib/tenant/urls";
+import { PRESET_LIST } from "@/lib/theme";
 import { APP_NAME } from "@/lib/version";
 
 const TITLE = "Ecommy · Tu tienda online, sin comisión por venta";
 const DESCRIPTION =
-  "Creá tu tienda online con catálogo, stock y carrito. Los pedidos te llegan armados por WhatsApp y cobrás por transferencia, sin pasarela ni comisión por venta. 14 días de Pro gratis, sin tarjeta.";
+  "Creá tu tienda online con catálogo, stock y carrito. Los pedidos te llegan armados por WhatsApp y cobrás por transferencia o con tarjeta en tu Mercado Pago, sin comisión por venta de Ecommy. 14 días de Pro gratis, sin tarjeta.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -52,57 +52,53 @@ export const dynamic = "force-dynamic";
  * planes cargados, de los defaults del código (mismo texto que con el seed).
  */
 
-function steps(plans: readonly PlanLike[]): { title: string; text: ReactNode; time: string }[] {
+function steps(plans: readonly PlanLike[]): [StepCopy, StepCopy, StepCopy] {
   const { csvPlan, webPlan } = landingPlanLines(plans);
   return [
     {
       title: "Creás la tienda",
-      text: "Nombre y rubro: el rubro define el estilo con el que arranca, y lo cambiás cuando quieras. Después, el WhatsApp donde te llegan los pedidos y tu alias para las transferencias.",
-      time: "Unos 5 minutos: son 2 pasos después de crear la cuenta.",
+      text: "Nombre y rubro: el rubro define el estilo con el que arranca. Después, el WhatsApp donde te llegan los pedidos.",
+      time: "unos 5 minutos",
     },
     {
       title: "Cargás el catálogo",
-      text: `A mano, con fotos, variantes de talle y color y stock por variante. Si lo tenés en una planilla, lo subís en CSV (desde ${csvPlan}). Si ya vendés en WooCommerce, Shopify u otra web con datos de producto, lo importás pegando la dirección (${webPlan}, incluido en la prueba): entra como borrador para que lo revises antes de publicar.`,
-      time: "Depende del catálogo. A mano, un par de minutos por producto; importado, lo que tardes en revisarlo.",
+      text: `A mano, con fotos, talles, colores y stock por variante. O desde tu planilla en CSV (desde ${csvPlan}), o importando tu tienda de WooCommerce o Shopify (${webPlan}, incluido en la prueba).`,
+      time: "lo que tardes en revisarlo",
     },
     {
-      title: "Compartís el link y cobrás",
-      text: "Lo pegás en la bio de Instagram, en tus estados de WhatsApp o donde ya vendés. El cliente arma el carrito, elige envío o retiro y confirma: el pedido queda registrado con número y te llega por WhatsApp. Si paga por transferencia, ve tu alias y el descuento; lo marcás pagado cuando ves el comprobante.",
-      time: "El mismo día que publicás.",
+      title: "Compartís el link",
+      text: "En la bio de Instagram, en tus estados o donde ya vendés. El cliente arma el carrito y confirma: el pedido queda registrado y te llega por WhatsApp.",
+      time: "el mismo día que publicás",
     },
   ];
 }
 
-function features(plans: readonly PlanLike[]): { icon: ReactNode; title: string; text: string; plans: string; mock: ReactNode }[] {
+function demos(plans: readonly PlanLike[]): { id: string; title: string; text: string; plans: string; demo: ReactNode; className: string }[] {
   const lines = landingPlanLines(plans);
   return [
     {
-      icon: <Layers className="size-5" strokeWidth={1.5} aria-hidden />,
-      title: "Tu catálogo, cargado en una tarde",
-      text: "Productos con variantes de talle y color, fotos, stock por variante y categorías anidadas. Si ya lo tenés en una planilla o en otra tienda, lo importás y seguís desde ahí.",
-      plans: lines.catalog,
-      mock: <CatalogMock />,
-    },
-    {
-      icon: <Tags className="size-5" strokeWidth={1.5} aria-hidden />,
-      title: "Precios que se actualizan en un paso",
-      text: "Subí un 8 % a toda una categoría con redondeo y vista previa, y deshacelo si te equivocaste. Promos programadas por fecha y cupones con tope de usos.",
+      id: "precios",
+      title: "Precios al día, en un paso",
+      text: "Subí un 8 % a toda una categoría con redondeo y vista previa. Si te equivocaste, Deshacer.",
       plans: lines.pricing,
-      mock: <PricesMock />,
+      demo: <PricesDemo />,
+      className: "lg:col-span-7",
     },
     {
-      icon: <Landmark className="size-5" strokeWidth={1.5} aria-hidden />,
-      title: "Cobrás como ya cobrás",
-      text: "Sin pasarela ni comisión: transferencia con descuento o acordar por WhatsApp. El pedido queda registrado antes de derivar y te llega armado, con total y dirección.",
-      plans: "En todos los planes",
-      mock: <CheckoutMock />,
+      id: "catalogo",
+      title: "Variantes con su stock",
+      text: "Talle y color con stock propio. Lo que se agota se tacha solo en la tienda.",
+      plans: lines.catalog,
+      demo: <CatalogDemo />,
+      className: "lg:col-span-5 lg:mt-24",
     },
     {
-      icon: <MapPinned className="size-5" strokeWidth={1.5} aria-hidden />,
+      id: "zonas",
       title: "Envíos por zona, dibujadas en el mapa",
-      text: "Marcá tu zona de reparto sobre el mapa, sumá provincias o códigos postales con su costo y plazo, y ofrecé retiro en tu local. El checkout calcula el envío solo.",
+      text: "Cada zona con su costo y su plazo, y retiro en tu local. El checkout calcula el envío solo.",
       plans: lines.shipping,
-      mock: <ShippingMock />,
+      demo: <ZonesDemo />,
+      className: "lg:col-span-6",
     },
   ];
 }
@@ -112,52 +108,49 @@ function also(plans: readonly PlanLike[]): { title: string; text: string; plans:
   return [
     {
       title: "Ley argentina, resuelta",
-      text: "Botón de arrepentimiento con registro de cada solicitud, precio sin impuestos nacionales (Ley 27.743), Data Fiscal de ARCA y el aviso de Defensa del Consumidor en el pie de la tienda.",
+      text: "Botón de arrepentimiento, precio sin impuestos nacionales (Ley 27.743), Data Fiscal de ARCA y el aviso de Defensa del Consumidor.",
       plans: "Todos los planes",
     },
     {
       title: "SEO técnico",
-      text: `Sitemap y robots por tienda, título y descripción editables, imagen para compartir en redes, datos estructurados de producto (JSON-LD) y redirecciones 301 desde las direcciones de tu dominio anterior (con dominio propio, ${lines.customDomain}).`,
+      text: `Sitemap, datos estructurados de producto, imagen para compartir y redirecciones 301 desde tu dominio anterior (con dominio propio, ${lines.customDomain}).`,
       plans: "Todos los planes",
     },
     {
       title: "Mudanza desde otra tienda",
-      text: "Importás desde WooCommerce, Shopify o webs con datos schema.org, con recargo y redondeo sobre el precio de origen, y volvés a sincronizar cuando cambian los precios.",
+      text: "Importás desde WooCommerce, Shopify o webs con datos schema.org, con recargo y redondeo sobre el precio de origen.",
       plans: lines.migration,
     },
     {
       title: "Equipo y auditoría",
-      text: "Sumás usuarios con permisos por rol y cada cambio queda registrado: quién tocó qué precio y cuándo.",
+      text: "Usuarios con permisos por rol, y cada cambio queda registrado: quién tocó qué precio y cuándo.",
       plans: lines.team,
     },
     {
       title: "Páginas por bloques",
-      text: "Armás el inicio y landings de campaña con bloques (portada, banners, grillas y sliders de productos, preguntas frecuentes, cuenta regresiva) sin tocar código.",
+      text: "El inicio y landings de campaña con portada, banners, sliders de productos y cuenta regresiva, sin tocar código.",
       plans: lines.pages,
+    },
+    {
+      title: "Carritos abandonados y precios por cantidad",
+      text: "Un mail para retomar el pedido que quedó a medias, y «desde 6 unidades» con su precio, hasta 4 tramos.",
+      plans: "Desde Starter",
     },
   ];
 }
 
-/** Ejemplo del recibo: mismos números que el mock del pedido #1042. */
-const ORDER = {
-  items: [
-    { name: "Jarra de cerámica esmaltada 1 L", price: 18900 },
-    { name: "Set 4 tazas de gres", price: 26500 },
-  ],
-  transferPercent: 10,
-  shipping: { label: "Envío CABA", price: 3200 },
-};
-
 /**
- * Lo que hoy no hace (MARKETING §1, "A quién NO le sirve"). Decirlo antes
- * de que se registren filtra a quien se va a ir en un mes y compra confianza.
+ * Lo que hoy no hace (MARKETING §1). Decirlo antes de que se registren filtra
+ * a quien se va a ir en un mes y compra confianza. Revisado contra el
+ * changelog v0.8: con tarjeta se cobra (vía Mercado Pago) y hay precios por
+ * cantidad desde v0.5, así que ya no figuran acá.
  */
 const NOT_YET = [
-  { title: "Cobro con tarjeta y cuotas dentro de la tienda", text: "No hay pasarela. Si la mayoría de tus ventas son con tarjeta online, hoy otra plataforma te sirve más." },
   { title: "Etiquetas y cotización de correos", text: "No hay integración con OCA, Andreani ni Correo Argentino: el envío se cobra por zona y lo despachás vos." },
   { title: "Sincronizar stock con Mercado Libre", text: "Si vendés fuerte ahí y necesitás el stock unificado, todavía no está." },
   { title: "Factura electrónica por cada venta", text: "Seguís facturando con tu sistema; Ecommy registra el pedido y el pago." },
-  { title: "Precios mayoristas por cantidad", text: "El catálogo mayorista se muestra bien, pero los precios escalonados todavía no existen." },
+  { title: "Otras pasarelas de pago", text: "Con tarjeta se cobra a través de tu cuenta de Mercado Pago. Otros procesadores, todavía no." },
+  { title: "Traerte compradores", text: "No es un marketplace: la tienda le vende a quien le llega tu link, desde tus redes, tu WhatsApp o Google." },
 ] as const;
 
 async function plansOrEmpty(): Promise<PublicPlan[]> {
@@ -169,9 +162,22 @@ async function plansOrEmpty(): Promise<PublicPlan[]> {
   }
 }
 
-/** "Nórdico y Mercado". */
-function listNames(names: string[]): string {
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}` : (names[0] ?? "");
+/** Sección "hoja" (BRAND §7.2): esquinas superiores de 32 px que entran sobre la anterior. */
+function Sheet({ id, label, className, children }: { id?: string; label?: string; className?: string; children: ReactNode }) {
+  return (
+    <section id={id} aria-labelledby={label} className={cn("lp-sheet lp-under-sheet scroll-mt-24 overflow-x-clip", className)}>
+      {children}
+    </section>
+  );
+}
+
+/** Logo sobre pomelo (BRAND §4.2): burbuja tinta con la "e" pomelo, que se dibuja. */
+function InkMark({ size }: { size: number }) {
+  return (
+    <span aria-hidden className="inline-flex shrink-0 items-center justify-center bg-eco-ink" style={{ width: size, height: size, ...bubbleRadii(size) }}>
+      <BrandGlyph size={Math.round(size * 0.58)} color="var(--eco-pomelo)" draw />
+    </span>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -182,27 +188,30 @@ export default async function LandingPage() {
   const [{ user }, plans] = await Promise.all([getSession(), plansOrEmpty()]);
   const signedIn = Boolean(user);
   const start = signedIn ? "/app/nueva" : "/registro";
+  const startLabel = signedIn ? "Crear una tienda" : "Crear tu tienda gratis";
   const demo = storeHref({ slug: "demo" });
+  const luna = exampleStoreAddress("taller-luna");
 
   const specimens = presetSpecimens();
-  const planLabels = specimens.map((s) => specimenPlanLabel(plans, s));
-  const freeNames = specimens.filter((_, i) => planLabels[i]?.startsWith("Incluido")).map((s) => s.presetName);
-  // Fuentes de los presets (docs/DESIGN.md §8.19, excepción de la landing):
-  // una hoja por preset, que `LazyFontSheets` inyecta cuando su elemento se
-  // acerca al viewport. Ninguna bloquea el render (el LCP es el h1, en
-  // Archivo autohospedada con `display: swap`); la del hero (Mercado) se
-  // precarga con prioridad baja.
-  const fontSheets = specimenFontSheets([
-    { presetId: "mercado", texts: STOREFRONT_MOCK_TEXTS },
-    ...specimens.map((s, i) => ({ presetId: s.presetId, texts: specimenTexts(s, planLabels[i]) })),
-  ]);
+  const kinds: DemoKind[] = specimens.map((s) => ({
+    kind: s.kind,
+    label: s.label,
+    hint: s.hint,
+    presetId: s.presetId,
+    presetName: s.presetName,
+    mood: s.mood,
+    description: PRESET_LIST.find((p) => p.id === s.presetId)?.description ?? "",
+    planLabel: specimenPlanLabel(plans, s),
+    product: s.product,
+    headline: SPECIMEN_SCENES[s.kind].headline,
+    catalog: SPECIMEN_SCENES[s.kind].catalog,
+  }));
+  const freeCount = kinds.filter((k) => k.planLabel?.startsWith("Incluido")).length;
 
   const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans, mpEnabled: billingEnabled() });
   const landingFaq = pickFaq(faq, ["comision", "tarjeta", "prueba", "mudanza", "datos", "facturacion"]);
 
-  const subtotal = ORDER.items.reduce((sum, i) => sum + i.price, 0);
-  const discount = Math.round((subtotal * ORDER.transferPercent) / 100);
-  const total = subtotal - discount + ORDER.shipping.price;
+  const { subtotal, discount, total } = sampleTotals();
   const refPlan = plans.find((p) => p.code === "starter" && (p.priceMonthly ?? 0) > 0) ?? plans.find((p) => (p.priceMonthly ?? 0) > 0);
 
   const origin = platformOrigin();
@@ -240,279 +249,271 @@ export default async function LandingPage() {
   };
 
   return (
-    <PlatformPage signedIn={signedIn}>
+    <PlatformPage signedIn={signedIn} footerOverlap className="lp-page">
       <JsonLd data={jsonLd} />
-      {/* `<link>` en JSX (React los sube al <head> del HTML); `preconnect()` de
-          react-dom en un Server Component sólo llega en el payload RSC, al hidratar. */}
+      {/* Fuentes de los presets (docs/DESIGN.md §8.19, excepción de la landing):
+          la demo de estilos pide la hoja de cada preset recién cuando se acerca
+          al viewport o cuando el visitante apunta a un rubro; ninguna bloquea el
+          render (el LCP es el h1, en Archivo autohospedada). */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      {fontSheets.mercado ? <link rel="preload" as="style" href={fontSheets.mercado} fetchPriority="low" /> : null}
       <LazyFontSheets />
 
-      {/* Hero: dolor + qué es + una acción ----------------------------- */}
-      <section className="border-b border-adm-border bg-adm-surface">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-10 pb-14 sm:px-6 md:pt-16 md:pb-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="min-w-0">
-            <p className={EYEBROW}>Tienda online para los que venden por WhatsApp</p>
-            <h1 className={cn(H1, "mt-4 max-w-[12ch]")}>Dejá de pasar precios por privado.</h1>
-            <p className="mt-5 max-w-[34ch] text-[19px] leading-[1.3] tracking-[-0.01em] sm:text-[21px]">
-              Tu catálogo con precio, stock y carrito. El cliente confirma y el pedido te llega por WhatsApp con el total y la dirección.
+      <Hero startHref={start} startLabel={startLabel} demoHref={demo} demoAddress={exampleStoreAddress("demo")} orderUrl={`https://${luna}/pedido/8f3k2`} />
+
+      {/* Probá tu tienda: efecto de posesión ----------------------------- */}
+      <Sheet id="probar" label="probar-t" className="bg-eco-paper [--lp-pb:96px] md:[--lp-pb:128px]">
+        <div aria-hidden className="eco-marquee border-b border-eco-line py-4 [--marquee-dur:60s]">
+          {[0, 1].map((n) => (
+            <p key={n} className={cn(DISPLAY, "flex shrink-0 items-center gap-6 pr-6 text-[20px] text-eco-ink sm:text-[26px]")}>
+              {kinds.flatMap((k) => k.catalog.slice(0, 2)).map((t) => (
+                <span key={`${n}-${t}`} className="flex items-center gap-6 whitespace-nowrap">
+                  {t}
+                  <span className="eco-bubble size-3 bg-eco-pomelo [--eco-bubble-r:5px]" />
+                </span>
+              ))}
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <Link href={start} className={CTA_PRIMARY}>
-                {signedIn ? "Crear una tienda" : "Crear tu tienda gratis"}
-                <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
-              </Link>
-              <Link href={demo} className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
-                Ver la tienda demo
-              </Link>
-            </div>
-            <p className="mt-3 text-[13px] text-adm-fg-muted">14 días de Pro, sin tarjeta. Después seguís en Free si querés.</p>
-            <dl className="mt-10 grid max-w-[500px] grid-cols-3 border-t border-adm-border pt-5 text-[13px]">
-              <div className="pr-3">
-                <dt className="text-adm-fg-muted">Comisión por venta</dt>
-                <dd className={cn(DISPLAY, "tnum mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em]")}>0 %</dd>
-              </div>
-              <div className="border-l border-adm-border px-3 sm:px-4">
-                <dt className="text-adm-fg-muted">Prueba de Pro</dt>
-                <dd className={cn(DISPLAY, "tnum mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em]")}>14 días</dd>
-              </div>
-              <div className="border-l border-adm-border pl-3 sm:pl-4">
-                <dt className="text-adm-fg-muted">Estilos por rubro</dt>
-                <dd className={cn(DISPLAY, "tnum mt-1 text-[24px] leading-none font-semibold tracking-[-0.02em]")}>{specimens.length}</dd>
-              </div>
-            </dl>
-          </div>
-          <StorefrontMock
-            address={exampleStoreAddress("taller-luna")}
-            fontSheet={fontSheets.mercado}
-            className="w-full max-w-[540px] justify-self-center lg:justify-self-end"
-          />
+          ))}
         </div>
-      </section>
+        <div className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 md:pt-20">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
+            <div className="eco-reveal">
+              <p className={EYEBROW}>Probalo ahora, sin registrarte</p>
+              <h2 id="probar-t" className={cn(H2, "mt-3 max-w-[17ch] sm:text-[52px]")}>
+                Escribí el nombre de tu negocio. Mirá tu tienda.
+              </h2>
+            </div>
+            <p className="eco-reveal max-w-[46ch] text-[16px] leading-relaxed text-eco-text-muted">
+              Cada rubro arranca con un estilo propio: tipografías, colores, forma de las fotos, grilla y botones. Lo que ves está dibujado con
+              los estilos reales de las tiendas.
+              {freeCount ? ` Free incluye ${freeCount}; en la prueba de 14 días usás los ${kinds.length}.` : null}
+            </p>
+          </div>
+          <div className="mt-12">
+            <StoreDemo kinds={kinds} initialKind="artesanias" addressTemplate={exampleStoreAddress("__slug__")} startHref={start} />
+          </div>
+        </div>
+      </Sheet>
 
       {/* Cómo funciona -------------------------------------------------- */}
-      <section id="como-funciona" aria-labelledby="como-funciona-t" className="scroll-mt-20">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 pt-16 pb-14 sm:px-6 md:pt-24 md:pb-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
-          <div>
-            <p className={EYEBROW}>Cómo funciona</p>
-            <h2 id="como-funciona-t" className={cn(H2, "mt-3 max-w-[16ch]")}>
-              De cero a tu primer pedido, en una tarde.
-            </h2>
-            <p className="mt-4 max-w-[40ch] text-[15px] leading-relaxed text-adm-fg-muted">
-              Con un catálogo chico, sin diseñador ni programador. Lo que necesitás tener a mano: fotos, precios, talles y tu alias.
+      <Sheet id="como-funciona" label="como-funciona-t" className="bg-eco-niebla [--lp-pb:96px] md:[--lp-pb:136px]">
+        <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 md:pt-24">
+          <div className="eco-reveal flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className={EYEBROW}>Cómo funciona</p>
+              <h2 id="como-funciona-t" className={cn(H2, "mt-3 max-w-[16ch]")}>
+                De cero a tu primer pedido, en una tarde.
+              </h2>
+            </div>
+            <p className="max-w-[38ch] text-[15px] leading-relaxed text-eco-text-muted">
+              Sin diseñador ni programador. Lo que necesitás a mano: fotos, precios, talles y tu alias.
             </p>
-            <Link href={start} className={cn(TEXT_LINK, "mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm")}>
-              Empezar ahora
-              <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
-            </Link>
           </div>
-          <ol className="border-b border-adm-border">
-            {steps(plans).map((step, i) => (
-              <li key={step.title} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 border-t border-adm-border py-6 sm:grid-cols-[3.5rem_minmax(0,1fr)]">
-                <span className={cn(DISPLAY, "tnum text-[28px] leading-none font-medium tracking-[-0.03em] text-adm-accent sm:text-[36px]")} aria-hidden>
-                  {i + 1}
-                </span>
-                <div>
-                  <h3 className="text-[18px] leading-snug font-semibold tracking-[-0.01em]">{step.title}</h3>
-                  <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-adm-fg-muted">{step.text}</p>
-                  <p className="mt-3 text-[13px]">
-                    <span className="font-medium">Lleva:</span> {step.time}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <div className="mt-14">
+            <Steps steps={steps(plans)} address={luna} />
+          </div>
         </div>
-      </section>
+      </Sheet>
 
-      {/* Sin comisiones: el diferencial, temprano (única banda tinta) ---- */}
-      <section aria-labelledby="comision-t" className="bg-adm-sidebar-bg text-adm-sidebar-fg">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
-          <div>
-            <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2 uppercase">Sin pasarela, sin comisión</p>
-            <h2 id="comision-t" className={cn(H2, "mt-3 max-w-[18ch] text-white sm:text-[40px]")}>
-              Te pagan a vos. Ecommy no toca la plata.
+      {/* Sin comisión: el diferencial, en hoja tinta ------------------------ */}
+      <Sheet label="comision-t" className="bg-eco-ink text-eco-mist [--lp-pb:96px] md:[--lp-pb:136px]">
+        <div aria-hidden className="lp-rings pointer-events-none absolute inset-0 rounded-t-[32px] [--lp-ring:rgb(255_255_255/0.05)] [--lp-rings-at:100%_0%]" />
+        <div className="relative mx-auto grid max-w-7xl gap-14 px-4 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
+          <div className="min-w-0">
+            <p className="eco-reveal text-[12px] font-semibold tracking-[0.1em] text-eco-pomelo uppercase">Sin comisión por venta</p>
+            <h2 id="comision-t" className={cn(H2, "eco-reveal mt-3 max-w-[13ch] text-white sm:text-[60px]")}>
+              Lo que vendés es tuyo. Entero.
             </h2>
-            <p className="mt-5 max-w-[56ch] text-[15px] leading-relaxed text-adm-sidebar-fg">
-              Las plataformas con pasarela de pago integrada cobran un porcentaje de cada venta, además del plan. Acá no hay pasarela: el
-              cliente te transfiere a tu cuenta o lo arreglan por WhatsApp, y Ecommy no cobra nada por venta. Tu costo es el plan, fijo por
-              mes.
+            <p className="eco-reveal mt-6 max-w-[54ch] text-[17px] leading-relaxed text-eco-mist">
+              Tu costo es el plan, fijo por mes. Ecommy no se queda con un porcentaje de cada venta: te pagan por transferencia a tu cuenta, o
+              con tarjeta y en cuotas a tu cuenta de Mercado Pago, que conectás en un paso.
             </p>
-            <h3 className="mt-10 text-[14px] font-semibold text-white">Lo que tenés que saber</h3>
-            <ul className="mt-3 max-w-[56ch] space-y-3 text-[14px] leading-relaxed text-adm-sidebar-muted">
-              <li className="border-l-2 border-adm-sidebar-border pl-4">
-                No hay cobro con tarjeta dentro de la tienda. Si alguien quiere pagar así, le mandás un link de pago de tu billetera por
-                WhatsApp.
+            <div className="mt-10">
+              <CommissionCalc plan={refPlan?.priceMonthly ? { name: refPlan.name, price: refPlan.priceMonthly } : null} />
+            </div>
+          </div>
+
+          <div className="min-w-0 lg:pt-6">
+            {/* Recibo: el pedido #1042 con "Comisión de Ecommy $ 0". */}
+            <figure className="eco-reveal-right relative mx-auto max-w-[420px]">
+              <div aria-hidden className="absolute -top-8 -right-10 size-48 rounded-full bg-eco-pomelo" />
+              <div className="lp-tilt-r relative">
+                <div className="lp-ticket bg-eco-paper px-6 pt-6 text-eco-ink shadow-[0_40px_80px_-30px_rgb(0_0_0/0.6)] [border-start-start-radius:28px] [border-start-end-radius:28px]">
+                  <figcaption className="flex items-baseline justify-between gap-3">
+                    <span className={cn(DISPLAY, "text-[20px]")}>Pedido #{SAMPLE_ORDER.number}</span>
+                    <span className="text-[12px] text-eco-text-muted">{SAMPLE_ORDER.store}</span>
+                  </figcaption>
+                  <p className="mt-1 text-[13px] text-eco-text-muted">Pagado por transferencia</p>
+                  <table className="tnum lp-ticket-rule mt-4 w-full pt-3 text-[14px]">
+                    <caption className="sr-only">Ejemplo de un pedido pagado por transferencia</caption>
+                    <tbody>
+                      {SAMPLE_ORDER.items.map((item) => (
+                        <tr key={item.name}>
+                          <th scope="row" className="py-1 pr-3 text-left font-normal">
+                            {item.qty} × {item.name}
+                          </th>
+                          <td className="py-1 text-right whitespace-nowrap">{formatMoney(item.total)}</td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <th scope="row" className="pt-3 pr-3 text-left font-normal text-eco-text-muted">
+                          Subtotal
+                        </th>
+                        <td className="pt-3 text-right whitespace-nowrap">{formatMoney(subtotal)}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row" className="py-1 pr-3 text-left font-normal text-eco-text-muted">
+                          Descuento por transferencia ({SAMPLE_ORDER.transferPercent} %)
+                        </th>
+                        <td className="py-1 text-right whitespace-nowrap">− {formatMoney(discount)}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row" className="py-1 pr-3 text-left font-normal text-eco-text-muted">
+                          {SAMPLE_ORDER.shipping.label}
+                        </th>
+                        <td className="py-1 text-right whitespace-nowrap">{formatMoney(SAMPLE_ORDER.shipping.price)}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row" className="pt-3 pr-3 text-left font-semibold">
+                          Comisión de Ecommy
+                        </th>
+                        <td className="pt-3 text-right">
+                          <span className="eco-bubble inline-block bg-eco-pomelo px-3 py-1 font-semibold [--eco-bubble-r:12px]">{formatMoney(0)}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div className="lp-ticket-rule mt-4 flex items-end justify-between gap-3 pt-4">
+                    <span className="text-[14px] font-semibold">Llega a tu cuenta</span>
+                    <span className={cn(DISPLAY, "tnum text-[34px] leading-none")}>{formatMoney(total)}</span>
+                  </div>
+                </div>
+              </div>
+            </figure>
+
+            <h3 className="mt-16 text-[15px] font-semibold text-white">Lo que tenés que saber</h3>
+            <ul className="mt-4 space-y-4 text-[15px] leading-relaxed text-eco-bruma">
+              <li className="border-l-2 border-eco-pomelo pl-4">
+                Con transferencia, el pago lo confirmás vos al ver el comprobante. Mientras tanto el pedido reserva el stock por las horas que
+                definas; si no se paga, se libera solo.
               </li>
-              <li className="border-l-2 border-adm-sidebar-border pl-4">
-                El pago lo confirmás vos al ver el comprobante. Mientras tanto, el pedido reserva el stock por las horas que definas; si no se
-                paga, se libera solo.
+              <li className="border-l-2 border-eco-ink-3 pl-4">
+                Con tarjeta, la plata entra directo a tu Mercado Pago y el pedido se marca pagado solo. La comisión de Mercado Pago la cobra
+                Mercado Pago, según el plazo que elijas; Ecommy no suma nada.
               </li>
-              <li className="border-l-2 border-adm-sidebar-border pl-4">
-                Si tu banco o tu billetera cobran algo por recibir transferencias, eso es aparte y lo ves con ellos.
+              <li className="border-l-2 border-eco-ink-3 pl-4">
+                Las cuotas sin interés las activás en tu Mercado Pago (3, 6, 9 o 12) y la tienda las anuncia en cada producto y en el checkout.
               </li>
             </ul>
           </div>
-
-          <figure className="self-start rounded-adm bg-adm-surface p-5 text-adm-fg sm:p-6">
-            <figcaption className="flex items-baseline justify-between gap-3 border-b border-dashed border-adm-input-border pb-3">
-              <span className="text-[14px] font-semibold">Pedido #1042</span>
-              <span className="text-[12px] text-adm-fg-muted">Pago por transferencia</span>
-            </figcaption>
-            <table className="tnum mt-3 w-full text-[13px]">
-              <caption className="sr-only">Ejemplo de un pedido pagado por transferencia</caption>
-              <tbody>
-                {ORDER.items.map((item) => (
-                  <tr key={item.name}>
-                    <th scope="row" className="py-1 pr-3 text-left font-normal">
-                      1 × {item.name}
-                    </th>
-                    <td className="py-1 text-right">{formatMoney(item.price)}</td>
-                  </tr>
-                ))}
-                <tr className="border-t border-adm-border">
-                  <th scope="row" className="pt-2 pb-1 pr-3 text-left font-normal text-adm-fg-muted">
-                    Subtotal
-                  </th>
-                  <td className="pt-2 pb-1 text-right">{formatMoney(subtotal)}</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="py-1 pr-3 text-left font-normal text-adm-fg-muted">
-                    Descuento por transferencia ({ORDER.transferPercent} %)
-                  </th>
-                  <td className="py-1 text-right">− {formatMoney(discount)}</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="py-1 pr-3 text-left font-normal text-adm-fg-muted">
-                    {ORDER.shipping.label}
-                  </th>
-                  <td className="py-1 text-right">{formatMoney(ORDER.shipping.price)}</td>
-                </tr>
-                <tr className="border-t border-adm-border">
-                  <th scope="row" className="pt-2 pb-1 pr-3 text-left font-normal">
-                    Paga el cliente
-                  </th>
-                  <td className="pt-2 pb-1 text-right">{formatMoney(total)}</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="py-1 pr-3 text-left font-normal">
-                    Comisión de Ecommy
-                  </th>
-                  <td className="py-1 text-right">{formatMoney(0)}</td>
-                </tr>
-                <tr className="border-t-2 border-adm-fg">
-                  <th scope="row" className="pt-2.5 pr-3 text-left text-[15px] font-semibold">
-                    Llega a tu cuenta
-                  </th>
-                  <td className={cn(DISPLAY, "pt-2.5 text-right text-[20px] font-semibold tracking-[-0.01em]")}>{formatMoney(total)}</td>
-                </tr>
-              </tbody>
-            </table>
-            {refPlan?.priceMonthly ? (
-              <p className="mt-5 border-t border-dashed border-adm-input-border pt-4 text-[13px] leading-relaxed text-adm-fg-muted">
-                Tu costo fijo es el plan: {refPlan.name} sale <span className="tnum text-adm-fg">{formatMoney(refPlan.priceMonthly)}</span> por
-                mes. Con 30 pedidos en el mes son <span className="tnum text-adm-fg">{formatMoney(Math.round(refPlan.priceMonthly / 30))}</span>{" "}
-                por pedido; con 100, <span className="tnum text-adm-fg">{formatMoney(Math.round(refPlan.priceMonthly / 100))}</span>.
-              </p>
-            ) : null}
-          </figure>
         </div>
-      </section>
+      </Sheet>
 
-      {/* Features ------------------------------------------------------- */}
-      <section aria-labelledby="panel-t">
-        <div className="mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-6 md:pt-28 md:pb-24">
-          <p className={EYEBROW}>El panel</p>
-          <h2 id="panel-t" className={cn(H2, "mt-3 max-w-[22ch]")}>
-            Lo que hacés todos los días, en un panel pensado para eso.
-          </h2>
-          <div className="mt-12 space-y-14 md:space-y-16">
-            {features(plans).map((f, i) => (
-              <div key={f.title} className="grid items-center gap-6 md:grid-cols-2 md:gap-12">
-                <div className={cn("min-w-0", i % 2 && "md:order-2")}>
-                  <h3 className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-0.01em]">
-                    <span className="text-adm-accent">{f.icon}</span>
-                    {f.title}
-                  </h3>
-                  <p className="mt-2 max-w-[48ch] text-[15px] leading-relaxed text-adm-fg-muted">{f.text}</p>
-                  <p className="mt-3 text-[12px] text-adm-fg-muted">{f.plans}</p>
-                </div>
-                <div className={cn("min-w-0", i % 2 && "md:order-1")}>{f.mock}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-20 grid gap-8 border-t-2 border-adm-fg pt-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
-            <h3 className={cn(DISPLAY, "text-[24px] leading-tight font-semibold tracking-[-0.02em]")}>Y lo que no se ve, también.</h3>
-            <dl>
-              {also(plans).map((a) => (
-                <div
-                  key={a.title}
-                  className="grid gap-x-8 gap-y-1 border-b border-adm-border py-4 first:pt-0 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]"
-                >
-                  <dt className="text-[14px] font-semibold">{a.title}</dt>
-                  <dd className="text-[14px] leading-relaxed text-adm-fg-muted">
-                    {a.text}
-                    <span className="mt-1 block text-[12px]">{a.plans}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
-      </section>
-
-      {/* Para quién: estilos por rubro --------------------------------- */}
-      <section id="rubros" aria-labelledby="rubros-t" className="scroll-mt-20 border-y border-adm-border bg-adm-surface">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-16">
-            <div>
-              <p className={EYEBROW}>Con tu marca</p>
-              <h2 id="rubros-t" className={cn(H2, "mt-3 max-w-[20ch]")}>
-                Un estilo para cada rubro, no una plantilla para todos.
+      {/* El panel: capturas reales + demos con las que se juega -------------- */}
+      <Sheet id="panel" label="panel-t" className="bg-eco-niebla [--lp-pb:96px] md:[--lp-pb:136px]">
+        <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 md:pt-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+            <div className="eco-reveal">
+              <p className={EYEBROW}>El panel</p>
+              <h2 id="panel-t" className={cn(H2, "mt-3 max-w-[14ch] sm:text-[52px]")}>
+                Lo de todos los días, en un toque.
               </h2>
+              <p className="mt-5 max-w-[44ch] text-[16px] leading-relaxed text-eco-text-muted">
+                Al entrar ves lo que hay que hacer hoy: pedidos por confirmar, para despachar, pagos sin acreditar y stock bajo. Y funciona igual
+                en el celular, con la barra de abajo al alcance del pulgar.
+              </p>
             </div>
-            <p className="max-w-[48ch] text-[15px] leading-relaxed text-adm-fg-muted">
-              Al crear la tienda elegís el rubro y arranca con su estilo: tipografías, colores, forma de las fotos, densidad de la grilla y
-              botones. Estas muestras están dibujadas con los estilos reales.
-              {freeNames.length ? ` Free incluye ${listNames(freeNames)}; en la prueba de 14 días usás los ${specimens.length}.` : null}
-            </p>
+            <div className="relative min-w-0 pb-10 sm:pr-10 sm:pb-6">
+              <div aria-hidden className="absolute -bottom-6 -left-8 size-64 rounded-full bg-eco-durazno sm:size-80" />
+              <div className="eco-reveal-right relative">
+                <BrowserFrame shot={SHOTS.panelInicio} address="ecommy.app/admin" sizes="(min-width: 1024px) 700px, 92vw" className="lp-tilt-l" />
+              </div>
+              <div className="eco-reveal absolute -right-1 -bottom-2 w-[32%] max-w-[210px] sm:-right-2">
+                <PhoneShot shot={SHOTS.panelPedidosMobile} sizes="210px" className="lp-tilt-r aspect-[540/1169]" />
+              </div>
+            </div>
           </div>
-          <PresetSpecimens className="mt-10" specimens={specimens} plans={plans} fontSheets={fontSheets} />
-          <p className="mt-5 text-[13px] text-adm-fg-muted">
-            ¿Tu rubro no está? Arrancás con Nórdico, el más neutro, y ajustás colores y tipografías desde el panel.{" "}
-            <Link href={demo} className={TEXT_LINK}>
-              Ver una tienda funcionando
-            </Link>
-          </p>
+
+          <div className="mt-24 grid gap-x-8 gap-y-16 lg:grid-cols-12">
+            {demos(plans).map((d) => (
+              <article key={d.id} aria-labelledby={`demo-${d.id}`} className={cn("eco-reveal min-w-0", d.className)}>
+                <h3 id={`demo-${d.id}`} className={cn(DISPLAY, "text-[24px] leading-tight text-eco-ink sm:text-[28px]")}>
+                  {d.title}
+                </h3>
+                <p className="mt-2 max-w-[52ch] text-[15px] leading-relaxed text-eco-text-muted">{d.text}</p>
+                <div className="mt-5">{d.demo}</div>
+                <p className="mt-3 text-[13px] text-eco-text-muted">{d.plans}</p>
+              </article>
+            ))}
+            <div className="eco-reveal hidden content-start gap-6 md:grid lg:col-span-6 lg:mt-20">
+              <div className="relative">
+                <BrowserFrame shot={SHOTS.panelProductos} address="ecommy.app/admin/productos" sizes="(min-width: 1024px) 600px, 92vw" className="lp-tilt-r" />
+              </div>
+              <p className="max-w-[48ch] text-[15px] leading-relaxed text-eco-text-muted">
+                Productos con su foto, precio y stock en una fila; editás precio y stock sin abrir la ficha.
+              </p>
+            </div>
+            <article aria-labelledby="demo-checkout" className="eco-reveal min-w-0 lg:col-span-12">
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:gap-12">
+                <div>
+                  <h3 id="demo-checkout" className={cn(DISPLAY, "text-[24px] leading-tight text-eco-ink sm:text-[28px]")}>
+                    El pedido te llega armado
+                  </h3>
+                  <p className="mt-2 max-w-[44ch] text-[15px] leading-relaxed text-eco-text-muted">
+                    Tu cliente elige entrega y pago, confirma, y el pedido queda registrado con número antes de pasar a WhatsApp. El mensaje es el
+                    mismo que arma tu tienda: cambiá las opciones y miralo.
+                  </p>
+                  <p className="mt-3 text-[13px] text-eco-text-muted">En todos los planes</p>
+                </div>
+                <CheckoutDemo storeName={SAMPLE_ORDER.store} orderUrl={`https://${luna}/pedido/8f3k2`} />
+              </div>
+            </article>
+          </div>
+
+          <div className="mt-24 border-t-2 border-eco-ink pt-10">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+              <h3 className={cn(DISPLAY, "eco-reveal text-[28px] leading-tight text-eco-ink")}>Y lo que no se ve, también.</h3>
+              <dl className="grid gap-x-10 gap-y-7 sm:grid-cols-2">
+                {also(plans).map((a) => (
+                  <div key={a.title} className="eco-reveal">
+                    <dt className="text-[15px] font-semibold text-eco-ink">{a.title}</dt>
+                    <dd className="mt-1 text-[14px] leading-relaxed text-eco-text-muted">
+                      {a.text}
+                      <span className="mt-1.5 block text-[12px] font-medium text-eco-pomelo-ink">{a.plans}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
         </div>
-      </section>
+      </Sheet>
 
       {/* Planes --------------------------------------------------------- */}
       {plans.length ? (
-        <section id="planes" aria-labelledby="planes-t" className="scroll-mt-20 bg-adm-surface-2">
-          <div className="mx-auto max-w-6xl px-4 pt-16 pb-14 sm:px-6 md:pt-20 md:pb-16">
-            <div className="flex flex-wrap items-end justify-between gap-4">
+        <Sheet id="planes" label="planes-t" className="bg-eco-pomelo-soft [--lp-pb:88px] md:[--lp-pb:120px]">
+          <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 md:pt-24">
+            <div className="eco-reveal flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className={EYEBROW}>Planes</p>
                 <h2 id="planes-t" className={cn(H2, "mt-3")}>
                   Empezás con todo. Después elegís.
                 </h2>
-                <p className="mt-3 max-w-[60ch] text-[15px] leading-relaxed text-adm-fg-muted">
-                  Toda tienda nueva arranca con 14 días de Pro. Si no elegís un plan pago, pasás a Free y no se borra nada. Precios finales en
-                  pesos, por mes y por tienda.
+                <p className="mt-4 max-w-[60ch] text-[16px] leading-relaxed text-eco-ink">
+                  Toda tienda nueva arranca con 14 días de Pro, sin tarjeta. Si no elegís un plan pago, pasás a Free y no se borra nada. Precios
+                  finales en pesos, por mes y por tienda.
                 </p>
               </div>
-              <Link href="/planes#comparar" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
+              <Link href="/planes#comparar" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-[15px]")}>
                 Comparar todo en detalle
               </Link>
             </div>
             <PlanCards
-              className="mt-8"
+              className="mt-10"
               plans={plans}
               highlight="pro"
               highlightLabel="Incluido en la prueba"
+              highlightNote="14 días de Pro, sin tarjeta. Después seguís en Free y no se borra nada."
               renderCta={(plan) =>
                 plan.code === "business" ? (
                   <PlanCtaLink href="/contacto#business">Hablemos</PlanCtaLink>
@@ -524,60 +525,70 @@ export default async function LandingPage() {
               }
             />
           </div>
-        </section>
+        </Sheet>
       ) : null}
 
-      {/* Lo que hoy no hace: honestidad antes del registro -------------- */}
-      <section aria-labelledby="no-hace-t" className="border-t border-adm-border">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-16 pb-12 sm:px-6 md:pt-20 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
-          <div>
+      {/* Antes de empezar: lo que no hace + preguntas ------------------------ */}
+      <Sheet id="preguntas" label="no-hace-t" className="bg-eco-paper [--lp-pb:96px] md:[--lp-pb:128px]">
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
+          <div className="min-w-0">
             <p className={EYEBROW}>Antes de empezar</p>
-            <h2 id="no-hace-t" className={cn(DISPLAY, "mt-3 text-[26px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[30px]")}>
+            <h2 id="no-hace-t" className={cn(DISPLAY, "mt-3 text-[30px] leading-[1.05] text-eco-ink sm:text-[38px]")}>
               Lo que hoy Ecommy no hace.
             </h2>
-            <p className="mt-3 max-w-[40ch] text-[14px] leading-relaxed text-adm-fg-muted">
-              Si alguna de estas es imprescindible para tu negocio, mejor saberlo ahora que en un mes.
+            <p className="mt-3 max-w-[40ch] text-[15px] leading-relaxed text-eco-text-muted">
+              Si alguna es imprescindible para tu negocio, mejor saberlo ahora que en un mes.
             </p>
+            <ul className="mt-8 space-y-3">
+              {NOT_YET.map((item) => (
+                <li key={item.title} className="eco-reveal flex gap-3.5 rounded-[20px] bg-eco-niebla p-4">
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-eco-paper text-eco-text-muted shadow-[0_0_0_1px_var(--eco-line)]">
+                    <Minus className="size-3.5" strokeWidth={2.25} aria-hidden />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold text-eco-ink">{item.title}</span>
+                    <span className="mt-0.5 block text-[14px] leading-relaxed text-eco-text-muted">{item.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <dl className="grid gap-x-10 sm:grid-cols-2">
-            {NOT_YET.map((item) => (
-              <div key={item.title} className="border-t border-adm-border py-4">
-                <dt className="text-[14px] font-semibold">{item.title}</dt>
-                <dd className="mt-1 text-[14px] leading-relaxed text-adm-fg-muted">{item.text}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      {/* Preguntas ------------------------------------------------------ */}
-      <section id="preguntas" aria-labelledby="preguntas-t" className="scroll-mt-20">
-        <div className="mx-auto max-w-6xl px-4 pt-8 pb-16 sm:px-6 md:pb-20">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 id="preguntas-t" className={cn(DISPLAY, "text-[26px] leading-tight font-semibold tracking-[-0.02em] sm:text-[30px]")}>
-              Preguntas frecuentes
-            </h2>
-            <Link href="/contacto" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
-              Más preguntas y contacto
-            </Link>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <h2 className={cn(DISPLAY, "text-[30px] leading-[1.05] text-eco-ink sm:text-[38px]")}>Preguntas frecuentes</h2>
+              <Link href="/contacto" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-[15px]")}>
+                Más preguntas y contacto
+              </Link>
+            </div>
+            <FaqAccordion className="mt-8" items={landingFaq} />
           </div>
-          <FaqList className="mt-8" items={landingFaq} />
         </div>
-      </section>
+      </Sheet>
 
-      {/* CTA final ------------------------------------------------------ */}
-      <section className="border-t border-adm-border bg-adm-surface">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:items-end">
-          <p className={cn(H2, "max-w-[22ch] sm:text-[40px]")}>La tienda la armás hoy. Lo que falta es tu primera venta.</p>
+      {/* CTA final: hoja pomelo con el logo dibujándose --------------------- */}
+      <Sheet label="cta-t" className="bg-eco-pomelo text-eco-ink [--lp-pb:88px] md:[--lp-pb:128px]">
+        <div aria-hidden className="lp-rings pointer-events-none absolute inset-0 rounded-t-[32px] [--lp-ring:rgb(16_22_47/0.08)] [--lp-rings-at:0%_100%]" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:gap-16">
+          <InkMark size={136} />
           <div>
-            <Link href={start} className={CTA_PRIMARY}>
-              {signedIn ? "Crear una tienda" : "Crear tu tienda gratis"}
-              <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
-            </Link>
-            <p className="mt-3 text-[13px] text-adm-fg-muted">14 días de Pro gratis, sin tarjeta. Sin comisión por venta.</p>
+            <h2 id="cta-t" className={cn(H2, "max-w-[17ch] text-[40px] leading-[0.98] sm:text-[60px] lg:text-[76px]")}>
+              La tienda la armás hoy. Lo que falta es tu primera venta.
+            </h2>
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <Link
+                href={start}
+                className="group inline-flex h-14 items-center gap-3 rounded-full bg-eco-ink pr-2 pl-7 text-[16px] font-semibold text-white transition-[background-color,transform] duration-[240ms] ease-eco-out hover:bg-eco-ink-2 active:scale-[0.98]"
+              >
+                {startLabel}
+                <span className="inline-flex size-10 items-center justify-center rounded-full bg-eco-pomelo text-eco-ink transition-transform duration-[420ms] ease-eco-spring group-hover:translate-x-1 group-hover:-rotate-45">
+                  <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
+                </span>
+              </Link>
+              <p className="text-[15px] font-medium">14 días de Pro, sin tarjeta. Sin comisión por venta.</p>
+            </div>
           </div>
         </div>
-      </section>
+      </Sheet>
     </PlatformPage>
   );
 }

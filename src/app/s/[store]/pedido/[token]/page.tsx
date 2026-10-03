@@ -151,7 +151,13 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
         }}
       />
 
-      <header>
+      <header className="order-head" data-cancelled={cancelled ? "1" : undefined}>
+        {cancelled ? null : (
+          <svg className="order-check" viewBox="0 0 48 48" width="48" height="48" aria-hidden>
+            <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" strokeWidth="2" pathLength={1} />
+            <path d="M14 24.5l7 7 13-14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />
+          </svg>
+        )}
         <p className="eyebrow">{order.store.name}</p>
         <h1 className="h-page mt-1">{cancelled ? `Pedido #${order.number}` : `Recibimos tu pedido #${order.number}`}</h1>
         <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -179,7 +185,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
       ) : null}
 
       {!cancelled && unpaid && isTransfer ? (
-        <section className="mt-6 rounded-lg border border-border bg-surface p-5" aria-labelledby="pagar">
+        <section className="mt-6 order-panel p-5" aria-labelledby="pagar">
           <h2 id="pagar" className="font-body text-base font-semibold tracking-normal normal-case">
             Transferí {money(order.total)}
           </h2>
@@ -224,7 +230,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
       ) : null}
 
       {!cancelled && isWhatsapp && orderMessageHref ? (
-        <section className="mt-6 rounded-lg border border-border bg-surface p-5" aria-labelledby="whatsapp">
+        <section className="mt-6 order-panel p-5" aria-labelledby="whatsapp">
           <h2 id="whatsapp" className="font-body text-base font-semibold tracking-normal normal-case">
             Coordiná el pago y la entrega por WhatsApp
           </h2>

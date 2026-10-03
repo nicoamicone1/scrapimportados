@@ -102,7 +102,7 @@ export function Dialog({
       aria-describedby={description ? descId : undefined}
       aria-label={title ? undefined : label}
       className={cn(
-        "adm-dialog m-auto max-h-[85dvh] max-w-[calc(100vw-2rem)] overflow-hidden rounded-adm border-0 bg-adm-surface p-0 text-adm-fg shadow-[var(--adm-shadow)]",
+        "adm-dialog m-auto max-h-[85dvh] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[20px] border-0 bg-adm-surface p-0 text-adm-fg shadow-[var(--adm-shadow)]",
         sizes[size],
         className,
       )}
@@ -110,10 +110,10 @@ export function Dialog({
       {open ? (
         <div className="flex max-h-[85dvh] flex-col">
           {title || !hideClose ? (
-            <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-3">
+            <header className="flex items-start justify-between gap-4 px-6 pt-5 pb-3">
               <div className="min-w-0">
                 {title ? (
-                  <h2 id={titleId} className="text-base font-semibold text-adm-fg">
+                  <h2 id={titleId} className="text-[17px] leading-6 font-semibold tracking-[-0.01em] text-adm-fg">
                     {title}
                   </h2>
                 ) : null}
@@ -128,16 +128,16 @@ export function Dialog({
                   type="button"
                   onClick={close}
                   aria-label="Cerrar"
-                  className="-mr-1.5 inline-flex size-7 shrink-0 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                  className="-mt-0.5 -mr-2 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-adm-fg-muted transition-colors duration-[140ms] hover:bg-adm-surface-2 hover:text-adm-fg pointer-coarse:size-11"
                 >
                   <X className="size-4" aria-hidden />
                 </button>
               ) : null}
             </header>
           ) : null}
-          <div className="adm-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>
+          <div className="adm-scroll min-h-0 flex-1 overflow-y-auto px-6 pb-5">{children}</div>
           {footer ? (
-            <footer className="flex items-center justify-end gap-2 border-t border-adm-border bg-adm-surface-2/60 px-5 py-3">
+            <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-adm-border bg-adm-bg px-6 py-3.5">
               {footer}
             </footer>
           ) : null}
@@ -178,7 +178,8 @@ export function Drawer({
       aria-label={title ? undefined : label}
       className={cn(
         "adm-dialog adm-drawer fixed inset-y-0 m-0 h-dvh max-h-none max-w-full border-0 bg-adm-surface p-0 text-adm-fg shadow-[var(--adm-shadow)]",
-        side === "right" ? "right-0 left-auto" : "adm-drawer-left right-auto left-0",
+        // La hoja: el borde que entra a la pantalla es curvo (20 px).
+        side === "right" ? "right-0 left-auto rounded-l-[20px]" : "adm-drawer-left right-auto left-0 rounded-r-[20px]",
         width,
         className,
       )}
@@ -186,10 +187,10 @@ export function Drawer({
       {open ? (
         <div className="flex h-full flex-col">
           {title || !hideClose ? (
-            <header className="flex items-start justify-between gap-4 border-b border-adm-border px-4 py-3">
+            <header className="flex items-start justify-between gap-4 border-b border-adm-border px-5 py-4">
               <div className="min-w-0">
                 {title ? (
-                  <h2 id={titleId} className="text-base font-semibold">
+                  <h2 id={titleId} className="text-[17px] leading-6 font-semibold tracking-[-0.01em]">
                     {title}
                   </h2>
                 ) : null}
@@ -200,7 +201,7 @@ export function Drawer({
                   type="button"
                   onClick={close}
                   aria-label="Cerrar"
-                  className="-mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-adm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg"
+                  className="-mr-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-adm-fg-muted transition-colors duration-[140ms] hover:bg-adm-surface-2 hover:text-adm-fg pointer-coarse:size-11"
                 >
                   <X className="size-4" aria-hidden />
                 </button>
@@ -209,7 +210,7 @@ export function Drawer({
           ) : null}
           <div className="adm-scroll min-h-0 flex-1 overflow-y-auto">{children}</div>
           {footer ? (
-            <footer className="flex items-center justify-end gap-2 border-t border-adm-border px-4 py-3">{footer}</footer>
+            <footer className="flex items-center justify-end gap-2 border-t border-adm-border bg-adm-bg px-5 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))]">{footer}</footer>
           ) : null}
         </div>
       ) : null}

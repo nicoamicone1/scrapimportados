@@ -86,7 +86,7 @@ export function JobCard({
     <article
       aria-label={job.title}
       className={cn(
-        "rounded-adm border bg-adm-surface p-3 shadow-adm-card",
+        "rounded-[14px] border bg-adm-surface p-3 shadow-adm-card",
         printing ? "border-adm-fg/25" : "border-adm-border",
         overlay && "rotate-1 shadow-[var(--adm-shadow)]",
       )}
@@ -99,7 +99,7 @@ export function JobCard({
             <span className="truncate font-medium text-adm-fg">{material || "Sin material"}</span>
             {look.qualityName ? <span className="truncate">· {look.qualityName}</span> : null}
             {job.order_number !== null && job.order_id ? (
-              <Link href={`/admin/pedidos/${job.order_id}`} className="tnum ml-auto shrink-0 font-medium text-adm-accent hover:underline">
+              <Link href={`/admin/pedidos/${job.order_id}`} className="tnum ml-auto shrink-0 font-medium text-adm-link hover:underline">
                 #{job.order_number}
               </Link>
             ) : null}

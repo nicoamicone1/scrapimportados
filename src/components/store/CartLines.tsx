@@ -29,7 +29,7 @@ export function CartLines({
   const byVariant = new Map(lines.map((l) => [l.variantId, l]));
   const thumb = size === "sm" ? "size-16" : "size-20 sm:size-24";
   return (
-    <ul className="divide-y divide-border">
+    <ul className="cart-lines divide-y divide-border">
       {items.map((item) => {
         const line = byVariant.get(item.variantId);
         const offer = line?.offer ?? null;
@@ -42,11 +42,11 @@ export function CartLines({
         // Precio por cantidad: el unitario ya es el del tramo (sumando todas las variantes del producto).
         const tier = line?.tierApplied ?? null;
         return (
-          <li key={item.variantId} className="flex gap-3 py-4 sm:gap-4">
+          <li key={item.variantId} className="cart-line st-pop flex gap-3 py-4 sm:gap-4">
             <StoreLink
               href={`/producto/${item.slug}`}
               onClick={onNavigate}
-              className={cn("relative shrink-0 overflow-hidden rounded-sm bg-surface", thumb)}
+              className={cn("cart-thumb relative shrink-0 overflow-hidden rounded-sm bg-surface", thumb)}
               tabIndex={-1}
               aria-hidden
             >

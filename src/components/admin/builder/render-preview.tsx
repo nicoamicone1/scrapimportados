@@ -3,7 +3,7 @@ import "server-only";
 import type { ReactNode } from "react";
 
 import { renderBlock } from "@/components/blocks/BlockRenderer";
-import { BlockDivider, BlockSection, needsDivider } from "@/components/blocks/Section";
+import { BlockDivider, BlockSection, needsDivider, sectionIndexes } from "@/components/blocks/Section";
 import type { BlockContext } from "@/components/blocks/types";
 import { resolveBlockData } from "@/lib/blocks/resolve";
 import type { Block } from "@/lib/blocks/schema";
@@ -71,6 +71,7 @@ export async function renderBlockPreviews(
   const shown = blocks.map((b) => ({ ...b, style: { ...b.style, hidden: false } }) as Block);
   const targets = only ? shown.filter((b) => only.has(b.id)) : shown;
   ctx.data = await resolveBlockData(storeId, targets, ctx.promotions, { includeHidden: true });
+  const sec = sectionIndexes(shown);
   return shown.flatMap((block, i) => {
     if (only && !only.has(block.id)) return [];
     const content = renderBlock(block, ctx, i);
@@ -81,7 +82,7 @@ export async function renderBlockPreviews(
       node: (
         <>
           {divider ? <BlockDivider /> : null}
-          <BlockSection block={block} prev={shown[i - 1]}>
+          <BlockSection block={block} prev={shown[i - 1]} sectionIndex={sec[i]}>
             {content}
           </BlockSection>
         </>

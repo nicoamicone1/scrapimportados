@@ -5,8 +5,8 @@ import { listCategories } from "@/lib/store/categories";
 import { storeHasModule } from "@/lib/store/modules";
 import { getCatalogIndex, getProductCards, type ProductCardData } from "@/lib/store/products";
 
-import type { Block, ProductSource } from "./schema";
-import { selectCategories, selectProductIds, MAX_BLOCK_PRODUCTS, type CategoryTile } from "./select";
+import type { Block } from "./schema";
+import { blockProductSource, selectCategories, selectProductIds, type CategoryTile } from "./select";
 
 export type { CategoryTile } from "./select";
 
@@ -19,7 +19,7 @@ export type { CategoryTile } from "./select";
  * el prefijo `/s/<slug>` lo agrega `StoreLink` al renderizar.
  */
 export interface ResolvedBlockData {
-  /** blockId → productos (product_slider / product_grid). */
+  /** blockId → productos (product_slider / product_grid / lookbook / hero con productos). */
   products: Record<string, ProductCardData[]>;
   /** blockId → categorías (category_list). */
   categories: Record<string, CategoryTile[]>;
@@ -28,15 +28,6 @@ export interface ResolvedBlockData {
 }
 
 export const EMPTY_BLOCK_DATA: ResolvedBlockData = { products: {}, categories: {} };
-
-/** Fuente efectiva: en la grilla, `rows × columns` pisa el límite. */
-function effectiveSource(block: Extract<Block, { type: "product_slider" | "product_grid" }>): ProductSource {
-  const source = block.settings.source;
-  if (block.type === "product_grid" && block.settings.rows && source.kind !== "manual") {
-    return { ...source, limit: Math.min(block.settings.rows * block.settings.columns, MAX_BLOCK_PRODUCTS) };
-  }
-  return source;
-}
 
 export interface ResolveOptions {
   /** Incluir bloques ocultos (preview del builder). */
@@ -51,10 +42,10 @@ export async function resolveBlockData(
   { includeHidden = false, now = new Date() }: ResolveOptions = {},
 ): Promise<ResolvedBlockData> {
   const visible = includeHidden ? blocks : blocks.filter((b) => !b.style.hidden);
-  const productBlocks = visible.filter(
-    (b): b is Extract<Block, { type: "product_slider" | "product_grid" }> =>
-      b.type === "product_slider" || b.type === "product_grid",
-  );
+  const productBlocks = visible.flatMap((b) => {
+    const source = blockProductSource(b);
+    return source ? [{ id: b.id, source }] : [];
+  });
   const categoryBlocks = visible.filter((b): b is Extract<Block, { type: "category_list" }> => b.type === "category_list");
   // Bloques de apps: se muestran sólo con la app activa (si se desactivó, desaparecen solos).
   const print3d = visible.some((b) => b.type === "print3d_cta") ? await storeHasModule(storeId, "print3d") : undefined;
@@ -65,7 +56,7 @@ export async function resolveBlockData(
 
   const products = Object.fromEntries(
     await Promise.all(
-      productBlocks.map(async (b) => [b.id, await getProductCards(storeId, selectProductIds(effectiveSource(b), index, opts))] as const),
+      productBlocks.map(async (b) => [b.id, await getProductCards(storeId, selectProductIds(b.source, index, opts))] as const),
     ),
   );
 

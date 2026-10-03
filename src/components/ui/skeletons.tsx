@@ -4,8 +4,8 @@ import type { AdminSection } from "@/components/admin/nav";
 import { BrandMark } from "@/components/platform/brand";
 import { cn } from "@/lib/cn";
 
-import { Skeleton } from "./display";
-import { SectionIcon } from "./SectionAccent";
+import { PAGE_TITLE, Skeleton } from "./display";
+import { SectionEyebrow } from "./SectionAccent";
 
 /*
  * Skeletons del admin (spec §14.5): imitan la página real (PageHeader +
@@ -13,7 +13,7 @@ import { SectionIcon } from "./SectionAccent";
  * Se usan desde los `loading.tsx` de cada ruta.
  */
 
-const panel = "rounded-adm border border-adm-border bg-adm-surface shadow-adm-card";
+const panel = "rounded-adm-lg border border-adm-border bg-adm-surface";
 
 /** Anchos "orgánicos" deterministas (sin Math.random: el HTML del server y el cliente coinciden). */
 const W = ["w-[62%]", "w-[48%]", "w-[74%]", "w-[40%]", "w-[56%]", "w-[68%]", "w-[44%]", "w-[80%]"];
@@ -57,19 +57,12 @@ export interface HeaderSkeletonProps {
 
 export function HeaderSkeleton({ tabs = 0, actions = 1, description = true, breadcrumb, section, title }: HeaderSkeletonProps) {
   return (
-    <div className="mb-5">
-      {breadcrumb ? <Skeleton className="mb-2 h-3.5 w-40" /> : null}
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <SectionIcon section={section} className="mt-px hidden opacity-70 sm:inline-flex" />
-          <div className="min-w-0">
-            {title ? (
-              <h1 className="text-xl leading-7 font-semibold text-adm-fg">{title}</h1>
-            ) : (
-              <Skeleton className="mt-1 h-5 w-44" />
-            )}
-            {description ? <Skeleton className="mt-2 h-3.5 w-64 max-w-[70vw]" /> : null}
-          </div>
+    <div className="mb-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0">
+          {breadcrumb ? <Skeleton className="mb-2.5 h-3.5 w-40" /> : <SectionEyebrow section={section} className="opacity-70" />}
+          {title ? <h1 className={PAGE_TITLE}>{title}</h1> : <Skeleton className="mt-1 h-6 w-48" />}
+          {description ? <Skeleton className="mt-2.5 h-3.5 w-64 max-w-[70vw]" /> : null}
         </div>
         {actions ? (
           <div className="flex gap-2">
@@ -80,7 +73,7 @@ export function HeaderSkeleton({ tabs = 0, actions = 1, description = true, brea
         ) : null}
       </div>
       {tabs ? (
-        <div className="mt-4 flex gap-5 border-b border-adm-border pb-2.5">
+        <div className="mt-5 flex gap-5 border-b border-adm-border pb-2.5">
           {Array.from({ length: tabs }, (_, i) => (
             <Skeleton key={i} className={cn("h-3.5", i === 0 ? "w-16" : "w-20")} />
           ))}
@@ -107,21 +100,21 @@ export function TableSkeleton({ rows = 8, cols = 5, filters = 2, thumb, select, 
     <div className={className}>
       {filters !== false ? (
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Skeleton className="h-8 w-full sm:w-72" />
+          <Skeleton className="h-8 w-full rounded-full sm:w-72" />
           {Array.from({ length: filters }, (_, i) => (
             <Skeleton key={i} className="h-8 w-36" />
           ))}
         </div>
       ) : null}
       <div className={cn(panel, "overflow-hidden")}>
-        <div className="flex h-9 items-center gap-6 border-b border-adm-border bg-adm-table-head px-3">
+        <div className="flex h-9 items-center gap-6 border-b border-adm-border bg-adm-table-head px-4">
           {select ? <Skeleton className="size-4 rounded-[3px]" /> : null}
           {Array.from({ length: cols }, (_, c) => (
             <Skeleton key={c} className={cn("h-3", c === 0 ? "w-28 flex-[2]" : "w-14 flex-1")} />
           ))}
         </div>
         {Array.from({ length: rows }, (_, r) => (
-          <div key={r} className="flex h-10 items-center gap-6 border-b border-adm-border px-3 last:border-b-0">
+          <div key={r} className="flex h-10 items-center gap-6 border-b border-adm-border px-4 last:border-b-0">
             {select ? <Skeleton className="size-4 shrink-0 rounded-[3px]" /> : null}
             {Array.from({ length: cols }, (_, c) =>
               c === 0 ? (
@@ -141,8 +134,8 @@ export function TableSkeleton({ rows = 8, cols = 5, filters = 2, thumb, select, 
       <div className="flex items-center justify-between py-3">
         <Skeleton className="h-3 w-28" />
         <div className="flex gap-2">
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-full" />
         </div>
       </div>
     </div>
@@ -174,11 +167,11 @@ export interface FormSkeletonProps {
 function FormPanel({ fields, index }: { fields: number; index: number }) {
   return (
     <div className={panel}>
-      <div className="border-b border-adm-border px-4 py-3">
+      <div className="border-b border-adm-border px-4 py-3.5 sm:px-5">
         <Skeleton className={cn("h-4", index % 2 ? "w-28" : "w-36")} />
         <Skeleton className="mt-2 h-3 w-60 max-w-full" />
       </div>
-      <div className="grid gap-4 p-4 md:grid-cols-2">
+      <div className="grid gap-4 p-4 sm:p-5 md:grid-cols-2">
         {Array.from({ length: fields }, (_, f) => (
           <div key={f} className={cn(f === 0 && "md:col-span-2")}>
             <FieldSkeleton i={f + index} tall={f === fields - 1 && fields > 3} />
@@ -233,7 +226,11 @@ export function FormSkeleton({ sections = 2, fields = 4, aside, split, saveBar }
       ) : (
         main
       )}
-      {saveBar ? <div className="-mx-4 mt-6 h-[52px] bg-adm-sidebar-bg md:-mx-6" /> : null}
+      {saveBar ? (
+        <div className="mt-6 flex justify-center">
+          <div className="h-[52px] w-full rounded-[22px] bg-adm-sidebar-bg sm:w-[420px] sm:rounded-full" />
+        </div>
+      ) : null}
     </>
   );
 }

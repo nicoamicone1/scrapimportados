@@ -4,11 +4,12 @@ import { forwardRef, type ComponentPropsWithoutRef, type ReactNode } from "react
 import { cn } from "@/lib/cn";
 
 /*
- * Borde `--adm-input-border` (3,2:1, BRAND §5.4). En pantallas táctiles el
- * texto pasa a 16 px (iOS no hace zoom al enfocar) y el control a 44 px.
+ * Borde `--adm-input-border` (3,6:1), radio 10 px, foco azul (borde + halo,
+ * admin.css; nunca pomelo). En pantallas táctiles el texto pasa a 16 px (iOS
+ * no hace zoom al enfocar) y el control a 44 px.
  */
 export const controlClass =
-  "w-full rounded-adm border border-adm-input-border bg-adm-surface text-sm pointer-coarse:text-base text-adm-fg placeholder:text-adm-fg-muted transition-colors duration-[120ms] hover:border-adm-input-border-hover disabled:cursor-not-allowed disabled:bg-adm-surface-2 disabled:text-adm-fg-muted read-only:bg-adm-surface-2 aria-invalid:border-adm-danger";
+  "w-full rounded-adm border border-adm-input-border bg-adm-surface text-sm pointer-coarse:text-base text-adm-fg placeholder:text-adm-fg-muted transition-[border-color,box-shadow,background-color] duration-[140ms] ease-eco-out hover:border-adm-input-border-hover disabled:cursor-not-allowed disabled:bg-adm-surface-2 disabled:text-adm-fg-muted read-only:bg-adm-surface-2 aria-invalid:border-adm-danger";
 
 type ControlSize = "sm" | "md";
 
@@ -126,7 +127,7 @@ export interface CheckboxProps extends Omit<ComponentPropsWithoutRef<"input">, "
   description?: ReactNode;
 }
 
-/** Checkbox nativo con `accent-color` del admin. */
+/** Checkbox nativo con `accent-color` de selección (azul). */
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
   { label, description, className, ...props },
   ref,
@@ -136,7 +137,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
       ref={ref}
       type="checkbox"
       className={cn(
-        "size-4 shrink-0 cursor-pointer rounded-[3px] border-adm-input-border accent-[var(--adm-accent)] disabled:cursor-not-allowed",
+        "size-4 shrink-0 cursor-pointer rounded-[4px] border-adm-input-border accent-[var(--adm-select)] disabled:cursor-not-allowed",
         label ? "mt-0.5" : className,
       )}
       {...props}

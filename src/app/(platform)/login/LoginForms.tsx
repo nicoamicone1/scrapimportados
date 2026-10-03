@@ -1,25 +1,23 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MailCheck } from "lucide-react";
 import { useActionState, useState } from "react";
 
-import { DISPLAY, FormAlert as Alert } from "@/components/platform/brand";
+import { ACCOUNT_TITLE, SITE_INPUT, SITE_SUBMIT } from "@/components/platform/AccountShell";
+import { FormAlert as Alert } from "@/components/platform/brand";
 import { PasswordInput } from "@/components/platform/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { cn } from "@/lib/cn";
 
 import { login, requestPasswordReset, updatePassword, type AuthFormState } from "@/app/admin/actions";
 
 function FormError({ state }: { state: AuthFormState }) {
   if (!state || state.ok) return null;
+  // Si el error es de un campo, va junto al campo; acá sólo los generales.
+  if (["email", "password", "confirm"].some((k) => state.fieldErrors?.[k])) return null;
   return <Alert>{state.error}</Alert>;
 }
-
-/** Controles de 44 px y 16 px de texto en el celular (sin zoom de iOS). */
-const TOUCH = "max-sm:h-11 max-sm:text-base";
-const TITLE = cn(DISPLAY, "text-[28px] leading-tight font-semibold tracking-[-0.02em]");
 
 function fieldError(state: AuthFormState, name: string) {
   return state && !state.ok ? state.fieldErrors?.[name] : undefined;
@@ -32,28 +30,29 @@ export function LoginForm({ next, initialEmail }: { next: string; initialEmail?:
 
   if (mode === "reset") {
     return (
-      <div>
+      <div key="reset" className="eco-pop">
         <button
           type="button"
           onClick={() => setMode("login")}
-          className="mb-6 inline-flex min-h-11 items-center gap-1.5 text-[13px] text-adm-fg-muted hover:text-adm-fg md:min-h-0"
+          className="mb-8 inline-flex min-h-11 items-center gap-1.5 rounded-full text-[14px] font-medium text-adm-fg-muted hover:text-adm-fg"
         >
-          <ArrowLeft className="size-3.5" aria-hidden />
+          <ArrowLeft className="size-4" strokeWidth={1.75} aria-hidden />
           Volver a ingresar
         </button>
-        <h1 className={TITLE}>Recuperá tu contraseña</h1>
-        <p className="mt-1 text-sm text-adm-fg-muted">Te mandamos un link para elegir una nueva.</p>
+        <h1 className={ACCOUNT_TITLE}>Recuperá tu contraseña</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">Te mandamos un link para elegir una nueva.</p>
         {resetState?.ok ? (
-          <p role="status" className="mt-6 rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-2.5 text-[13px]">
-            {resetState.data.message}
-          </p>
+          <div role="status" className="eco-pop mt-8 flex gap-3 rounded-[20px] rounded-bl-[4px] bg-eco-azul-soft px-4 py-4 text-[15px] leading-snug">
+            <MailCheck className="mt-0.5 size-5 shrink-0 text-adm-link" strokeWidth={1.75} aria-hidden />
+            <span>{resetState.data.message}</span>
+          </div>
         ) : (
-          <form action={resetAction} className="mt-6 space-y-4">
+          <form action={resetAction} className="mt-8 space-y-5">
             <FormError state={resetState} />
             <Field label="Email" error={fieldError(resetState, "email")}>
-              <Input name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" defaultValue={initialEmail} required autoFocus className={TOUCH} />
+              <Input name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" defaultValue={initialEmail} required autoFocus className={SITE_INPUT} />
             </Field>
-            <Button type="submit" variant="primary" size="lg" loading={resetPending} loadingText="Enviando…" className="h-11 w-full text-[15px]">
+            <Button type="submit" variant="primary" size="lg" loading={resetPending} loadingText="Enviando…" className={SITE_SUBMIT}>
               Enviar link
             </Button>
           </form>
@@ -63,27 +62,42 @@ export function LoginForm({ next, initialEmail }: { next: string; initialEmail?:
   }
 
   return (
-    <div>
-      <h1 className={TITLE}>Ingresá al panel</h1>
-      <p className="mt-1 text-sm text-adm-fg-muted">Con el email y la contraseña de tu cuenta.</p>
-      <form action={loginAction} className="mt-6 space-y-4">
+    <div key="login" className="eco-pop">
+      <h1 className={ACCOUNT_TITLE}>Hola de nuevo.</h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">Ingresá con el email y la contraseña de tu cuenta: entrás directo a tu última tienda.</p>
+      <form action={loginAction} className="mt-8 space-y-5">
         <input type="hidden" name="next" value={next} />
         <FormError state={loginState} />
         <Field label="Email" error={fieldError(loginState, "email")}>
-          <Input name="email" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" defaultValue={initialEmail} required autoFocus={!initialEmail} className={TOUCH} />
+          <Input
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            defaultValue={initialEmail}
+            required
+            autoFocus={!initialEmail}
+            className={SITE_INPUT}
+          />
         </Field>
         <Field
           label="Contraseña"
           error={fieldError(loginState, "password")}
           aside={
-            <button type="button" onClick={() => setMode("reset")} className="font-medium text-adm-accent underline underline-offset-2 hover:no-underline">
-              ¿Olvidaste tu contraseña?
+            <button
+              type="button"
+              onClick={() => setMode("reset")}
+              className="text-[13px] font-medium text-adm-link underline decoration-1 underline-offset-[3px] hover:decoration-2"
+            >
+              ¿La olvidaste?
             </button>
           }
         >
-          <PasswordInput name="password" autoComplete="current-password" required autoFocus={Boolean(initialEmail)} className={TOUCH} />
+          <PasswordInput name="password" autoComplete="current-password" required autoFocus={Boolean(initialEmail)} className={SITE_INPUT} />
         </Field>
-        <Button type="submit" variant="primary" size="lg" loading={loginPending} loadingText="Ingresando…" className="h-11 w-full text-[15px]">
+        <Button type="submit" variant="primary" size="lg" loading={loginPending} loadingText="Ingresando…" className={SITE_SUBMIT}>
           Ingresar
         </Button>
       </form>
@@ -94,18 +108,18 @@ export function LoginForm({ next, initialEmail }: { next: string; initialEmail?:
 export function NewPasswordForm() {
   const [state, action, pending] = useActionState(updatePassword, null);
   return (
-    <div>
-      <h1 className={TITLE}>Elegí una nueva contraseña</h1>
-      <p className="mt-1 text-sm text-adm-fg-muted">Al guardarla entrás directo al panel.</p>
-      <form action={action} className="mt-6 space-y-4">
+    <div className="eco-pop">
+      <h1 className={ACCOUNT_TITLE}>Elegí una contraseña nueva</h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">Al guardarla entrás directo al panel.</p>
+      <form action={action} className="mt-8 space-y-5">
         <FormError state={state} />
-        <Field label="Nueva contraseña" hint="Al menos 8 caracteres." error={fieldError(state, "password")}>
-          <PasswordInput name="password" autoComplete="new-password" minLength={8} required autoFocus className={TOUCH} />
+        <Field label="Contraseña nueva" hint="Al menos 8 caracteres." error={fieldError(state, "password")}>
+          <PasswordInput name="password" autoComplete="new-password" minLength={8} required autoFocus className={SITE_INPUT} />
         </Field>
         <Field label="Repetila" error={fieldError(state, "confirm")}>
-          <PasswordInput name="confirm" autoComplete="new-password" required className={TOUCH} />
+          <PasswordInput name="confirm" autoComplete="new-password" required className={SITE_INPUT} />
         </Field>
-        <Button type="submit" variant="primary" size="lg" loading={pending} loadingText="Guardando…" className="h-11 w-full text-[15px]">
+        <Button type="submit" variant="primary" size="lg" loading={pending} loadingText="Guardando…" className={SITE_SUBMIT}>
           Guardar y entrar
         </Button>
       </form>

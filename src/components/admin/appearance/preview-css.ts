@@ -30,6 +30,16 @@ export function storeRootAttrs(theme: Theme): Record<string, string | undefined>
     "data-dark": dark ? "1" : undefined,
     "data-glow": dark && theme.effects.shadows !== "none" ? "1" : undefined,
     "data-shadows": theme.effects.shadows,
+    "data-hero": theme.style.hero,
+    "data-titles": theme.style.titles,
+    "data-shape": theme.style.shape,
+    "data-card": theme.style.card,
+    "data-motion": theme.style.motion,
+    "data-grid": theme.style.grid,
+    "data-filters": theme.style.filters,
+    "data-gallery": theme.style.gallery,
+    "data-header": theme.header.layout,
+    "data-footer": theme.footer.style,
   };
 }
 

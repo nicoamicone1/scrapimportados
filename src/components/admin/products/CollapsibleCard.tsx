@@ -39,12 +39,12 @@ export function CollapsibleCard({
           aria-controls={bodyId}
           onClick={() => setOpen(!isOpen)}
           className={cn(
-            "flex min-h-12 w-full items-start gap-2 px-4 py-3 text-left hover:bg-adm-row-hover",
-            isOpen ? "rounded-t-adm border-b border-adm-border" : "rounded-adm",
+            "flex min-h-12 w-full items-start gap-2 px-4 py-3 text-left transition-colors duration-[140ms] ease-eco-out hover:bg-adm-row-hover",
+            isOpen ? "rounded-t-adm-lg border-b border-adm-border" : "rounded-adm-lg",
           )}
         >
           <ChevronRight
-            className={cn("mt-1 size-4 shrink-0 text-adm-fg-muted transition-transform duration-100", isOpen && "rotate-90")}
+            className={cn("mt-1 size-4 shrink-0 text-adm-fg-muted transition-transform duration-[240ms] ease-eco-out", isOpen && "rotate-90")}
             aria-hidden
           />
           <span className="min-w-0 flex-1">

@@ -50,10 +50,10 @@ export function ProvincePicker({
         <span className="tnum text-adm-fg-muted">
           {value.length === 0 ? "Ninguna elegida" : `${value.length} de ${PROVINCES.length} elegidas`}
         </span>
-        <button type="button" className="text-adm-accent hover:underline" onClick={() => onChange(PROVINCES.map((p) => p.code))}>
+        <button type="button" className="text-adm-link hover:underline" onClick={() => onChange(PROVINCES.map((p) => p.code))}>
           Seleccionar todas
         </button>
-        <button type="button" className="text-adm-accent hover:underline" onClick={() => onChange([])}>
+        <button type="button" className="text-adm-link hover:underline" onClick={() => onChange([])}>
           Ninguna
         </button>
       </div>

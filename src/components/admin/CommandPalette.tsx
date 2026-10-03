@@ -112,13 +112,19 @@ function useLiveSearch(query: string) {
   return { result: searchable ? result : EMPTY, loading: searchable && loading, error: searchable && error };
 }
 
+/* Fila activa: niebla con el ícono en tinta y la tecla Enter a la derecha (aparece con la curva de la marca). */
 const itemClass =
-  "flex h-9 cursor-pointer items-center gap-2.5 rounded-adm-sm px-2.5 text-sm pointer-coarse:h-11 text-adm-fg data-[selected=true]:bg-adm-surface-2 data-[disabled=true]:opacity-50";
+  "flex h-10 cursor-pointer items-center gap-3 rounded-[10px] px-3 text-sm pointer-coarse:h-11 text-adm-fg transition-colors duration-[140ms] ease-eco-out data-[selected=true]:bg-adm-surface-2 data-[disabled=true]:opacity-50 [&>svg:first-child]:transition-colors data-[selected=true]:[&>svg:first-child]:text-adm-fg";
 const groupClass =
-  "[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:tracking-[0.06em] [&_[cmdk-group-heading]]:text-adm-fg-muted [&_[cmdk-group-heading]]:uppercase";
+  "[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:tracking-[0.1em] [&_[cmdk-group-heading]]:text-adm-fg-muted [&_[cmdk-group-heading]]:uppercase";
 
 function Enter() {
-  return <CornerDownLeft className="size-3.5 text-adm-fg-muted opacity-0 group-data-[selected=true]/item:opacity-100" aria-hidden />;
+  return (
+    <CornerDownLeft
+      className="size-3.5 -translate-x-1 text-adm-fg-muted opacity-0 transition-[opacity,translate] duration-[240ms] ease-eco-out group-data-[selected=true]/item:translate-x-0 group-data-[selected=true]/item:opacity-100"
+      aria-hidden
+    />
+  );
 }
 
 function PaletteBody({ modules, onClose }: { modules: readonly ModuleCode[]; onClose: () => void }) {
@@ -155,24 +161,24 @@ function PaletteBody({ modules, onClose }: { modules: readonly ModuleCode[]; onC
   const nothing = !navItems.length && !actions.length && !result.orders.length && !result.products.length;
 
   return (
-    <Command label="Buscar o ir a" shouldFilter={false} loop className="-mx-5 -mb-4">
-      <div className="flex items-center gap-2 border-b border-adm-border px-4">
+    <Command label="Buscar o ir a" shouldFilter={false} loop className="-mx-6 -mb-5">
+      <div className="flex items-center gap-3 border-b border-adm-border px-5">
         {loading ? (
-          <Loader2 className="size-4 shrink-0 animate-spin text-adm-fg-muted" aria-hidden />
+          <Loader2 className="size-[18px] shrink-0 animate-spin text-eco-pomelo" aria-hidden />
         ) : (
-          <Search className="size-4 shrink-0 text-adm-fg-muted" aria-hidden />
+          <Search className="size-[18px] shrink-0 text-adm-fg-muted" aria-hidden />
         )}
         <Command.Input
           ref={inputRef}
           value={query}
           onValueChange={setQuery}
           placeholder="Buscar pedidos, productos o ir a…"
-          className="h-11 w-full bg-transparent text-sm text-adm-fg outline-none pointer-coarse:text-base placeholder:text-adm-fg-muted focus-visible:shadow-none"
+          className="h-14 w-full bg-transparent text-[15px] text-adm-fg outline-none pointer-coarse:text-base placeholder:text-adm-fg-muted focus-visible:shadow-none"
         />
       </div>
-      <Command.List className="adm-scroll max-h-[min(60vh,440px)] overflow-y-auto p-1.5">
+      <Command.List className="adm-scroll max-h-[min(60vh,440px)] overflow-y-auto p-2">
         {nothing && !loading ? (
-          <div className="px-3 py-6 text-[13px] text-adm-fg-muted">
+          <div className="px-3 py-8 text-[13px] text-adm-fg-muted">
             {error ? "No pudimos buscar. Probá de nuevo." : query.trim() ? `Sin resultados para «${query.trim()}».` : "Escribí para buscar."}
           </div>
         ) : null}
@@ -241,7 +247,7 @@ function PaletteBody({ modules, onClose }: { modules: readonly ModuleCode[]; onC
         ) : null}
 
       </Command.List>
-      <div className="flex items-center gap-3 border-t border-adm-border px-4 py-2 text-xs text-adm-fg-muted">
+      <div className="flex items-center gap-3 border-t border-adm-border bg-adm-bg px-5 py-2.5 text-xs text-adm-fg-muted">
         <span className="flex items-center gap-1">
           <Kbd>↑</Kbd>
           <Kbd>↓</Kbd> moverse

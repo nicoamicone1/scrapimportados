@@ -1,5 +1,6 @@
 import {
   AlignLeft,
+  BookImage,
   CalendarClock,
   CircleHelp,
   Columns2,
@@ -11,6 +12,7 @@ import {
   ListChecks,
   MessageSquareQuote,
   Minus,
+  MoveHorizontal,
   PanelTop,
   Printer,
   SquarePlay,
@@ -38,6 +40,8 @@ export const BLOCK_ICONS: Record<BlockType, LucideIcon> = {
   video: SquarePlay,
   divider: Minus,
   print3d_cta: Printer,
+  marquee: MoveHorizontal,
+  lookbook: BookImage,
 };
 
 export const BlockIconImage = ImageIcon;
@@ -222,6 +226,28 @@ const THUMBS: Record<BlockType, () => ReactNode> = {
       <rect x="114" y="52" width="24" height="26" rx="2" {...fill(0.45)} />
       <rect x="121" y="30" width="10" height="9" rx="1" {...fill(0.8)} />
       <path d="M124 39 L128 39 L126 44 Z" {...fill(0.8)} />
+    </Frame>
+  ),
+  marquee: () => (
+    <Frame>
+      <rect x="1" y="34" width="158" height="28" {...fill(0.12)} />
+      {[0, 1, 2].map((i) => (
+        <g key={i}>
+          <rect x={-10 + i * 58} y="44" width="40" height="8" rx="2" {...fill(0.75)} />
+          <circle cx={38 + i * 58} cy="48" r="2.5" {...fill(0.6)} />
+        </g>
+      ))}
+      <path d="M128 72 h18 m-5 -4 l5 4 l-5 4" stroke="currentColor" strokeOpacity=".5" fill="none" />
+    </Frame>
+  ),
+  lookbook: () => (
+    <Frame>
+      <rect x="8" y="8" width="72" height="80" rx="2" {...fill(0.18)} />
+      <rect x="88" y="10" width="44" height="6" rx="2" {...fill(0.7)} />
+      <Lines x={88} y={20} widths={[56]} h={3} o={0.35} />
+      {[0, 1].map((c) =>
+        [0, 1].map((r) => <Card key={`${c}${r}`} x={88 + c * 34} y={30 + r * 30} w={29} h={27} />),
+      )}
     </Frame>
   ),
 };

@@ -1,6 +1,6 @@
 import { closestWeight, fontStack, googleHref } from "./fonts";
 import { DEFAULT_THEME, PRESETS } from "./presets";
-import { themeSchema, type Theme } from "./schema";
+import { DEFAULT_THEME_STYLE, themeSchema, type Theme, type ThemeStyle } from "./schema";
 
 /**
  * Tema → CSS variables del storefront (docs/DESIGN.md §3).
@@ -84,9 +84,23 @@ export function isDarkTheme(theme: Theme): boolean {
   return luminance(theme.colors.background) < 0.2;
 }
 
+/**
+ * `theme.style` faltante o parcial (temas guardados antes de 2026-10, o antes
+ * de que se sumara un campo) se completa con el estilo del preset guardado, no
+ * con el default genérico: un `atelier` guardado en 2026-09 sigue siendo atelier.
+ */
+function withPresetStyle(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const v = value as Record<string, unknown>;
+  const id = typeof v.preset === "string" ? v.preset : "";
+  const base: ThemeStyle = Object.hasOwn(PRESETS, id) ? PRESETS[id as keyof typeof PRESETS].style : DEFAULT_THEME_STYLE;
+  const saved = v.style && typeof v.style === "object" && !Array.isArray(v.style) ? (v.style as Record<string, unknown>) : {};
+  return { ...v, style: { ...base, ...saved } };
+}
+
 /** Normaliza un valor de la DB a un `Theme` válido (con defaults si falta algo). */
 export function parseTheme(value: unknown): Theme {
-  const direct = themeSchema.safeParse(value);
+  const direct = themeSchema.safeParse(withPresetStyle(value));
   if (direct.success) return direct.data;
   if (value && typeof value === "object") {
     // Merge por sección con el preset guardado (o el default): tolera temas

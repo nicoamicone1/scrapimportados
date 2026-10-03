@@ -30,12 +30,14 @@ export interface BlockMeta {
 }
 
 export const BLOCK_META: Record<BlockType, BlockMeta> = {
-  hero: { type: "hero", label: BLOCK_LABELS.hero, description: "Imagen grande con título y un botón. Ideal para abrir la página.", group: "campaign" },
+  hero: { type: "hero", label: BLOCK_LABELS.hero, description: "Lo primero que se ve: título, un botón y foto o productos, en cinco disposiciones.", group: "campaign" },
+  marquee: { type: "marquee", label: BLOCK_LABELS.marquee, description: "Tira de texto que corre: envíos, cuotas, la promo de la semana.", group: "campaign" },
   banner_grid: { type: "banner_grid", label: BLOCK_LABELS.banner_grid, description: "De 1 a 4 imágenes con link: campañas o accesos a colecciones.", group: "campaign" },
   countdown: { type: "countdown", label: BLOCK_LABELS.countdown, description: "Cuenta regresiva hasta una fecha. Al terminar muestra un texto de cierre.", group: "campaign" },
   product_slider: { type: "product_slider", label: BLOCK_LABELS.product_slider, description: "Fila de productos que se desliza. Novedades, una categoría, ofertas.", group: "products" },
   product_grid: { type: "product_grid", label: BLOCK_LABELS.product_grid, description: "Grilla de productos con la cantidad de columnas que elijas.", group: "products" },
-  category_list: { type: "category_list", label: BLOCK_LABELS.category_list, description: "Accesos a categorías como tarjetas, chips o círculos con foto.", group: "products" },
+  category_list: { type: "category_list", label: BLOCK_LABELS.category_list, description: "Accesos a categorías: tarjetas, pastillas, círculos con foto o lista grande.", group: "products" },
+  lookbook: { type: "lookbook", label: BLOCK_LABELS.lookbook, description: "Una foto grande y 2 a 4 productos al lado: una colección, un ambiente, un look.", group: "products" },
   heading: { type: "heading", label: BLOCK_LABELS.heading, description: "Título de sección con una línea chica arriba (opcional).", group: "content" },
   rich_text: { type: "rich_text", label: BLOCK_LABELS.rich_text, description: "Texto con títulos, listas y links. Para políticas o explicaciones.", group: "content" },
   image_text: { type: "image_text", label: BLOCK_LABELS.image_text, description: "Foto a un lado y texto al otro. Para contar la historia de la marca.", group: "content" },
@@ -56,12 +58,14 @@ export const BLOCK_META: Record<BlockType, BlockMeta> = {
 /** Orden de la paleta. */
 export const PALETTE_ORDER: BlockType[] = [
   "hero",
+  "marquee",
   "banner_grid",
   "countdown",
   "print3d_cta",
   "product_slider",
   "product_grid",
   "category_list",
+  "lookbook",
   "heading",
   "rich_text",
   "image_text",
@@ -89,13 +93,15 @@ const DEFAULT_PADDING: Record<BlockType, BlockStyle["paddingY"]> = {
   video: "md",
   divider: "none",
   print3d_cta: "md",
+  marquee: "none",
+  lookbook: "lg",
 };
 
 export function defaultStyle(type: BlockType): BlockStyle {
   return {
     background: "default",
     paddingY: DEFAULT_PADDING[type],
-    container: type === "hero" ? "full" : type === "rich_text" || type === "faq" ? "narrow" : "normal",
+    container: type === "hero" || type === "marquee" ? "full" : type === "rich_text" || type === "faq" ? "narrow" : "normal",
   };
 }
 
@@ -110,6 +116,8 @@ type Settings<T extends BlockType> = BlockOf<T>["settings"];
 
 const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
   hero: () => ({
+    layout: "auto",
+    products: { kind: "newest", limit: 4 },
     eyebrow: "Temporada primavera",
     title: "Llegaron las novedades para la casa",
     subtitle: "Más de 80 productos nuevos en cocina, audio y deco. 10 % off pagando con transferencia.",
@@ -125,12 +133,14 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
     source: { kind: "newest", limit: 12 },
     viewAllHref: "/productos",
     cardsPerView: 4,
+    highlight: "none",
   }),
   product_grid: () => ({
     title: "Ofertas",
     source: { kind: "on_sale", limit: 8 },
     viewAllHref: "/productos",
     columns: 4,
+    highlight: "none",
   }),
   banner_grid: () => ({
     columns: 2,
@@ -150,6 +160,7 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
   image_text: () => ({
     imageUrl: "",
     imagePosition: "left",
+    layout: "split",
     title: "Una tienda de barrio, ahora online",
     html: "<p>Empezamos en 2012 con un local chico en Morón. Hoy seguimos eligiendo y probando cada producto antes de publicarlo, y te atendemos las mismas personas de siempre.</p>",
     cta: { label: "Ver productos", href: "/productos" },
@@ -157,6 +168,7 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
   category_list: () => ({ title: "Comprá por categoría", categoryIds: "all", style: "cards", columns: 4 }),
   features: () => ({
     columns: 3,
+    layout: "row",
     items: [
       { icon: "Truck", title: "Envíos a todo el país", text: "Despachamos en 24 a 48 hs hábiles." },
       { icon: "Store", title: "Retirás en el local", text: "Sin costo. Te avisamos por WhatsApp cuando está listo." },
@@ -170,6 +182,7 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
       { q: "¿Puedo retirar en persona?", a: "Sí. Elegí «Retirás en el local» en el checkout y te avisamos cuando esté listo." },
       { q: "¿Cómo pago con transferencia?", a: "Al confirmar el pedido te mostramos los datos bancarios. Enviás el comprobante por WhatsApp y lo despachamos." },
     ],
+    layout: "list",
   }),
   countdown: () => ({
     title: "La promo termina en",
@@ -177,8 +190,9 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
     text: "Hasta 30 % off en tecnología y hogar.",
     expiredText: "La promo terminó. Mirá lo que sigue con descuento.",
     cta: { label: "Ver ofertas", href: "/productos" },
+    layout: "inline",
   }),
-  testimonials: () => ({ items: [] }),
+  testimonials: () => ({ items: [], layout: "cards" }),
   video: () => ({ url: "", ratio: "16:9" }),
   divider: () => ({ style: "line", size: "md" }),
   print3d_cta: () => ({
@@ -186,6 +200,20 @@ const DEFAULT_SETTINGS: { [K in BlockType]: () => Settings<K> } = {
     title: "Imprimimos tu pieza",
     text: "Subí el STL o 3MF y ves al instante cuánto sale y cuándo la tenés.",
     cta: { label: "Cotizar mi pieza", href: "/impresion-3d" },
+  }),
+  marquee: () => ({
+    items: ["Envíos a todo el país en 24 a 48 hs", "Hasta 6 cuotas sin interés con tarjeta", "Retirás gratis en el local de Morón"],
+    size: "sm",
+    speed: "normal",
+  }),
+  lookbook: () => ({
+    eyebrow: "Colección",
+    title: "Living de invierno",
+    text: "Mantas de lana, almohadones de lino y una lámpara de pie. Todo lo de la foto se compra acá al lado.",
+    imageUrl: "",
+    imagePosition: "left",
+    source: { kind: "newest", limit: 4 },
+    cta: { label: "Ver la colección", href: "/productos" },
   }),
 };
 

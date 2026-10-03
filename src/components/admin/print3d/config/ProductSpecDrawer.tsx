@@ -281,7 +281,7 @@ export function ProductSpecDrawer({
                   onClick={() => set("color_id", "")}
                   className={cn(
                     "h-8 rounded-adm border px-2.5 text-xs",
-                    !values.color_id ? "border-adm-accent bg-adm-accent-soft text-adm-accent" : "border-adm-border text-adm-fg-muted hover:text-adm-fg",
+                    !values.color_id ? "border-adm-link bg-adm-accent-soft text-adm-link" : "border-adm-border text-adm-fg-muted hover:text-adm-fg",
                   )}
                 >
                   El que pida el cliente
@@ -295,7 +295,7 @@ export function ProductSpecDrawer({
                     className={cn(
                       "inline-flex h-8 items-center gap-1.5 rounded-adm border px-2 text-xs",
                       values.color_id === c.id
-                        ? "border-adm-accent bg-adm-accent-soft text-adm-accent"
+                        ? "border-adm-link bg-adm-accent-soft text-adm-link"
                         : "border-adm-border text-adm-fg-muted hover:text-adm-fg",
                     )}
                   >

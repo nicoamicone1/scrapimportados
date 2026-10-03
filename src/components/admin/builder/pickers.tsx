@@ -25,6 +25,8 @@ export interface BuilderOptions {
   timezone: string;
   /** Apps activas de la tienda: los bloques de una app sólo se ofrecen si está activa. */
   modules?: ModuleCode[];
+  /** Datos verdaderos de la tienda para el copy de las plantillas de portada (% por transferencia, WhatsApp). */
+  starter?: { transferDiscount: number; whatsapp: boolean };
 }
 
 const OptionsContext = createContext<BuilderOptions>({ categories: [], tags: [], links: [], timezone: "America/Argentina/Buenos_Aires" });

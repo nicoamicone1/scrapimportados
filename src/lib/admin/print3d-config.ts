@@ -116,7 +116,7 @@ export async function listPrinters(): Promise<AdminPrinter[]> {
     lifetime_hours: n(p.lifetime_hours, 5000),
     hours_used: n(p.hours_used),
     status: (p.status === "maintenance" || p.status === "inactive" ? p.status : "active") as PrinterStatus,
-    color: p.color ?? "#E86A33",
+    color: p.color ?? "#B02C14",
     position: p.position ?? 0,
     notes: p.notes,
     open_jobs: open.get(p.id) ?? 0,

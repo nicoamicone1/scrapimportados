@@ -3,9 +3,9 @@
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import { BrandMark } from "@/components/platform/brand";
+import { BrandLockup, BrandMark } from "@/components/platform/brand";
 import { cn } from "@/lib/cn";
 import type { ModuleCode } from "@/lib/modules/registry";
 
@@ -25,6 +25,11 @@ export interface SidebarProps {
   modules?: readonly ModuleCode[];
   /** Chip del plan debajo del nombre de la tienda (lo llena M: "Pro · trial 9 días"). */
   planChip?: ReactNode;
+  /**
+   * Selector de tienda para la tarjeta de arriba (`<StoreSwitcher variant="sidebar">`).
+   * Si falta, la tarjeta muestra el nombre de la tienda sin menú.
+   */
+  storeSwitcher?: ReactNode;
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
   /** Se llama al navegar (cierra el drawer en mobile). */
@@ -34,106 +39,214 @@ export interface SidebarProps {
 
 const NO_MODULES: readonly ModuleCode[] = [];
 
-/**
- * Lockup sobre tinta (BRAND §4.2): tile pino de 28 px con la "e" ámbar en SVG
- * (`BrandGlyph`) + "Ecommy" en `--eco-mist`, stack del sistema 600 (el panel
- * no carga Archivo). Separación 0,36 × lado = 10 px.
- */
-function Brand({ collapsed }: { collapsed: boolean }) {
+/** Inicial de la tienda en una tesela clara (la tienda, no Ecommy: sin pomelo). */
+export function StoreAvatar({ name, className }: { name: string; className?: string }) {
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
   return (
-    <span className="flex items-center gap-2.5">
-      <BrandMark size={28} tone="dark" />
-      {collapsed ? (
-        <span className="sr-only">Ecommy, inicio</span>
-      ) : (
-        <span className="text-[17px] leading-none font-semibold tracking-[-0.01em] text-adm-sidebar-fg">Ecommy</span>
-      )}
+    <span
+      aria-hidden
+      className={cn("eco-display inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-eco-mist text-[15px] text-eco-ink", className)}
+    >
+      {initial}
     </span>
   );
 }
 
 /**
- * Navegación lateral del admin (spec §14.6): fondo verde-tinta, marca +
- * tienda + chip del plan arriba, ítem activo en pino con barra ámbar a la
- * izquierda, versión al pie.
+ * Pastilla que se desliza al ítem activo (BRAND §9: el fondo viaja entre
+ * ítems con `--eco-ease-out`). Mide `[data-active]` dentro del contenedor;
+ * la primera vez se ubica sin animar.
  */
-export function Sidebar({ storeName, isOwner, modules = NO_MODULES, planChip, collapsed = false, onToggleCollapsed, onNavigate, className }: SidebarProps) {
-  const pathname = usePathname();
+function useActivePill(containerRef: React.RefObject<HTMLElement | null>, activeKey: string | null, collapsed: boolean) {
+  const [style, setStyle] = useState<CSSProperties | null>(null);
+  const placed = useRef(false);
+
+  useLayoutEffect(() => {
+    const box = containerRef.current;
+    if (!box) return;
+    const measure = () => {
+      const el = box.querySelector<HTMLElement>("a[data-active]");
+      if (!el) {
+        setStyle(null);
+        placed.current = false;
+        return;
+      }
+      setStyle({
+        height: el.offsetHeight,
+        width: el.offsetWidth,
+        transform: `translate(${el.offsetLeft}px, ${el.offsetTop}px)`,
+        transitionProperty: placed.current ? "transform, height, width" : "none",
+      });
+      placed.current = true;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [containerRef, activeKey, collapsed]);
+
+  return style;
+}
+
+/**
+ * Navegación lateral del admin (BRAND §7, §9): tinta noche, lockup con la
+ * burbuja pomelo, tarjeta de la tienda activa con su plan (y el selector de
+ * tienda), grupos y el ítem activo como pastilla que se desliza, con el
+ * ícono en pomelo. Al pie, versión y "contraer".
+ */
+export function Sidebar({
+  storeName,
+  isOwner,
+  modules = NO_MODULES,
+  planChip,
+  storeSwitcher,
+  collapsed = false,
+  onToggleCollapsed,
+  onNavigate,
+  className,
+}: SidebarProps) {
+  const pathname = usePathname() ?? "";
   const nav = useMemo(() => buildNav(modules), [modules]);
 
+  // Al tocar un ítem, la pastilla se mueve enseguida (antes de que termine la navegación).
+  const [optimistic, setOptimistic] = useState<{ href: string; from: string } | null>(null);
+  const pendingHref = optimistic && optimistic.from === pathname ? optimistic.href : null;
+
+  const realActive = useMemo(() => {
+    for (const g of nav) for (const i of g.items) if (isNavActive(i, pathname)) return i.href;
+    return null;
+  }, [nav, pathname]);
+  const shownActive = pendingHref ?? realActive;
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const pill = useActivePill(listRef, shownActive, collapsed);
+
   return (
-    <div className={cn("adm-dark flex h-full flex-col bg-adm-sidebar-bg text-adm-sidebar-fg", className)}>
-      <div className={cn("shrink-0 border-b border-adm-sidebar-border", collapsed ? "flex h-14 items-center justify-center px-2" : "px-4 pt-4 pb-3.5")}>
-        <Link href="/admin" onClick={onNavigate} className="inline-flex rounded-adm" title={collapsed ? `Ecommy · ${storeName}` : undefined}>
-          <Brand collapsed={collapsed} />
+    <div
+      data-collapsed={collapsed ? "" : undefined}
+      className={cn("adm-dark group/sidebar flex h-full flex-col bg-adm-sidebar-bg text-adm-sidebar-fg", className)}
+    >
+      <div className={cn("shrink-0", collapsed ? "flex flex-col items-center gap-3 px-2 pt-4 pb-3" : "px-4 pt-5 pb-3")}>
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          className={cn("inline-flex rounded-adm", !collapsed && "px-1")}
+          title={collapsed ? `Ecommy · ${storeName}` : undefined}
+        >
+          {collapsed ? (
+            <>
+              <BrandMark size={28} />
+              <span className="sr-only">Ecommy, inicio</span>
+            </>
+          ) : (
+            <>
+              <BrandLockup tone="dark" size={26} />
+              <span className="sr-only">, inicio</span>
+            </>
+          )}
         </Link>
-        {!collapsed ? (
-          <div className="mt-2.5 min-w-0">
-            <div className="truncate text-[13px] font-medium text-adm-sidebar-fg" title={storeName}>
-              {storeName}
+
+        {/* Tarjeta de la tienda activa: nombre (selector de tienda) + plan. */}
+        <div
+          className={cn(
+            "mt-4 rounded-adm-lg bg-white/[0.04] ring-1 ring-white/[0.07] ring-inset",
+            collapsed ? "mt-0 bg-transparent ring-0" : "p-1.5",
+          )}
+        >
+          {storeSwitcher ?? (
+            <div className="flex items-center gap-2.5 p-1.5">
+              <StoreAvatar name={storeName} />
+              {!collapsed ? (
+                <span className="truncate text-sm font-semibold text-white" title={storeName}>
+                  {storeName}
+                </span>
+              ) : null}
             </div>
-            {planChip ? <div className="mt-1.5 flex">{planChip}</div> : null}
-          </div>
-        ) : null}
+          )}
+          {planChip && !collapsed ? <div className="flex pt-0.5 pb-1 pl-12">{planChip}</div> : null}
+        </div>
       </div>
 
-      <nav aria-label="Principal" className="adm-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3 [scrollbar-color:var(--adm-sidebar-border)_transparent]">
-        {nav.map((group, gi) => {
-          const items = group.items.filter((i) => !i.ownerOnly || isOwner);
-          if (!items.length) return null;
-          return (
-            <div key={group.label} className={cn(gi > 0 && "mt-4")}>
-              {collapsed ? (
-                gi > 0 ? <div aria-hidden className="mx-2 mb-2 h-px bg-adm-sidebar-border" /> : null
-              ) : (
-                <div className="px-2.5 pb-1 text-[11px] font-medium tracking-[0.07em] text-adm-sidebar-muted uppercase">{group.label}</div>
-              )}
-              <ul className="space-y-px">
-                {items.map((item) => {
-                  const active = isNavActive(item, pathname);
-                  const Icon = item.icon;
-                  const Badge = NAV_BADGES[item.href];
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onNavigate}
-                        target={item.external ? "_blank" : undefined}
-                        rel={item.external ? "noopener" : undefined}
-                        aria-current={active ? "page" : undefined}
-                        title={collapsed ? item.label : undefined}
-                        className={cn(
-                          "relative flex h-8 items-center gap-2.5 rounded-adm text-sm transition-colors duration-[120ms] pointer-coarse:h-11",
-                          collapsed ? "justify-center px-0" : "px-2.5",
-                          active
-                            ? "bg-adm-sidebar-active font-medium text-white"
-                            : "text-adm-sidebar-fg/90 hover:bg-adm-sidebar-hover hover:text-white",
-                        )}
-                      >
-                        {active ? (
-                          <span aria-hidden className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r-[2px] bg-adm-accent-2" />
-                        ) : null}
-                        <Icon
-                          aria-hidden
-                          className={cn("size-4 shrink-0", active ? "text-adm-accent-2" : "text-adm-sidebar-muted")}
-                        />
-                        {collapsed ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
-                        {item.external ? <span className="sr-only"> (se abre en otra pestaña)</span> : null}
-                        {Badge ? <Badge collapsed={collapsed} /> : null}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })}
+      <nav
+        aria-label="Principal"
+        className="adm-scroll min-h-0 flex-1 overflow-y-auto px-3 pt-2 pb-4 [scrollbar-color:var(--adm-sidebar-border)_transparent]"
+      >
+        <div ref={listRef} className="relative">
+          {/* Pastilla del ítem activo (una sola: viaja entre ítems). */}
+          {pill ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-0 left-0 rounded-full bg-adm-sidebar-active shadow-[inset_0_0_0_1px_rgb(255_255_255/0.06)] duration-[320ms] ease-eco-out"
+              style={pill}
+            />
+          ) : null}
+
+          {nav.map((group, gi) => {
+            const items = group.items.filter((i) => !i.ownerOnly || isOwner);
+            if (!items.length) return null;
+            return (
+              <div key={group.label} className={cn(gi > 0 && (collapsed ? "mt-3" : "mt-5"))}>
+                {collapsed ? (
+                  gi > 0 ? <div aria-hidden className="mx-3 mb-3 h-px bg-adm-sidebar-border" /> : null
+                ) : (
+                  <div className="px-3 pb-1.5 text-[11px] font-semibold tracking-[0.1em] text-adm-sidebar-muted uppercase">{group.label}</div>
+                )}
+                <ul className="space-y-0.5">
+                  {items.map((item) => {
+                    const active = isNavActive(item, pathname);
+                    const shown = item.href === shownActive;
+                    const Icon = item.icon;
+                    const Badge = NAV_BADGES[item.href];
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={(e) => {
+                            if (!item.external && !e.metaKey && !e.ctrlKey && !e.shiftKey && item.href !== shownActive) {
+                              setOptimistic({ href: item.href, from: pathname });
+                            }
+                            onNavigate?.();
+                          }}
+                          target={item.external ? "_blank" : undefined}
+                          rel={item.external ? "noopener" : undefined}
+                          aria-current={active ? "page" : undefined}
+                          data-active={shown ? "" : undefined}
+                          title={collapsed ? item.label : undefined}
+                          className={cn(
+                            "relative flex h-8 items-center gap-3 rounded-full text-sm transition-[color,background-color] duration-[240ms] ease-eco-out pointer-coarse:h-11",
+                            collapsed ? "justify-center px-0" : "px-3",
+                            shown
+                              ? "font-medium text-white"
+                              : // Sin pastilla propia: el hover es un velo apenas visible.
+                                "text-adm-sidebar-fg/85 hover:bg-white/[0.05] hover:text-white",
+                          )}
+                        >
+                          <Icon
+                            aria-hidden
+                            strokeWidth={shown ? 2 : 1.75}
+                            className={cn(
+                              "relative size-4 shrink-0 transition-colors duration-[240ms]",
+                              shown ? "text-eco-pomelo" : "text-adm-sidebar-muted",
+                            )}
+                          />
+                          {collapsed ? <span className="sr-only">{item.label}</span> : <span className="relative truncate">{item.label}</span>}
+                          {item.external ? <span className="sr-only"> (se abre en otra pestaña)</span> : null}
+                          {Badge ? <Badge collapsed={collapsed} /> : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
       </nav>
 
       <div
         className={cn(
-          "flex h-11 shrink-0 items-center border-t border-adm-sidebar-border",
-          collapsed ? "justify-center px-2" : "justify-between px-4",
+          "flex h-12 shrink-0 items-center border-t border-adm-sidebar-border/70",
+          collapsed ? "justify-center px-2" : "justify-between pr-2.5 pl-5",
         )}
       >
         {!collapsed ? (
@@ -146,7 +259,7 @@ export function Sidebar({ storeName, isOwner, modules = NO_MODULES, planChip, co
             onClick={onToggleCollapsed}
             aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
             title={collapsed ? "Expandir menú" : "Contraer menú"}
-            className="inline-flex size-8 items-center justify-center rounded-adm text-adm-sidebar-muted hover:bg-adm-sidebar-hover hover:text-adm-sidebar-fg"
+            className="inline-flex size-8 items-center justify-center rounded-full text-adm-sidebar-muted transition-colors duration-[140ms] hover:bg-white/[0.06] hover:text-adm-sidebar-fg"
           >
             {collapsed ? <PanelLeftOpen className="size-4" aria-hidden /> : <PanelLeftClose className="size-4" aria-hidden />}
           </button>
@@ -158,15 +271,15 @@ export function Sidebar({ storeName, isOwner, modules = NO_MODULES, planChip, co
 
 /**
  * Chip de plan para el slot `planChip` (M decide el texto: "Pro", "Trial · 9 días").
- * `tone="trial"` lo pinta ámbar; `"plan"`, pino claro sobre el sidebar.
+ * Pastilla sobre tinta: `trial` en pomelo, `plan` en blanco tenue, `warning` en carmín claro.
  */
 export function SidebarPlanChip({ children, tone = "plan", href }: { children: ReactNode; tone?: "plan" | "trial" | "warning"; href?: string }) {
   const cls = cn(
-    "inline-flex h-5 items-center gap-1 rounded-[4px] px-1.5 text-[11px] font-medium",
-    tone === "trial" && "bg-adm-accent-2/15 text-adm-accent-2",
-    tone === "plan" && "bg-white/8 text-adm-sidebar-fg",
+    "inline-flex h-5 items-center gap-1 rounded-full px-2 text-[11px] font-semibold tracking-[0.02em] transition-colors duration-[140ms]",
+    tone === "trial" && "bg-eco-pomelo/15 text-eco-pomelo",
+    tone === "plan" && "bg-white/[0.08] text-adm-sidebar-fg",
     tone === "warning" && "bg-adm-danger-on-dark/15 text-adm-danger-on-dark",
-    href && "hover:bg-white/12",
+    href && "hover:bg-white/[0.14]",
   );
   return href ? (
     <Link href={href} className={cls}>

@@ -1,5 +1,6 @@
 import { StoreLink } from "@/components/store/StoreLink";
 import { cn } from "@/lib/cn";
+import { getFont } from "@/lib/theme";
 import type { MenuItem } from "@/lib/store/menus";
 import type { StorePaymentMethod } from "@/lib/store/payment-methods";
 import type { StoreSettings } from "@/lib/store/settings";
@@ -44,7 +45,7 @@ function LegalBand({ settings, year }: { settings: StoreSettings; year: number }
   const { legal } = settings;
   const policies = POLICY_LINKS.filter((p) => settings.policies[p.key]);
   return (
-    <div className="border-t border-border">
+    <div className="ftr-legal border-t border-border">
       <div className="store-container flex flex-col gap-4 py-5 text-xs text-fg-muted lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
           <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
@@ -150,7 +151,27 @@ function shippingText(zones: StoreShippingZone[], hasPickup: boolean): string[] 
   return out;
 }
 
-/** Footer temable (DESIGN.md §6.7): `simple`, `columns` o `minimal`. */
+/** Lista de links del menú del pie, en línea. */
+function FlatLinks({ links, className }: { links: MenuItem[]; className?: string }) {
+  if (!links.length) return null;
+  return (
+    <nav aria-label="Pie de página" className={className}>
+      <ul className="flex flex-wrap gap-x-5 gap-y-2">
+        {links.map((l) => (
+          <li key={`${l.label}-${l.href}`}>
+            <FooterLink href={l.href}>{l.label}</FooterLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/**
+ * Footer temable (DESIGN.md §6.7): `simple`, `columns`, `minimal`, `statement`
+ * (el nombre de la tienda gigante como cierre) o `band` (una hoja del color
+ * primario que entra con las esquinas de arriba según `style.shape`).
+ */
 export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }: FooterProps) {
   const year = new Date().getFullYear();
   const style = settings.theme.footer.style;
@@ -160,11 +181,82 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
   const showPayments = settings.theme.footer.showPayments && paymentMethods.length > 0;
   const ship = shippingText(zones, hasPickup);
 
+  if (effective === "statement") {
+    // El nombre ocupa el ancho: el tamaño sale de la cantidad de letras.
+    const chars = Math.max(4, settings.name.length);
+    // Ancho medio de letra según la familia: las angostas necesitan más cuerpo para llenar.
+    const cat = getFont(settings.theme.fonts.heading);
+    const k = /narrow|condensed/.test(cat.id) ? 2.15 : cat.category === "mono" ? 1.25 : 1.5;
+    return (
+      <footer className="ftr ftr-statement mt-[var(--space-section-lg)] bg-bg text-sm">
+        <div className="store-container grid gap-8 border-t border-border pt-10 pb-8 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            {settings.tagline ? <p className="max-w-[40ch] text-base text-fg">{settings.tagline}</p> : null}
+            <div className="mt-4">
+              <Contact settings={settings} />
+            </div>
+          </div>
+          <div className="space-y-4 lg:col-span-5">
+            <FlatLinks links={flatLinks} />
+            {showPayments ? <p className="text-fg-muted">{paymentsText(paymentMethods).join(" · ")}</p> : null}
+            {ship.length ? <p className="text-fg-muted">{ship.join(" · ")}</p> : null}
+          </div>
+          <div className="lg:col-span-3 lg:justify-self-end">
+            <Social settings={settings} className="lg:flex-col lg:items-end" />
+          </div>
+        </div>
+        <div className="store-container overflow-hidden" aria-hidden>
+          <p className="ftr-giant heading st-reveal" style={{ "--chars": chars, "--ftr-k": k } as React.CSSProperties}>
+            {settings.name}
+          </p>
+        </div>
+        <LegalBand settings={settings} year={year} />
+      </footer>
+    );
+  }
+
+  if (effective === "band") {
+    return (
+      <footer className="ftr ftr-band mt-[var(--space-section-lg)] text-sm">
+        <div className="store-container grid gap-8 pt-12 pb-10 sm:grid-cols-2 lg:grid-cols-12 lg:pt-16">
+          <div className="sm:col-span-2 lg:col-span-5 lg:pr-8">
+            <p className="heading text-[length:var(--text-2xl)] leading-tight">{settings.name}</p>
+            {settings.tagline ? <p className="mt-2 max-w-[44ch] text-fg-muted">{settings.tagline}</p> : null}
+            <Social settings={settings} className="mt-5" />
+          </div>
+          <div className="lg:col-span-3">
+            <p className="ftr-label">Contacto</p>
+            <div className="mt-3">
+              <Contact settings={settings} />
+            </div>
+          </div>
+          <div className="space-y-5 lg:col-span-4">
+            {flatLinks.length ? (
+              <div>
+                <p className="ftr-label">La tienda</p>
+                <FlatLinks links={flatLinks} className="mt-3" />
+              </div>
+            ) : null}
+            {showPayments || ship.length ? (
+              <ul className="space-y-1.5 text-fg-muted">
+                {showPayments ? <li>{paymentsText(paymentMethods).join(" · ")}</li> : null}
+                {ship.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </div>
+        <LegalBand settings={settings} year={year} />
+      </footer>
+    );
+  }
+
   if (effective === "minimal") {
     const terms = settings.policies.terms_md;
     const privacy = settings.policies.privacy_md;
     return (
-      <footer className="mt-[var(--space-section-md)] border-t border-border bg-bg text-sm">
+      <footer className="ftr ftr-minimal mt-[var(--space-section-md)] border-t border-border bg-bg text-sm">
         <div className="store-container flex flex-wrap items-center gap-x-3 gap-y-1 py-5 text-fg-muted">
           <span className="text-fg">{settings.name}</span>
           {terms ? <FooterLink href="/politicas/terminos">Términos</FooterLink> : null}
@@ -180,23 +272,13 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
   if (effective === "simple") {
     const editorial = settings.theme.preset === "editorial";
     return (
-      <footer className="mt-[var(--space-section-md)] border-t border-border bg-bg text-sm">
+      <footer className="ftr ftr-simple mt-[var(--space-section-md)] border-t border-border bg-bg text-sm">
         <div className="store-container flex flex-col gap-6 py-10 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className={cn("heading leading-none", editorial ? "text-display" : "h-section")}>{settings.name}</p>
             {settings.tagline ? <p className="mt-2 max-w-[48ch] text-fg-muted">{settings.tagline}</p> : null}
           </div>
-          {flatLinks.length ? (
-            <nav aria-label="Pie de página">
-              <ul className="flex flex-wrap gap-x-5 gap-y-2">
-                {flatLinks.map((l) => (
-                  <li key={`${l.label}-${l.href}`}>
-                    <FooterLink href={l.href}>{l.label}</FooterLink>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ) : null}
+          <FlatLinks links={flatLinks} />
         </div>
         <div className="store-container grid gap-6 border-t border-border py-6 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-5">
@@ -215,7 +297,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
 
   // columns: 5 · 2 · 2 · 3 (anchos desiguales, sólo grupos con links reales)
   return (
-    <footer className="mt-[var(--space-section-md)] border-t border-border bg-bg text-sm">
+    <footer className="ftr ftr-columns mt-[var(--space-section-md)] border-t border-border bg-bg text-sm">
       <div className="store-container grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-6">
         <div className="sm:col-span-2 lg:col-span-5 lg:pr-8">
           <p className="heading text-xl leading-tight">{settings.name}</p>
@@ -227,7 +309,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
         </div>
         {groups.slice(0, 2).map((group) => (
           <nav key={group.label} aria-label={group.label} className="lg:col-span-2">
-            <p className="font-medium">{group.label}</p>
+            <p className="ftr-label">{group.label}</p>
             <ul className="mt-3 space-y-2">
               {group.children.map((link) => (
                 <li key={`${link.label}-${link.href}`}>
@@ -241,7 +323,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
           <div className="space-y-5 lg:col-span-3">
             {showPayments ? (
               <div>
-                <p className="font-medium">Medios de pago</p>
+                <p className="ftr-label">Medios de pago</p>
                 <ul className="mt-3 space-y-1.5 text-fg-muted">
                   {paymentsText(paymentMethods).map((t) => (
                     <li key={t}>{t}</li>
@@ -251,7 +333,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
             ) : null}
             {ship.length ? (
               <div>
-                <p className="font-medium">Envíos</p>
+                <p className="ftr-label">Envíos</p>
                 <ul className="mt-3 space-y-1.5 text-fg-muted">
                   {ship.map((t) => (
                     <li key={t}>{t}</li>

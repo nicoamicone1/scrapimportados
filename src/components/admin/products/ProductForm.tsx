@@ -520,7 +520,7 @@ export function ProductForm({ product, categories, brands, tags, siteName }: Pro
                     href={meta.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex max-w-full items-center gap-1 text-adm-accent underline underline-offset-2"
+                    className="inline-flex max-w-full items-center gap-1 text-adm-link underline underline-offset-2"
                   >
                     <span className="truncate">{hostOf(meta.source_url)}</span>
                     <ExternalLink className="size-3.5 shrink-0" aria-hidden />

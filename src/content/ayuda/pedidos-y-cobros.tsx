@@ -20,8 +20,8 @@ export const meta: HelpArticleMeta = {
 export const body = (
   <>
     <p>
-      Tu tienda no tiene pasarela de pago: el cliente te paga a vos, por transferencia o como lo acuerden por WhatsApp. Lo que sí hace la
-      tienda es registrar cada pedido antes de que se hable de plata, con productos, total, envío y datos del cliente.
+      El cliente te paga a vos: por transferencia, como lo acuerden por WhatsApp o, si conectaste tu cuenta de Mercado Pago, con tarjeta y en
+      cuotas. Ecommy no toca la plata ni cobra por venta. Lo que sí hace la tienda es registrar cada pedido antes de que se hable de plata, con productos, total, envío y datos del cliente.
     </p>
 
     <h2 id="cliente">Qué ve tu cliente al comprar</h2>
@@ -37,9 +37,13 @@ export const body = (
       <li>
         <strong>Acordar por WhatsApp</strong>: se abre el chat con tu número y el pedido armado. Coordinan pago y entrega por ahí.
       </li>
+      <li>
+        <strong>Tarjeta de crédito o débito</strong> (si conectaste Mercado Pago): paga en Mercado Pago, en las cuotas que ofrezcas, y vuelve a su
+        pedido. Cuando el pago se aprueba, el pedido se marca como pagado solo.
+      </li>
     </ul>
     <p>
-      En los dos casos, el cliente se queda con el link de su pedido para ver el estado, los pagos y el seguimiento. Los métodos, el descuento
+      En todos los casos, el cliente se queda con el link de su pedido para ver el estado, los pagos y el seguimiento. Los métodos, el descuento
       (se aplica sobre los productos, sin el envío) y los datos bancarios se configuran en <strong>Configuración › Pagos y checkout</strong>.
     </p>
 

@@ -10,9 +10,12 @@ export function storeBrand(store: StoreEmailInfo): Brand {
   return { name: store.name, url: store.url, logoUrl: store.logoUrl ?? null, ...brandColors(store.primary, store.primaryText) };
 }
 
-/** Marca de los mails de la plataforma (verde-tinta de Ecommy, sin logo remoto). */
+/**
+ * Marca de los mails de la plataforma: pomelo con texto tinta y el logo de
+ * Ecommy armado en HTML (sin logo remoto). Ver `renderEmail`.
+ */
 export function platformBrand(url: string | null): Brand {
-  return { name: "Ecommy", url, logoUrl: null, accent: PLATFORM_ACCENT, accentText: PLATFORM_ACCENT_TEXT };
+  return { name: "Ecommy", url, logoUrl: null, accent: PLATFORM_ACCENT, accentText: PLATFORM_ACCENT_TEXT, platform: true };
 }
 
 export function moneyOf(order: Pick<OrderEmailData, "currency" | "locale">): (value: number) => string {

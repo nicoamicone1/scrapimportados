@@ -66,7 +66,7 @@ export default async function ImportarPage({ searchParams }: PageProps<"/admin/i
           Historial
         </h2>
         {/* Mobile: una línea por importación con lo que pasó. */}
-        <div className="rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
+        <div className="rounded-adm-lg border border-adm-border bg-adm-surface md:hidden">
           {jobs.rows.length === 0 ? (
             <div className="px-4 py-6">
               <p className="text-[15px] font-semibold text-adm-fg">{EMPTY_TITLE}</p>

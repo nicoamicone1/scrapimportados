@@ -34,6 +34,7 @@ import { FontSelect } from "./FontSelect";
 import { PresetApplyAction, PresetGallery, presetMeta, presetStatus, THEME_PREVIEW_ID, type PresetKey } from "./PresetGallery";
 import { PresetThumb, presetFontsHref } from "./PresetThumb";
 import { PreviewFrame } from "./PreviewFrame";
+import { PICTOS, VisualChoice } from "./VisualChoice";
 import type { PreviewDevice } from "./preview-css";
 
 /*
@@ -43,7 +44,7 @@ import type { PreviewDevice } from "./preview-css";
  * header, footer, botones) se vuelve a renderizar en el server con debounce.
  */
 
-type Section = "preset" | "colors" | "type" | "shapes" | "cards" | "header" | "layout" | "footer" | "effects" | "css";
+type Section = "preset" | "style" | "catalog" | "colors" | "type" | "shapes" | "cards" | "header" | "layout" | "footer" | "effects" | "css";
 
 const COLOR_FIELDS: { key: keyof ThemeColors; label: string; hint: string }[] = [
   { key: "background", label: "Fondo", hint: "Fondo de toda la tienda." },
@@ -58,6 +59,18 @@ const COLOR_FIELDS: { key: keyof ThemeColors; label: string; hint: string }[] = 
   { key: "success", label: "Éxito", hint: "Confirmaciones, «Pagado»." },
   { key: "danger", label: "Error", hint: "Errores y «Sin stock»." },
 ];
+
+const HEADER_LABELS: Record<Theme["header"]["layout"], string> = {
+  "logo-left": "Logo a la izq.",
+  "logo-center": "Logo al centro",
+  minimal: "Mínimo",
+  stacked: "Apilado",
+  pill: "Pastilla",
+  double: "Doble barra",
+};
+const CARD_LABELS: Record<Theme["style"]["card"], string> = { stack: "Apilada", overlay: "Sobre la foto", boxed: "En caja", row: "En fila", tile: "Baldosa" };
+const FOOTER_LABELS: Record<Theme["footer"]["style"], string> = { simple: "Simple", columns: "Columnas", minimal: "Mínimo", statement: "Nombre gigante", band: "Banda de color" };
+const MOTION_LABELS: Record<Theme["style"]["motion"], string> = { none: "Quieto", soft: "Suave", lively: "Animado" };
 
 /**
  * Un preset aplicado sobre el tema actual: copia todo el estilo y conserva lo
@@ -74,7 +87,7 @@ function withOwnerChoices(preset: Theme, current: Theme): Theme {
 
 /** Claves que cambian la estructura del preview (requieren render en el server). */
 function structuralKey(t: Theme) {
-  return JSON.stringify({ cards: t.cards, header: t.header, footer: t.footer, buttons: t.buttons, effects: t.effects, grid: t.layout.gridColumns, preset: t.preset === "editorial" });
+  return JSON.stringify({ cards: t.cards, header: t.header, footer: t.footer, buttons: t.buttons, effects: t.effects, grid: t.layout.gridColumns, style: t.style, preset: t.preset === "editorial" });
 }
 
 function Accordion({
@@ -323,7 +336,7 @@ export function ThemeEditor({
     <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
       {galleryFonts && galleryFontsHref ? <link rel="stylesheet" href={galleryFontsHref} /> : null}
       {browsing ? (
-        <div className="w-full shrink-0 overflow-hidden rounded-adm border border-adm-border bg-adm-surface xl:sticky xl:top-4 xl:max-h-[calc(100dvh-96px)] xl:w-[540px] xl:overflow-y-auto adm-scroll">
+        <div className="w-full shrink-0 overflow-hidden rounded-adm border border-adm-border bg-adm-surface xl:sticky xl:top-[72px] xl:max-h-[calc(100dvh-152px)] xl:w-[540px] xl:overflow-y-auto adm-scroll">
           <PresetGallery
             brand={brand}
             current={current}
@@ -339,7 +352,7 @@ export function ThemeEditor({
         </div>
       ) : (
         /* Formulario */
-        <div className="w-full shrink-0 overflow-hidden rounded-adm border border-adm-border bg-adm-surface xl:sticky xl:top-4 xl:max-h-[calc(100dvh-96px)] xl:w-[400px] xl:overflow-y-auto adm-scroll">
+        <div className="w-full shrink-0 overflow-hidden rounded-adm border border-adm-border bg-adm-surface xl:sticky xl:top-[72px] xl:max-h-[calc(100dvh-152px)] xl:w-[400px] xl:overflow-y-auto adm-scroll">
           <Accordion id="preset" title="Preset" summary={presetName} open={open === "preset"} onToggle={toggle}>
             <div className="overflow-hidden rounded-adm border border-adm-border">
               <PresetThumb theme={theme} brand={brand} headline={summaryMeta?.mood ?? brand} labels={summaryMeta?.industries} />
@@ -372,6 +385,132 @@ export function ThemeEditor({
             <Button ref={openerRef} className="w-full" icon={<LayoutGrid />} onClick={openGallery}>
               Ver y comparar los {PRESET_LIST.length} presets
             </Button>
+          </Accordion>
+
+          <Accordion
+            id="style"
+            title="Disposición y movimiento"
+            summary={`${HEADER_LABELS[theme.header.layout]} · ${CARD_LABELS[theme.style.card]} · ${MOTION_LABELS[theme.style.motion]}`}
+            open={open === "style"}
+            onToggle={toggle}
+          >
+            <p className="text-xs text-adm-fg-muted">Lo que hace que tu tienda no se parezca a otra: cómo se arman el encabezado, las tarjetas y los títulos, y cuánto se mueve.</p>
+            <VisualChoice
+              label="Encabezado"
+              value={theme.header.layout}
+              onChange={(layout) => set("header", { layout })}
+              options={[
+                { value: "logo-left", label: HEADER_LABELS["logo-left"], hint: "Logo, menú y buscador en una fila. Para catálogos.", picto: PICTOS.header["logo-left"] },
+                { value: "logo-center", label: HEADER_LABELS["logo-center"], hint: "Menú a la izquierda y logo al centro. Moda.", picto: PICTOS.header["logo-center"] },
+                { value: "minimal", label: HEADER_LABELS.minimal, hint: "Logo y tres palabras: Menú, Buscar, Carrito.", picto: PICTOS.header.minimal },
+                { value: "stacked", label: HEADER_LABELS.stacked, hint: "Logo grande arriba y el menú debajo. Al bajar queda sólo el menú.", picto: PICTOS.header.stacked },
+                { value: "pill", label: HEADER_LABELS.pill, hint: "Una pastilla flotante despegada de los bordes.", picto: PICTOS.header.pill },
+                { value: "double", label: HEADER_LABELS.double, hint: "Buscador grande y las categorías en una banda de color.", picto: PICTOS.header.double },
+              ]}
+            />
+            <VisualChoice
+              label="Tarjeta de producto"
+              value={theme.style.card}
+              onChange={(card) => set("style", { card })}
+              options={[
+                { value: "stack", label: CARD_LABELS.stack, hint: "Foto y texto debajo; el botón aparece al pasar el mouse.", picto: PICTOS.card.stack },
+                { value: "overlay", label: CARD_LABELS.overlay, hint: "Nombre y precio sobre la foto. Fotos ambientadas.", picto: PICTOS.card.overlay },
+                { value: "boxed", label: CARD_LABELS.boxed, hint: "Caja con el botón de agregar siempre visible.", picto: PICTOS.card.boxed },
+                { value: "tile", label: CARD_LABELS.tile, hint: "Baldosa con un botón + redondo sobre la foto.", picto: PICTOS.card.tile },
+                { value: "row", label: CARD_LABELS.row, hint: "Lista de precios: foto chica, precio y botón en una fila.", picto: PICTOS.card.row },
+              ]}
+            />
+            <VisualChoice
+              label="Títulos de sección"
+              value={theme.style.titles}
+              onChange={(titles) => set("style", { titles })}
+              columns={3}
+              options={[
+                { value: "plain", label: "Solos", picto: PICTOS.titles.plain },
+                { value: "rule", label: "Con regla", picto: PICTOS.titles.rule },
+                { value: "centered", label: "Centrados", picto: PICTOS.titles.centered },
+                { value: "index", label: "Numerados", picto: PICTOS.titles.index },
+                { value: "tag", label: "Con etiqueta", picto: PICTOS.titles.tag },
+              ]}
+            />
+            <VisualChoice
+              label="Forma de banners y categorías"
+              value={theme.style.shape}
+              onChange={(shape) => set("style", { shape })}
+              columns={4}
+              hint="Las fotos de la ficha de producto no cambian de forma."
+              options={[
+                { value: "rect", label: "Recta", picto: PICTOS.shape.rect },
+                { value: "soft", label: "Suave", picto: PICTOS.shape.soft },
+                { value: "arch", label: "Arco", picto: PICTOS.shape.arch },
+                { value: "bubble", label: "Burbuja", picto: PICTOS.shape.bubble },
+              ]}
+            />
+            <VisualChoice
+              label="Portada"
+              value={theme.style.hero}
+              onChange={(hero) => set("style", { hero })}
+              hint="Cómo se arma el primer bloque de la portada cuando está en «Según el estilo»."
+              options={[
+                { value: "cover", label: "Foto a sangre", picto: PICTOS.hero.cover },
+                { value: "split", label: "Mitad y mitad", picto: PICTOS.hero.split },
+                { value: "framed", label: "Enmarcada", picto: PICTOS.hero.framed },
+                { value: "poster", label: "Afiche", picto: PICTOS.hero.poster },
+                { value: "stack", label: "Apilada", picto: PICTOS.hero.stack },
+              ]}
+            />
+            <VisualChoice
+              label="Movimiento"
+              value={theme.style.motion}
+              onChange={(motion) => set("style", { motion })}
+              hint="Quien tenga activado «reducir movimiento» en su equipo no ve animaciones."
+              options={[
+                { value: "none", label: MOTION_LABELS.none, hint: "Nada se mueve. Catálogos para comprar rápido.", picto: PICTOS.motion.none },
+                { value: "soft", label: MOTION_LABELS.soft, hint: "Entradas y hovers con curva.", picto: PICTOS.motion.soft },
+                { value: "lively", label: MOTION_LABELS.lively, hint: "Además, anuncio en marquesina y productos que entran escalonados.", picto: PICTOS.motion.lively },
+              ]}
+            />
+          </Accordion>
+
+          <Accordion
+            id="catalog"
+            title="Catálogo y ficha"
+            summary={`${{ uniform: "Grilla pareja", feature: "Con destacados", list: "Lista" }[theme.style.grid]} · ${{ sidebar: "Filtros al costado", bar: "Filtros arriba", drawer: "Filtros en panel" }[theme.style.filters]}`}
+            open={open === "catalog"}
+            onToggle={toggle}
+          >
+            <VisualChoice
+              label="Grilla del catálogo"
+              value={theme.style.grid}
+              onChange={(grid) => set("style", { grid })}
+              options={[
+                { value: "uniform", label: "Pareja", hint: "Todas las tarjetas del mismo tamaño.", picto: PICTOS.grid.uniform },
+                { value: "feature", label: "Con destacados", hint: "Una de cada diez a doble tamaño, como una revista.", picto: PICTOS.grid.feature },
+                { value: "list", label: "Lista", hint: "Una fila por producto: ideal para mayoristas.", picto: PICTOS.grid.list },
+              ]}
+            />
+            <VisualChoice
+              label="Filtros"
+              value={theme.style.filters}
+              onChange={(filters) => set("style", { filters })}
+              options={[
+                { value: "sidebar", label: "Al costado", hint: "Columna fija de filtros. Muchas marcas y talles.", picto: PICTOS.filters.sidebar },
+                { value: "bar", label: "Arriba", hint: "Categorías en pastillas y el resto en un panel.", picto: PICTOS.filters.bar },
+                { value: "drawer", label: "En un panel", hint: "Sólo un botón «Filtrar»: más lugar para las fotos.", picto: PICTOS.filters.drawer },
+              ]}
+            />
+            <VisualChoice
+              label="Fotos de la ficha"
+              value={theme.style.gallery}
+              onChange={(gallery) => set("style", { gallery })}
+              columns={4}
+              options={[
+                { value: "thumbs", label: "Miniaturas", hint: "Miniaturas al costado y zoom en la principal.", picto: PICTOS.gallery.thumbs },
+                { value: "grid", label: "Grilla", hint: "Todas las fotos a la vista, de a dos.", picto: PICTOS.gallery.grid },
+                { value: "stack", label: "Apiladas", hint: "Fotos grandes una debajo de la otra.", picto: PICTOS.gallery.stack },
+                { value: "carousel", label: "Carrusel", hint: "Carrusel a todo el ancho y la compra debajo.", picto: PICTOS.gallery.carousel },
+              ]}
+            />
           </Accordion>
 
           <Accordion id="colors" title="Colores" summary={<ColorDots colors={theme.colors} />} open={open === "colors"} onToggle={toggle}>
@@ -533,16 +672,9 @@ export function ThemeEditor({
           </Accordion>
 
           <Accordion id="header" title="Encabezado" open={open === "header"} onToggle={toggle}>
-            <Segmented
-              label="Diseño"
-              value={theme.header.layout}
-              onChange={(layout) => set("header", { layout })}
-              options={[
-                { value: "logo-left", label: "Logo a la izq." },
-                { value: "logo-center", label: "Logo al centro" },
-                { value: "minimal", label: "Mínimo" },
-              ]}
-            />
+            <p className="text-xs text-adm-fg-muted">
+              Diseño: <span className="font-medium text-adm-fg">{HEADER_LABELS[theme.header.layout]}</span> (se cambia en «Disposición y movimiento»).
+            </p>
             <ToggleField label="Fijo al scrollear" checked={theme.header.sticky} onChange={(sticky) => set("header", { sticky })} />
             <ToggleField
               label="Transparente sobre la portada"
@@ -596,14 +728,16 @@ export function ThemeEditor({
           </Accordion>
 
           <Accordion id="footer" title="Pie de página" open={open === "footer"} onToggle={toggle}>
-            <Segmented
+            <VisualChoice
               label="Estilo"
               value={theme.footer.style}
               onChange={(style) => set("footer", { style })}
               options={[
-                { value: "simple", label: "Simple" },
-                { value: "columns", label: "Columnas" },
-                { value: "minimal", label: "Mínimo" },
+                { value: "simple", label: FOOTER_LABELS.simple, hint: "Nombre de la tienda y los links en una fila.", picto: PICTOS.footer.simple },
+                { value: "columns", label: FOOTER_LABELS.columns, hint: "Columnas de links, pagos y envíos.", picto: PICTOS.footer.columns },
+                { value: "minimal", label: FOOTER_LABELS.minimal, hint: "Una sola línea.", picto: PICTOS.footer.minimal },
+                { value: "statement", label: FOOTER_LABELS.statement, hint: "El nombre de la tienda a todo el ancho, como cierre.", picto: PICTOS.footer.statement },
+                { value: "band", label: FOOTER_LABELS.band, hint: "Una banda del color primario con las esquinas según la forma.", picto: PICTOS.footer.band },
               ]}
             />
             <ToggleField label="Redes sociales" checked={theme.footer.showSocial} onChange={(showSocial) => set("footer", { showSocial })} />

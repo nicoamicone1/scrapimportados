@@ -384,26 +384,28 @@ body {
   }
 }
 
-/* Entrada ligada al scroll, sin JS: donde no hay soporte el contenido se ve fijo (nunca oculto). */
+/* Entrada ligada al scroll, sin JS: donde no hay soporte el contenido se ve fijo (nunca oculto).
+   Relleno `forwards` (no `both`): fuera de pantalla el elemento conserva su estado normal, así
+   una captura de página completa o un salto por ancla nunca encuentran contenido invisible. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .eco-reveal {
-      animation: eco-rise linear both;
+      animation: eco-rise linear forwards;
       animation-timeline: view();
       animation-range: entry 0% entry 42%;
     }
     .eco-reveal-left {
-      animation: eco-slide-left linear both;
+      animation: eco-slide-left linear forwards;
       animation-timeline: view();
       animation-range: entry 0% entry 46%;
     }
     .eco-reveal-right {
-      animation: eco-slide-right linear both;
+      animation: eco-slide-right linear forwards;
       animation-timeline: view();
       animation-range: entry 0% entry 46%;
     }
     .eco-reveal-scale {
-      animation: eco-grow linear both;
+      animation: eco-grow linear forwards;
       animation-timeline: view();
       animation-range: entry 0% cover 34%;
     }

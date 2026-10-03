@@ -105,7 +105,7 @@ export async function Print3dOrderPanel({ orderId }: { orderId: string }) {
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium">Archivos del cliente</p>
             {data.quote ? (
-              <Link href={`/admin/taller-3d/cotizaciones/${data.quote.id}`} className="text-xs text-adm-accent hover:underline">
+              <Link href={`/admin/taller-3d/cotizaciones/${data.quote.id}`} className="text-xs text-adm-link hover:underline">
                 Ver cotización
               </Link>
             ) : null}
@@ -114,7 +114,7 @@ export async function Print3dOrderPanel({ orderId }: { orderId: string }) {
             {data.files.map((f, i) => (
               <li key={i} className="flex items-center gap-2">
                 {f.url ? (
-                  <a href={f.url} className="inline-flex min-w-0 items-center gap-1.5 text-adm-accent hover:underline">
+                  <a href={f.url} className="inline-flex min-w-0 items-center gap-1.5 text-adm-link hover:underline">
                     <Download className="size-3.5 shrink-0" aria-hidden />
                     <span className="truncate">{f.name}</span>
                   </a>

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AccountAside, AccountShell, ReceiptMini } from "@/components/platform/AccountShell";
+import { AccountAside, AccountShell, StoreGlimpse } from "@/components/platform/AccountShell";
+import { TEXT_LINK } from "@/components/platform/brand";
 import { getSession } from "@/lib/auth";
 
 import { RegisterForm } from "./RegisterForm";
@@ -28,22 +29,22 @@ export default async function RegistroPage({ searchParams }: PageProps<"/registr
     <AccountShell
       aside={
         <AccountAside
-          eyebrow="Sin comisión por venta"
+          tone="durazno"
+          eyebrow="Tu tienda en una tarde"
           title="Te pagan a vos. Ecommy no toca la plata."
           points={[
-            "14 días de Pro con todas las funciones. Sin tarjeta ni datos de pago.",
-            "El pedido queda registrado y te llega por WhatsApp con el total y la dirección.",
-            "Si no elegís plan, pasás a Free y no se borra nada.",
+            "14 días de Pro con todas las funciones, sin tarjeta.",
+            "Sin comisión por venta: transferencia, WhatsApp o tu Mercado Pago.",
+            "Si no elegís un plan, pasás a Free y no se borra nada.",
           ]}
-        >
-          <ReceiptMini />
-        </AccountAside>
+          visual={<StoreGlimpse />}
+        />
       }
     >
       <RegisterForm next={next} initialEmail={email} createsStore={createsStore} />
-      <p className="mt-8 text-[13px] text-adm-fg-muted">
+      <p className="mt-10 border-t border-eco-line pt-6 text-[14px] text-adm-fg-muted">
         ¿Ya tenés cuenta?{" "}
-        <Link href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+        <Link href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`} className={TEXT_LINK}>
           Ingresá
         </Link>
       </p>

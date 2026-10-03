@@ -1,12 +1,16 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
+import { slugify } from "@/lib/slug";
 
 import { SmartLink } from "./Button";
 
 /**
- * Encabezado de sección: h2 a la izquierda + subtítulo muted; "Ver todo"
- * como link de texto en la misma línea base (DESIGN.md §2.7, §6.8).
+ * Encabezado de sección (DESIGN.md §2.7, §6.8): h2 + subtítulo muted y
+ * "Ver todo" como link de texto. La forma la decide `theme.style.titles`
+ * en `blocks.css` (`.blk-sectitle` dentro de `[data-titles]`):
+ *   plain · rule (regla gruesa arriba) · centered (centrado entre filetes)
+ *   · index (numerado 01/02, como revista) · tag (etiqueta del color primario).
  */
 export function SectionTitle({
   title,
@@ -16,6 +20,7 @@ export function SectionTitle({
   arrow,
   aside,
   className,
+  anchor,
 }: {
   title?: string;
   subtitle?: string;
@@ -26,18 +31,24 @@ export function SectionTitle({
   /** Contenido extra a la derecha (flechas del slider). */
   aside?: ReactNode;
   className?: string;
+  /** Usar el título como ancla (`/#como-comprar`). */
+  anchor?: boolean;
 }) {
   if (!title && !href && !aside) return null;
   return (
-    <div className={cn("blk-head flex items-end justify-between gap-4", className)}>
-      <div className="min-w-0">
-        {title ? <h2 className="blk-title">{title}</h2> : null}
-        {subtitle ? <p className="mt-1 text-sm text-fg-muted">{subtitle}</p> : null}
+    <div className={cn("blk-head", className)}>
+      <div className="blk-head-main">
+        {title ? (
+          <h2 className="blk-title blk-sectitle" id={anchor ? slugify(title) || undefined : undefined}>
+            <span>{title}</span>
+          </h2>
+        ) : null}
+        {subtitle ? <p className="blk-head-sub">{subtitle}</p> : null}
       </div>
       {href || aside ? (
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="blk-head-aside">
           {href ? (
-            <SmartLink href={href} className="blk-link">
+            <SmartLink href={href} className="blk-link st-link">
               {hrefLabel}
               {arrow ? " →" : null}
             </SmartLink>

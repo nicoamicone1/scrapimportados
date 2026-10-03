@@ -151,8 +151,8 @@ export function FilamentShelf({ materials, spools }: { materials: AdminMaterial[
       ) : (
         <div className="space-y-4">
           {lowColors.length ? (
-            <div role="status" className="rounded-adm border border-[#E9D3A6] bg-[#FBF4E6] px-4 py-3">
-              <p className="flex items-center gap-2 text-[13px] font-medium text-[#7A4A00]">
+            <div role="status" className="rounded-adm border border-adm-warning/25 bg-[var(--adm-badge-amber-bg)] px-4 py-3">
+              <p className="flex items-center gap-2 text-[13px] font-medium text-[var(--adm-badge-amber-fg)]">
                 <TriangleAlert className="size-4" aria-hidden />
                 Stock bajo: {lowColors.length === 1 ? "un color tiene" : `${lowColors.length} colores tienen`} menos de {LOW_STOCK_GRAMS} g
               </p>
@@ -162,7 +162,7 @@ export function FilamentShelf({ materials, spools }: { materials: AdminMaterial[
                     key={color.id}
                     type="button"
                     onClick={() => setAddTarget({ colorId: color.id })}
-                    className="tnum inline-flex h-8 items-center gap-1.5 rounded-adm border border-[#E9D3A6] bg-adm-surface px-2 text-xs text-adm-fg hover:border-[#C9A867]"
+                    className="tnum inline-flex h-8 items-center gap-1.5 rounded-adm border border-adm-warning/30 bg-adm-surface px-2 text-xs text-adm-fg hover:border-[#C9A867]"
                     title="Agregar bobinas de este color"
                   >
                     <Swatch hex={color.hex} size={12} />
@@ -261,7 +261,7 @@ function MaterialShelf({
   return (
     <section
       aria-labelledby={`mat-${m.id}`}
-      className={cn("overflow-hidden rounded-adm border border-adm-border bg-adm-surface shadow-adm-card", !m.is_active && "opacity-75")}
+      className={cn("overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface", !m.is_active && "opacity-75")}
     >
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-adm-border bg-adm-table-head px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2.5">

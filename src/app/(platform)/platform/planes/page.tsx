@@ -42,7 +42,7 @@ export default async function PlatformPlansPage() {
           </Link>{" "}
           / Planes
         </p>
-        <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.01em]">Planes</h1>
+        <h1 className="mt-1 eco-display text-[24px] leading-tight">Planes</h1>
         <p className="mt-1 max-w-2xl text-sm text-adm-fg-muted">
           Lo que cambies acá rige al instante para todas las tiendas de ese plan (la web pública se actualiza en unos minutos). Los códigos de
           función y límite los usa el código: si agregás uno nuevo, sumalo también en <code className="font-mono text-xs">src/lib/plans/features.ts</code>.

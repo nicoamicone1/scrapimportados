@@ -299,7 +299,7 @@ function CsvImportForm({ categories, hasProducts }: { categories: CategoryOption
               key={o.v}
               className={cn(
                 "flex cursor-pointer gap-3 rounded-adm border p-3 text-sm",
-                mode === o.v ? "border-adm-accent bg-adm-accent-soft/40" : "border-adm-border hover:bg-adm-hover",
+                mode === o.v ? "border-adm-link bg-adm-accent-soft/40" : "border-adm-border hover:bg-adm-hover",
               )}
             >
               <input
@@ -308,7 +308,7 @@ function CsvImportForm({ categories, hasProducts }: { categories: CategoryOption
                 value={o.v}
                 checked={mode === o.v}
                 onChange={() => setMode(o.v)}
-                className="mt-0.5 accent-[var(--adm-accent)]"
+                className="mt-0.5 accent-[var(--adm-select)]"
               />
               <span>
                 <span className="block font-medium text-adm-fg">{o.title}</span>
@@ -330,7 +330,7 @@ function CsvImportForm({ categories, hasProducts }: { categories: CategoryOption
           onDrop={onDrop}
           className={cn(
             "flex cursor-pointer flex-col items-start gap-2 rounded-adm border border-dashed px-5 py-6 text-sm transition-colors",
-            dragging ? "border-adm-accent bg-adm-accent-soft/40" : "border-adm-input-border bg-adm-surface-2/40 hover:bg-adm-hover",
+            dragging ? "border-adm-link bg-adm-accent-soft/40" : "border-adm-input-border bg-adm-surface-2/40 hover:bg-adm-hover",
             error && "border-adm-danger",
           )}
         >
@@ -367,7 +367,7 @@ function CsvImportForm({ categories, hasProducts }: { categories: CategoryOption
           <p className="text-[13px] font-medium text-adm-fg">Columnas {mode === "update" ? "(sólo sku es obligatoria)" : "(name y price son obligatorias)"}</p>
           <a
             href={`/api/import/template?mode=${mode}`}
-            className="inline-flex items-center gap-1.5 text-[13px] text-adm-accent underline-offset-2 hover:underline"
+            className="inline-flex items-center gap-1.5 text-[13px] text-adm-link underline-offset-2 hover:underline"
           >
             <Download className="size-4" aria-hidden />
             Descargar plantilla

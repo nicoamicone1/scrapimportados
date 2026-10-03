@@ -167,7 +167,7 @@ export function AddSpoolsDialog({
               className={cn(
                 "tnum h-7 rounded-adm border px-2 text-xs transition-colors",
                 net === g
-                  ? "border-adm-accent bg-adm-accent-soft text-adm-accent"
+                  ? "border-adm-link bg-adm-accent-soft text-adm-link"
                   : "border-adm-border bg-adm-surface text-adm-fg-muted hover:text-adm-fg",
               )}
             >

@@ -1,6 +1,6 @@
 import { isPromotionEligible, type Promotion } from "@/lib/pricing";
 
-import type { ProductSource } from "./schema";
+import type { Block, ProductSource } from "./schema";
 
 /*
  * Selección PURA de productos y categorías para los bloques del builder
@@ -115,6 +115,35 @@ export function selectProductIds(
   return availableFirst(pool)
     .slice(0, limit)
     .map((p) => p.id);
+}
+
+/**
+ * Fuente de productos del bloque (o `null` si no lleva). En la grilla,
+ * `rows × columns` pisa el límite; la portada y la colección destacada
+ * muestran pocos (4 como máximo).
+ */
+export function blockProductSource(block: Block): ProductSource | null {
+  switch (block.type) {
+    case "product_slider":
+      return block.settings.source;
+    case "product_grid": {
+      const source = block.settings.source;
+      if (block.settings.rows && source.kind !== "manual") {
+        return { ...source, limit: Math.min(block.settings.rows * block.settings.columns, MAX_BLOCK_PRODUCTS) };
+      }
+      return source;
+    }
+    case "hero":
+    case "lookbook": {
+      const source = block.type === "hero" ? block.settings.products : block.settings.source;
+      if (!source) return null;
+      // Portada: hasta 6 (la lista de precios de `card: row` muestra 6; el collage, 4). Colección: 4.
+      const max = block.type === "hero" ? 6 : 4;
+      return source.kind === "manual" ? { ...source, productIds: source.productIds.slice(0, max) } : { ...source, limit: Math.min(source.limit, max) };
+    }
+    default:
+      return null;
+  }
 }
 
 /** Tile de categoría ya resuelto para el bloque `category_list`. */

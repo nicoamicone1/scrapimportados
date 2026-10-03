@@ -31,6 +31,34 @@ function backgroundProps(style: BlockStyle): { className?: string; style?: CSSPr
   }
 }
 
+/** ¿El bloque abre con un título de sección (`.blk-sectitle`)? Para numerarlos 01, 02… (`titles: "index"`). */
+export function hasSectionTitle(block: Block): boolean {
+  switch (block.type) {
+    case "product_slider":
+    case "product_grid":
+      return Boolean(block.settings.title);
+    case "category_list":
+    case "faq":
+      return Boolean(block.settings.title);
+    case "heading":
+      return block.settings.level === 2 && Boolean(block.settings.text);
+    case "countdown":
+      return Boolean(block.settings.title);
+    default:
+      return false;
+  }
+}
+
+/** Cuántos títulos de sección hay antes de cada bloque (para el contador CSS). */
+export function sectionIndexes(blocks: Block[]): number[] {
+  let n = 0;
+  return blocks.map((b) => {
+    const before = n;
+    if (hasSectionTitle(b)) n++;
+    return before;
+  });
+}
+
 /** ¿Va una regla (effects.dividers) entre el bloque anterior y este? */
 export function needsDivider(prev: Block | undefined, block: Block): boolean {
   if (!prev) return false;
@@ -40,6 +68,7 @@ export function needsDivider(prev: Block | undefined, block: Block): boolean {
     b.type !== "hero" &&
     b.type !== "divider" &&
     b.type !== "banner_grid" &&
+    b.type !== "marquee" &&
     b.type !== "countdown";
   // El título se pega a su contenido: no se separa del bloque que le sigue.
   return plain(prev) && plain(block) && prev.type !== "heading";
@@ -50,10 +79,13 @@ export function BlockSection({
   children,
   className,
   prev,
+  sectionIndex,
 }: {
   block: Block;
   children: ReactNode;
   className?: string;
+  /** Títulos de sección anteriores (numeración 01, 02… del estilo `index`). */
+  sectionIndex?: number;
   /** Bloque anterior: si es un título, este se le pega (sin espacio arriba, DESIGN.md §2.2). */
   prev?: Block;
 }) {
@@ -64,7 +96,17 @@ export function BlockSection({
     s.container === "full" ? null : cn("store-container", s.container === "narrow" && "blk-narrow");
 
   return (
-    <div className="blk" data-block={block.type} data-block-id={block.id}>
+    <div
+      className="blk"
+      data-block={block.type}
+      data-block-id={block.id}
+      data-sec={sectionIndex !== undefined && hasSectionTitle(block) ? "" : undefined}
+      style={
+        sectionIndex !== undefined && hasSectionTitle(block)
+          ? ({ "--sec-label": `"${String(sectionIndex + 1).padStart(2, "0")}"` } as CSSProperties)
+          : undefined
+      }
+    >
       <section
         className={cn(`blk-pad-${s.paddingY}`, bg.className, s.hideOnMobile && "blk-hide-mobile", glued && "blk-glued", className)}
         style={bg.style}

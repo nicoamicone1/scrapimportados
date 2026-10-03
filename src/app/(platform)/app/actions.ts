@@ -5,9 +5,12 @@ import { redirect } from "next/navigation";
 
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { ADMIN_STORE_COOKIE, ADMIN_STORE_COOKIE_OPTIONS, getSession } from "@/lib/auth";
+import { starterHomeBlocks } from "@/lib/blocks/starters";
 import { notifyStoreCreated } from "@/lib/email/notify";
+import type { Json } from "@/lib/supabase/database.types";
 import { setActiveStore } from "@/lib/tenant/actions";
 import { createStoreSchema, type CreateStoreInput } from "@/lib/tenant/create-store";
+import { presetForKind } from "@/lib/tenant/kinds";
 import { STORE_SLUG_MESSAGES } from "@/lib/tenant/slug";
 
 /** "Entrar al panel" desde /app: fija la tienda activa y va a /admin. */
@@ -56,6 +59,21 @@ export async function createStore(input: CreateStoreInput): Promise<ActionResult
       console.error("[app] create_store:", msg);
       return fail("No pudimos crear la tienda. Probá de nuevo.");
     }
+
+    // Inicio de fábrica del estilo del rubro (docs/DESIGN.md §6.12): reemplaza la
+    // portada genérica que siembra `create_store`. Si falla, la tienda queda con esa.
+    const { error: homeError } = await supabase
+      .from("pages")
+      .update({
+        blocks: starterHomeBlocks(presetForKind(v.kind), {
+          storeName: v.name,
+          transferDiscount: v.transferEnabled ? v.transferDiscount : 0,
+          whatsapp: v.whatsappEnabled && Boolean(v.whatsapp),
+        }) as unknown as Json,
+      })
+      .eq("store_id", storeId)
+      .eq("slug", "home");
+    if (homeError) console.error("[app] inicio de fábrica:", homeError.message);
 
     (await cookies()).set(ADMIN_STORE_COOKIE, storeId, ADMIN_STORE_COOKIE_OPTIONS);
     const { error: auditError } = await supabase.from("audit_log").insert({

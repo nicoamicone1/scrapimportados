@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Ellipsis, Eye, Printer, Wallet, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Ellipsis, Eye, Printer, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
@@ -20,6 +20,7 @@ import { formatMoney, formatNumber } from "@/lib/money";
 
 import { CancelDialog, ShipDialog, type ShipValues } from "./OrderDialogs";
 import { ExpiryText, OrderStatusBadge, PaymentStatusBadge, RelativeTime } from "./OrderBadges";
+import { OrderJourneyMini } from "./OrderJourney";
 import { quickActionFor, type QuickAction } from "./quick-action";
 
 const BULK_STATUSES: OrderStatus[] = ["confirmed", "preparing", "shipped", "delivered", "cancelled"];
@@ -189,6 +190,7 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
         className={className}
         loading={busyId === o.id}
         disabled={busyId !== null && busyId !== o.id}
+        iconRight={<ArrowRight />}
         onClick={() => runQuick(o, q)}
         aria-label={`${q.label}, pedido #${o.number}`}
       >
@@ -258,7 +260,8 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
                 <li
                   key={o.id}
                   className={cn(
-                    "relative flex gap-1 rounded-adm border border-adm-border bg-adm-surface p-3 shadow-adm-card",
+                    "relative flex gap-1 rounded-adm-lg border border-adm-border bg-adm-surface p-3 shadow-adm-card",
+                    o.status === "cancelled" && "bg-adm-surface-2/60",
                     checked && "bg-adm-accent-2-soft/60",
                   )}
                 >
@@ -268,7 +271,7 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-1.5">
-                        {isNew ? <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-adm-accent" /> : null}
+                        {isNew ? <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-eco-pomelo" /> : null}
                         <Link
                           href={`/admin/pedidos/${o.id}`}
                           className={cn(
@@ -281,7 +284,9 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
                         </Link>
                         {o.source === "manual" ? <span className="text-xs text-adm-fg-muted">Manual</span> : null}
                       </div>
-                      <span className="tnum shrink-0 text-[15px] font-semibold">{formatMoney(o.total, { currency: o.currency })}</span>
+                      <span className={cn("eco-num shrink-0 text-[17px]", o.status === "cancelled" && "text-adm-fg-muted line-through decoration-1")}>
+                        {formatMoney(o.total, { currency: o.currency })}
+                      </span>
                     </div>
                     <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[13px]">
                       <span className="truncate">{o.customer.name}</span>
@@ -290,6 +295,7 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <OrderStatusBadge status={o.status} fulfillment={o.fulfillment} />
                       <PaymentStatusBadge status={o.paymentStatus} />
+                      <OrderJourneyMini status={o.status} className="ml-auto" />
                       {hasReservation({ status: o.status, payment_status: o.paymentStatus, expires_at: o.expiresAt }) ? (
                         <ExpiryText expiresAt={o.expiresAt} timeZone={timeZone} />
                       ) : null}
@@ -352,10 +358,10 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
                       </TD>
                       <TD className="whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          {isNew ? <span aria-hidden className="size-1.5 rounded-full bg-adm-accent" /> : null}
+                          {isNew ? <span aria-hidden className="size-1.5 rounded-full bg-eco-pomelo" /> : null}
                           <Link
                             href={`/admin/pedidos/${o.id}`}
-                            className={cn("tnum text-adm-fg hover:underline", isNew ? "font-semibold" : "font-medium")}
+                            className={cn("tnum text-adm-fg hover:text-adm-link hover:underline", isNew ? "font-semibold" : "font-medium")}
                           >
                             #{o.number}
                           </Link>
@@ -369,13 +375,18 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
                         <div className="truncate text-xs text-adm-fg-muted">{o.customer.email ?? o.customer.phone ?? "—"}</div>
                       </TD>
                       <TD numeric>
-                        <div className="font-medium">{formatMoney(o.total, { currency: o.currency })}</div>
+                        <div className={cn("font-semibold text-adm-fg", o.status === "cancelled" && "font-normal text-adm-fg-muted line-through")}>
+                          {formatMoney(o.total, { currency: o.currency })}
+                        </div>
                         <div className="text-xs font-normal text-adm-fg-muted">
                           {formatNumber(o.itemsCount)} {o.itemsCount === 1 ? "ítem" : "ítems"}
                         </div>
                       </TD>
                       <TD>
-                        <OrderStatusBadge status={o.status} fulfillment={o.fulfillment} />
+                        <div className="flex flex-col items-start gap-1.5">
+                          <OrderStatusBadge status={o.status} fulfillment={o.fulfillment} />
+                          <OrderJourneyMini status={o.status} className="pl-0.5" />
+                        </div>
                       </TD>
                       <TD>
                         <div className="flex flex-col items-start gap-0.5">

@@ -17,6 +17,12 @@ import { formatMoney, formatNumber } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Clientes" };
 
+/** Iniciales para el avatar (los clientes con más de un pedido, en pomelo: vuelven a comprar). */
+function initials(name: string) {
+  const parts = name.trim().split(/[\s@.]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts[1][0] ?? "") : "")).toUpperCase() || "?";
+}
+
 export default async function CustomersPage({ searchParams }: PageProps<"/admin/clientes">) {
   const { supabase, store: active } = await requireAdmin();
   const filters = parseCustomerFilters(await searchParams);
@@ -78,14 +84,28 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
           ) : (
             rows.map((c) => (
               <TR key={c.id}>
-                <TD className="max-w-72">
-                  <Link href={`/admin/clientes/${c.id}`} className="block truncate font-medium hover:underline">
-                    {c.name || c.email || "Sin nombre"}
-                  </Link>
-                  <div className="tnum truncate text-xs text-adm-fg-muted">{[c.phone, c.email].filter(Boolean).join(" · ") || "Sin contacto"}</div>
+                <TD className="max-w-80">
+                  <div className="flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                        c.orders_count > 1 ? "bg-adm-accent-2-soft text-adm-accent-2-ink" : "bg-adm-surface-2 text-adm-fg-muted"
+                      }`}
+                    >
+                      {initials(c.name || c.email || "?")}
+                    </span>
+                    <div className="min-w-0">
+                      <Link href={`/admin/clientes/${c.id}`} className="block truncate font-medium text-adm-fg hover:text-adm-link hover:underline">
+                        {c.name || c.email || "Sin nombre"}
+                      </Link>
+                      <div className="tnum truncate text-xs text-adm-fg-muted">{[c.phone, c.email].filter(Boolean).join(" · ") || "Sin contacto"}</div>
+                    </div>
+                  </div>
                 </TD>
                 <TD numeric>{formatNumber(c.orders_count)}</TD>
-                <TD numeric>{formatMoney(Number(c.total_spent), { currency: store.currency })}</TD>
+                <TD numeric className="font-semibold text-adm-fg">
+                  {formatMoney(Number(c.total_spent), { currency: store.currency })}
+                </TD>
                 <TD muted className="hidden whitespace-nowrap md:table-cell">
                   {c.lastOrderAt ? <RelativeTime value={c.lastOrderAt} timeZone={store.timezone} /> : "—"}
                 </TD>
@@ -95,7 +115,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
                       <Link
                         key={t}
                         href={`/admin/clientes?tag=${encodeURIComponent(t)}`}
-                        className="rounded-[4px] bg-adm-surface-2 px-1.5 text-xs leading-5 text-adm-fg-muted hover:text-adm-fg"
+                        className="inline-flex h-6 items-center rounded-full bg-adm-surface-2 px-2.5 text-xs text-adm-fg-muted transition-colors duration-[140ms] ease-eco-out hover:bg-adm-border hover:text-adm-fg"
                       >
                         {t}
                       </Link>

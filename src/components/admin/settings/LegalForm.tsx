@@ -158,7 +158,7 @@ export function LegalForm({ initial, store }: { initial: LegalSettingsInput; sto
                 description={
                   <>
                     «Defensa de las y los consumidores. Para reclamos ingresá acá», al pie de la tienda. Obligatorio para vender online en Argentina.{" "}
-                    <a href={CONSUMER_DEFENSE_URL} target="_blank" rel="noopener noreferrer" className="text-adm-accent underline-offset-2 hover:underline">
+                    <a href={CONSUMER_DEFENSE_URL} target="_blank" rel="noopener noreferrer" className="text-adm-link underline-offset-2 hover:underline">
                       Ver formulario
                     </a>
                   </>
@@ -238,7 +238,7 @@ export function LegalForm({ initial, store }: { initial: LegalSettingsInput; sto
                   href={`${storeBase}/politicas/${LEGAL_TEMPLATES[policy].slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-mono text-xs text-adm-accent hover:underline"
+                  className="inline-flex items-center gap-1 font-mono text-xs text-adm-link hover:underline"
                 >
                   /politicas/{LEGAL_TEMPLATES[policy].slug}
                   <ExternalLink className="size-3" aria-hidden />

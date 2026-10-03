@@ -5,7 +5,7 @@ import { FieldsSkeleton } from "@/components/ui/skeletons";
 export default function Loading() {
   return (
     <AccountShell wide>
-      <div className="max-w-[600px]">
+      <div className="max-w-[620px]">
         <FieldsSkeleton fields={3} />
       </div>
     </AccountShell>

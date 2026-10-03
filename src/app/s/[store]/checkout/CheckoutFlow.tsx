@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
@@ -184,15 +184,21 @@ export function StepShell({
     if (active && n > 1) headingRef.current?.focus();
   }, [active, n]);
   return (
-    <section className="border-b border-border py-5" aria-labelledby={`paso-${n}`}>
-      <div className="flex items-baseline justify-between gap-4">
+    <section className="co-step border-b border-border py-5" data-state={active ? "active" : done ? "done" : "next"} aria-labelledby={`paso-${n}`}>
+      <div className="flex items-center justify-between gap-4">
         <h2
           id={`paso-${n}`}
           ref={headingRef}
           tabIndex={-1}
-          className={cn("font-body text-base font-semibold tracking-normal normal-case outline-none", !active && !done && "text-fg-muted")}
+          className={cn("flex items-center gap-3 font-body text-base font-semibold tracking-normal normal-case outline-none", !active && !done && "text-fg-muted")}
         >
-          {n}. {title}
+          <span className="co-step-num tnum" aria-hidden>
+            {done ? <Check className="st-pop size-3.5" strokeWidth={2.5} /> : n}
+          </span>
+          <span>
+            <span className="sr-only">{n}. </span>
+            {title}
+          </span>
         </h2>
         {done ? (
           <button type="button" onClick={onEdit} className="link text-sm" aria-label={`Editar ${title.toLowerCase()}`}>
@@ -200,8 +206,8 @@ export function StepShell({
           </button>
         ) : null}
       </div>
-      {done && summary ? <div className="mt-1.5 text-sm text-fg-muted">{summary}</div> : null}
-      {active ? <div className="mt-4">{children}</div> : null}
+      {done && summary ? <div className="mt-1.5 pl-10 text-sm text-fg-muted">{summary}</div> : null}
+      {active ? <div className="co-step-body mt-4">{children}</div> : null}
     </section>
   );
 }
@@ -975,7 +981,7 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
 
       {/* Resumen desktop */}
       <aside className="hidden lg:block" aria-label="Resumen del pedido">
-        <div className="sticky top-[calc(var(--header-h)+24px)] space-y-4 rounded-lg border border-border bg-surface p-5">
+        <div className="cart-summary sticky top-[calc(var(--header-sticky-h)+24px)] space-y-4 p-5">
           <p className="font-semibold">Resumen</p>
           {summary}
           <FreeShippingBar threshold={props.freeShippingThreshold} amount={cartTotals.merchandiseTotal} partial={props.freeShippingPartial} />

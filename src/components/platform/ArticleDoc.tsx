@@ -1,27 +1,25 @@
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { CornerArc } from "@/app/(platform)/site-shapes";
 import { cn } from "@/lib/cn";
 
 import type { Heading } from "@/content/text";
 
+import "@/app/(platform)/site.css";
+
 import { DISPLAY } from "./brand";
 
 /*
- * Página de artículo (centro de ayuda y guías): medida de 68ch, índice
- * lateral fijo en desktop desde los h2 y plegable arriba en mobile, igual
- * que `LegalDoc`. El cuerpo es JSX plano; los estilos de prosa salen de acá.
+ * Página de artículo (centro de ayuda y guías). Tipografía de lectura:
+ * Archivo de ancho normal a 17/1.7 y 64 ch (`.site-prose`, site.css),
+ * titulares en display. Índice lateral fijo en desktop desde los h2 y
+ * plegable arriba en mobile, igual que `LegalDoc`.
  */
 
-/** Estilos de prosa para el cuerpo (h2 con ancla, listas, links, código). */
-export const ARTICLE_PROSE = cn(
-  "text-[16px] leading-[1.7] text-adm-fg",
-  "[&_h2]:mt-11 [&_h2]:scroll-mt-6 [&_h2]:text-[21px] [&_h2]:leading-snug [&_h2]:font-semibold [&_h2]:tracking-[-0.015em] [&_h2:first-child]:mt-0",
-  "[&_h3]:mt-7 [&_h3]:text-[16px] [&_h3]:leading-snug [&_h3]:font-semibold",
-  "[&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mt-1.5 [&_li]:pl-1",
-  "[&_li::marker]:text-adm-fg-muted [&_a]:text-adm-accent [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:no-underline [&_strong]:font-semibold",
-  "[&_code]:rounded-[3px] [&_code]:bg-adm-surface-2 [&_code]:px-1 [&_code]:py-px [&_code]:font-mono [&_code]:text-[13px] [&_code]:break-words",
-);
+/** Estilos de prosa para el cuerpo (los define `.site-prose` en site.css). */
+export const ARTICLE_PROSE = "site-prose";
 
 export interface Crumb {
   href: string;
@@ -30,12 +28,17 @@ export interface Crumb {
 
 function Toc({ headings }: { headings: readonly Heading[] }) {
   return (
-    <ol className="space-y-1.5 text-[13px]">
+    <ol className="site-toc space-y-0.5 text-[14px]">
       {headings.map((h, i) => (
-        <li key={h.id} className="flex gap-2">
-          <span className="tnum w-5 shrink-0 text-right text-adm-fg-muted">{i + 1}.</span>
-          <a href={`#${h.id}`} className="text-adm-fg underline-offset-4 hover:text-adm-accent hover:underline">
-            {h.text}
+        <li key={h.id}>
+          <a
+            href={`#${h.id}`}
+            className="group flex gap-3 rounded-[12px] px-3 py-2 leading-snug text-adm-fg-muted transition-colors duration-[140ms] hover:bg-eco-niebla-2 hover:text-adm-fg"
+          >
+            <span aria-hidden className="tnum w-5 shrink-0 font-semibold text-eco-pomelo-ink">
+              {/^\d+[.)]\s/.test(h.text) ? "·" : String(i + 1).padStart(2, "0")}
+            </span>
+            <span>{h.text}</span>
           </a>
         </li>
       ))}
@@ -69,63 +72,84 @@ export function ArticleDoc({
 }) {
   const guide = variant === "guide";
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14">
-      <header className="max-w-[68ch] border-b border-adm-border pb-6">
-        <nav aria-label="Ubicación" className="text-[13px] text-adm-fg-muted">
-          <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-            {breadcrumb.map((c, i) => (
-              <li key={c.href} className="flex items-center gap-1.5">
-                {i > 0 ? <span aria-hidden>/</span> : null}
-                <Link href={c.href} className="underline-offset-4 hover:text-adm-fg hover:underline">
-                  {c.label}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </nav>
-        <h1
-          className={cn(
-            DISPLAY,
-            "mt-3 font-semibold text-balance",
-            guide
-              ? "text-[32px] leading-[1.08] tracking-[-0.03em] sm:text-[42px]"
-              : "text-[28px] leading-tight tracking-[-0.02em] sm:text-[34px]",
-          )}
-        >
-          {title}
-        </h1>
-        {lead ? (
-          <p className={cn("mt-4 text-pretty", guide ? "text-[19px] leading-snug tracking-[-0.01em]" : "text-[16px] leading-relaxed text-adm-fg-muted")}>
-            {lead}
-          </p>
-        ) : null}
-        <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-adm-fg-muted">{meta}</p>
-        {actions ? <div className="mt-4">{actions}</div> : null}
+    <article>
+      <header className={cn("relative overflow-hidden", guide ? "bg-eco-ink text-white" : "border-b border-eco-line bg-adm-surface")}>
+        <CornerArc corner="br" size={guide ? 520 : 380} className={cn("hidden md:block", guide ? "bg-eco-ink-2" : "bg-eco-durazno/70")} />
+        <div className={cn("relative mx-auto max-w-6xl px-4 sm:px-6", guide ? "pt-12 pb-14 md:pt-20 md:pb-20" : "pt-10 pb-10 md:pt-14 md:pb-12")}>
+          <nav aria-label="Ubicación" className="text-[13px]">
+            <ol className="flex flex-wrap items-center gap-1.5">
+              {breadcrumb.map((c, i) => (
+                <li key={c.href} className="flex items-center gap-1.5">
+                  {i > 0 ? (
+                    <span aria-hidden className={guide ? "text-eco-bruma" : "text-adm-fg-muted"}>
+                      /
+                    </span>
+                  ) : null}
+                  <Link
+                    href={c.href}
+                    className={cn(
+                      "inline-flex min-h-8 items-center rounded-full px-3 font-medium transition-colors duration-[140ms]",
+                      guide ? "bg-eco-ink-2 text-eco-mist hover:bg-eco-ink-3" : "bg-eco-niebla-2 text-adm-fg hover:bg-eco-line",
+                    )}
+                  >
+                    {c.label}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <h1
+            className={cn(
+              DISPLAY,
+              "eco-pop mt-6 max-w-[22ch] text-balance",
+              guide ? "text-[38px] leading-[1] sm:text-[56px]" : "text-[32px] leading-[1.04] sm:text-[44px]",
+            )}
+          >
+            {title}
+          </h1>
+          {lead ? (
+            <p
+              className={cn(
+                "eco-pop mt-5 max-w-[60ch] text-pretty [--i:1]",
+                guide ? "text-[19px] leading-[1.45] text-eco-mist sm:text-[21px]" : "text-[17px] leading-relaxed text-adm-fg-muted",
+              )}
+            >
+              {lead}
+            </p>
+          ) : null}
+          <p className={cn("mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]", guide ? "text-eco-bruma" : "text-adm-fg-muted")}>{meta}</p>
+          {actions ? <div className="mt-6">{actions}</div> : null}
+        </div>
       </header>
 
-      {headings.length > 1 ? (
-        <details className="mt-6 rounded-adm border border-adm-border bg-adm-surface lg:hidden">
-          <summary className="cursor-pointer px-4 py-3 text-[14px] font-medium">En esta página</summary>
-          <nav aria-label="Índice" className="border-t border-adm-border px-4 py-3">
-            <Toc headings={headings} />
-          </nav>
-        </details>
-      ) : null}
-
-      <div className="mt-8 lg:grid lg:grid-cols-[minmax(0,68ch)_minmax(0,1fr)] lg:gap-16">
-        <div className="min-w-0">
-          <div className={ARTICLE_PROSE}>{children}</div>
-          {after}
-        </div>
-        <aside className="hidden lg:block">
-          {headings.length > 1 ? (
-            <nav aria-label="Índice" className="sticky top-6 border-l border-adm-border pl-5">
-              <p className="mb-3 text-[12px] font-medium text-adm-fg-muted">En esta página</p>
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-16">
+        {headings.length > 1 ? (
+          <details className="group mb-10 rounded-eco-lg border border-eco-line bg-adm-surface lg:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
+              En esta página
+              <ChevronDown className="size-4 transition-transform duration-[240ms] ease-eco-out group-open:rotate-180" strokeWidth={2} aria-hidden />
+            </summary>
+            <nav aria-label="Índice" className="border-t border-eco-line px-1 py-2">
               <Toc headings={headings} />
             </nav>
-          ) : null}
-        </aside>
+          </details>
+        ) : null}
+
+        <div className="lg:grid lg:grid-cols-[minmax(0,680px)_minmax(0,1fr)] lg:gap-20">
+          <div className="min-w-0">
+            <div className={ARTICLE_PROSE}>{children}</div>
+            {after}
+          </div>
+          <aside className="hidden lg:block">
+            {headings.length > 1 ? (
+              <nav aria-label="Índice" className="sticky top-24">
+                <p className="mb-2 px-3 text-[12px] font-semibold tracking-[0.08em] text-adm-fg-muted uppercase">En esta página</p>
+                <Toc headings={headings} />
+              </nav>
+            ) : null}
+          </aside>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

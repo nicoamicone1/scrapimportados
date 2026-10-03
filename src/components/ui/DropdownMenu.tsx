@@ -45,9 +45,11 @@ export interface DropdownMenuProps {
   align?: "start" | "end";
   width?: number;
   className?: string;
+  /** Clases del contenedor del disparador (ej. `flex w-full` para un disparador de ancho completo). */
+  triggerClassName?: string;
 }
 
-export function DropdownMenu({ trigger, children, align = "end", width = 208, className }: DropdownMenuProps) {
+export function DropdownMenu({ trigger, children, align = "end", width = 208, className, triggerClassName }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const wrapperRef = useRef<HTMLSpanElement>(null);
@@ -146,7 +148,7 @@ export function DropdownMenu({ trigger, children, align = "end", width = 208, cl
 
   return (
     <MenuContext.Provider value={{ close: () => close() }}>
-      <span ref={wrapperRef} className="inline-flex max-w-full min-w-0">
+      <span ref={wrapperRef} className={cn("inline-flex max-w-full min-w-0", triggerClassName)}>
         {triggerNode}
       </span>
       {open ? (
@@ -156,9 +158,9 @@ export function DropdownMenu({ trigger, children, align = "end", width = 208, cl
           role="menu"
           tabIndex={-1}
           onKeyDown={onMenuKeyDown}
-          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width }}
+          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width, transformOrigin: align === "end" ? "top right" : "top left" }}
           className={cn(
-            "fixed z-50 rounded-adm border border-adm-border bg-adm-surface p-1 text-sm text-adm-fg shadow-[var(--adm-shadow)]",
+            "adm-pop-in fixed z-50 rounded-[14px] border border-adm-border bg-adm-surface p-1.5 text-sm text-adm-fg shadow-[var(--adm-shadow)]",
             className,
           )}
         >
@@ -170,7 +172,7 @@ export function DropdownMenu({ trigger, children, align = "end", width = 208, cl
 }
 
 const itemClass =
-  "flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-adm-sm px-2 py-1 text-left text-sm pointer-coarse:min-h-11 outline-none select-none focus:bg-adm-surface-2 hover:bg-adm-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-adm-fg-muted";
+  "flex min-h-8 w-full cursor-pointer items-center gap-2.5 rounded-[8px] px-2.5 py-1 text-left text-sm pointer-coarse:min-h-11 outline-none select-none transition-colors duration-[140ms] focus:bg-adm-surface-2 hover:bg-adm-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-adm-fg-muted";
 
 export interface DropdownItemProps {
   children: ReactNode;
@@ -220,9 +222,9 @@ export function DropdownItem({ children, onSelect, href, icon, shortcut, danger,
 }
 
 export function DropdownSeparator() {
-  return <div role="separator" className="-mx-1 my-1 h-px bg-adm-border" />;
+  return <div role="separator" className="-mx-1.5 my-1.5 h-px bg-adm-border" />;
 }
 
 export function DropdownLabel({ children }: { children: ReactNode }) {
-  return <div className="px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-[0.07em] text-adm-fg-muted uppercase">{children}</div>;
+  return <div className="px-2.5 pt-1.5 pb-1 text-[11px] font-semibold tracking-[0.08em] text-adm-fg-muted uppercase">{children}</div>;
 }

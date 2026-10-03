@@ -60,10 +60,10 @@ export function SearchInput({
       {pending && !controlled ? (
         <Loader2
           aria-hidden
-          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 animate-spin text-adm-accent-2-ink"
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 animate-spin text-adm-accent-2-ink"
         />
       ) : (
-        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-adm-fg-muted" />
+        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-adm-fg-muted" />
       )}
       <input
         type="search"
@@ -79,14 +79,15 @@ export function SearchInput({
         aria-label={aria["aria-label"] ?? placeholder}
         aria-busy={(pending && !controlled) || undefined}
         autoFocus={autoFocus}
-        className="h-8 w-full rounded-adm border border-adm-input-border bg-adm-surface pr-9 pl-8 text-sm text-adm-fg transition-colors duration-[120ms] placeholder:text-adm-fg-muted hover:border-adm-input-border-hover pointer-coarse:h-10 pointer-coarse:text-base [&::-webkit-search-cancel-button]:hidden"
+        // Pastilla (BRAND §10: buscadores y filtros); foco azul desde admin.css.
+        className="h-8 w-full rounded-full border border-adm-input-border bg-adm-surface pr-9 pl-9 text-sm text-adm-fg transition-[border-color,box-shadow] duration-[140ms] ease-eco-out placeholder:text-adm-fg-muted hover:border-adm-input-border-hover pointer-coarse:h-10 pointer-coarse:text-base [&::-webkit-search-cancel-button]:hidden"
       />
       {shown ? (
         <button
           type="button"
           onClick={() => update("")}
           aria-label="Limpiar búsqueda"
-          className="absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-adm-sm text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg pointer-coarse:right-1 pointer-coarse:size-8"
+          className="absolute top-1/2 right-1 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-adm-fg-muted hover:bg-adm-surface-2 hover:text-adm-fg pointer-coarse:right-1 pointer-coarse:size-8"
         >
           <X className="size-3.5" aria-hidden />
         </button>

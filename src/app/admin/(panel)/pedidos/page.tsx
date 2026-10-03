@@ -4,12 +4,12 @@ import type { Metadata } from "next";
 import { ExpireSweep } from "@/components/admin/orders/ExpireSweep";
 import { OrdersFilters } from "@/components/admin/orders/OrdersFilters";
 import { OrdersTable } from "@/components/admin/orders/OrdersTable";
+import { PillTabs } from "@/components/admin/orders/PillTabs";
 import { WithdrawalsLink } from "@/components/admin/orders/WithdrawalsLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
 import { Pagination } from "@/components/ui/Pagination";
 import { TableEmpty } from "@/components/ui/Table";
-import { TabsNav } from "@/components/ui/Tabs";
 import { requireAdmin } from "@/lib/auth";
 import {
   countNewWithdrawals,
@@ -78,13 +78,14 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ped
           </>
         }
       >
-        <TabsNav
+        <PillTabs
           label="Vistas rápidas"
           items={ORDER_TABS.map((tab) => ({
             href: tabHref(tab),
             label: ORDER_TAB_LABELS[tab],
             active: filters.tab === tab,
             count: counts[tab],
+            attention: tab === "pendientes" || tab === "preparar",
           }))}
         />
       </PageHeader>

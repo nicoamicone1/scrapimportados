@@ -351,7 +351,7 @@ function BoardColumn({
       aria-label={printer ? `Impresora ${printer.name}` : "Sin asignar"}
       className={cn(
         "flex w-[86vw] max-w-[340px] shrink-0 snap-start flex-col rounded-adm border border-adm-border bg-adm-surface-2/70 sm:w-[300px]",
-        isOver && "border-adm-accent-2 bg-adm-accent-2-soft/40",
+        isOver && "border-adm-link bg-adm-accent-soft/50",
       )}
     >
       <header

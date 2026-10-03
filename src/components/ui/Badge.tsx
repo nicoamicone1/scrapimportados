@@ -2,19 +2,24 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-/** Tonos lavados de docs/DESIGN.md §7.7 (contraste ≥ 5.8:1). */
-export type BadgeTone = "neutral" | "amber" | "blue" | "purple" | "teal" | "green" | "orange" | "red" | "accent";
+/**
+ * Tonos lavados fríos de docs/DESIGN.md §7.7 (tokens `--adm-badge-*` en
+ * admin.css, contraste ≥ 5,9:1). `accent` = pomelo de marca ("En uso",
+ * "Nuevo"); `ink` = tinta sólida para un dato que tiene que saltar.
+ */
+export type BadgeTone = "neutral" | "amber" | "blue" | "purple" | "teal" | "green" | "orange" | "red" | "accent" | "ink";
 
 const tones: Record<BadgeTone, string> = {
-  neutral: "bg-[#ECEBE7] text-[#5C5952]",
-  amber: "bg-[#F5EAD3] text-[#7A4A00]",
-  blue: "bg-[#E2EBF4] text-[#1F4B75]",
-  purple: "bg-[#ECE5F2] text-[#5A3C82]",
-  teal: "bg-[#DCEFEC] text-[#1C5C55]",
-  green: "bg-[#E1EFDF] text-[#2A5F2E]",
-  orange: "bg-[#F7E4D6] text-[#8A3C0C]",
-  red: "bg-[#F8E1DE] text-[#9B2218]",
-  accent: "bg-adm-accent-soft text-adm-accent",
+  neutral: "bg-[var(--adm-badge-neutral-bg)] text-[var(--adm-badge-neutral-fg)]",
+  amber: "bg-[var(--adm-badge-amber-bg)] text-[var(--adm-badge-amber-fg)]",
+  blue: "bg-[var(--adm-badge-blue-bg)] text-[var(--adm-badge-blue-fg)]",
+  purple: "bg-[var(--adm-badge-purple-bg)] text-[var(--adm-badge-purple-fg)]",
+  teal: "bg-[var(--adm-badge-teal-bg)] text-[var(--adm-badge-teal-fg)]",
+  green: "bg-[var(--adm-badge-green-bg)] text-[var(--adm-badge-green-fg)]",
+  orange: "bg-[var(--adm-badge-orange-bg)] text-[var(--adm-badge-orange-fg)]",
+  red: "bg-[var(--adm-badge-red-bg)] text-[var(--adm-badge-red-fg)]",
+  accent: "bg-[var(--adm-badge-accent-bg)] text-[var(--adm-badge-accent-fg)]",
+  ink: "bg-eco-ink text-white",
 };
 
 export interface BadgeProps {
@@ -26,12 +31,14 @@ export interface BadgeProps {
   title?: string;
 }
 
+/** Pastilla de 22 px con punto + etiqueta (BRAND §10). */
 export function Badge({ tone = "neutral", dot = true, className, children, title }: BadgeProps) {
   return (
     <span
       title={title}
       className={cn(
-        "inline-flex h-5 items-center gap-1.5 rounded-adm-sm px-1.5 text-xs font-medium whitespace-nowrap",
+        "inline-flex h-[22px] items-center gap-1.5 rounded-full text-xs leading-none font-medium whitespace-nowrap",
+        dot ? "pr-2.5 pl-2" : "px-2.5",
         tones[tone],
         className,
       )}

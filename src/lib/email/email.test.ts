@@ -308,7 +308,21 @@ describe("plantillas de cuenta", () => {
 describe("layout", () => {
   it("acento: sólo hex válido; si no, tinta neutra", () => {
     expect(brandColors("#123abc", "#fff").accent).toBe("#123abc");
-    expect(brandColors("red;background:url(x)", null).accent).toBe("#1c1917");
+    expect(brandColors("red;background:url(x)", null).accent).toBe("#10162f");
+  });
+
+  it("plataforma: logo y botón en pastilla pomelo con texto tinta; la tienda no lleva nada de Ecommy", () => {
+    const platform = welcomeEmail({ storeName: "Taller Luna", storeUrl: "https://taller-luna.ecommy.app", platformUrl: "https://www.ecommy.app" }).html;
+    expect(platform).toMatch(/<td bgcolor="#ff5a3c" style="background:#ff5a3c;border-radius:999px;">/);
+    expect(platform).toMatch(/<a href="https:\/\/www\.ecommy\.app\/admin" style="[^"]*color:#10162f;[^"]*border-radius:999px;">Abrir el panel<\/a>/);
+    expect(platform).toContain('fillcolor="#ff5a3c"');
+    expect(platform).toContain(">ecommy</td>");
+    expect(platform).toContain("color:#2f4bff;");
+
+    const buyer = orderReceivedEmail(order(), store).html;
+    expect(buyer).not.toContain("#ff5a3c");
+    expect(buyer).not.toContain(">ecommy</td>");
+    expect(buyer).not.toContain("999px");
   });
 
   it("links: sólo http(s)/mailto/tel; logo sólo https", () => {

@@ -117,7 +117,7 @@ export function QuoteReview({ quote, catalog, settings, bed, today, publicUrl, s
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0 space-y-4">
         {mismatches ? (
-          <div role="alert" className="flex gap-2 rounded-adm border border-[#F1C9C3] bg-[#FBEFED] px-4 py-3 text-[13px] text-[#9B2218]">
+          <div role="alert" className="flex gap-2 rounded-adm border border-adm-danger/25 bg-adm-danger-soft px-4 py-3 text-[13px] text-adm-danger">
             <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
             <p>
               <span className="font-semibold">La geometría no coincide con el archivo</span> en {mismatches}{" "}
@@ -380,7 +380,7 @@ function GeometryVerdict({ check }: { check: FileCheck }) {
       </span>
     </p>
   ) : (
-    <div className={cn("rounded-adm border border-[#F1C9C3] bg-[#FBEFED] px-3 py-2 text-xs text-[#9B2218]")}>
+    <div className={cn("rounded-adm border border-adm-danger/25 bg-adm-danger-soft px-3 py-2 text-xs text-adm-danger")}>
       <p className="font-semibold">La geometría no coincide con el archivo</p>
       <p className="tnum mt-0.5">
         Volumen {pct(c.diffs.volume)} · área {pct(c.diffs.area)} · medidas {pct(c.diffs.bbox)} · triángulos {pct(c.diffs.triangles)}

@@ -95,7 +95,7 @@ export default async function PromocionesPage({ searchParams }: { searchParams: 
       </div>
 
       {/* Mobile: una tarjeta por promoción, con pausar/activar en un toque. */}
-      <div className="rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
+      <div className="rounded-adm-lg border border-adm-border bg-adm-surface md:hidden">
         {rows.length === 0 ? (
           <div className="px-4 py-6">
             <p className="text-[15px] font-semibold text-adm-fg">No hay promociones con estos filtros.</p>

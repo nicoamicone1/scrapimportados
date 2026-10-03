@@ -300,7 +300,7 @@ export default async function TerminosPage() {
           <>
             <p>
               Estos términos regulan el uso de Ecommy. Al crear una cuenta los aceptás, junto con la{" "}
-              <Link href="/privacidad" className="text-adm-accent underline underline-offset-2">
+              <Link href="/privacidad">
                 política de privacidad
               </Link>
               .

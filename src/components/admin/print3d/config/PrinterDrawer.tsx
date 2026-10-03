@@ -214,13 +214,13 @@ export function PrinterDrawer({
                   className={cn(
                     "flex min-h-11 flex-col items-start justify-center rounded-adm border px-2.5 py-1.5 text-left transition-colors",
                     active
-                      ? "border-adm-accent bg-adm-accent-soft"
+                      ? "border-adm-link bg-adm-accent-soft"
                       : "border-adm-border bg-adm-surface hover:border-adm-input-border-hover hover:bg-adm-hover",
                   )}
                 >
                   <span className="flex w-full items-center justify-between gap-1 text-[13px] font-medium text-adm-fg">
                     {p.model}
-                    {active ? <Check className="size-3.5 text-adm-accent" aria-hidden /> : null}
+                    {active ? <Check className="size-3.5 text-adm-link" aria-hidden /> : null}
                   </span>
                   <span className="tnum text-[11px] text-adm-fg-muted">
                     {p.brand} · {p.bed[0] === p.bed[1] && p.bed[1] === p.bed[2] ? `${p.bed[0]}³` : p.bed.join("×")}

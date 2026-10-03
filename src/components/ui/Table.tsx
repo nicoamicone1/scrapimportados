@@ -23,7 +23,7 @@ export function Table({
   return (
     <div
       className={cn(
-        "adm-scroll relative w-full overflow-auto rounded-adm border border-adm-border bg-adm-surface shadow-adm-card",
+        "adm-scroll relative w-full overflow-auto rounded-adm-lg border border-adm-border bg-adm-surface",
         containerClassName,
       )}
     >
@@ -51,9 +51,10 @@ export function TR({
     <tr
       aria-selected={selected || undefined}
       className={cn(
-        "group/row",
+        "group/row transition-colors duration-[140ms] ease-eco-out",
         interactive && "hover:bg-adm-row-hover",
-        selected && "bg-adm-accent-2-soft/60 hover:bg-adm-accent-2-soft/60",
+        // Seleccionada: azul lavado (selección = azul, BRAND §5.3).
+        selected && "bg-[var(--adm-select-soft)] hover:bg-[var(--adm-select-soft)]",
         className,
       )}
       {...props}
@@ -70,7 +71,7 @@ export function TH({
     <th
       scope="col"
       className={cn(
-        "h-9 border-b border-adm-border px-3 text-left text-xs font-medium whitespace-nowrap text-adm-fg-muted",
+        "h-9 border-b border-adm-border px-3 text-left text-xs font-medium whitespace-nowrap text-adm-fg-muted first:pl-4 last:pr-4",
         numeric && "text-right",
         className,
       )}
@@ -88,7 +89,7 @@ export function TD({
   return (
     <td
       className={cn(
-        "h-10 border-b border-adm-border px-3 align-middle text-adm-fg",
+        "h-10 border-b border-adm-border px-3 align-middle text-adm-fg first:pl-4 last:pr-4",
         numeric && "text-right tnum whitespace-nowrap",
         muted && "text-adm-fg-muted",
         className,
@@ -112,7 +113,7 @@ export function TableEmpty({
 }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-8">
+      <td colSpan={colSpan} className="px-5 py-10">
         <p className="text-[15px] font-semibold text-adm-fg">{title}</p>
         {description ? <p className="mt-1 max-w-prose text-[13px] text-adm-fg-muted">{description}</p> : null}
         {action ? <div className="mt-3 flex gap-2">{action}</div> : null}

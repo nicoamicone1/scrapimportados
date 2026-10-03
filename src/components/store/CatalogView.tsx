@@ -28,6 +28,7 @@ import { storePath } from "@/lib/tenant/urls";
 
 import { Breadcrumbs } from "./Breadcrumbs";
 import { FilterDrawer } from "./FilterDrawer";
+import { PageHead } from "./PageHead";
 import { ProductCard, ProductGrid, type ProductCardProps } from "./ProductCard";
 import { SortSelect } from "./SortSelect";
 
@@ -405,6 +406,12 @@ export async function CatalogView({ basePath, store, linkBase, searchParams, dis
     );
   }
 
+  const style = settings.theme.style;
+  const withSidebar = style.filters === "sidebar";
+  // Pastillas de categoría arriba (`bar`): hermanas si estás en una categoría, raíces si no.
+  const pillLinks = category ? subcategories.map((c) => ({ name: c.name, href: `/categoria/${c.slug}` })) : categoryLinks;
+  const eyebrow = category ? (parentChain.at(-1)?.name ?? "Categoría") : state.q ? "Búsqueda" : "Catálogo";
+
   const from = (list.page - 1) * list.perPage + 1;
   const to = Math.min(list.page * list.perPage, list.total);
 
@@ -419,12 +426,34 @@ export async function CatalogView({ basePath, store, linkBase, searchParams, dis
         ].filter((item, i, arr) => !(item.name === "Productos" && arr.length === 2))}
       />
 
-      <header className="mt-3 max-w-[68ch]">
-        <h1 className="h-page">{heading}</h1>
-        {category?.description ? <p className="mt-2 text-fg-muted">{category.description}</p> : null}
-      </header>
+      <PageHead
+        className="cat-head mt-3"
+        eyebrow={eyebrow}
+        title={heading}
+        count={list.total || undefined}
+        description={category?.description ? <p>{category.description}</p> : null}
+      />
 
-      {subcategories.length ? (
+      {style.filters === "bar" && pillLinks.length ? (
+        <nav aria-label={category ? "Subcategorías" : "Categorías"} className="cat-pills no-scrollbar -mx-[var(--gutter)] mt-5 overflow-x-auto px-[var(--gutter)]">
+          <ul className="flex gap-2">
+            {category ? null : (
+              <li className="shrink-0">
+                <span className="chip cat-pill" aria-current="true">
+                  Todo
+                </span>
+              </li>
+            )}
+            {pillLinks.map((c) => (
+              <li key={c.href} className="shrink-0">
+                <StoreLink href={c.href} className="chip cat-pill">
+                  {c.name}
+                </StoreLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : subcategories.length ? (
         <nav aria-label="Subcategorías" className="no-scrollbar -mx-[var(--gutter)] mt-4 overflow-x-auto px-[var(--gutter)]">
           <ul className="flex gap-2">
             {subcategories.map((c) => (
@@ -438,12 +467,12 @@ export async function CatalogView({ basePath, store, linkBase, searchParams, dis
         </nav>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+      <div className="cat-toolbar mt-6 flex flex-wrap items-center justify-between gap-3 pb-3">
         <p className="tnum text-sm text-fg-muted" aria-live="polite">
           {list.total ? `${formatNumber(list.total)} ${list.total === 1 ? "producto" : "productos"}` : "Sin resultados"}
         </p>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <FilterDrawer activeCount={activeCount} resultCount={list.total}>
+          <FilterDrawer activeCount={activeCount} resultCount={list.total} always={!withSidebar}>
             {panel("m")}
           </FilterDrawer>
           <SortSelect options={sortOptions} value={state.sort} />
@@ -454,17 +483,22 @@ export async function CatalogView({ basePath, store, linkBase, searchParams, dis
         <ActiveFilters state={state} href={href} clearHref={clearHref} categoryName={catFilter?.name} />
       </div>
 
-      <div className="mt-4 grid gap-8 lg:grid-cols-12">
-        <aside aria-label="Filtros" className="hidden lg:col-span-3 lg:block xl:col-span-2">
-          {panel("d")}
-        </aside>
-        <div className="min-w-0 lg:col-span-9 xl:col-span-10">
+      <div className={cn("mt-4 grid gap-8", withSidebar && "lg:grid-cols-12")}>
+        {withSidebar ? (
+          <aside aria-label="Filtros" className="cat-aside hidden lg:col-span-3 lg:block xl:col-span-2">
+            <div className="lg:sticky lg:top-[calc(var(--header-sticky-h)+16px)] lg:max-h-[calc(100svh-var(--header-sticky-h)-32px)] lg:overflow-y-auto lg:pr-2">
+              {panel("d")}
+            </div>
+          </aside>
+        ) : null}
+        <div className={cn("min-w-0", withSidebar && "lg:col-span-9 xl:col-span-10")}>
           {list.items.length ? (
             <ProductGrid
               products={list.items}
               {...cardProps}
               dividers={settings.theme.effects.dividers}
-              columns={Math.max(2, settings.theme.layout.gridColumns.desktop - 1)}
+              layout={style.grid}
+              columns={withSidebar ? Math.max(2, settings.theme.layout.gridColumns.desktop - 1) : settings.theme.layout.gridColumns.desktop}
             />
           ) : (
             empty

@@ -14,11 +14,13 @@ import { Features } from "./Features";
 import { Heading } from "./Heading";
 import { Hero } from "./Hero";
 import { ImageText } from "./ImageText";
+import { Lookbook } from "./Lookbook";
+import { Marquee } from "./Marquee";
 import { Print3dCta } from "./Print3dCta";
 import { ProductGridBlock } from "./ProductGrid";
 import { ProductSlider } from "./ProductSlider";
 import { RichText } from "./RichText";
-import { BlockDivider, BlockSection, needsDivider } from "./Section";
+import { BlockDivider, BlockSection, needsDivider, sectionIndexes } from "./Section";
 import { Testimonials } from "./Testimonials";
 import type { BlockContext } from "./types";
 import { Video } from "./Video";
@@ -60,6 +62,10 @@ export function isBlockEmpty(block: Block, ctx: BlockContext): boolean {
       return !sanitizeHtml(block.settings.html).trim();
     case "print3d_cta":
       return !ctx.data.print3d || !block.settings.title.trim();
+    case "marquee":
+      return !block.settings.items.some((t) => t.trim());
+    case "lookbook":
+      return !block.settings.imageUrl && !(ctx.data.products[block.id]?.length);
     case "countdown": {
       const end = Date.parse(block.settings.endsAt);
       const now = (ctx.now ?? new Date()).getTime();
@@ -104,11 +110,16 @@ export function renderBlock(block: Block, ctx: BlockContext, index: number): Rea
       return <Divider block={block} ctx={ctx} index={index} />;
     case "print3d_cta":
       return <Print3dCta block={block} ctx={ctx} index={index} />;
+    case "marquee":
+      return <Marquee block={block} ctx={ctx} index={index} />;
+    case "lookbook":
+      return <Lookbook block={block} ctx={ctx} index={index} />;
   }
 }
 
 export function BlockRenderer({ blocks, ...ctx }: { blocks: Block[] } & BlockContext) {
   const visible = blocks.filter((b) => !b.style.hidden && !isBlockEmpty(b, ctx));
+  const sec = sectionIndexes(visible);
   return (
     <>
       {visible.map((block, i) => {
@@ -118,7 +129,7 @@ export function BlockRenderer({ blocks, ...ctx }: { blocks: Block[] } & BlockCon
         return (
           <Fragment key={block.id}>
             {divider ? <BlockDivider /> : null}
-            <BlockSection block={block} prev={visible[i - 1]}>
+            <BlockSection block={block} prev={visible[i - 1]} sectionIndex={sec[i]}>
               {content}
             </BlockSection>
           </Fragment>

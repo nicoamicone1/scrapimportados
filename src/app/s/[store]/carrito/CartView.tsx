@@ -42,7 +42,8 @@ export function CartView({
     return (
       <div className="mt-4">
         {messages.length ? <Notices messages={messages} /> : null}
-        <p className="text-fg-muted">Tu carrito está vacío.</p>
+        <p className="heading text-[length:var(--text-xl)]">Tu carrito está vacío.</p>
+        <p className="mt-1 text-fg-muted">Elegí algo del catálogo y lo vas a ver acá.</p>
         <StoreLink href="/productos" className="btn btn-primary mt-4">
           Ver todos los productos
         </StoreLink>
@@ -67,7 +68,7 @@ export function CartView({
         </StoreLink>
       </div>
 
-      <aside className="h-fit space-y-5 rounded-lg border border-border bg-surface p-5 lg:sticky lg:top-[calc(var(--header-h)+24px)] lg:col-span-5 xl:col-span-4" aria-label="Resumen">
+      <aside className="cart-summary h-fit space-y-5 p-5 lg:sticky lg:top-[calc(var(--header-sticky-h)+24px)] lg:col-span-5 xl:col-span-4" aria-label="Resumen">
         <FreeShippingBar threshold={freeShippingThreshold} amount={totals.merchandiseTotal} partial={freeShippingPartial} />
         <CouponForm />
         {totals.coupon && !totals.coupon.applied ? <p className="text-sm text-danger">{totals.coupon.reason}</p> : null}

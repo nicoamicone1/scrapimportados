@@ -500,7 +500,7 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
                   name="fulfillment"
                   checked={fulfillment === "delivery"}
                   onChange={() => setFulfillment("delivery")}
-                  className="accent-[var(--adm-accent)]"
+                  className="accent-[var(--adm-link)]"
                 />
                 Envío a domicilio
               </label>
@@ -510,7 +510,7 @@ export function ManualOrderForm({ currency, methods, pickups, zones, reservation
                   name="fulfillment"
                   checked={fulfillment === "pickup"}
                   onChange={() => setFulfillment("pickup")}
-                  className="accent-[var(--adm-accent)]"
+                  className="accent-[var(--adm-link)]"
                 />
                 Retira en el local
               </label>

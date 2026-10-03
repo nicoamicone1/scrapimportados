@@ -23,7 +23,7 @@ const contentClass = cn(
   "min-h-40 px-3 py-2.5 text-sm leading-relaxed text-adm-fg outline-none",
   "[&_p]:my-2 [&_p:first-child]:mt-0 [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold",
   "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_li_p]:my-0.5",
-  "[&_a]:text-adm-accent [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-adm-border [&_blockquote]:pl-3 [&_blockquote]:text-adm-fg-muted",
+  "[&_a]:text-adm-link [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-adm-border [&_blockquote]:pl-3 [&_blockquote]:text-adm-fg-muted",
   "[&_.is-editor-empty:first-child]:before:pointer-events-none [&_.is-editor-empty:first-child]:before:float-left [&_.is-editor-empty:first-child]:before:h-0 [&_.is-editor-empty:first-child]:before:text-adm-fg-muted/70 [&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]",
 );
 

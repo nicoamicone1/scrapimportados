@@ -122,9 +122,9 @@ export function SuggestDialog({
           </section>
         ))}
         {plan.unplaceable.length ? (
-          <section className="rounded-adm border border-[#F1C9C3] bg-[#FBEFED] px-3 py-2.5">
-            <h3 className="text-[13px] font-semibold text-[#9B2218]">Sin impresora que pueda</h3>
-            <p className="text-xs text-[#9B2218]">No entran en la cama o ninguna impresora activa imprime ese material. Quedan sin asignar.</p>
+          <section className="rounded-adm border border-adm-danger/25 bg-adm-danger-soft px-3 py-2.5">
+            <h3 className="text-[13px] font-semibold text-adm-danger">Sin impresora que pueda</h3>
+            <p className="text-xs text-adm-danger">No entran en la cama o ninguna impresora activa imprime ese material. Quedan sin asignar.</p>
             <ul className="mt-1.5 space-y-0.5 text-[13px]">
               {plan.unplaceable.map((j) => (
                 <li key={j.id} className="truncate">

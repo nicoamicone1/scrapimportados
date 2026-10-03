@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { ArrowRight, Check, MessageCircle, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { StoreLink } from "@/components/store/StoreLink";
@@ -36,25 +36,30 @@ export interface QuickAddProps {
 }
 
 /**
- * Compra rápida de la card (DESIGN.md §6.1): aparece al hover/focus en
- * desktop, pegada al borde inferior de la imagen. En mobile no se muestra.
+ * Compra rápida de la card (DESIGN.md §6.1). Dónde y cómo se ve lo decide
+ * `data-card` (store.css, "Tarjeta"): en `stack`/`overlay` sube al hover en
+ * desktop y en mobile no está; en `boxed`/`row` es un botón siempre visible; en
+ * `tile` es un "+" redondo sobre la foto (la etiqueta queda para lectores de
+ * pantalla). Por eso lleva ícono y etiqueta por separado.
  */
 export function QuickAdd({ product, variant, hasOptions, available, whatsappHref }: QuickAddProps) {
   const { add, open } = useCart();
   const [added, setAdded] = useState(false);
-  const cls = "btn btn-primary pcard-quick absolute inset-x-0 bottom-0 z-10 w-full rounded-none";
+  const cls = "btn btn-primary pcard-quick";
 
   if (!available) {
     return whatsappHref ? (
-      <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={cls}>
-        Consultar por WhatsApp
+      <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={cls} data-kind="ask">
+        <MessageCircle className="pcard-quick-icon" aria-hidden strokeWidth={1.75} />
+        <span className="pcard-quick-label">Consultar por WhatsApp</span>
       </a>
     ) : null;
   }
   if (hasOptions || !variant) {
     return (
-      <StoreLink href={`/producto/${product.slug}`} className={cls} tabIndex={-1}>
-        Elegir opciones
+      <StoreLink href={`/producto/${product.slug}`} className={cls} tabIndex={-1} data-kind="options">
+        <ArrowRight className="pcard-quick-icon" aria-hidden strokeWidth={1.75} />
+        <span className="pcard-quick-label">Elegir opciones</span>
       </StoreLink>
     );
   }
@@ -88,9 +93,20 @@ export function QuickAdd({ product, variant, hasOptions, available, whatsappHref
   };
 
   return (
-    <button type="button" onClick={onAdd} className={cls} aria-label={added ? `${product.name} agregado al carrito` : `Agregar ${product.name} al carrito`}>
-      {added ? <Check className="size-4" aria-hidden /> : null}
-      {added ? "Agregado" : "Agregar al carrito"}
+    <button
+      type="button"
+      onClick={onAdd}
+      className={cls}
+      data-kind="add"
+      data-added={added ? "1" : undefined}
+      aria-label={added ? `${product.name} agregado al carrito` : `Agregar ${product.name} al carrito`}
+    >
+      {added ? (
+        <Check key="ok" className="pcard-quick-icon st-pop" aria-hidden strokeWidth={2} />
+      ) : (
+        <Plus key="add" className="pcard-quick-icon" aria-hidden strokeWidth={1.75} />
+      )}
+      <span className="pcard-quick-label">{added ? "Agregado" : "Agregar al carrito"}</span>
     </button>
   );
 }

@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "blob-report/**",
+    // Capturas de trabajo (scripts/shots.cjs)
+    ".shots/**",
   ]),
 ]);
 

@@ -27,6 +27,7 @@ export function CountdownClock({
   expired,
   before,
   children,
+  variant = "inline",
 }: {
   endsAt: string;
   serverNow: number;
@@ -38,6 +39,8 @@ export function CountdownClock({
   before?: ReactNode;
   /** CTA que acompaña mientras corre. */
   children?: ReactNode;
+  /** `banner`: números gigantes a lo ancho, separados por dos puntos. */
+  variant?: "inline" | "banner";
 }) {
   const end = Date.parse(endsAt);
   const [now, setNow] = useState(serverNow);
@@ -70,11 +73,12 @@ export function CountdownClock({
         role="timer"
         aria-live="off"
         aria-label={`Faltan ${p.days} días, ${p.hours} horas y ${p.minutes} minutos`}
-        className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3 @3xl:gap-x-10"
+        className="blk-cd mt-4 flex flex-wrap items-end gap-x-6 gap-y-3 @3xl:gap-x-10"
+        data-variant={variant}
       >
         {units.map((u, i) => (
-          <div key={u.label} className="flex flex-col">
-            <span className="heading blk-display tnum" style={{ lineHeight: 1 }}>
+          <div key={u.label} className="blk-cd-unit flex flex-col">
+            <span className="blk-cd-num heading blk-display tnum" style={{ lineHeight: 1 }}>
               {i === 0 && u.label.startsWith("d") ? u.value : pad(u.value)}
             </span>
             <span className="mt-2 text-xs tracking-[0.08em] text-fg-muted uppercase">{u.label}</span>

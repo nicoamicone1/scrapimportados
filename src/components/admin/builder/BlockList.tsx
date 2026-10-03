@@ -55,6 +55,10 @@ export function blockSummary(block: Block): string {
       return block.settings.style === "line" ? "Línea" : "Espacio";
     case "print3d_cta":
       return block.settings.title;
+    case "marquee":
+      return block.settings.items.filter(Boolean).join(" · ") || "Sin texto";
+    case "lookbook":
+      return block.settings.title;
   }
 }
 

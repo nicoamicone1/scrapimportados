@@ -145,7 +145,7 @@ export function MarkdownField({
         <div
           id={`${baseId}-preview`}
           role="tabpanel"
-          className="adm-scroll max-h-[480px] [&_a]:text-adm-accent [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-adm-border [&_blockquote]:pl-3 [&_h2]:mt-4 [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-semibold [&_h2:first-child]:mt-0 [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h4]:font-semibold [&_hr]:my-3 [&_hr]:border-adm-border [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 min-h-[96px] overflow-y-auto bg-adm-surface px-4 py-3 text-sm"
+          className="adm-scroll max-h-[480px] [&_a]:text-adm-link [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-adm-border [&_blockquote]:pl-3 [&_h2]:mt-4 [&_h2]:mb-1.5 [&_h2]:text-base [&_h2]:font-semibold [&_h2:first-child]:mt-0 [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h4]:font-semibold [&_hr]:my-3 [&_hr]:border-adm-border [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 min-h-[96px] overflow-y-auto bg-adm-surface px-4 py-3 text-sm"
           // HTML generado por markdownToHtml y saneado con sanitizeHtml (allowlist).
           dangerouslySetInnerHTML={{ __html: html || '<p class="text-adm-fg-muted">Nada para mostrar todavía.</p>' }}
         />

@@ -191,21 +191,27 @@ export function useNewOrdersCount(): number {
   );
 }
 
-/** Badge del ítem "Pedidos" del sidebar. */
+/**
+ * Badge del ítem "Pedidos" del sidebar: pastilla pomelo con texto tinta que
+ * aparece con un rebote corto (y lo repite cuando cambia el número).
+ */
 export function OrdersBadge({ collapsed = false }: { collapsed?: boolean }) {
   const n = useNewOrdersCount();
   if (!n) return null;
   const label = `${n} ${n === 1 ? "pedido nuevo" : "pedidos nuevos"}`;
   if (collapsed) {
     return (
-      <span className="absolute top-1 right-1 size-2 rounded-full bg-adm-accent-2" title={label}>
+      <span key={n} className="adm-bounce-in absolute top-0.5 right-1.5 size-2.5 rounded-full bg-eco-pomelo ring-2 ring-adm-sidebar-bg" title={label}>
         <span className="sr-only">{label}</span>
       </span>
     );
   }
   return (
     <span
-      className={cn("tnum ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-adm-accent-2 px-1 text-[11px] font-semibold text-adm-accent-2-fg")}
+      key={n}
+      className={cn(
+        "adm-bounce-in tnum relative ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-eco-pomelo px-1.5 text-[11px] font-bold text-eco-ink",
+      )}
       title={label}
     >
       {n > 99 ? "99+" : n}

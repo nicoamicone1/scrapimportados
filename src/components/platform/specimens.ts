@@ -35,6 +35,23 @@ export const SPECIMEN_PRODUCTS: Record<SpecimenKind, SampleProduct> = {
   gourmet: { name: "Malbec de Valle de Uco 750 ml", price: 16500, compareAt: 19400 },
 };
 
+/**
+ * Portada y grilla de la demo "Probá tu tienda" por rubro: el titular de la
+ * portada de ejemplo y los productos de la grilla (copy real del rubro).
+ */
+export const SPECIMEN_SCENES: Record<SpecimenKind, { headline: string; catalog: readonly string[] }> = {
+  moda: { headline: "Nueva temporada", catalog: ["Campera de gabardina", "Vestido de lino", "Cartera de cuero", "Aros de plata 925", "Camisa oversize"] },
+  artesanias: { headline: "Hecho a mano, para tu mesa", catalog: ["Jarra de cerámica 1 L", "Set 4 tazas de gres", "Mate de calabaza", "Individuales de yute", "Fuente ovalada"] },
+  tecnologia: { headline: "Electro y bazar con envío", catalog: ["Pava eléctrica 1,7 L", "Licuadora 600 W", "Taladro percutor", "Freidora de aire 4 L", "Juego de sartenes"] },
+  marca: { headline: "Colección de primavera", catalog: ["Buzo de frisa oversize", "Remera estampada", "Gorra cinco paneles", "Pantalón cargo", "Fanzine n.º 12"] },
+  gaming: { headline: "Armá tu setup", catalog: ["Auriculares USB", "Teclado mecánico", "Mouse inalámbrico", "Micrófono de condensador", "Vinilo 180 g"] },
+  farmacia: { headline: "Cuidado de todos los días", catalog: ["Protector solar FPS 50", "Sérum vitamina C", "Crema de manos", "Agua micelar 400 ml", "Shampoo sólido"] },
+  libreria: { headline: "Vuelta al cole", catalog: ["Cuaderno A4 tapa dura", "Lápices de colores × 24", "Mochila escolar", "Rompecabezas 500 piezas", "Cartuchera doble"] },
+  muebles: { headline: "Madera maciza, hecha a medida", catalog: ["Mesa ratona de lapacho", "Sillón dos cuerpos", "Lámpara de pie", "Aparador de paraíso", "Banqueta alta"] },
+  mayorista: { headline: "Lista de precios por bulto", catalog: ["Cinta de embalar × 36", "Film stretch 50 cm", "Cajas de cartón × 25", "Bolsas kraft × 100", "Precintos × 1000"] },
+  gourmet: { headline: "Los vinos de la semana", catalog: ["Malbec Valle de Uco", "Café de especialidad 250 g", "Aceite de oliva 500 ml", "Gin artesanal", "Yerba orgánica 1 kg"] },
+};
+
 /** Texto del botón de la muestra: el mismo de la card real (DESIGN.md §2.8). */
 export const SPECIMEN_BUTTON = "Agregar al carrito";
 
@@ -76,6 +93,13 @@ export function presetSpecimens(): Specimen[] {
  */
 export function presetMinPlan<P extends Pick<PlanInfo, "features">>(plans: readonly P[], presetId: PresetKey): P | null {
   return plans.find((p) => isPresetAllowed(p, presetId)) ?? null;
+}
+
+/** "Incluido en Free" / "Desde Starter" (o nada si no hay planes cargados). */
+export function specimenPlanLabel(plans: readonly Pick<PlanInfo, "features" | "name">[], specimen: Pick<Specimen, "presetId">): string | null {
+  const min = presetMinPlan(plans, specimen.presetId);
+  if (!min) return null;
+  return min === plans[0] ? `Incluido en ${min.name}` : `Desde ${min.name}`;
 }
 
 /** Caracteres únicos (con sus mayúsculas: hay presets con títulos y botones en mayúsculas), ordenados. */

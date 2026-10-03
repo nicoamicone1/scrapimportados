@@ -185,7 +185,7 @@ export function MercadoPagoCard({ state, currency, locale }: { state: MercadoPag
                 href="https://www.mercadopago.com.ar/costs-section"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-adm-accent underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-1 text-adm-link underline-offset-2 hover:underline"
               >
                 Abrir Costos y cuotas <ExternalLink className="size-3" aria-hidden />
               </a>

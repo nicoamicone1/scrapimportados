@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AccountShell } from "@/components/platform/AccountShell";
-import { DISPLAY } from "@/components/platform/brand";
+import { ACCOUNT_TITLE, AccountShell } from "@/components/platform/AccountShell";
+import { TEXT_LINK } from "@/components/platform/brand";
+import { PlanCtaLink } from "@/components/platform/PlanCards";
 import { getProfile, getSession, listMyStores } from "@/lib/auth";
-import { cn } from "@/lib/cn";
 
 import { NewStoreWizard } from "./NewStoreWizard";
 
@@ -25,18 +25,15 @@ export default async function NuevaTiendaPage() {
     <AccountShell wide>
       {owned >= MAX_STORES && !profile?.is_platform_admin ? (
         <div className="max-w-[440px]">
-          <h1 className={cn(DISPLAY, "text-[28px] leading-tight font-semibold tracking-[-0.02em]")}>Llegaste al máximo de tiendas</h1>
-          <p className="mt-2 text-sm leading-relaxed text-adm-fg-muted">
+          <h1 className={ACCOUNT_TITLE}>Llegaste al máximo de tiendas</h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">
             Cada cuenta puede tener hasta {MAX_STORES} tiendas propias. Si necesitás más, el plan Business se arma a medida.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link
-              href="/app"
-              className="inline-flex h-11 items-center rounded-adm bg-adm-accent px-4 text-[15px] font-medium text-adm-accent-fg hover:bg-adm-accent-hover"
-            >
-              Volver a mis tiendas
-            </Link>
-            <Link href="/contacto#business" className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="w-full sm:w-auto">
+              <PlanCtaLink href="/app">Volver a mis tiendas</PlanCtaLink>
+            </div>
+            <Link href="/contacto#business" className={TEXT_LINK}>
               Consultar por Business
             </Link>
           </div>
@@ -45,8 +42,8 @@ export default async function NuevaTiendaPage() {
         <>
           <NewStoreWizard firstStore={stores.length === 0} />
           {stores.length ? (
-            <p className="mt-8 text-[13px] text-adm-fg-muted">
-              <Link href="/app" className="inline-flex min-h-11 items-center text-adm-accent underline underline-offset-4 hover:no-underline md:min-h-0">
+            <p className="mt-8 text-[14px]">
+              <Link href="/app" className={`${TEXT_LINK} inline-flex min-h-11 items-center md:min-h-0`}>
                 Volver a mis tiendas
               </Link>
             </p>

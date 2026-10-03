@@ -97,9 +97,9 @@ export function CartDrawer({ promotions, freeShippingThreshold, freeShippingPart
           <CartLines items={items} lines={totals.lines} onQty={setQty} onRemove={remove} onNavigate={close} />
         </div>
       ) : (
-        <div className="px-4 py-8 sm:px-5">
-          <p className="text-base">Tu carrito está vacío.</p>
-          <p className="mt-1 text-sm text-fg-muted">Agregá productos y los vas a ver acá.</p>
+        <div className="cart-empty px-4 py-10 sm:px-5">
+          <p className="heading text-[length:var(--text-xl)]">Tu carrito está vacío.</p>
+          <p className="mt-1.5 text-sm text-fg-muted">Agregá productos y los vas a ver acá.</p>
           <StoreLink href="/productos" className="btn btn-primary mt-6" onClick={close}>
             Ver todos los productos
           </StoreLink>

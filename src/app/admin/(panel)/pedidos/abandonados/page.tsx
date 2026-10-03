@@ -59,7 +59,7 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
         {list.available && !on ? (
           <p className="mb-3 text-[13px] text-adm-fg-muted">
             El aviso está apagado: el checkout no ofrece guardar el carrito.{" "}
-            <Link href="/admin/configuracion/pagos" className="font-medium text-adm-accent hover:underline">
+            <Link href="/admin/configuracion/pagos" className="font-medium text-adm-link hover:underline">
               Prenderlo en Pagos y checkout
             </Link>
           </p>

@@ -33,10 +33,10 @@ export type RedKind = "reel" | "carrusel" | "historias";
 
 export const KIND_LABEL: Record<RedKind, string> = { reel: "Reel", carrusel: "Carrusel", historias: "Historias" };
 
-/** Fondo de la placa: crema (default) o verde-tinta, para cerrar un carrusel. */
-export type Tone = "crema" | "tinta";
+/** Fondo de la placa: niebla (default), tinta noche o pomelo (cierres de carrusel). */
+export type Tone = "niebla" | "tinta" | "pomelo";
 
-/** (a) Titular grande. `acento` sigue al titular en pino (ámbar sobre tinta). */
+/** (a) Titular grande. `acento` sigue al titular en pomelo (pomelo-ink sobre niebla, tinta sobre pomelo). */
 export interface HookSlide {
   template: "gancho";
   kicker?: string;
@@ -46,7 +46,7 @@ export interface HookSlide {
   tone?: Tone;
 }
 
-/** (b) Número o valor grande + explicación. */
+/** (b) Número o valor grande (display pomelo sobre tinta) + explicación. */
 export interface FactSlide {
   template: "dato";
   kicker: string;
@@ -71,7 +71,7 @@ export interface CompareSlide {
   note?: string;
 }
 
-/** (e) Marco verde-tinta con un rectángulo crema vacío para pegar una captura real. */
+/** (e) Marco tinta con un recuadro niebla en forma de burbuja para pegar una captura real. */
 export interface ScreenshotSlide {
   template: "captura";
   kicker?: string;
@@ -90,7 +90,7 @@ export interface StorySlide {
   kicker?: string;
   title: string;
   body?: string;
-  /** CTA en ámbar al pie ("Link en la bio"). */
+  /** CTA en pastilla pomelo al pie ("Link en la bio"). */
   cta?: string;
   sticker?: StickerKind;
 }

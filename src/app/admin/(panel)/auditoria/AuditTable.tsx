@@ -85,7 +85,7 @@ export function AuditTable({ rows, timeZone, filtered }: { rows: AuditRow[]; tim
                           <Link
                             href={r.href}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-adm-accent underline-offset-2 hover:underline"
+                            className="text-adm-link underline-offset-2 hover:underline"
                             title={r.entity_id ?? undefined}
                           >
                             {r.entity}
@@ -108,7 +108,7 @@ export function AuditTable({ rows, timeZone, filtered }: { rows: AuditRow[]; tim
                         <Link
                           href={r.href}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-adm-accent underline-offset-2 hover:underline"
+                          className="text-adm-link underline-offset-2 hover:underline"
                           title={r.entity_id ?? undefined}
                         >
                           {r.entity}

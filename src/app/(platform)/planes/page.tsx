@@ -1,19 +1,20 @@
+import { ArrowUpRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DISPLAY, EYEBROW, TEXT_LINK } from "@/components/platform/brand";
-import { FaqList } from "@/components/platform/FaqList";
+import { DISPLAY, EYEBROW, H1, TEXT_LINK } from "@/components/platform/brand";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
+import { FaqAccordion } from "@/components/platform/faq-accordion";
 import { PlanCards, PlanComparison, PlanCtaLink } from "@/components/platform/PlanCards";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { exampleStoreAddress } from "@/components/platform/site";
 import { getSession } from "@/lib/auth";
 import { billingEnabled } from "@/lib/billing/mercadopago";
-import type { PublicPlan } from "@/lib/plans/catalog";
 import { cn } from "@/lib/cn";
-import { yearlyOffer } from "@/lib/plans/yearly";
 
 import { plansOrEmpty } from "../_lib/public-site";
+import { ArcWord, CornerArc, Rings } from "../site-shapes";
+import "../site.css";
 
 export const metadata: Metadata = {
   title: "Planes",
@@ -24,21 +25,47 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-/** "Starter" · "Starter y Pro" · "Starter, Pro y Business". */
-function joinNames(names: string[]): string {
-  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
+/** La prueba contada como un recorrido: hoy, día 14 y después (reversión de riesgo, sin letra chica). */
+function TrialPath() {
+  const steps = [
+    { when: "Hoy", what: "Pro completo", detail: "Todas las funciones, sin tarjeta ni datos de pago." },
+    { when: "Día 14", what: "Elegís", detail: "Si te sirve, pagás el plan que quieras desde el panel." },
+    { when: "Después", what: "Free, si no elegiste", detail: "No se borra nada: productos, pedidos y páginas quedan." },
+  ];
+  return (
+    <figure className="eco-bubble relative overflow-hidden bg-eco-ink p-6 text-white [--eco-bubble-r:32px] sm:p-8">
+      <Rings size={520} className="-right-40 -bottom-56 text-eco-ink-3" />
+      <figcaption className="relative text-[12px] font-semibold tracking-[0.1em] text-eco-pomelo uppercase">Cómo funciona la prueba</figcaption>
+      <svg aria-hidden viewBox="0 0 300 70" className="relative mt-5 h-auto w-full overflow-visible" preserveAspectRatio="none">
+        <path d="M14 58 C 80 -10, 220 -10, 286 58" fill="none" stroke="var(--eco-ink-3)" strokeWidth={3} strokeLinecap="round" />
+        <path d="M14 58 C 80 -10, 220 -10, 286 58" fill="none" stroke="var(--eco-pomelo)" strokeWidth={3} strokeLinecap="round" pathLength={1} className="eco-draw" />
+        <circle cx={14} cy={58} r={7} fill="var(--eco-pomelo)" />
+        <circle cx={150} cy={7} r={7} fill="var(--eco-durazno)" />
+        <circle cx={286} cy={58} r={7} fill="var(--eco-mist)" />
+      </svg>
+      <ol className="relative mt-4 grid grid-cols-3 gap-3 text-[13px] sm:gap-5">
+        {steps.map((s, i) => (
+          <li key={s.when} className={cn("min-w-0", i === 1 && "text-center", i === 2 && "text-right")}>
+            <p className="tnum font-semibold text-eco-bruma">{s.when}</p>
+            <p className={cn(DISPLAY, "mt-1 text-[15px] leading-tight sm:text-[17px]")}>{s.what}</p>
+            <p className="mt-1.5 hidden leading-snug text-eco-mist sm:block">{s.detail}</p>
+          </li>
+        ))}
+      </ol>
+      <p className="relative mt-5 border-t border-eco-ink-3 pt-4 text-[14px] leading-snug text-eco-mist sm:hidden">
+        Sin tarjeta. Si no elegís un plan, pasás a Free y no se borra nada.
+      </p>
+    </figure>
+  );
 }
 
-/** Párrafo del pago anual (sólo si algún plan lo tiene; sin 0019 no aparece). */
-function YearlyNote({ yearly, mercadoPago }: { yearly: PublicPlan[]; mercadoPago: boolean }) {
-  const offers = new Set(yearly.map((p) => yearlyOffer(p.priceMonthly, p.priceYearly)));
-  const [offer] = offers;
-  const common = offers.size === 1 && offer?.startsWith("12 meses") ? offer : null;
+/** Párrafo del pago anual con el ahorro de cada plan en pesos (sólo si algún plan lo tiene). */
+function YearlyNote({ mercadoPago }: { mercadoPago: boolean }) {
   return (
-    <p className="mt-14 max-w-[640px] text-[14px] leading-relaxed text-adm-fg-muted">
-      <span className="font-medium text-adm-fg">Pago anual en {joinNames(yearly.map((p) => p.name))}</span>
-      {common ? `: ${common}.` : "."} Pagás el año por adelantado, {mercadoPago ? "por transferencia o con MercadoPago" : "por transferencia"}, y ese precio queda fijo durante los 12
-      meses. Se renueva al año.
+    <p className="mt-10 max-w-[72ch] text-[14px] leading-relaxed text-adm-fg-muted">
+      <span className="font-semibold text-adm-fg">Pago anual:</span> pagás el año por adelantado,{" "}
+      {mercadoPago ? "por transferencia o con Mercado Pago" : "por transferencia"}, y el precio queda fijo durante los 12 meses. El ahorro de cada plan
+      está en su tarjeta, en pesos. Se renueva al año.
     </p>
   );
 }
@@ -46,13 +73,14 @@ function YearlyNote({ yearly, mercadoPago }: { yearly: PublicPlan[]; mercadoPago
 export default async function PlanesPage() {
   const [{ user }, plans] = await Promise.all([getSession(), plansOrEmpty("planes")]);
   const start = user ? "/app/nueva" : "/registro";
-  const yearlyPlans = plans.filter((p) => p.monthlyEquivalent != null);
+  const anyYearly = plans.some((p) => p.monthlyEquivalent != null);
   const mpEnabled = billingEnabled();
   const faq = pickFaq(platformFaq({ storeAddress: exampleStoreAddress(), plans, mpEnabled }), [
     "prueba",
+    "comision",
     "cambio-plan",
     "anual",
-    "comision",
+    "tarjeta",
     "varias-tiendas",
     "dominio",
     "datos",
@@ -60,24 +88,36 @@ export default async function PlanesPage() {
 
   return (
     <PlatformPage signedIn={Boolean(user)}>
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
-        <p className={EYEBROW}>Planes</p>
-        <h1 className={cn(DISPLAY, "mt-3 max-w-[18ch] text-[36px] leading-[1.05] font-semibold tracking-[-0.03em] sm:text-[48px]")}>
-          Empezás con todo. Después elegís.
-        </h1>
-        <p className="mt-4 max-w-[60ch] text-[17px] leading-snug">
-          Toda tienda nueva arranca con 14 días de Pro, sin tarjeta. Si no elegís un plan pago, pasás a Free y no se borra nada.
-        </p>
-        <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-adm-fg-muted">
-          <li>Sin comisión por venta</li>
-          <li>Precios finales en pesos, por mes y por tienda</li>
-          <li>Cambiás de plan cuando quieras</li>
-        </ul>
+      <section className="relative overflow-hidden">
+        <CornerArc corner="tr" size={520} className="hidden bg-eco-durazno/70 lg:block" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 pt-12 pb-12 sm:px-6 md:pt-20 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-14">
+          <div className="eco-pop">
+            <p className={EYEBROW}>Planes</p>
+            <h1 className={cn(H1, "mt-4 max-w-[13ch] text-balance")}>
+              Empezás con <ArcWord>todo</ArcWord>. Después elegís.
+            </h1>
+            <p className="mt-6 max-w-[44ch] text-[19px] leading-[1.4] sm:text-[21px]">
+              Toda tienda nueva arranca con 14 días de Pro. Precios finales en pesos, por mes y por tienda.
+            </p>
+            <ul className="mt-7 flex flex-wrap gap-2 text-[13px] font-medium">
+              {["Sin comisión por venta", "Sin tarjeta para probar", "Cambiás de plan cuando quieras"].map((t) => (
+                <li key={t} className="rounded-full border border-eco-line bg-adm-surface px-3.5 py-2">
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="eco-pop [--i:2]">
+            <TrialPath />
+          </div>
+        </div>
+      </section>
 
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 md:pb-24">
         {plans.length ? null : (
-          <p role="status" className="mt-8 rounded-adm border border-adm-border bg-adm-surface px-4 py-3 text-[14px]">
+          <p role="status" className="rounded-eco-lg border border-eco-line bg-adm-surface px-5 py-4 text-[15px]">
             No pudimos cargar los precios. Probá de nuevo en un rato o{" "}
-            <Link href="/contacto" className="text-adm-accent underline underline-offset-2">
+            <Link href="/contacto" className={TEXT_LINK}>
               escribinos
             </Link>
             .
@@ -85,10 +125,11 @@ export default async function PlanesPage() {
         )}
 
         <PlanCards
-          className="mt-10"
+          className="mt-4 xl:mt-8"
           plans={plans}
           highlight="pro"
           highlightLabel="Incluido en la prueba"
+          highlightNote="14 días de Pro, sin tarjeta. Después seguís en Free y no se borra nada."
           renderCta={(plan) =>
             plan.code === "business" ? (
               <PlanCtaLink href="/contacto#business">Hablemos</PlanCtaLink>
@@ -100,24 +141,41 @@ export default async function PlanesPage() {
           }
         />
 
-        {yearlyPlans.length ? <YearlyNote yearly={yearlyPlans} mercadoPago={mpEnabled} /> : null}
+        {anyYearly ? <YearlyNote mercadoPago={mpEnabled} /> : null}
 
-        <h2 id="comparar" className={cn(DISPLAY, "scroll-mt-20 text-[26px] font-semibold tracking-[-0.02em]", yearlyPlans.length ? "mt-8" : "mt-16")}>
-          Comparación completa
-        </h2>
-        <div className="mt-4">
-          <PlanComparison plans={plans} />
-        </div>
+        <section aria-labelledby="comparar" className="mt-20 md:mt-28">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className={EYEBROW}>Comparación</p>
+              <h2 id="comparar" className={cn(DISPLAY, "mt-3 scroll-mt-24 text-[30px] leading-none sm:text-[40px]")}>
+                Plan por plan, sin letra chica
+              </h2>
+            </div>
+            <p className="max-w-[40ch] text-[14px] leading-relaxed text-adm-fg-muted">
+              Los límites son por tienda. Si llegás a uno, te avisamos antes y no se borra nada.
+            </p>
+          </div>
+          <div className="mt-8">
+            <PlanComparison plans={plans} highlight="pro" />
+          </div>
+        </section>
 
-        <div className="mt-14 flex flex-wrap items-end justify-between gap-4">
-          <h2 id="preguntas" className={cn(DISPLAY, "scroll-mt-20 text-[26px] font-semibold tracking-[-0.02em]")}>
-            Preguntas frecuentes
-          </h2>
-          <Link href="/contacto" className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-sm")}>
-            Más preguntas y contacto
-          </Link>
-        </div>
-        <FaqList className="mt-6" items={faq} />
+        <section aria-labelledby="preguntas" className="mt-20 grid gap-10 md:mt-28 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <p className={EYEBROW}>Preguntas</p>
+            <h2 id="preguntas" className={cn(DISPLAY, "mt-3 scroll-mt-24 text-[30px] leading-none sm:text-[40px]")}>
+              Antes de elegir
+            </h2>
+            <p className="mt-4 max-w-[34ch] text-[15px] leading-relaxed text-adm-fg-muted">
+              Lo que más nos preguntan sobre la prueba, los cobros y tus datos.
+            </p>
+            <Link href="/contacto" className={cn(TEXT_LINK, "mt-5 inline-flex min-h-11 items-center gap-1 text-[15px]")}>
+              Más preguntas y contacto
+              <ArrowUpRight className="size-4" strokeWidth={1.75} aria-hidden />
+            </Link>
+          </div>
+          <FaqAccordion items={faq} />
+        </section>
       </div>
     </PlatformPage>
   );

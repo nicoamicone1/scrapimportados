@@ -71,6 +71,10 @@ export const themeFontsSchema = z
     }
   });
 
+export const STYLE_GRIDS = ["uniform", "feature", "list"] as const;
+export const STYLE_FILTERS = ["sidebar", "bar", "drawer"] as const;
+export const STYLE_GALLERIES = ["thumbs", "grid", "stack", "carousel"] as const;
+
 export const themeStyleSchema = z.object({
   /** Disposición de la portada (bloque hero en `layout: "auto"`): foto a sangre, mitad y mitad, enmarcada, tipográfica o apilada. */
   hero: z.enum(["cover", "split", "framed", "poster", "stack"]),
@@ -78,14 +82,38 @@ export const themeStyleSchema = z.object({
   titles: z.enum(["plain", "rule", "centered", "index", "tag"]),
   /** Forma de las imágenes de campaña, categorías y banners (nunca la foto de la ficha). */
   shape: z.enum(["rect", "soft", "arch", "bubble"]),
-  /** Disposición de la tarjeta de producto: apilada, texto sobre la foto, en caja o en fila. */
-  card: z.enum(["stack", "overlay", "boxed", "row"]),
+  /**
+   * Disposición de la tarjeta de producto: apilada (foto + texto), texto sobre
+   * la foto, en caja con botón visible, en fila (lista de precios) o baldosa
+   * (panel con botón "+" que aparece sobre la foto).
+   */
+  card: z.enum(["stack", "overlay", "boxed", "row", "tile"]),
   /** Movimiento: ninguno, suave (entradas y hovers con curva) o animado (marquesinas, escalonados). */
   motion: z.enum(["none", "soft", "lively"]),
+  /*
+   * Sumados en 2026-10 (S1). Cada uno con default propio: un `style` guardado
+   * con los cinco campos de arriba sigue validando, y `parseTheme` completa
+   * los que falten con los del preset guardado.
+   */
+  /** Grilla del catálogo: pareja, con destacados a doble ancho o lista. */
+  grid: z.enum(STYLE_GRIDS).default("uniform"),
+  /** Filtros del catálogo: columna lateral, barra de pastillas arriba o sólo un panel. */
+  filters: z.enum(STYLE_FILTERS).default("sidebar"),
+  /** Galería de la ficha: miniaturas al costado, grilla de fotos, fotos apiladas o carrusel a sangre. */
+  gallery: z.enum(STYLE_GALLERIES).default("thumbs"),
 });
 export type ThemeStyle = z.infer<typeof themeStyleSchema>;
 
-export const DEFAULT_THEME_STYLE: ThemeStyle = { hero: "cover", titles: "plain", shape: "rect", card: "stack", motion: "soft" };
+export const DEFAULT_THEME_STYLE: ThemeStyle = {
+  hero: "cover",
+  titles: "plain",
+  shape: "rect",
+  card: "stack",
+  motion: "soft",
+  grid: "uniform",
+  filters: "sidebar",
+  gallery: "thumbs",
+};
 
 export const themeSchema = z.object({
   preset: z.enum(PRESET_IDS),
@@ -109,7 +137,14 @@ export const themeSchema = z.object({
     showNetPrice: z.boolean().default(true),
   }),
   header: z.object({
-    layout: z.enum(["logo-left", "logo-center", "minimal"]),
+    /**
+     * logo-left: logo · nav · buscador · carrito · logo-center: nav · LOGO · iconos
+     * · minimal: logo + "Menú Buscar Carrito (2)" en texto · stacked: logo grande
+     * centrado arriba y la nav en una segunda fila · pill: pastilla flotante
+     * despegada de los bordes · double: buscador protagonista arriba y las
+     * categorías en una banda de color debajo (catálogos grandes).
+     */
+    layout: z.enum(["logo-left", "logo-center", "minimal", "stacked", "pill", "double"]),
     sticky: z.boolean(),
     transparentOnHome: z.boolean(),
     showSearch: z.boolean(),
@@ -123,7 +158,8 @@ export const themeSchema = z.object({
     }),
   }),
   footer: z.object({
-    style: z.enum(["simple", "columns", "minimal"]),
+    /** simple · columns · minimal · statement (nombre de la tienda gigante) · band (hoja de color primario). */
+    style: z.enum(["simple", "columns", "minimal", "statement", "band"]),
     showSocial: z.boolean(),
     showPayments: z.boolean(),
     /**

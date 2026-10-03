@@ -67,9 +67,9 @@ export function DueChip({ due, today, status, className }: { due: string | null;
   const state = dueState(due, today, status);
   const label = formatYmdShort(due);
   const cls = {
-    overdue: "bg-[#F8E1DE] text-[#9B2218] font-semibold",
-    today: "bg-[#F5EAD3] text-[#7A4A00] font-semibold",
-    soon: "bg-[#F5EAD3] text-[#7A4A00]",
+    overdue: "bg-[var(--adm-badge-red-bg)] text-[var(--adm-badge-red-fg)] font-semibold",
+    today: "bg-[var(--adm-badge-amber-bg)] text-[var(--adm-badge-amber-fg)] font-semibold",
+    soon: "bg-[var(--adm-badge-amber-bg)] text-[var(--adm-badge-amber-fg)]",
     ok: "bg-adm-surface-2 text-adm-fg-muted",
     none: "",
   }[state];

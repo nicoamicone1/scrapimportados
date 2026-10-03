@@ -134,7 +134,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
         </p>
         <div className="mt-1 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">{store.name}</h1>
+            <h1 className="eco-display text-[24px] leading-tight">{store.name}</h1>
             <p className="mt-0.5 text-sm text-adm-fg-muted">
               {storeDisplayHost(store)} · creada el {formatDate(store.created_at)}
               {sub && period && sub.status !== "trialing" && sub.plan_code !== "free" ? ` · pago ${billingPeriodLabel(period)}` : ""}

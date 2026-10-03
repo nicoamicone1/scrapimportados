@@ -192,7 +192,7 @@ export function JobDetailView({ initialJob }: { initialJob: JobDetail }) {
     </Card>
   );
   const logCard = (
-    <details className="group rounded-adm border border-adm-border bg-adm-surface shadow-adm-card" open={job.status !== "done" || s.errors > 0 || undefined}>
+    <details className="group rounded-adm-lg border border-adm-border bg-adm-surface" open={job.status !== "done" || s.errors > 0 || undefined}>
       <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 text-[15px] font-semibold text-adm-fg [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-4 text-adm-fg-muted transition-transform group-open:rotate-90" aria-hidden />
         Registro

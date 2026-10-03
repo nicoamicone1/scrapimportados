@@ -19,9 +19,10 @@ export interface LimitBannerProps {
 }
 
 /**
- * Aviso de uso vs. límite del plan (BRAND §10): fondo ámbar lavado, número
- * concreto + consecuencia + "Ver planes". Aparece desde el 80 % del límite
- * (antes de chocarlo); no se muestra si el límite es ilimitado.
+ * Aviso de uso vs. límite del plan (BRAND §10): fondo pomelo lavado, radio
+ * 16 px, número concreto (con la barra de uso) + consecuencia + "Ver planes".
+ * Aparece desde el 80 % del límite (antes de chocarlo); no se muestra si el
+ * límite es ilimitado.
  */
 export function LimitBanner({ limit, used, threshold = 0.8, plan, className }: LimitBannerProps) {
   const ctx = useOptionalAdminStore();
@@ -33,30 +34,46 @@ export function LimitBanner({ limit, used, threshold = 0.8, plan, className }: L
   const reached = used >= max;
   const { unit } = LIMITS[limit];
   const next = PLAN_NAMES[limitMinPlan(limit, max + 1)];
+  const pct = Math.min(100, Math.round((used / Math.max(1, max)) * 100));
 
   return (
     <div
       role="status"
       className={cn(
-        "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-adm border bg-adm-accent-2-soft px-3 py-2 text-[13px] text-adm-fg",
-        reached ? "border-adm-accent-2" : "border-adm-accent-2/40",
+        "flex flex-wrap items-center gap-x-3 gap-y-2 rounded-adm-lg bg-adm-accent-2-soft py-2 pr-2 pl-3 text-[13px] text-adm-fg",
+        reached && "ring-1 ring-adm-accent-2 ring-inset",
         className,
       )}
     >
-      <Lock className="size-3.5 shrink-0 text-adm-accent-2-ink" strokeWidth={1.75} aria-hidden />
+      <span
+        aria-hidden
+        className={cn(
+          "eco-bubble inline-flex size-7 shrink-0 items-center justify-center [--eco-bubble-r:10px]",
+          reached ? "bg-adm-accent-2 text-adm-accent-2-fg" : "bg-adm-surface text-adm-accent-2-ink",
+        )}
+      >
+        <Lock className="size-3.5" strokeWidth={1.75} />
+      </span>
+      {/* Barra de uso: el número se ve, no sólo se lee. */}
+      <span aria-hidden className="hidden h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-adm-surface sm:block">
+        <span className="block h-full rounded-full bg-adm-accent-2" style={{ width: `${pct}%` }} />
+      </span>
       <span className="min-w-0 flex-1">
         {reached ? (
           <>
-            Llegaste al máximo de <span className="tabular-nums">{max}</span> {unit} del plan {effective.name}. Para sumar más, pasate a {next}.
+            Llegaste al máximo de <span className="font-semibold tabular-nums">{max}</span> {unit} del plan {effective.name}. Para sumar más, pasate a {next}.
           </>
         ) : (
           <>
-            Usás <span className="tabular-nums">{used}</span> de <span className="tabular-nums">{max}</span> {unit} del plan {effective.name}. Al llegar a{" "}
+            Usás <span className="font-semibold tabular-nums">{used}</span> de <span className="tabular-nums">{max}</span> {unit} del plan {effective.name}. Al llegar a{" "}
             <span className="tabular-nums">{max}</span> no vas a poder sumar más; lo que ya tenés no se toca.
           </>
         )}
       </span>
-      <Link href={PLAN_PAGE} className="font-medium text-adm-accent underline underline-offset-2 hover:no-underline">
+      <Link
+        href={PLAN_PAGE}
+        className="inline-flex h-8 shrink-0 items-center rounded-full bg-adm-accent px-3.5 text-[13px] font-medium text-adm-accent-fg transition-colors duration-[140ms] hover:bg-adm-accent-hover pointer-coarse:h-10"
+      >
         Ver planes
       </Link>
     </div>

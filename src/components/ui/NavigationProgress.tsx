@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 
 /*
- * Barra de progreso de navegación (spec §14.5): 2 px arriba de todo.
+ * Barra de progreso de navegación (spec §14.5, BRAND §9): 3 px pomelo arriba de todo.
  * - Arranca al hacer click en un <a> interno (mismo origen, sin target, sin
  *   modificadores, a otra URL) o con `popstate` (atrás/adelante).
  * - Avanza sola hasta ~90 % y termina cuando cambian `usePathname()` /
@@ -14,7 +14,7 @@ import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react
  */
 
 export interface NavigationProgressProps {
-  /** Color de la barra (default ámbar del admin). En el storefront: `var(--primary)`. */
+  /** Color de la barra (default pomelo de la marca, 3 px). En el storefront: `var(--primary)`. */
   color?: string;
 }
 

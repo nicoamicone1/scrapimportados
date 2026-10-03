@@ -1,12 +1,12 @@
-import { Import, Plus } from "lucide-react";
+import { Import, PackagePlus, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LimitBanner } from "@/components/admin/LimitBanner";
+import { PillTabs } from "@/components/admin/orders/PillTabs";
 import { ProductsTable } from "@/components/admin/products/ProductsTable";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, PageHeader } from "@/components/ui/display";
-import { TabsNav } from "@/components/ui/Tabs";
 import { listCategoryOptions } from "@/lib/admin/categories";
 import { categoryPath, flattenTree } from "@/lib/admin/category-tree";
 import { getProductCounts, listAdminProducts, parseProductFilters } from "@/lib/admin/products";
@@ -68,6 +68,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
       <>
         <PageHeader title="Productos" actions={actions} />
         <EmptyState
+          icon={<PackagePlus />}
           title="Todavía no tenés productos"
           description="Cargá el primero a mano o traé tu catálogo desde otra tienda (WooCommerce, Shopify o una planilla)."
           actions={
@@ -92,7 +93,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
             {formatNumber(counts.active)} activos · {formatNumber(counts.draft)} en borrador ·{" "}
             {counts.outOfStock ? (
               // Atajo: de "8 sin stock" a la lista de esos 8 en un toque.
-              <Link href={hrefWith(params, { stock: "sin" })} className="text-adm-accent underline underline-offset-2">
+              <Link href={hrefWith(params, { stock: "sin" })} className="font-medium text-adm-link underline decoration-2 underline-offset-4 hover:text-adm-link-hover">
                 {formatNumber(counts.outOfStock)} sin stock
               </Link>
             ) : (
@@ -102,10 +103,8 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
         }
         actions={actions}
       >
-        <TabsNav
+        <PillTabs
           label="Estado"
-          // pb-px: evita el scroll vertical de 1px del TabsNav (el subrayado usa -mb-px).
-          className="pb-px"
           items={[
             { href: hrefWith(params, { estado: null }), label: "Todos", active: !estado, count: counts.all },
             { href: hrefWith(params, { estado: "activos" }), label: "Activos", active: estado === "activos", count: counts.active },

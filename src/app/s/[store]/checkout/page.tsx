@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHead } from "@/components/store/PageHead";
 import { checkoutRemindersEnabled } from "@/lib/store/checkout-reminders";
 import { requireStore } from "@/lib/store/context";
 import { getStoreDisplay } from "@/lib/store/display";
@@ -30,7 +31,7 @@ export default async function CheckoutPage({ params }: PageProps<"/s/[store]/che
 
   return (
     <div className="store-container py-[var(--space-section-sm)]">
-      <h1 className="h-page">Finalizá tu compra</h1>
+      <PageHead title="Finalizá tu compra" eyebrow={settings.name} />
       <CheckoutFlow
         storeName={settings.name}
         promotions={promotions}

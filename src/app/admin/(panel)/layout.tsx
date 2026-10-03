@@ -88,6 +88,14 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
             impersonating={ctx.membership.impersonating}
           />
         }
+        sidebarStoreSwitcher={
+          <StoreSwitcher
+            variant="sidebar"
+            stores={switcherStores}
+            active={{ id: ctx.store.id, name: ctx.store.name, slug: ctx.store.slug }}
+            impersonating={ctx.membership.impersonating}
+          />
+        }
         user={{
           name: ctx.profile.name || user.email || "Usuario",
           email: ctx.profile.email,

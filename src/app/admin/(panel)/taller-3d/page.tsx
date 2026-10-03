@@ -184,7 +184,7 @@ export default async function Taller3dPage() {
                       <Swatch hex={color?.hex} size={12} />
                       <span className="min-w-0 flex-1 truncate font-medium">{j.title}</span>
                       {j.order_number && j.order_id ? (
-                        <Link href={`/admin/pedidos/${j.order_id}`} className="tnum shrink-0 text-adm-accent hover:underline">
+                        <Link href={`/admin/pedidos/${j.order_id}`} className="tnum shrink-0 text-adm-link hover:underline">
                           #{j.order_number}
                         </Link>
                       ) : null}
@@ -220,7 +220,7 @@ export default async function Taller3dPage() {
               {o.month.cost.incomplete ? (
                 <p className="mt-3 text-xs text-adm-fg-muted">
                   Faltan costos de bobinas o datos de alguna impresora: el margen real es menor. Cargalos en{" "}
-                  <Link href="/admin/taller-3d/filamento" className="text-adm-accent hover:underline">
+                  <Link href="/admin/taller-3d/filamento" className="text-adm-link hover:underline">
                     Filamento
                   </Link>
                   .

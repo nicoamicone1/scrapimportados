@@ -65,10 +65,10 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Plataforma</h1>
+            <h1 className="eco-display text-[24px] leading-tight">Plataforma</h1>
             <p className="mt-1 text-sm text-adm-fg-muted">Tiendas, planes y uso de Ecommy.</p>
           </div>
-          <Link href="/platform/planes" className="text-sm font-medium text-adm-accent hover:underline">
+          <Link href="/platform/planes" className="text-sm font-medium text-adm-link underline decoration-1 underline-offset-[3px] hover:decoration-2">
             Editar planes
           </Link>
         </div>

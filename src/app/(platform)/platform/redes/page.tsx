@@ -70,11 +70,11 @@ export default async function RedesPage({ searchParams }: PageProps<"/platform/r
     <div className="min-h-dvh">
       <AppHeader email={user.email ?? ""} isPlatformAdmin={profile.is_platform_admin} section="redes" />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 className="text-[22px] font-semibold tracking-[-0.01em]">Redes</h1>
+        <h1 className="eco-display text-[24px] leading-tight">Redes</h1>
         <p className="mt-1 max-w-[68ch] text-sm text-adm-fg-muted">
           Las {RED_PIECES.length} piezas de <code className="font-mono text-[13px]">docs/SOCIAL-KIT.md</code>, dibujadas por Ecommy: descargá el PNG,
           copiá el texto y publicá. {toFill} tienen datos de una grabación o de tu audiencia para completar antes de publicar. En las placas verdes
-          con un rectángulo crema pegás una captura real del panel o de la tienda.
+          con un recuadro en burbuja pegás una captura real del panel o de la tienda.
         </p>
 
         <nav aria-label="Formato" className="mt-5 flex gap-5 border-b border-adm-border text-sm">
@@ -190,14 +190,14 @@ function PieceCard({
                     {TEMPLATE_LABEL[slide.template]}
                   </span>
                   <span className="flex gap-3">
-                    <a href={redImageHref(piece, { format, slide: n, values, download: true })} download className="font-medium text-adm-accent hover:underline">
+                    <a href={redImageHref(piece, { format, slide: n, values, download: true })} download className="font-medium text-adm-link underline decoration-1 underline-offset-[3px] hover:decoration-2">
                       Descargar PNG
                     </a>
                     {alt ? (
                       <a
                         href={redImageHref(piece, { format: alt, slide: n, values, download: true })}
                         download
-                        className="text-adm-accent hover:underline"
+                        className="text-adm-link underline decoration-1 underline-offset-[3px] hover:decoration-2"
                         title={`Descargar ${FORMAT_LABEL[alt]}`}
                       >
                         {alt === "story" ? "Vertical" : "Feed"}
@@ -231,7 +231,7 @@ function PieceCard({
             {piece.hashtags.length ? (
               <div>
                 <dt className="text-xs text-adm-fg-muted">Hashtags</dt>
-                <dd className="mt-0.5 text-adm-accent">{piece.hashtags.join(" ")}</dd>
+                <dd className="mt-0.5 text-adm-link">{piece.hashtags.join(" ")}</dd>
               </div>
             ) : null}
           </dl>

@@ -195,7 +195,7 @@ export function InventoryTable({
       </div>
 
       {/* Mobile: tarjetas con el stock editable en un toque. */}
-      <div className="relative rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
+      <div className="relative rounded-adm-lg border border-adm-border bg-adm-surface md:hidden">
         {items.length === 0 ? (
           <div className="px-4 py-6">
             <p className="text-[15px] font-semibold text-adm-fg">{emptyTitle}</p>
@@ -213,7 +213,7 @@ export function InventoryTable({
             {items.map((r) => (
               <li
                 key={r.variant_id}
-                className={cn("flex items-start border-b border-adm-border last:border-b-0", selected.has(r.variant_id) && "bg-adm-accent-2-soft/60")}
+                className={cn("flex items-start border-b border-adm-border last:border-b-0", selected.has(r.variant_id) && "bg-[var(--adm-select-soft)]")}
               >
                 <label className="flex h-14 w-12 shrink-0 cursor-pointer items-center justify-center">
                   <Checkbox aria-label={`Seleccionar ${labelOf(r)}`} checked={selected.has(r.variant_id)} onChange={() => toggle(r.variant_id)} />

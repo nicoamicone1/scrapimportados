@@ -6,6 +6,7 @@ import { renderBlock } from "@/components/blocks/BlockRenderer";
 import { buttonAttrs } from "@/components/blocks/Button";
 import { BlockSection } from "@/components/blocks/Section";
 import { PriceTag } from "@/components/store/PriceTag";
+import { createBlock } from "@/lib/blocks/defaults";
 import { resolveBlockData } from "@/lib/blocks/resolve";
 import type { Block } from "@/lib/blocks/schema";
 import { cn } from "@/lib/cn";
@@ -33,28 +34,30 @@ function heroFrom(home: Block[] | undefined): Block {
   if (existing && existing.type === "hero")
     return { ...existing, id: "pv-hero", style: { ...existing.style, hidden: false, hideOnMobile: false }, settings: { ...existing.settings, height: "sm" } };
   return {
+    ...createBlock("hero", {
+      style: { background: "default", paddingY: "none", container: "full" },
+      settings: {
+        eyebrow: "Temporada primavera",
+        title: "Llegaron las novedades para la casa",
+        subtitle: "Cocina, audio y deco. 10 % off pagando con transferencia.",
+        imageUrl: FALLBACK_HERO,
+        overlay: 45,
+        align: "left",
+        height: "sm",
+        cta: { label: "Ver novedades", href: "/productos" },
+        cta2: { label: "Cómo comprar", href: "/" },
+      },
+    }),
     id: "pv-hero",
-    type: "hero",
-    style: { background: "default", paddingY: "none", container: "full" },
-    settings: {
-      eyebrow: "Temporada primavera",
-      title: "Llegaron las novedades para la casa",
-      subtitle: "Cocina, audio y deco. 10 % off pagando con transferencia.",
-      imageUrl: FALLBACK_HERO,
-      overlay: 45,
-      align: "left",
-      height: "sm",
-      cta: { label: "Ver novedades", href: "/productos" },
-      cta2: { label: "Cómo comprar", href: "/" },
-    },
   };
 }
 
 const SLIDER: Block = {
+  ...createBlock("product_slider", {
+    style: { background: "default", paddingY: "md", container: "normal" },
+    settings: { title: "Novedades", subtitle: "Lo último que sumamos al catálogo.", source: { kind: "newest", limit: 4 }, viewAllHref: "/productos", cardsPerView: 4 },
+  }),
   id: "pv-slider",
-  type: "product_slider",
-  style: { background: "default", paddingY: "md", container: "normal" },
-  settings: { title: "Novedades", subtitle: "Lo último que sumamos al catálogo.", source: { kind: "newest", limit: 4 }, viewAllHref: "/productos", cardsPerView: 4 },
 };
 
 const BANNERS: Block = {
@@ -99,9 +102,127 @@ function Logo({ settings, className }: { settings: StoreSettings; className?: st
 function PreviewHeader({ theme, settings, menu }: { theme: Theme; settings: StoreSettings; menu: MenuItem[] }) {
   const { layout, showSearch } = theme.header;
   const nav = menu.slice(0, 5);
-  const upper = theme.buttons.uppercase && layout === "logo-center";
-  const navClass = cn("text-sm hover:underline", upper && "text-xs tracking-[0.12em] uppercase");
+  const upper = theme.buttons.uppercase && (layout === "logo-center" || layout === "minimal");
+  const navClass = cn("nav-link text-sm", upper && "text-xs tracking-[0.12em] uppercase");
   const cart = <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden />;
+  const searchIcon = showSearch ? <Search className="size-5" strokeWidth={1.5} aria-hidden /> : null;
+  const navItems = (center?: boolean) => (
+    <nav className={cn("hdr-nav flex items-center gap-6", center && "justify-center")}>
+      {nav.map((i) => (
+        <span key={i.label} className={navClass}>
+          {i.label}
+        </span>
+      ))}
+    </nav>
+  );
+  const searchField = (wide?: boolean) => (
+    <span
+      className={cn(
+        "flex items-center gap-2 border bg-surface px-3 text-sm text-fg-muted",
+        wide ? "h-[46px] flex-1 border-fg" : "h-10 w-[300px] rounded-md border-border-strong",
+      )}
+      style={wide ? { borderRadius: "var(--btn-radius)", borderWidth: 1.5, maxWidth: 680 } : undefined}
+    >
+      <Search className="size-4" aria-hidden /> Buscar por nombre, marca o código
+    </span>
+  );
+  const mobileRow = (
+    <div className="flex w-full items-center justify-between @3xl:hidden">
+      <Menu className="size-5" strokeWidth={1.5} aria-hidden />
+      <Logo settings={settings} />
+      <span className="flex items-center gap-3">
+        {layout === "double" ? null : searchIcon}
+        {cart}
+      </span>
+    </div>
+  );
+
+  let body: React.ReactNode;
+  if (layout === "stacked") {
+    body = (
+      <>
+        <div className="store-container flex items-center @3xl:grid @3xl:grid-cols-[1fr_auto_1fr]" style={{ height: "calc(var(--header-h) + 20px)" }}>
+          {mobileRow}
+          <span className="hidden items-center gap-2 text-sm @3xl:flex">{showSearch ? <>{searchIcon} Buscar</> : null}</span>
+          <span className="hidden @3xl:block">
+            <Logo settings={settings} className="text-[44px]" />
+          </span>
+          <span className="hidden justify-end text-sm @3xl:flex">Carrito (2)</span>
+        </div>
+        <div className="hidden border-t border-border py-3 @3xl:block">{navItems(true)}</div>
+      </>
+    );
+  } else if (layout === "double") {
+    body = (
+      <>
+        <div className="store-container flex items-center gap-8" style={{ height: "calc(var(--header-h) + 8px)" }}>
+          {mobileRow}
+          <span className="hidden @3xl:block">
+            <Logo settings={settings} />
+          </span>
+          <span className="hidden flex-1 @3xl:flex">{showSearch ? searchField(true) : null}</span>
+          <span className="hidden items-center gap-2 text-sm @3xl:flex">
+            {cart} Carrito
+          </span>
+        </div>
+        {showSearch ? <div className="store-container pb-2.5 @3xl:hidden">{searchField(true)}</div> : null}
+        <div className="hdr-band hidden py-3 @3xl:block">
+          <div className="store-container">{navItems()}</div>
+        </div>
+      </>
+    );
+  } else if (layout === "pill") {
+    body = (
+      <div className="store-container py-2.5">
+        <div className="hdr-pill flex items-center gap-6 px-5" style={{ height: "var(--header-h)" }}>
+          {mobileRow}
+          <span className="hidden @3xl:block">
+            <Logo settings={settings} />
+          </span>
+          <span className="hidden flex-1 @3xl:block">{navItems(true)}</span>
+          <span className="hidden items-center gap-4 @3xl:flex">
+            {searchIcon}
+            {cart}
+          </span>
+        </div>
+      </div>
+    );
+  } else {
+    body = (
+      <div className="store-container flex items-center gap-6" style={{ height: "var(--header-h)" }}>
+        {mobileRow}
+        {layout === "logo-left" ? (
+          <div className="hidden w-full items-center gap-8 @3xl:flex">
+            <Logo settings={settings} />
+            {navItems()}
+            <div className="ml-auto flex items-center gap-4">
+              {showSearch ? searchField() : null}
+              {cart}
+            </div>
+          </div>
+        ) : layout === "logo-center" ? (
+          <div className="hidden w-full grid-cols-[1fr_auto_1fr] items-center @3xl:grid">
+            {navItems()}
+            <Logo settings={settings} className="text-2xl" />
+            <div className="flex items-center justify-end gap-4">
+              {searchIcon}
+              {cart}
+            </div>
+          </div>
+        ) : (
+          <div className="hidden w-full items-center justify-between @3xl:flex">
+            <Logo settings={settings} />
+            <div className={cn("flex items-center gap-6 text-sm", upper && "text-xs tracking-[0.12em] uppercase")}>
+              <span>Menú</span>
+              {showSearch ? <span>Buscar</span> : null}
+              <span>Carrito (2)</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="@container">
       {settings.announcement.enabled && settings.announcement.text ? (
@@ -112,74 +233,85 @@ function PreviewHeader({ theme, settings, menu }: { theme: Theme; settings: Stor
           {settings.announcement.text}
         </div>
       ) : null}
-      <header className={cn("bg-bg text-fg", theme.effects.dividers && "border-b border-border")}>
-        <div className="store-container flex items-center gap-6" style={{ height: "var(--header-h)" }}>
-          {/* Mobile: menú · logo · carrito */}
-          <div className="flex w-full items-center justify-between @3xl:hidden">
-            <Menu className="size-5" strokeWidth={1.5} aria-hidden />
-            <Logo settings={settings} />
-            <span className="flex items-center gap-3">
-              {showSearch ? <Search className="size-5" strokeWidth={1.5} aria-hidden /> : null}
-              {cart}
-            </span>
-          </div>
-          {layout === "logo-left" ? (
-            <div className="hidden w-full items-center gap-8 @3xl:flex">
-              <Logo settings={settings} />
-              <nav className="flex items-center gap-5" style={{ fontWeight: "var(--body-strong-weight)" }}>
-                {nav.map((i) => (
-                  <span key={i.label} className={navClass}>
-                    {i.label}
-                  </span>
-                ))}
-              </nav>
-              <div className="ml-auto flex items-center gap-4">
-                {showSearch ? (
-                  <span className="flex h-10 w-[300px] items-center gap-2 rounded-md border border-border-strong bg-surface px-3 text-sm text-fg-muted">
-                    <Search className="size-4" aria-hidden /> Buscar productos
-                  </span>
-                ) : null}
-                {cart}
-              </div>
-            </div>
-          ) : layout === "logo-center" ? (
-            <div className="hidden w-full grid-cols-[1fr_auto_1fr] items-center @3xl:grid">
-              <nav className="flex items-center gap-5">
-                {nav.map((i) => (
-                  <span key={i.label} className={navClass}>
-                    {i.label}
-                  </span>
-                ))}
-              </nav>
-              <Logo settings={settings} className="text-2xl" />
-              <div className="flex items-center justify-end gap-4">
-                {showSearch ? <Search className="size-5" strokeWidth={1.5} aria-hidden /> : null}
-                {cart}
-              </div>
-            </div>
-          ) : (
-            <div className="hidden w-full items-center justify-between @3xl:flex">
-              <Logo settings={settings} />
-              <div className="flex items-center gap-6 text-sm">
-                <span>Menú</span>
-                {showSearch ? <span>Buscar</span> : null}
-                <span>Carrito (2)</span>
-              </div>
-            </div>
-          )}
-        </div>
+      <header
+        className={cn(
+          "store-header",
+          layout === "pill" && "!border-b-0 !bg-transparent",
+          theme.effects.dividers && layout !== "pill" && "border-b border-border",
+        )}
+        data-layout={layout}
+        style={{ height: "auto" }}
+      >
+        {body}
       </header>
     </div>
   );
 }
 
-function PreviewFooter({ theme, settings, menu }: { theme: Theme; settings: StoreSettings; menu: MenuItem[] }) {
+function PreviewFooter({ theme, settings, menu, device }: { theme: Theme; settings: StoreSettings; menu: MenuItem[]; device: PreviewDevice }) {
   const year = new Date().getFullYear();
   const social = Object.keys(settings.social).map((k) => k[0].toUpperCase() + k.slice(1));
   const payments = "Transferencia bancaria (10 % off) · Acordás con el vendedor";
   const groups = menu.filter((m) => m.children.length);
+  const flat = menu.flatMap((m) => (m.children.length ? m.children : [m])).slice(0, 6);
   const style = theme.footer.style === "columns" && groups.length < 2 ? "simple" : theme.footer.style;
+  const legal = (
+    <p className="store-container mt-10 text-xs text-fg-muted">
+      © {year} {settings.name} · Defensa del Consumidor · Botón de arrepentimiento
+    </p>
+  );
 
+  if (style === "statement") {
+    const width = device === "mobile" ? 358 : 1200;
+    const size = Math.min(300, (width * 1.5) / Math.max(4, settings.name.length));
+    return (
+      <footer className="@container border-t border-border pt-10 pb-6 text-sm">
+        <div className="store-container grid gap-6 @3xl:grid-cols-12">
+          <p className="text-fg @3xl:col-span-4">{settings.tagline || (settings.whatsapp_phone ? `WhatsApp +${settings.whatsapp_phone}` : "")}</p>
+          <p className="flex flex-wrap gap-x-5 gap-y-2 text-fg-muted @3xl:col-span-5">
+            {flat.map((i) => (
+              <span key={`${i.label}${i.href}`}>{i.label}</span>
+            ))}
+          </p>
+          <p className="text-fg-muted @3xl:col-span-3 @3xl:text-right">{theme.footer.showSocial && social.length ? social.join(" · ") : null}</p>
+        </div>
+        <div className="store-container overflow-hidden">
+          <p className="ftr-giant heading mt-8" style={{ fontSize: size }}>
+            {settings.name}
+          </p>
+        </div>
+        <div className="border-t border-fg pt-1">{legal}</div>
+      </footer>
+    );
+  }
+  if (style === "band") {
+    return (
+      <footer className="ftr-band @container pt-12 pb-6 text-sm">
+        <div className="store-container grid gap-8 @3xl:grid-cols-12">
+          <div className="@3xl:col-span-5">
+            <p className="heading" style={{ fontSize: "var(--text-2xl)" }}>
+              {settings.name}
+            </p>
+            {settings.tagline ? <p className="mt-2 max-w-[40ch] text-fg-muted">{settings.tagline}</p> : null}
+            {theme.footer.showSocial && social.length ? <p className="mt-4 text-fg-muted">{social.join(" · ")}</p> : null}
+          </div>
+          <div className="@3xl:col-span-3">
+            <p className="ftr-label">Contacto</p>
+            <p className="mt-3 text-fg-muted">{settings.whatsapp_phone ? `WhatsApp +${settings.whatsapp_phone}` : settings.contact_email}</p>
+          </div>
+          <div className="@3xl:col-span-4">
+            <p className="ftr-label">La tienda</p>
+            <p className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-fg-muted">
+              {flat.map((i) => (
+                <span key={`${i.label}${i.href}`}>{i.label}</span>
+              ))}
+            </p>
+          </div>
+        </div>
+        {legal}
+      </footer>
+    );
+  }
   if (style === "minimal") {
     return (
       <footer className="border-t border-border py-6 text-sm text-fg-muted">
@@ -316,7 +448,7 @@ export async function ThemePreview({ storeId, theme, device }: { storeId: string
         ) : null;
       })}
       <Showcase theme={theme} transferPercent={ctx.transferPercent} />
-      <PreviewFooter theme={theme} settings={settings} menu={menus.footer} />
+      <PreviewFooter theme={theme} settings={settings} menu={menus.footer} device={device} />
     </>
   );
 }

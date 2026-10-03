@@ -24,8 +24,8 @@ export function PendingOverlay({ pending, label = "Actualizando…", className }
         className,
       )}
     >
-      <span className="inline-flex items-center gap-2 rounded-adm border border-adm-border bg-adm-surface px-2.5 py-1.5 text-xs text-adm-fg-muted shadow-adm-card">
-        <Loader2 className="size-3.5 animate-spin text-adm-accent-2-ink" aria-hidden />
+      <span className="adm-pop-in inline-flex items-center gap-2 rounded-full bg-eco-ink px-3 py-1.5 text-xs text-eco-mist shadow-[var(--adm-shadow)]">
+        <Loader2 className="size-3.5 animate-spin text-eco-pomelo" aria-hidden />
         {label}
       </span>
     </div>

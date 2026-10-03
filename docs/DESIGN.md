@@ -21,7 +21,7 @@ Un sitio "hecho con IA" se reconoce en dos segundos porque repite los mismos def
 | Gradientes violeta→rosa, violeta→azul, índigo→cian (fondos, headers, textos con `bg-clip-text`) | Es la firma visual del template SaaS 2023. Ninguna marca real de ropa ni ferretería se ve así. | Colores planos del tema. Si hace falta profundidad: foto, o `--secondary` como banda plana. |
 | Glassmorphism (`backdrop-blur` + fondo translúcido + borde blanco) | Baja el contraste, cuesta performance en mobile y fecha el diseño. | Superficie opaca `--surface`. El header transparente sobre el hero NO se blurea: al scrollear pasa a sólido. |
 | Blobs, orbes, círculos difuminados, "mesh gradients" de fondo | Relleno decorativo sin información. | `--bg` limpio y buena foto. |
-| `rounded-2xl` / `rounded-3xl` en todo | Borra la personalidad del tema: todo parece un dashboard de Notion. | Sólo `var(--radius-sm\|md\|lg)` del tema. Nunca un radio literal en el storefront. |
+| `rounded-2xl` / `rounded-3xl` en todo | Borra la personalidad del tema: todo parece un dashboard de Notion. | Radios del tema (`var(--radius-sm\|md\|lg)`) y, para lo que lleva forma, `var(--shape-radius)` / `var(--shape-radius-sm)` de `style.shape` (§3.9). Nunca un radio literal "porque sí": la curva la elige el preset. |
 | Sombras grandes en todo (`shadow-lg/xl` en cards, secciones, inputs) | Todo "flota", nada tiene jerarquía. | `var(--shadow-*)` del tema; con `effects.shadows: 'none'` no hay ninguna. Sombras sólo en capas que de verdad están encima: drawer, popover, header sticky al scrollear. |
 | Hero centrado con "Bienvenido a {tienda}" + subtítulo vago + dos botones iguales | Cero información: no dice qué vendés ni por qué comprarte. | Hero alineado a la izquierda, con una campaña concreta ("Temporada otoño. Camperas de gabardina desde $ 89.000") y **un** CTA fuerte; el segundo, si existe, es link de texto. |
 | Tarjetas de "features" con ícono dentro de un círculo de color pastel | Patrón de landing SaaS. | Bloque `features` como fila de texto: ícono lucide 20px trazo 1.5 en `--fg`, a la izquierda del título, sin fondo. Máximo 4. Contenido operativo: "Envíos a todo el país", "Retirás en el local", "10 % off con transferencia". |
@@ -32,13 +32,14 @@ Un sitio "hecho con IA" se reconoce en dos segundos porque repite los mismos def
 | Lorem ipsum o "Título del producto" en defaults de bloques | Se publica por error. | Defaults con copy real de ejemplo en rioplatense, o placeholder visible sólo dentro del builder. |
 | Testimonios inventados ("María G. — ★★★★★ ¡Excelente!") | Engaña al cliente final; riesgo legal. | El bloque `testimonials` nace **vacío**; el builder avisa "Usá sólo reseñas reales". Nunca estrellas generadas. |
 | Badges "NUEVO" / "HOT" fluorescentes, rotados, con sombra | Gritan y compiten con la foto. | Badge de promo discreto (§6.1) con `badge_label` de la promoción. Sin badge "Nuevo" automático. |
-| Todo centrado (títulos, textos, grillas) | Destruye el eje de lectura; todo pesa lo mismo. | Izquierda por defecto. Centrado sólo en: header `logo-center`, hero con `align:'center'` elegido por el dueño, announcement bar, estados vacíos de una línea. |
+| Todo centrado (títulos, textos, grillas) | Destruye el eje de lectura; todo pesa lo mismo. | Izquierda por defecto. Centrado sólo cuando el preset lo elige como voz (`style.titles: 'centered'`, header `logo-center`/`stacked`), el hero con `align:'center'`, la barra de anuncio y estados vacíos de una línea. |
 | Íconos gigantes (48–96px) como ilustración | Rellenan sin comunicar. | Íconos 16–20px, funcionales. La ilustración es la foto del producto. |
 | Todas las secciones con la misma altura y el mismo `py-16` | Ritmo monótono, "scroll infinito de cajas". | Ritmo asimétrico (§2.2): `style.paddingY` varía por bloque; bloques relacionados se pegan. |
-| Footer de 4 columnas iguales con 5 links cada una | Genérico, casi siempre con links inventados. | 3 estilos (§6.7) con columnas de ancho desigual y sólo links que existen. |
+| Footer de 4 columnas iguales con 5 links cada una | Genérico, casi siempre con links inventados. | 5 estilos (§6.7) con columnas de ancho desigual y sólo links que existen. |
 | Colores "tailwind-500" sin ajustar (`blue-500`, `violet-600`, `emerald-500`) | Delatan el framework y rara vez pasan AA. | En storefront no se usa **ninguna** clase de color de la paleta de Tailwind: sólo `bg-bg`, `text-fg`, `bg-primary`, etc. |
-| Animaciones de entrada en cada sección (fade-up al scrollear) | Retrasan el contenido, marean. | Contenido visible de entrada. Movimiento sólo como respuesta a una acción (abrir drawer, agregar al carrito). `prefers-reduced-motion` siempre. |
-| Barrita de color a la izquierda de cada título, chips pill de categoría y badge "En stock" en cada card (estado actual) | Ruido repetido 20 veces por pantalla. | Título tipográfico solo. Categoría, si hace falta, como texto `--fg-muted` 12px. El stock se comunica sólo cuando falta. |
+| Animaciones de entrada que esconden contenido o se repiten en todo | Retrasan el contenido, marean. | `style.motion` decide (§3.9): `none` no mueve nada; `soft` y `lively` usan las utilidades `st-*` (CSS ligado al scroll dentro de `@supports`: sin soporte, el contenido está fijo y visible). Nunca una animación de la que dependa leer algo; `prefers-reduced-motion` siempre. |
+| Barrita de color a la izquierda de cada título, chips pill de categoría y badge "En stock" en cada card (estado actual) | Ruido repetido 20 veces por pantalla. | Título con la voz de `style.titles` (solo, regla, centrado, índice o etiqueta). Pastillas de categoría sólo arriba del catálogo con `style.filters: 'bar'`, nunca dentro de la card. El stock se comunica sólo cuando falta. |
+| **Diez presets con la misma disposición** (mismo header, misma card, misma grilla, mismo pie) | Es "el mismo sitio con otro skin": lo primero que nota un dueño que compara estilos. | Cada preset elige header, pie y `style.*` (§3.9, §4). `presets.test.ts` exige que dos presets difieran en ≥ 4 de 10 ejes de disposición. |
 
 ### 1.2 Admin
 
@@ -104,12 +105,12 @@ Un sitio "hecho con IA" se reconoce en dos segundos porque repite los mismos def
 
 - Evitar filas de N elementos iguales una tras otra. Alternar una pieza grande con dos chicas: banner de 1 columna → banner de 2 → slider.
 - `banner_grid` con 3 ítems y `ratio: 'auto'` se renderiza como 1 grande (2 filas) + 2 apilados (§6.6).
-- Ficha de producto: galería 7/12 + buy box 5/12. `image_text`: 7/12 + 5/12. Nunca 50/50 por defecto.
+- Ficha de producto: galería 7/12 + buy box 5/12 (`thumbs`, `stack`), 8/4 (`grid`) o carrusel a todo el ancho con compra 5/12 + detalle 7/12 debajo (`carousel`). `image_text`: 7/12 + 5/12. Nunca 50/50 por defecto.
 
 ### 2.7 Alineación
 
 - Texto a la izquierda por defecto: títulos de sección, hero, rich text, footer, estados vacíos largos.
-- "Ver todo" en la misma línea base que el título de sección, a la derecha, como link de texto (subrayado al hover). La flecha "→" sólo en `editorial`.
+- "Ver todo" en la misma línea base que el título de sección, a la derecha, como link de texto (subrayado al hover). La flecha "→" sólo en `editorial`. Con `titles: 'centered'` el título va centrado y el link debajo o a la derecha según el bloque.
 
 ### 2.8 Microcopy (voseo rioplatense)
 
@@ -210,7 +211,7 @@ Reglas fijas:
 - `style` define el botón **primario**. El secundario es siempre el siguiente más callado: `solid` → `outline`; `outline`/`soft` → link subrayado.
 - El CTA de conversión final ("Iniciar compra", "Confirmar pedido", "Abrir WhatsApp") es **siempre `solid`**, diga lo que diga el tema.
 - Alto `--control-h` (§3.7), padding horizontal `1.25em`, peso `min(bodyWeight + 200, 700)`. Íconos sólo funcionales (WhatsApp, carrito), 16px.
-- Transición `background-color, color, border-color` 120 ms. Nunca `transform: scale`.
+- Transición `background-color, color, border-color` 120 ms. Nunca `transform: scale` al hover (sí `scale(.92)` al apretar los botones redondos de ícono: stepper, flechas, "+" de la baldosa).
 
 ### 3.5 `cards`
 
@@ -230,9 +231,9 @@ Reglas fijas:
 
 | Campo | Efecto |
 | --- | --- |
-| `layout` | §6.4 |
+| `layout` | `logo-left` · `logo-center` · `minimal` · `stacked` · `pill` · `double` (§6.4) |
 | `sticky` | `position: sticky; top: 0`. Al scrollear > 8px aparece `border-bottom 1px --border` (o `--shadow-sm` si `shadows: 'strong'`). |
-| `transparentOnHome` | Sólo si la home empieza con un `hero` con imagen: el header se superpone, texto blanco, fondo transparente; al scrollear pasa a `--bg` sólido. Sin blur. |
+| `transparentOnHome` | Sólo si la home empieza con un `hero` con imagen y el layout es de una fila (`logo-left`, `logo-center`, `minimal`): el header se superpone, texto blanco, fondo transparente; al scrollear pasa a `--bg` sólido. Sin blur. `stacked`, `pill` y `double` lo ignoran. |
 | `showSearch` | `logo-left`: campo visible en desktop (máx. 420px). `logo-center`/`minimal`: ícono que abre un overlay de búsqueda de ancho completo. `false`: no hay búsqueda en el header (sigue existiendo `/productos?q=`). |
 
 ### 3.7 `layout`
@@ -258,7 +259,7 @@ Reglas fijas:
 ### 3.8 `footer` y `effects`
 
 - `footer.showCredit` (default `true`): "Hecho con Ecommy" en la banda legal, texto `--text-xs` `--fg-muted` del tema con link a la plataforma. Obligatorio en Free; desde Starter el dueño lo apaga en Apariencia › Pie de página (el server lo fuerza a `true` en Free). No es estilo: no pasa el tema a `custom` ni lo pisa un preset.
-- `footer.style`: §6.7. `showSocial`: links de `store_settings.social` como texto ("Instagram · TikTok") o íconos lucide 18px monocromos; nunca logos a color. `showPayments`: **texto**, no logos de tarjetas (no hay pasarela): "Transferencia bancaria (10 % off) · Acordás con el vendedor".
+- `footer.style`: `simple` · `columns` · `minimal` · `statement` · `band` (§6.7). `showSocial`: links de `store_settings.social` como texto ("Instagram · TikTok") o íconos lucide 18px monocromos; nunca logos a color. `showPayments`: **texto**, no logos de tarjetas (no hay pasarela): "Transferencia bancaria (10 % off) · Acordás con el vendedor".
 - `effects.shadows`:
 
 | Valor | `--shadow-sm` | `--shadow-md` | `--shadow-lg` (drawer, popover) |
@@ -271,6 +272,40 @@ Reglas fijas:
 - `effects.dividers`: `true` → reglas 1px `--border` entre bloques (ancho del container), bajo el header y entre celdas de las grillas de productos (look de catálogo). `false` → separación sólo por espacio.
 - `effects.imageFilter`: `grain` → overlay SVG de ruido al 5 % sobre hero y banners; `mono` → `filter: grayscale(1) contrast(1.05)` sobre hero y banners. Nunca sobre fotos de producto.
 - `custom_css`: se inyecta después de `cssVars`. Saneado: sin `@import`, sin `url(javascript:…)`, sin `expression(`.
+
+### 3.9 `style`: la disposición (2026-10)
+
+`theme.style` es lo que hace que dos presets no se parezcan aunque compartan colores. Se emite como `data-*` en `.store-root` (layout del storefront y `storeRootAttrs` de las vistas previas del panel) y el CSS (`store.css` para el chrome, `blocks.css` para los bloques) lo lee de ahí: los componentes no reciben props nuevas. Todos los campos tienen default; `parseTheme` completa un `style` faltante o parcial **con el del preset guardado** (no con el genérico), así un tema guardado antes de 2026-10 sigue siendo su preset.
+
+| Campo | Valores | `data-*` | Qué cambia |
+| --- | --- | --- | --- |
+| `hero` | `cover` · `split` · `framed` · `poster` · `stack` | `data-hero` | Portada (bloque hero en `layout: "auto"`, de S2). |
+| `titles` | `plain` · `rule` · `centered` · `index` · `tag` | `data-titles` | Voz de los títulos: bloques (`SectionTitle`) y chrome (`PageHead`: catálogo, carrito, checkout, relacionados). `index` vuela la cantidad ("Remeras ⁽¹²⁴⁾"); `tag` pone el eyebrow en una etiqueta. |
+| `shape` | `rect` · `soft` · `arch` · `bubble` | `data-shape` | `--shape-radius` / `--shape-radius-sm`: portadas, banners, categorías, foto de las tarjetas, miniaturas del carrito, pastilla del header, hoja del pie. **Nunca** las fotos de la ficha. |
+| `card` | `stack` · `overlay` · `boxed` · `row` · `tile` | `data-card` | Disposición de `ProductCard` (§6.1). |
+| `motion` | `none` · `soft` · `lively` | `data-motion` | Utilidades `st-*` (abajo). `lively` suma marquesina en el anuncio y escalonados. |
+| `grid` | `uniform` · `feature` · `list` | `data-grid` + `data-layout` en `.store-grid` | Grilla del catálogo: pareja, con un destacado a doble tamaño cada diez (izquierda y derecha alternados; sólo desde 1024px y con 3+ columnas, si no queda pareja), o lista de precios. |
+| `filters` | `sidebar` · `bar` · `drawer` | `data-filters` | Filtros del catálogo: columna lateral sticky, pastillas de categoría arriba + panel, o sólo el panel. Sin columna, la grilla usa todas las columnas del tema. |
+| `gallery` | `thumbs` · `grid` · `stack` · `carousel` | `data-gallery` | Ficha (§6.3). |
+
+Además `data-header` (= `header.layout`) y `data-footer` (= `footer.style`).
+
+**Utilidades compartidas** (`src/app/s/[store]/store.css`, comentario de cabecera; contrato S1 → S2):
+
+| Utilidad | Qué hace | Con `none` | `soft` | `lively` |
+| --- | --- | --- | --- | --- |
+| `--st-ease`, `--st-ease-in-out`, `--st-ease-spring`, `--st-dur-1..3`, `--st-lift` | Curvas y duraciones | `ease`, 120–220 ms, lift 0 | curva larga, 160/280/520 ms, lift 3px | 640 ms en entradas, lift 5px |
+| `.st-reveal`, `.st-reveal-scale` | Entrada al scrollear (`animation-timeline: view()` dentro de `@supports`) | nada | sí | sí |
+| `.st-stagger` (+ `--i` en cada hijo) | Hijos que entran escalonados | nada | juntos | escalonados |
+| `.st-hover-lift`, `.st-hover-zoom` + `.st-zoom` | Hover con curva | sin movimiento | sí | sí |
+| `.st-pop` | Aparece al montar con rebote (badge, "Agregado", fila del carrito, número del stepper) | nada | sí | sí |
+| `.st-marquee` > `.st-marquee-track` > `span` + `span[data-dup]` | Marquesina que se pausa con hover/foco | estática, centrada | estática | corre |
+| `.st-link` | Subrayado que se dibuja | sí | sí | sí |
+| `.st-shape`, `.st-shape-sm` | Aplican la forma y `overflow: hidden` | — | — | — |
+
+Todo respeta `prefers-reduced-motion` (además de la regla global) y ninguna entrada esconde contenido sin soporte.
+
+**Vista previa por preset (tienda demo).** `/s/demo?estilo=<preset>` (o `demo.<dominio>/?estilo=…`) muestra la demo con ese preset sin tocar la base: `src/proxy.ts` pasa `x-store-preview-style` al server y deja una cookie de sesión `ecommy_estilo`, así la navegación interna lo conserva; `?estilo=original` la borra. `getStoreDisplay` (`src/lib/store/display.ts`) pisa el tema completo con el del preset (salvo `footer.showCredit`) **sólo** si `x-store-slug` es `demo`. Un layout no recibe `searchParams` en Next 16: por eso se resuelve en el proxy y no en la página.
 
 ---
 
@@ -305,6 +340,33 @@ Auditoría completa en [`docs/ux-audit/presets-apariencia.md`](ux-audit/presets-
 | todos | `footer.showCredit: true` | Campo nuevo del schema (default `true`, sin migración: `theme` es jsonb). |
 
 Fuera de §4, en la misma pasada: el precio de la card pasa a `--text-lg` como pide §6.1 (estaba en `--text-base`); dentro de una banda `background: 'primary'` el botón primario se invierte (antes tenía el mismo color que la banda) y las tarjetas con panel vuelven a los tokens del tema (antes: texto `--primary-fg` sobre `--surface`, blanco sobre blanco).
+
+### Curado 2026-10: diez personalidades
+
+Antes los diez presets cambiaban colores, fuentes, radios y densidad, pero la disposición era la misma. Desde 2026-10 cada uno elige además header, pie y `style` (§3.9). `create_store()` guarda sólo `{ preset }`: **las tiendas que nunca guardaron su apariencia cambian de disposición** con este curado (aceptado: es el rediseño). Las que guardaron su tema conservan colores, fuentes, header y pie guardados y toman el `style` de su preset.
+
+| Preset | Header | Portada | Tarjeta | Catálogo (grilla · filtros) | Ficha | Títulos | Forma | Movimiento | Pie |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `atelier` | logo al centro, transparente | foto a sangre | apilada, texto centrado | destacados · panel | grilla de fotos (8/4) | centrados | recta | suave | simple |
+| `mercado` | apilado (logo grande + toldo) | enmarcada | en caja, foto en arco, botón visible | pareja · pastillas | carrusel | solos | arco | suave | banda verde |
+| `nordico` | una fila con buscador | mitad y mitad | en caja, botón visible | pareja · costado | miniaturas | con regla | suave | quieto | columnas |
+| `editorial` | mínimo en texto | afiche | texto sobre la foto | destacados · panel | fotos apiladas | índice | recta | animado (marquesina) | nombre gigante |
+| `neon` | doble barra, banda ámbar | mitad y mitad | baldosa con "+" | pareja · costado | miniaturas | etiqueta | suave | animado | columnas |
+| `botica` | una fila con buscador | enmarcada | apilada, foto suave | pareja · pastillas | miniaturas | etiqueta | suave | suave | columnas |
+| `recreo` | pastilla-burbuja flotante | apilada | baldosa con "+" | pareja · pastillas | carrusel | solos | burbuja | animado | banda mandarina |
+| `lapacho` | una fila, transparente | foto a sangre | apilada 16:9 | destacados · pastillas | carrusel a todo el ancho | solos | recta | suave | mínimo |
+| `galpon` | doble barra, banda azul | mitad y mitad | fila de lista de precios | lista · costado | miniaturas | con regla | recta | quieto | simple |
+| `bodega` | apilado | foto a sangre | apilada, botella en arco | pareja · costado | grilla de fotos | centrados | arco | suave | nombre gigante |
+
+Color y tipografía, en la misma pasada:
+
+| Preset | Cambio | Razón |
+| --- | --- | --- |
+| `mercado` | Fondo `#F6F0E4 → #FBF4E6`, superficie blanca, banda secundaria mostaza `#F4CF6B`, `textMuted #5E4F3F`, Fraunces 600 → 700 | Atelier, mercado y lapacho eran tres "crema + serif" casi iguales. Mercado pasa a papel claro con mostaza de feria y una Fraunces más gorda. Contrastes en `presets.test.ts` (muted sobre mostaza 5,25:1). |
+| `lapacho` | Fondo piedra `#EEECE7`, `textMuted #5C554F`, banda `#E0DBD2`; títulos Newsreader 400 → **Syne 600** | Fuera del grupo serif: Syne es la grotesca de galería de diseño, y el fondo gris piedra se separa del blanco roto de atelier. |
+| `bodega` | `transparentOnHome: false` | El header apilado no se superpone a la portada. |
+
+Fuente de verdad: `src/lib/theme/presets.ts` (cada preset lleva su dirección de arte en el comentario). Los JSON de abajo muestran colores y tipografía; `header`, `footer` y `style` de cada uno están en la tabla de arriba.
 
 ### 4.1 `atelier` — moda, joyería, marroquinería
 
@@ -347,28 +409,28 @@ Para marcas que venden con la foto: indumentaria de autor, joyería, cuero, lenc
 
 ### 4.2 `mercado` — artesanías, deco, dietética, feria
 
-Para quien vende cerámica, mates, textiles, velas, productos naturales. Fondo crema, Fraunces (serif blanda y cálida) con Nunito Sans legible a 17px, verde bosque como CTA y terracota para promos; el error va en un carmín aparte para no confundirse con la promo. Cards con borde fino y radio medio, **un** gesto redondo (el botón pill sólido), hover que levanta apenas con borde, sin sombras, y grano sutil en las fotos de campaña. Se siente como un puesto cuidado, no como un marketplace.
+Para quien vende cerámica, mates, textiles, velas, productos naturales. Papel claro con una banda mostaza, Fraunces 700 (serif blanda y gorda) con Nunito Sans legible a 17px, verde bosque como CTA y terracota para promos; el error va en un carmín aparte para no confundirse con la promo. Logo grande arriba con el menú debajo como un toldo, tarjetas en caja con la foto en arco y el botón pill a la vista, categorías en pastillas, grano sutil en las fotos de campaña y un pie verde que entra con un arco. Se siente como un puesto cuidado, no como un marketplace.
 
 ```json
 {
   "preset": "mercado",
   "colors": {
-    "background": "#F6F0E4",
-    "surface": "#FFFBF3",
-    "text": "#2B2118",
-    "textMuted": "#6B5C4B",
+    "background": "#FBF4E6",
+    "surface": "#FFFFFF",
+    "text": "#2A1F14",
+    "textMuted": "#5E4F3F",
     "primary": "#2F5D46",
     "primaryText": "#FFFBF3",
-    "secondary": "#EADFC9",
+    "secondary": "#F4CF6B",
     "accent": "#A8431F",
-    "border": "#DCCFB8",
+    "border": "#E6D7BC",
     "success": "#3E6B2F",
     "danger": "#8F2445"
   },
   "fonts": {
     "heading": "fraunces",
     "body": "nunito-sans",
-    "headingWeight": 600,
+    "headingWeight": 700,
     "bodyWeight": 400,
     "headingTransform": "none",
     "headingTracking": "tight",
@@ -583,28 +645,28 @@ Para librerías escolares, papelerías, jugueterías y ropa de chicos, que neces
 
 ### 4.8 `lapacho` — mueblería, iluminación, objetos de diseño
 
-Para mueblerías de diseño, carpinterías a medida, iluminación y objetos. Es el único preset apaisado: fotos 16:9 (mesas, sillones y aparadores son horizontales) en `contain` sobre blanco, una por fila en el celular y tres en desktop, con densidad amplia de showroom. Newsreader 400 en títulos (tono revista de interiores, tipo Kinfolk) y Karla en el cuerpo; fondo piedra cálida, marrón madera de lapacho en foco y links, botón outline, y el rosa de la flor del lapacho sólo para promos. Footer mínimo. Se distingue por el formato: el producto se ve entero y a escala.
+Para mueblerías de diseño, carpinterías a medida, iluminación y objetos. Es el único preset apaisado: fotos 16:9 (mesas, sillones y aparadores son horizontales) en `contain` sobre blanco, una por fila en el celular y tres en desktop, con densidad amplia de showroom. Syne 600 en títulos (grotesca de galería de diseño; hasta 2026-10 era Newsreader) y Karla en el cuerpo; fondo gris piedra, marrón madera de lapacho en foco y links, botón outline, y el rosa de la flor del lapacho sólo para promos. Footer mínimo. Se distingue por el formato: el producto se ve entero y a escala.
 
 ```json
 {
   "preset": "lapacho",
   "colors": {
-    "background": "#F2EFEA",
+    "background": "#EEECE7",
     "surface": "#FFFFFF",
     "text": "#1F1A17",
-    "textMuted": "#625A53",
+    "textMuted": "#5C554F",
     "primary": "#4E3426",
     "primaryText": "#F7F3EE",
-    "secondary": "#E6E0D7",
+    "secondary": "#E0DBD2",
     "accent": "#B0306A",
-    "border": "#DAD3C9",
+    "border": "#D4CEC4",
     "success": "#3C6B3F",
     "danger": "#A8281E"
   },
   "fonts": {
-    "heading": "newsreader",
+    "heading": "syne",
     "body": "karla",
-    "headingWeight": 400,
+    "headingWeight": 600,
     "bodyWeight": 400,
     "headingTransform": "none",
     "headingTracking": "tight",
@@ -753,15 +815,25 @@ Viven en `src/components/store/*` y `src/components/blocks/*`. Consumen tokens; 
 
 ### 6.1 ProductCard
 
-Orden: imagen → [marca] → [SKU] → nombre (máx. 2 líneas, alto reservado) → PriceTag → [línea de transferencia]. **Sin** chips de categoría, sin badge "En stock", sin botón visible por defecto.
+Orden: imagen → [marca] → [SKU] → nombre (máx. 2 líneas, alto reservado) → PriceTag → [línea de transferencia] → [compra rápida]. **Sin** chips de categoría, sin badge "En stock".
 
-- **Compra rápida**: en desktop, al `hover`/`focus-within` aparece "Agregar al carrito" pegado al borde inferior de la imagen (ancho completo, `--control-h`, estilo del tema). En mobile no hay botón: la card entera lleva a la ficha. Con variantes: "Elegir opciones" (abre la ficha).
+El markup es uno solo; la disposición la pone el CSS según `.store-root[data-card]` (`style.card`), ubicando las piezas en una grilla interna de tres áreas (`media`, `body`, `cta`). Así los bloques y la vista previa del panel la heredan sin props nuevas.
+
+| `style.card` | Disposición | Compra rápida | Hover |
+| --- | --- | --- | --- |
+| `stack` | Foto + texto debajo; centrado si `titles: 'centered'`. Respeta `cards.style` (plana, con borde, con sombra). | Sube con rebote sobre el borde inferior de la foto, sólo desktop con hover. | Zoom o segunda foto (`cards.hover`). |
+| `overlay` | Nombre (en la fuente de títulos) y precio sobre la foto, con un velo que sube desde abajo; los tokens de texto se re-derivan a blanco. En mobile se ocultan las líneas secundarias del precio. | Arriba de la foto, sólo desktop. | Zoom lento. |
+| `boxed` | Caja `--surface` con borde, foto inset con `--shape-radius-sm`. | Botón siempre visible (también en mobile), con "+" que gira. | Borde fuerte + zoom. |
+| `tile` | Baldosa sin borde (con borde en temas oscuros), radio de la forma. | "+" redondo de 44px sobre la foto, siempre visible; la etiqueta queda para lectores de pantalla. | La baldosa sube; el "+" gira con rebote. |
+| `row` | Dentro de `.store-grid`: fila de lista de precios (foto 64–72px, SKU, nombre, precio a la derecha, botón). Dos columnas desde 1280px. Fuera de una grilla (sliders), se ve como `boxed`. | Botón compacto siempre visible. | Fondo apenas tintado. |
+
+- **Compra rápida** (`QuickAdd`): "Agregar al carrito" → "Agregado" con check que aparece con rebote; con variantes, "Elegir opciones" (abre la ficha); agotado con WhatsApp, "Consultar por WhatsApp". Ícono y etiqueta van por separado para que cada disposición elija.
 - **Por `cards.style`**: `flat` → texto con `padding-top: --card-pad`, sin padding lateral; `bordered`/`elevated` → texto con `padding: --card-pad`, la imagen toca los bordes del panel (radio sólo arriba).
 - **Por `imageRatio`**: `4:5`/`3:4` cover a sangre; `1:1`/`16:9` contain con padding 6 % sobre `--surface`.
 - **Precio**: "$ 45.900" en `--fg`, `--text-lg`, `tabular-nums`. Variantes con distinto precio: "Desde $ 45.900" ("Desde" en `--fg-muted`, peso normal).
 - **Promo**: actual en `--accent` + anterior tachado `--fg-muted --text-sm` en la misma línea: `$ 36.720  $ 45.900`. Si no entra, el tachado baja de línea.
 - **Transferencia**: si el método `transfer` tiene descuento > 0, línea `--text-xs --fg-muted`: "$ 33.048 con transferencia". Una sola vez por card.
-- **Badge de promo**: `badge_label` de la promoción ganadora ("-20 %", "Ciber Lunes"). Esquina superior izquierda de la imagen a 8px, `--text-xs`, peso 600, `bg --bg`, `color --accent`, `padding 2px 6px`, radio `--radius-sm`. Sin sombra, sin rotación; uppercase sólo si `buttons.uppercase`. Máximo **un** badge por card.
+- **Badge de promo**: `badge_label` de la promoción ganadora ("-20 %", "Ciber Lunes"). Esquina superior izquierda de la imagen a 8px (con `shape: 'arch'`, abajo: arriba no hay esquina), `--text-xs`, peso 600, `bg --bg`, `color --accent`, `padding 2px 6px`, radio `--radius-sm`. Sin sombra, sin rotación; uppercase sólo si `buttons.uppercase`. Máximo **un** badge por card.
 - **Sin stock**: imagen al 55 % de opacidad; precio en `--fg-muted` y debajo "Sin stock" `--text-xs`. El botón de hover dice "Consultar por WhatsApp" si el método whatsapp está activo; si no, no hay botón. Van al final de los listados salvo orden explícito.
 - **Stock bajo**: "Quedan 3" sólo en la ficha, no en la card.
 
@@ -775,29 +847,57 @@ Un solo componente para card, ficha, carrito y checkout. Props: `price`, `compar
 
 ### 6.3 Ficha de producto
 
-Desktop: galería 7/12 (miniaturas verticales a la izquierda, principal con `imageRatio` del tema) + buy box 5/12, las dos columnas sticky (`top: calc(var(--header-h) + 24px)`): la más corta acompaña a la otra. La principal **entra completa en el viewport**: alto máximo `clamp(400px, 100svh − --header-h − 128px, 680px)` (128px = announcement bar + padding de sección + breadcrumb de la primera pantalla + aire inferior; cubre también el `top` del sticky); el ancho sale de ese alto × ratio y el conjunto miniaturas + principal se centra en su columna (4:5 → 544px de ancho, 3:4 → 510px; 1:1 y 16:9 suelen quedar limitadas por la columna). Las miniaturas miden lo mismo que la principal, con scroll interno. El zoom trabaja sobre la caja de la imagen; `sizes` refleja el tope (≤ 680px, nunca `vw` de la columna en pantallas anchas). El buy box no lleva tope propio: 5/12 de `wide` ≈ 68ch y el texto corrido ya tiene su medida. Mobile: galería con scroll-snap horizontal y contador "2/5" en `--text-xs`, sin dots.
+Cuatro disposiciones según `style.gallery` (el buy box es el mismo en las cuatro):
+
+| `gallery` | Desktop | Columnas |
+| --- | --- | --- |
+| `thumbs` | Miniaturas verticales + principal con zoom (lo que sigue). | 7/12 + 5/12, las dos sticky. |
+| `grid` | Todas las fotos en dos columnas, sin clics; la de la variante elegida pasa primera. | 8/12 + 4/12, buy box sticky. |
+| `stack` | Fotos a ancho completo, una debajo de otra. | 7/12 + 5/12, buy box sticky. |
+| `carousel` | Carrusel a sangre con alto fijo, la siguiente foto asomando, flechas y contador en una pastilla. | Galería 12/12; debajo compra 5/12 (sticky) + detalle 7/12. |
+
+Con una sola foto, `grid` y `stack` se ven como `thumbs`. Las fotos de la ficha nunca llevan la forma del preset. El título usa la voz del preset (`index`: más grande y apretado; `tag`: `--text-2xl`).
+
+`thumbs` en detalle — desktop: galería 7/12 (miniaturas verticales a la izquierda, principal con `imageRatio` del tema) + buy box 5/12, las dos columnas sticky (`top: calc(var(--header-sticky-h) + 24px)`: el alto que de verdad queda pegado arriba según el header): la más corta acompaña a la otra. La principal **entra completa en el viewport**: alto máximo `clamp(400px, 100svh − --header-h − 128px, 680px)` (128px = announcement bar + padding de sección + breadcrumb de la primera pantalla + aire inferior; cubre también el `top` del sticky); el ancho sale de ese alto × ratio y el conjunto miniaturas + principal se centra en su columna (4:5 → 544px de ancho, 3:4 → 510px; 1:1 y 16:9 suelen quedar limitadas por la columna). Las miniaturas miden lo mismo que la principal, con scroll interno. El zoom trabaja sobre la caja de la imagen; `sizes` refleja el tope (≤ 680px, nunca `vw` de la columna en pantallas anchas). El buy box no lleva tope propio: 5/12 de `wide` ≈ 68ch y el texto corrido ya tiene su medida. Mobile: galería con scroll-snap horizontal y contador "2/5" en `--text-xs`, sin dots.
 
 Buy box: marca/SKU → h1 (heading) → PriceTag `lg` → variantes (botones rectangulares `--radius-sm`; agotados tachados y `disabled`; colores como texto + muestra de 16px) → cantidad + "Agregar al carrito" → entrega ("Te lo llevamos · desde $ 4.500" / "Retirás en el local · gratis") → descripción (RichText).
 
-### 6.4 Header — 3 layouts
+### 6.4 Header — 6 layouts
 
-Base: fondo `--bg`, texto `--fg`, alto `--header-h`, borde inferior `--border` si `dividers` o al scrollear. Announcement bar opcional encima: `announcement.bg/fg` o `--secondary`/`--fg`, 32px, `--text-xs`, centrado, sin botón de cerrar.
+Base: fondo `--bg`, texto `--fg`, borde inferior `--border` si `dividers` o al scrollear. Announcement bar opcional encima: `announcement.bg/fg` o `--secondary`/`--fg`, 32px, `--text-xs`, centrada y estática; con `style.motion: 'lively'` corre como marquesina (`.st-marquee`, se pausa con hover/foco, quieta con movimiento reducido). Sin botón de cerrar.
 
-- **`logo-left`**: logo · nav (menú `header`, `--text-sm`, peso `bodyWeight + 100`) · buscador (si `showSearch`) · carrito. Para catálogos grandes.
-- **`logo-center`**: nav a la izquierda, logo centrado (28–40px de alto), buscar + carrito a la derecha. Nav en uppercase `--text-xs` tracking 0.12em si `buttons.uppercase`. Para moda.
-- **`minimal`**: logo a la izquierda; a la derecha **texto**: "Menú", "Buscar", "Carrito (2)". "Menú" abre un panel full-height con links en `--font-heading` grandes. Para marcas editoriales.
-- Mobile (los tres): menú a la izquierda · logo · carrito. El buscador pasa a ícono.
-- Contador del carrito: "(2)" en texto o círculo 18px `bg --primary`/`--primary-fg`. Nunca un color fijo.
-- Megamenú sólo si un ítem tiene > 6 hijos: columnas de texto, sin imágenes promocionales.
+| `layout` | Desktop | Mobile | Para |
+| --- | --- | --- | --- |
+| `logo-left` | logo · nav · buscador (máx. 420px) · carrito, en `--header-h`. | menú · logo · buscar + carrito | catálogos, salud, objetos |
+| `logo-center` | nav · logo al centro · buscar + carrito. Nav en versalitas si `buttons.uppercase`. | ídem | moda |
+| `minimal` | logo + **texto**: "Menú", "Buscar", "Carrito (2)". "Menú" abre un panel con links grandes en `--font-heading`. | ídem | marcas editoriales |
+| `stacked` | Logo grande (30–52px) centrado entre "Buscar" y "Carrito (2)", y la nav centrada en una segunda fila entre reglas. Al scrollear sube la primera fila (`transform`, sin cambiar el layout) y queda sólo la nav. | ídem | feria, vinoteca |
+| `pill` | Pastilla flotante despegada de los bordes, `--surface` con borde; el header no tiene fondo. Radio según la forma: pastilla, 16px (`soft`) o burbuja. Al scrollear, sombra (o anillo en oscuro). | La pastilla se mantiene. | infantil, gaming |
+| `double` | Logo · buscador protagonista (46px, borde `--fg` de 1,5px) · "Carrito"; debajo, la nav en una banda `--primary` / `--primary-fg`. | Suma el buscador visible en una segunda fila. | mayoristas, gaming, catálogos grandes |
+
+- Transparente sobre la portada sólo en los tres de una fila (§3.6).
+- `--header-sticky-h` (definida en `.store-root[data-header]`) es el alto que queda pegado arriba; lo usan ficha, carrito, checkout y la columna de filtros.
+- Contador del carrito: "(2)" en texto o círculo 18px `bg --primary`/`--primary-fg` que aparece con rebote al cambiar. Nunca un color fijo.
+- Links de la nav con subrayado que se dibuja (`.st-link`). Megamenú sólo si un ítem tiene > 6 hijos: columnas de texto, sin imágenes promocionales.
 
 ### 6.5 Hero
 
-- **Alturas** (`settings.height`): `sm` 40vh (mín. 320px) · `md` 60vh (mín. 420px) · `lg` 80vh (mín. 520px) · `screen` `calc(100svh - var(--header-h))` (o `100svh` con header transparente). En mobile se usa `imageUrlMobile` (4:5) si existe.
-- **Overlay** (`overlay` 0–80, α = overlay/100): gradiente orientado al texto, no un velo uniforme. `align: 'left'` → `linear-gradient(to top right, rgb(0 0 0/α) 0%, rgb(0 0 0/α·0.3) 60%)`; `center` → `rgb(0 0 0/α)` plano. Si `overlay < 25`, el builder advierte "El texto puede no leerse".
-- **Alineación**: `left` (default) → bloque de texto abajo a la izquierda, máx. 560px, a un gutter del borde; `center` → centrado vertical y horizontal, máx. 720px.
-- Contenido: eyebrow opcional (`--text-xs` uppercase tracking 0.12em) → título `--text-display` → subtítulo `--text-lg` máx. 2 líneas → CTA primario (`solid`, sobre imagen oscura usa `--bg`/`--fg`) + `cta2` como link subrayado.
-- Sin imagen: hero tipográfico sobre `--bg` o `--secondary`, título a la izquierda, sin decoración.
-- Ancho completo sin radio. Si es el primer bloque: imagen con `priority` / `fetchpriority="high"`.
+Componente: `src/components/blocks/Hero.tsx` (+ `src/lib/blocks/hero.ts`). Cinco disposiciones, elegidas con `settings.layout`: `auto` (default: la de `theme.style.hero`) o una fija. Todas funcionan **con y sin foto** (sin foto nunca queda una caja vacía), se recomponen con container queries (tienda y vista previa del panel) y entran con `.blk-in` (sube y aparece, escalonado con `--i`; la foto se "asienta" con `.blk-in-media`). Con `motion: 'none'`, `prefers-reduced-motion` o dentro de la vista previa del panel no se anima nada.
+
+| Disposición | Con foto | Sin foto | Mobile (390) | Preset de fábrica |
+| --- | --- | --- | --- | --- |
+| `cover` | A sangre, texto abajo a la izquierda (o centrado) sobre el overlay | Se arma como `poster` | Igual, foto `imageUrlMobile` si existe | atelier, lapacho, bodega |
+| `split` | Mitad texto sobre `--primary` (`.blk-bg-primary`) · mitad foto con la forma del tema | Collage escalonado de 2–4 productos (foto + nombre + precio); con `card: 'row'` (galpon) **lista de precios** de hasta 6 filas con SKU y tachado; sin productos, monograma (inicial de la tienda) | Texto arriba, foto o 2 productos debajo | nordico, neon, galpon |
+| `framed` | Foto enmarcada en el contenedor (forma del tema) + tarjeta `--bg` que la pisa abajo a la izquierda (`align: 'center'` = a la derecha) | Marco `--secondary` con 3 productos en fila; sin productos, monograma gigante | Foto 4:5 y la tarjeta sube 72px sobre ella | mercado, botica |
+| `poster` | Titular gigante a lo ancho sobre `--secondary` (tamaño por largo del título: ≤14 letras 15,5cqi, ≤30 10cqi, más 7cqi), regla, bajada + CTAs en una fila; la foto va como franja 21:8 debajo | Tira de 4 productos debajo (o nada) | El titular baja a 2,4–3,4 × base | editorial |
+| `stack` | Título centrado y la foto como franja | Título centrado + tira de 4 `ProductCard` escalonada sobre media banda `--secondary` | 2 cards por fila | recreo |
+
+- **Productos de la portada** (`settings.products`, `ProductSource | null`): default (incluye portadas guardadas antes de 2026-10) = los 4 más nuevos; `null` = sin productos. Portada: hasta 6 (`blockProductSource`).
+- **Alturas** (`settings.height`): en `cover` `sm` 40vh/320 · `md` 60vh/440 · `lg` 80vh/540 · `screen`; en `split` 400/480/72vh/100svh; en `framed` cambia la proporción del marco; en `poster` el aire.
+- **Overlay** (sólo `cover`): gradiente orientado al texto (`to top right`) o plano si está centrado. El panel lo muestra sólo cuando la portada efectiva es `cover` y advierte por debajo de 25 %.
+- Contenido: eyebrow → título (`h1` si es el primer bloque) → bajada `--text-lg` (máx. 52ch) → CTA primario + `cta2` como link. Un solo CTA fuerte.
+- **Header transparente**: sólo sobre `cover` con foto (`heroIsFullBleed(block, theme.style.hero)`); en las demás el header va sólido.
+- Si es el primer bloque: foto con `fetchpriority="high"`.
 
 ### 6.6 BannerGrid
 
@@ -805,24 +905,31 @@ Base: fondo `--bg`, texto `--fg`, alto `--header-h`, borde inferior `--border` s
 - **2 columnas**: `4:5` o `1:1`; texto abajo a la izquierda sobre la imagen, título `--text-xl`, CTA como link subrayado.
 - **3–4 columnas = tiles**: `1:1` o `4:5`, texto **debajo** de la imagen (no encima): título `--text-base` semibold + subtítulo `--fg-muted`. Son accesos a categorías o colecciones; la pieza entera es link.
 - **`ratio: 'auto'` con 3 ítems** (desktop): grilla asimétrica 2fr/1fr; el primero ocupa 2 filas, los otros dos apilados.
-- `gap`: `none` 0 · `sm` 8px · `md` `--gap-grid`. Radio `--radius-lg`, salvo `gap: 'none'` o `container: 'full'` (0).
+- **Forma**: cada marco usa `.blk-shape` (`--shape-radius` del estilo; con `rect`, `--radius-lg` del tema). Sin forma con `gap: 'none'` o `container: 'full'`.
+- **Sin foto**: el marco es un plano tipográfico que rota `--secondary` → `--primary` (con los tokens de texto re-derivados) → `--surface` con borde, con el número del banner ("01") arriba y el título en `--font-heading` grande. Nunca una caja gris vacía.
+- **Movimiento**: entran escalonados (`.st-stagger`); al hover la foto se acerca (`.st-hover-zoom` + `.st-zoom`).
+- `gap`: `none` 0 · `sm` 8px · `md` `--gap-grid`.
 - Mobile: 1 col → full; 2 col → 2 col; 3 col → scroll horizontal con snap (tiles de 72vw); 4 col → 2×2.
 
-### 6.7 Footer — 3 estilos
+### 6.7 Footer — 5 estilos
 
-Fondo `--bg` con regla superior `--border` (no bloque negro por defecto). Texto `--text-sm`; links `--fg-muted` → `--fg` al hover.
+Fondo `--bg` con regla superior `--border` (no bloque negro por defecto), salvo `band`. Texto `--text-sm`; links `--fg-muted` → `--fg` al hover. Rótulos de grupo en `.ftr-label` (versalitas 12px).
 
-- **`simple`**: fila 1 = nombre de la tienda en `--font-heading` grande (`--text-2xl`; `--text-display` en `editorial`) a la izquierda + links del menú `footer` en línea a la derecha. Fila 2 = contacto (WhatsApp, email, dirección) · redes · legales · "© 2026 {tienda}".
+- **`simple`**: fila 1 = nombre de la tienda en `--font-heading` grande + links del menú `footer` en línea a la derecha. Fila 2 = contacto · redes · pagos · envíos.
 - **`columns`**: grilla de 12 con anchos desiguales: marca + tagline + contacto (5) · grupos del menú `footer` (2 grupos × 2) · "Medios de pago" y "Envíos" en texto (3). Sólo grupos con links reales; con un solo grupo se degrada a `simple`.
-- **`minimal`**: una línea: "© 2026 {tienda} · Términos · Privacidad · Instagram". Para landings y marcas muy limpias.
-- Siempre: datos de contacto reales y link "Botón de arrepentimiento" cuando hay política de devoluciones (obligatorio en Argentina para venta online).
+- **`minimal`**: una línea: "{tienda} · Términos · Privacidad · Instagram · WhatsApp".
+- **`statement`**: tagline + contacto · links + pagos + envíos · redes, y debajo **el nombre de la tienda a todo el ancho** (`.ftr-giant`) como cierre: el cuerpo sale de la cantidad de letras y del ancho de la familia (angostas ×2,15, mono ×1,25), con tope de 24vw / 380px; entra con `.st-reveal`. Es decorativo (`aria-hidden`): el nombre ya está en la banda legal.
+- **`band`**: una hoja `--primary` con texto `--primary-fg` (los tokens de texto se re-derivan adentro, `--fg-muted` al 88 %) cuyas esquinas de arriba siguen la forma: rectas, 24–40px (`soft`), arco elíptico (`arch`) o 32–56px (`bubble`). Marca + redes (5) · contacto (3) · links + pagos + envíos (4).
+- Siempre: datos de contacto reales, banda legal con "Botón de arrepentimiento" (obligatorio en Argentina para venta online), Defensa del Consumidor, CUIT y "Hecho con Ecommy" según `footer.showCredit`.
 
-### 6.8 ProductSlider
+### 6.8 ProductSlider (y ProductGrid)
 
 - Track `overflow-x: auto`, `scroll-snap-type: x mandatory`, ítems `scroll-snap-align: start`, scrollbar oculta, `scroll-padding-inline` = gutter. El último ítem visible asoma un 30 % para sugerir scroll.
 - Ancho de ítem: `(100% − gaps) / cardsPerView` en desktop; en mobile, 2.3 visibles (1.3 si `gridColumns.mobile: 1`).
-- **Flechas discretas**: sólo ≥ 1024px, en la línea del título a la derecha junto a "Ver todo": dos botones 32px, ícono `ChevronLeft`/`ChevronRight` 16px, `border 1px --border`, radio `--radius-sm`, opacidad 35 % y `disabled` en los extremos. **No** flotan sobre las cards. **Sin dots, sin autoplay.**
-- Encabezado: h2 a la izquierda + subtítulo opcional `--fg-muted`; "Ver todo" como link de texto.
+- **Flechas discretas**: sólo ≥ 1024px, en la línea del título a la derecha junto a "Ver todo": dos botones 32px, `border 1px --border`, radio `--radius-sm`, opacidad 35 % y `disabled` en los extremos. **No** flotan sobre las cards. **Sin dots, sin autoplay.**
+- Encabezado: `SectionTitle` (ver §6.12, títulos de sección). "Ver todo" con subrayado que se dibuja (`.st-link`).
+- **Protagonista** (`highlight: 'first'`, slider y grilla): en el carrusel el primer producto mide el doble de ancho y el **mismo alto** (su foto toma el ratio del tema ×2 vía `--card-ratio`); en la grilla ocupa 2 × 2 en desktop y todo el ancho en mobile, y la grilla se recorta para cerrar la última fila. La tarjeta es la de S1 (`ProductCard`, `theme.style.card`), sin cambios.
+- Entrada: `.st-stagger` (los hijos toman `--i` por `nth-child`, ciclo de 6).
 
 ### 6.9 RichText (prose)
 
@@ -833,12 +940,15 @@ Clase propia `.prose-store` (no el plugin typography por defecto):
 - `blockquote`: borde izquierdo 2px `--fg`, `--text-lg`, itálica del heading si la fuente la tiene.
 - Listas con viñeta "–" en `--fg-muted`. Tablas (fichas técnicas): reglas horizontales `--border`, sin zebra, números a la derecha con `tabular-nums`.
 - Imágenes al ancho de la columna, radio `--radius-lg`; `figcaption` `--text-xs --fg-muted`.
+- La portada de fábrica ya no usa un `rich_text` para "Cómo comprar": usa una `faq` titulada "Cómo comprar" (su título es el ancla `#como-comprar` del menú de fábrica). El texto enriquecido queda para políticas y páginas largas.
 
 ### 6.10 Carrito y Checkout
 
-- **Drawer**: 420px desktop / 100 % mobile, desde la derecha, `bg --bg`, `--shadow-lg`. Filas: miniatura 64px (ratio del tema) · nombre + variante · stepper 32px · precio. Pie sticky: subtotal, "El envío se calcula en el checkout", "Iniciar compra" (solid, ancho completo), "Seguir comprando" (link).
+- **Drawer**: 420px desktop / 100 % mobile, desde la derecha, `bg --bg`, `--shadow-lg`; entra con `--st-ease` en `--st-dur-3` y, si la forma no es recta, con el borde interior redondeado (20px). Filas: miniatura 64px (con la forma chica del preset) · nombre + variante · stepper 32px · precio; cada fila aparece con `.st-pop`. Pie sticky: barra de envío gratis, subtotal, "El envío se calcula en el checkout", "Iniciar compra" (solid, ancho completo), "Ver carrito" / "Seguir comprando" (links).
+- **Micro-interacciones**: el número del stepper rebota al cambiar y los botones se achican al apretar (`scale(.88)`); la barra de envío gratis crece con `transform: scaleX` (no `width`) y, al llegar, se pinta `--success` con un check que aparece con rebote; el contador del header rebota al sumar.
+- **Página del carrito y resumen del checkout**: panel `.cart-summary` (`--surface`, borde, `--panel-radius`: radio del tema, ≥ 16px con forma, burbuja con `bubble`), sticky bajo `--header-sticky-h`. Títulos con `PageHead` (eyebrow = nombre de la tienda) en la voz del preset. Vacío: titular en `--font-heading` + una línea + "Ver todos los productos" + destacados en grilla.
 - **Checkout**: **una columna** de formulario (máx. 560px) + resumen a la derecha en desktop (380px, `position: sticky; top: calc(var(--header-h) + 24px)`). En mobile, el resumen es un acordeón arriba: "Ver resumen · $ 128.400".
-- **Pasos verticales** numerados: "1. Tus datos", "2. Entrega", "3. Pago", "4. Revisá y confirmá". Activo expandido; completos colapsados en una línea + "Editar"; futuros en `--fg-muted`. Sin stepper horizontal de círculos.
+- **Pasos verticales** numerados: "1. Tus datos", "2. Entrega", "3. Pago", "4. Revisá y confirmá". El número va en una ficha de 28px (circular, o cuadrada si la forma es recta): activa en `--fg` sólida, completa con un check `--success` que aparece con rebote, futura con borde. Activo expandido (el contenido entra con un `st-rise` corto); completos colapsados en una línea + "Editar"; futuros en `--fg-muted`. Sin stepper horizontal de círculos.
 - **Entrega**: dos radios grandes (tarjetas `bordered` de una línea): "Te lo llevamos — {zona}, llega en {eta} · $ 4.500" / "Retirás en el local — {dirección} · Gratis". Zona sin cobertura: mensaje inline con link a WhatsApp, no un modal.
 - **Pago**: radios con el descuento alineado a la derecha ("Transferencia bancaria   −10 %"). El total del resumen se actualiza al instante.
 - **Inputs**: label arriba (`--text-sm`, peso 500), alto `--control-h`, borde `--border-strong`, radio `--radius-md`, foco `outline: 2px solid var(--primary); outline-offset: 2px`. Error debajo en `--danger` `--text-sm`. `autocomplete` correcto (`name`, `email`, `tel`, `street-address`, `postal-code`).
@@ -846,140 +956,155 @@ Clase propia `.prose-store` (no el plugin typography por defecto):
 
 ### 6.11 Página de pedido (`/pedido/[token]`)
 
-- Encabezado: "Recibimos tu pedido #1043" (heading) + fecha + estado como texto con punto de color, no badge chillón.
+- Encabezado: un círculo con check en `--success` que se dibuja una vez (SVG, `stroke-dashoffset`, quieto con movimiento reducido o `motion: 'none'`) + "Recibimos tu pedido #1043" (heading) + fecha + estado como texto con punto de color, no badge chillón. Centrado si `titles: 'centered'`. Las cajas de pago y detalle son `.order-panel` (mismo panel que el resumen del carrito).
 - **La acción va primero**, antes del resumen. Transferencia → caja `bordered` con filas Banco / Titular / CBU / Alias / CUIT / Monto a transferir, cada una con "Copiar" (feedback "Copiado"); debajo "Enviar comprobante por WhatsApp" (solid). WhatsApp → botón grande "Abrir WhatsApp" + "Si no se abrió solo, tocá el botón."
 - Después: timeline vertical de eventos visibles (fecha `--text-xs --fg-muted` + mensaje), ítems, totales y entrega.
 - Pie: "Guardá este link para ver cómo va tu pedido." + "Copiar link".
 
 ### 6.12 Resto de bloques (§9 de la spec)
 
-- `heading`: eyebrow + título, izquierda por defecto, sin subrayados decorativos.
-- `image_text`: imagen 7/12 + texto 5/12 (o invertido), texto centrado verticalmente y alineado a la izquierda.
-- `category_list`: `cards` = tiles como BannerGrid 3–4 cols; `chips` = links de texto con borde `--border` y `--radius-pill`; `circles` = foto circular 96px + nombre debajo (el único círculo permitido, y sólo con fotos reales).
-- `features`: ver §1.1. `faq`: `<details>` con regla entre ítems y "+"/"−" a la derecha, sin cajas. `countdown`: números `tabular-nums` en heading, sin tarjetitas por dígito; al vencer, el bloque se oculta. `testimonials`: cita en heading + autor, nace vacío. `video`: sin autoplay con sonido. `divider`: regla `--border` o espacio.
+**Títulos de sección** (`SectionTitle`, `heading` nivel 2, `faq`, `countdown`: clase `.blk-sectitle`) según `theme.style.titles`:
+`plain` solo · `rule` regla de 2px `--fg` arriba (diario) · `centered` centrado entre dos filetes, "Ver todo" debajo · `index` número de sección `01`, `02`… arriba con una regla corta (revista; el render calcula el número porque `container-type` aísla los contadores CSS: `sectionIndexes()` → `--sec`) · `tag` el título como etiqueta `--primary` (en `bubble`, con la esquina baja izquierda recta).
+
+**Forma** (`theme.style.shape`, utilidades de S1 en `store.css`): `.blk-shape` para imágenes de campaña (hero, banners, tiles de categoría, imagen y texto, colección), `.blk-shape-sm` para miniaturas, `.blk-card-shape` para tarjetas con texto (el arco se insinúa con 40px arriba, nunca corta el texto). Con `rect` se respeta el radio del tema.
+
+- `heading`: eyebrow + título; el h2 toma la forma de `titles`. Entra con `.st-reveal`.
+- `image_text`: `layout: 'split'` (imagen 7/12 con la forma del estilo + texto 5/12, o invertido; en `arch` la foto pasa a 4:5) o `'overlap'` (foto 8/12 y una tarjeta `--bg` que la pisa desde el otro lado; sin foto, la tarjeta queda sobre un plano `--secondary`). Eyebrow opcional.
+- `category_list` (`style`): `cards` = tiles con forma (4:5 en `arch`); sin foto, plano de color rotado con el nombre en `--font-heading` · `chips` = pastillas con la cantidad, se rellenan de `--fg` al hover · `circles` = foto 96–120px en círculo (burbuja en `bubble`, ventana en `arch`), sin foto la inicial; al hover sube y gira 3° con rebote · `list` = **índice tipográfico**: número, nombre en `--font-heading` a 4,6cqi, cantidad y flecha, con reglas; al hover el nombre se corre 10px, toma `--accent` y asoma la foto de la categoría girada (sólo ≥ 768px).
+- `features` (`layout`): `row` (fila de texto, ícono 20px sin fondo) · `cards` (tarjetas `--surface` con número "01" y título en `--font-heading`; sin círculos pastel) · `strip` (tira compacta con separadores verticales, 2×2 en mobile; ideal debajo de la portada). Máx. 4.
+- `faq` (`layout`): `list` (título arriba) · `split` (título a la izquierda, fijo al scrollear, y preguntas a la derecha). `<details>` nativo con reglas y un "+" que gira a "−". El título es ancla.
+- `countdown` (`layout`): `inline` · `banner` (números gigantes a todo el ancho entre dos reglas; queda bien con fondo primario). Al vencer muestra `expiredText` o se oculta.
+- `testimonials` (`layout`): `cards` (tarjetas con forma chica) · `quote` (la primera reseña gigante en `--font-heading` con la comilla en `--accent`; el resto debajo). **Nace vacío** y nunca va en las portadas de fábrica.
+- **`marquee`** (nuevo): tira de frases (máx. 12 × 120) que corre a la izquierda; `size: 'sm'` (tira de datos 48px) o `'lg'` (titular gigante en `--font-heading`); `speed`; link opcional. Separador: un punto con la forma del estilo (rombo en `rect`, burbuja, arco). Se mueve con `motion: soft` (×1,5 más lenta) y `lively`; se pausa con hover, foco o su botón (WCAG 2.2.2); con `motion: 'none'` o movimiento reducido queda quieta y centrada (en `lg`, sólo la primera frase). Sin regla divisoria (es una banda).
+- **`lookbook`** — Colección destacada (nuevo): una foto grande 7/12 con forma + texto y 2–4 `ProductCard` en 2 columnas (5/12), `imagePosition` izquierda/derecha. Sin foto, el lado grande es un plano `--secondary` con el título gigante (es el h2: no se repite). Sin foto ni productos, no se muestra.
+- `video`: sin autoplay con sonido. `divider`: regla `--border` o espacio.
+
+**Portadas de fábrica** (`src/lib/blocks/starters.ts`, `defaultHomeFor(preset, opts)`): una composición por preset, con copy verdadero para cualquier tienda nueva (nombre, % real por transferencia, WhatsApp si lo tiene; sin plazos, años ni reseñas). Los bloques sin datos no se muestran, así que la portada se completa sola a medida que se carga el catálogo.
+
+| Preset | Composición |
+| --- | --- |
+| atelier | cover lg silencioso → colección destacada (foto a la derecha) → categorías en tarjetas → grilla 3 col. con descuento → tira de beneficios → Cómo comprar |
+| mercado | framed (arco) con collage → beneficios en tarjetas → categorías en arco → grilla con protagonista → Cómo comprar dividida sobre `--surface` |
+| nordico | split bajo con collage → beneficios en fila sobre `--surface` → rubros en pastillas → carrusel de 5 → grilla 5 col. con descuento → Cómo comprar |
+| editorial | poster con el nombre gigante → marquesina `lg` sobre `--primary` → grilla con protagonista e índice 01/02 → secciones en lista → carrusel → Cómo comprar dividida |
+| neon | split ámbar con collage → marquesina sobre `--primary` → carrusel con protagonista → pastillas → grilla → tira de beneficios → Cómo comprar |
+| botica | framed con la tarjeta a la derecha → categorías como etiquetas → grilla → beneficios en tarjetas → Cómo comprar dividida |
+| recreo | stack con 4 cards escalonadas → categorías en burbujas → marquesina lenta → carrusel con protagonista → beneficios en tarjetas → Cómo comprar |
+| lapacho | cover a pantalla completa → colección destacada (foto a la izquierda) → categorías en tarjetas 3 col. → grilla → Cómo comprar dividida |
+| galpon | split compacto con **lista de precios** (ofertas, SKU, tachado) → beneficios en fila → rubros en lista → grilla densa 5 × 4 → Cómo comprar |
+| bodega | cover centrado lg → colección (2 botellas) → la carta en lista sobre `--surface` → carrusel → Cómo comprar dividida |
+
+Se usan en: la home de una tienda nueva (`starterHomeBlocks`, después de `create_store`), "Empezar desde una plantilla" del constructor (fija la disposición de la portada de esa plantilla) y la vista previa `?estilo=<preset>` de la tienda demo (`previewHomeBlocks`, sólo lectura; reusa la foto guardada sólo en los presets `cover`).
 
 ---
 
 ## 7. Admin
 
-Herramienta de trabajo: neutra, densa, rápida. **No** hereda el tema de la tienda (salvo dentro del preview). Tokens fijos bajo `.admin-root`.
+Herramienta de trabajo con sello propio: densa y rápida, pero reconocible en cualquier captura como Ecommy (BRAND §5–§10). **No** hereda el tema de la tienda (salvo dentro del preview). Tokens fijos bajo `.admin-root` en `src/app/admin/admin.css`, mapeados a Tailwind en `globals.css` (`bg-adm-*`, `text-adm-*`, `rounded-adm|adm-lg`, `shadow-adm-card`, `ease-eco-out|spring`). Kit en `src/components/ui` (nombres y props estables: lo usan todas las pantallas).
 
-### 7.1 Paleta fija (v0.1, spec §14.6)
+### 7.1 Paleta fija (v0.9, identidad 2026-10)
 
-El admin deja de ser "hoja blanca": fondo crema, superficies blancas, sidebar verde-tinta, primario pino y acento ámbar. Fuente de verdad: `src/app/admin/admin.css` (mapeados en `globals.css` como `bg-adm-*`, `text-adm-*`, `shadow-adm-card`). Los `--adm-*` referencian los primitivos de marca `--eco-*` de `globals.css` (BRAND.md §5.5); los valores de abajo ya incluyen las correcciones de contraste de BRAND §5.4.
+Base fría (niebla + blanco), **tinta** para la estructura y la acción, **azul** para interactuar y seleccionar, **pomelo** sólo como marca y llamada. Los `--adm-*` referencian los primitivos `--eco-*` (BRAND §5.1).
 
-```css
-.admin-root {
-  --adm-bg:           #EFEAE1; /* fondo del contenido: crema cálida */
-  --adm-surface:      #FFFFFF; /* paneles, tablas, dialogs, topbar */
-  --adm-surface-2:    #F4F1EA; /* buscador del topbar, readonly, chips */
-  --adm-border:       #E2DBCD;
-  --adm-input-border: #968F80; /* 3.21:1 sobre blanco (delimita el control); hover #7A7465 */
-  --adm-fg:           #1A2320; /* = --eco-ink (16.09:1 blanco, 13.43:1 crema) */
-  --adm-fg-muted:     #6B6860; /* 4.64:1 sobre bg, 5.07:1 sobre table-head */
-  --adm-fg-subtle:    #C9C1B0; /* sólo iconos decorativos de empty states */
-  --adm-accent:       #2E4A3F; /* pino: botón primario, links, tabs activas */
-  --adm-accent-soft:  #E6EFE9; /* tarjeta de onboarding */
-  --adm-accent-2:     #E0A458; /* ámbar: foco, progreso, badge de pedidos, CTA "accent" */
-  --adm-accent-2-fg:  #1A2320; /* texto sobre ámbar (7.37:1) */
-  --adm-accent-2-ink: #8A5A12; /* ámbar legible como texto/icono */
-  --adm-focus-ring:   #A8702A; /* anillo de foco sobre claro (4.19:1 blanco, 3.49:1 crema); en el sidebar #E0A458 */
-  --adm-sidebar-bg:     #1A2320;
-  --adm-sidebar-fg:     #E8E6DF; /* 12.9:1 */
-  --adm-sidebar-muted:  #8FA39A; /* grupos e iconos: 6.03:1 */
-  --adm-sidebar-hover:  #232E2A;
-  --adm-sidebar-active: #2E4A3F; /* texto encima 7.76:1 */
-  --adm-table-head:   #F7F4EE;
-  --adm-row-hover:    #FAF8F3;
-  --adm-shadow-surface: 0 1px 2px rgb(20 25 22 / .06); /* cards, tablas, stats */
-  --adm-skeleton: #E4DDCF; --adm-skeleton-shine: #F3EFE7;
-  /* danger/warning/success/info y badges de estado: sin cambios (§7.7). */
-}
-```
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `--adm-bg` | niebla `#F4F5F9` | La hoja (fondo del contenido) |
+| `--adm-surface` / `-2` | `#FFFFFF` / `#EEF0F6` | Paneles, tablas, dialogs / buscador, readonly, chips, fila activa de menús |
+| `--adm-border` | `#DFE2EC` | Bordes decorativos de paneles y reglas (1,38:1: no delimita controles) |
+| `--adm-input-border` | `#7E86A0` | Borde de inputs (3,62:1); en botones secundarios al 45 % (el texto identifica el botón) |
+| `--adm-fg` / `-muted` | tinta `#10162F` / `#5B627A` | Texto (17,8:1) / secundario (6,05:1) |
+| `--adm-accent` | tinta | **Botón primario**, tab activa, contador activo, avatar |
+| `--adm-accent-soft` | `#E8ECFF` | Selección lavada (chips, filas, drop targets) |
+| `--adm-link` / `-hover` | azul `#2F4BFF` / `#2238D9` | Links (subrayados dentro de texto), foco, selección; nunca decorativo |
+| `--adm-select` / `-soft` | azul / azul-soft | Checkbox, radio, switch encendido, fila seleccionada |
+| `--adm-accent-2` (+`-soft`, `-ink`, `-fg`) | pomelo `#FF5A3C` | Marca: ícono del ítem activo, badge de pedidos nuevos, barra de progreso, "Guardar" de la SaveBar, banners de plan. Texto encima siempre tinta. Nunca foco ni borde de input |
+| `--adm-danger` (+`-soft`, `-on-dark`) | carmín `#C01A3F` | Destructivo y errores (no se confunde con el pomelo) |
+| `--adm-success` / `-warning` / `-info` (+`-on-dark`) | `#1B7A4B` / `#9A5B00` / azul-dark | Deltas; íconos de toasts (variante clara sobre tinta) |
+| `--adm-sidebar-*` | tinta / ink-2 / ink-3, texto `#E9ECF8`, muted `#9AA3C7` | Sidebar, tapa mobile, barra inferior, SaveBar, toasts |
+| `--adm-badge-*` | ver §7.7 | Estados |
+| `--adm-sheet-radius` | 28 px | Esquina de la hoja |
 
-**Tinta por sección** (`NavGroup.section` en `nav.ts`, `sectionFor(pathname)`): icono de `PageHeader` con fondo tintado + franja de 3px en el borde inferior del topbar. Sin gradientes.
+**Tinta por sección** (`NavGroup.section` en `nav.ts`): ventas pomelo, catálogo azul, marketing magenta `#C2257A`, tienda petróleo `#0F7C80`, sistema gris azulado. Ya no hay franja en el topbar: la sección se marca con el **punto de color del rótulo** sobre el título (§7.4).
 
-| Sección | Grupo del menú | Franja | Fondo icono | Icono |
-| --- | --- | --- | --- | --- |
-| `orders` | Principal (dashboard, pedidos, clientes) | `#E0A458` | `#F8ECD9` | `#8A5A12` |
-| `catalog` | Catálogo | `#2E4A3F` | `#E6EFE9` | `#2E4A3F` |
-| `marketing` | Marketing | `#B8542A` | `#F6E3DA` | `#9E4520` |
-| `store` | Tienda | `#3D5A80` | `#E3E9F1` | `#3D5A80` |
-| `system` | Sistema | `#6B6860` | `#EBE8E1` | `#5C5952` |
+Foco: anillo doble azul (`--adm-focus`); en inputs, borde azul + halo azul 22 %; sobre tinta (`.adm-dark`), anillo azul claro `#8FA0FF`. Sombras teñidas de tinta: `--adm-shadow-surface` casi imperceptible (botones, buscador), `--adm-shadow` en capas (dialogs, menús, palette, toasts). **Paneles: borde o sombra, no las dos**: `Card`, `Table` y `StatStrip` llevan sólo borde.
 
-Reglas: foco = anillo ámbar (`--adm-focus`); en inputs, borde `--adm-focus-ring` + halo ámbar 35 %. Sombra `--adm-shadow` (grande) sólo en dialogs, dropdowns y command palette; las superficies llevan `--adm-shadow-surface`. Ámbar nunca como texto chico sobre blanco (usar `--adm-accent-2-ink`). Botones: `primary` pino, `secondary` blanco con borde, `ghost`, `danger`, `accent` ámbar (máximo uno por pantalla, para "empezá por acá").
+### 7.2 Tipografía, forma y densidad
 
-### 7.2 Tipografía y densidad
+- Texto en el stack del sistema (nitidez nativa). **Títulos de página y números de métrica en Archivo expandida y pesada** (`.eco-display` 22 → 26 px vía `PAGE_TITLE`; `.eco-num` 24 → 30 px en `Stat`). Mono para SKU, cupones, slugs.
+- Tamaños: 13 px tablas y metadatos · 14 px cuerpo, inputs, botones · 15–17 px títulos de panel y dialog · 11 px rótulos en mayúsculas (tracking 0,08–0,1 em). Pesos 400 / 500 / 600. `tabular-nums` en todo número.
+- Radios: **10 px** controles y botones (`rounded-adm`) · **16 px** paneles, tablas, banners (`rounded-adm-lg`) · **20 px** dialogs y drawers · **pastilla** en badges, chips, buscador, paginación, contadores de tabs, toasts, SaveBar, barra mobile e ítem activo del sidebar.
+- Densidad: filas 40 px, controles 32 px en tablas/filtros y 36 px en formularios; padding de paneles 16 → 20 px. Las curvas no agregan aire.
+- Pantallas táctiles (`pointer-coarse`): botones md/lg e inputs a 44 px, sm a 36 px con área táctil extendida, texto de inputs 16 px (evita el zoom de iOS).
 
-- Stack del sistema: `system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif` (herramienta: nitidez nativa y cero carga). Mono: `ui-monospace, SFMono-Regular, Consolas, monospace` para SKU, cupones, tokens.
-- Tamaños: **13px** tablas y metadatos · **14px** cuerpo, inputs, botones · 16px títulos de panel · 20px título de página · 28px números del dashboard. Pesos 400 / 500 / 600.
-- `font-variant-numeric: tabular-nums` en celdas numéricas, precios, stock y fechas; números alineados a la derecha.
-- Densidad: controles 32px en tablas/filtros y 36px en formularios; padding de paneles 16px (20px en formularios); gaps 8 / 12 / 16px. Radio único 6px (badges 4px).
+### 7.3 Shell: la hoja sobre la tinta
 
-### 7.3 Shell
-
-- Sidebar 232px, `bg --adm-sidebar-bg`. Arriba: lockup sobre tinta (BRAND §4.2): `BrandMark` SVG de 28px en **tile pino** con la "e" ámbar (nunca la "e" en texto) + "Ecommy" 17px/600 en `--adm-sidebar-fg`; debajo el nombre de la tienda 13px y el slot `planChip` (`SidebarPlanChip`). Ítems 32px (44px en pantallas táctiles), ícono 16px `--adm-sidebar-muted`, texto `--adm-sidebar-fg`; activo: fondo `--adm-sidebar-active`, texto blanco 500, ícono ámbar y barra izquierda ámbar de 3px. Grupos 11px uppercase `--adm-sidebar-muted`. Badge de pedidos nuevos en ámbar. Al pie, versión en `--adm-sidebar-muted`.
-- Grupos del menú: Principal (Inicio, Pedidos, Carritos abandonados, Clientes) · Catálogo (Productos, Categorías, Inventario, Avisos de stock, **Importar**) · Marketing · Tienda · Sistema (Plan, Configuración, Usuarios, Auditoría, Novedades, Ayuda). Etiquetas en lenguaje del comercio: "Inicio" (no "Dashboard"), "Novedades" (no "Changelog").
-- Topbar 48px (56px táctil), `--adm-surface` con borde inferior y franja de 3px de la sección: slot `storeSwitcher`, breadcrumb (desde `lg`, no en Inicio), buscador con fondo `--adm-surface-2` ("Buscar pedidos, productos o ir a…  Ctrl K"), "Ver tienda", menú de usuario (avatar pino: Mi cuenta, Usuarios y roles, Cerrar sesión). En mobile: tienda a la izquierda + tres íconos de 44px (buscar, ver tienda, cuenta); sin hamburguesa.
-- **Mobile (< md): barra inferior** (`MobileTabBar`) de 56px + safe area: Inicio, Pedidos (con badge ámbar de nuevos), Productos, Compartir y "Menú" (drawer con el sidebar completo). Activo: texto pino + barra ámbar de 3px arriba. Se oculta cuando la página tiene su propia barra fija inferior (`data-adm-bottom-bar`, ej. `SaveBar`) o un campo con foco; los toasts suben para no taparla (`--adm-toast-*` en admin.css).
-- Pantallas táctiles (`pointer-coarse`): botones md/lg e inputs a 44px, sm a 36px con área táctil extendida, texto de inputs 16px (evita el zoom de iOS). En desktop rigen las densidades de §7.2.
-- "Saltar al contenido" como primer foco del shell.
-- Barra de progreso de navegación ámbar de 2px arriba de todo (`NavigationProgress`).
-- Guardado: `SaveBar` sticky inferior con fondo `--adm-sidebar-bg`, texto claro, "Descartar" (ghost claro) y "Guardar" (ámbar). Lleva `data-adm-bottom-bar` (oculta la barra inferior mobile); cualquier otra barra fija inferior (acciones masivas, wizard) tiene que llevarlo también.
-- Carga: cada ruta tiene `loading.tsx` con skeletons que imitan la página (`src/components/ui/skeletons.tsx`, shimmer `.sk`); los filtros usan `useUrlTransition` y la tabla muestra un velo con spinner chico mientras llega el resultado.
+- **Escritorio.** El fondo del shell es tinta; el sidebar vive sobre ella sin borde y el contenido apoya encima como una **hoja niebla con la esquina superior izquierda de 28 px** (BRAND §7.2). La curva la dibuja el topbar fijo (`SheetCorner`, gradiente radial con la tinta del sidebar), así no se pierde al scrollear.
+- **Sidebar** (244 px; contraído 64 px, cookie `adm-sidebar`): `BrandLockup` sobre tinta (burbuja pomelo + "ecommy" en display blanco; contraído, sólo `BrandMark`). Debajo, la **tarjeta de la tienda activa** (`rounded-adm-lg`, blanco 4 % + filo 7 %): inicial en tesela clara + nombre + `⇅` (es el `StoreSwitcher variant="sidebar"`) y el chip del plan (`SidebarPlanChip`, pastilla; la prueba en pomelo). Grupos con rótulo 11 px en mayúsculas `--adm-sidebar-muted`. Ítems de 32 px (44 táctil) en pastilla: **el activo es una sola pastilla tinta-3 que se desliza de un ítem a otro** (320 ms, `--eco-ease-out`; se mueve al tocar, antes de que termine la navegación) con el ícono en **pomelo**; hover, velo blanco 5 %. Badge de pedidos nuevos: pastilla pomelo con texto tinta que entra con rebote (`.adm-bounce-in`, se repite al cambiar el número); contraído, punto pomelo. Al pie, versión (punto pomelo si hay novedades) y "Contraer menú".
+- **Topbar** de 56 px del color de la hoja, borde inferior `--adm-border`, alineado con el contenido (32 px): buscador en **pastilla blanca** ("Buscar pedidos, productos o ir a…" + `Ctrl K` en una pastilla niebla) que abre la palette, "Ver tienda" en pastilla blanca y avatar tinta con menú (Mi cuenta, Usuarios y roles, Cerrar sesión). Sin breadcrumb ni franja de color: la ubicación la dan el sidebar y el rótulo del título.
+- **Mobile (< md).** Tapa de tinta de 56 px con la burbuja de Ecommy, el selector de tienda en pastilla y tres íconos de 44 px (buscar, ver tienda, cuenta); debajo, la hoja asoma con **las dos esquinas curvas de 20 px** (fijas al scrollear). **Barra inferior flotante**: pastilla tinta de 64 px a 10 px del borde (+ safe area) con Inicio, Pedidos (badge pomelo), Productos, Compartir y "Menú" (drawer izquierdo con el sidebar completo y el borde derecho curvo). Activo: pastilla tinta-3 con ícono pomelo y texto blanco; targets de 52 px. Se oculta con `data-adm-bottom-bar` (SaveBar, acciones masivas) o con un campo enfocado; los toasts suben (`--adm-toast-*`).
+- "Saltar al contenido" como primer foco. Barra de progreso de navegación **pomelo de 3 px** arriba de todo (`NavigationProgress`).
+- **SaveBar**: pastilla tinta flotante centrada abajo (en mobile, ancho completo con radio 22 px) que sube con rebote corto al aparecer: punto pomelo + "Cambios sin guardar" · "Descartar" (ghost claro) · **"Guardar" pomelo** con texto tinta. Lleva `data-adm-bottom-bar`; cualquier otra barra fija inferior también. `className` va al contenedor (ubicación en grillas).
+- Carga: cada ruta tiene `loading.tsx` con skeletons que imitan la página (rótulo + título display, paneles de 16 px, pastillas; `src/components/ui/skeletons.tsx`, shimmer `.sk`); los filtros usan `useUrlTransition` y la tabla muestra un velo con una **pastilla tinta** "Actualizando…" con spinner pomelo.
 
 ### 7.4 PageHeader
 
-Título 20px/600 a la izquierda + descripción opcional 14px muted con dato útil ("142 productos activos · 8 sin stock"). A la derecha: secundaria (outline) y primaria ("Nuevo producto"). Breadcrumb 13px arriba sólo en detalle ("Pedidos / #1043"). Tabs de filtro debajo con subrayado 2px `--adm-accent`, no pills.
+Arriba, **rótulo de sección**: punto de la tinta de la sección + nombre del grupo en 11 px mayúsculas ("● CATÁLOGO"; "Ventas" para pedidos y clientes, "Inicio" en el dashboard; `icon` pone el ícono en lugar del punto; `section={false}` lo oculta). En el detalle, el rótulo se reemplaza por las migas ("Configuración / Tienda", links que se vuelven azules al hover). Título en `.eco-display` 22 → 26 px y debajo la línea con el dato útil ("142 productos activos · 8 sin stock"). Acciones a la derecha, alineadas a la base del bloque: secundaria y luego primaria. Tabs debajo (§7.6).
 
 ### 7.5 Tablas
 
-- Panel `--adm-surface`, borde 1px, radio 6px. Header **sticky** 36px, `bg --adm-table-head`, 12px/500 muted, sin uppercase. Filas **40px**, 13px, `tabular-nums`, regla inferior `--adm-border`, hover `--adm-row-hover`, seleccionada ámbar lavado (`--adm-accent-2-soft` 60 %). Prop `pending` (o el `UrlPendingScope` de la página): velo blanco 60 % + spinner chico.
-- Primera columna = identidad clickeable (miniatura 32px radio 4px + nombre 500 + SKU mono 12px muted). Números a la derecha. Fechas relativas ("hace 2 h") con `title` absoluto.
-- Acciones de fila en menú "…" al final (visible al hover y al foco). Al seleccionar, la barra de filtros se reemplaza por la de acciones masivas: "3 seleccionados · Cambiar estado · Archivar · Exportar CSV".
-- Filtros arriba: búsqueda 280px + selects 32px + "Limpiar filtros". Paginación abajo: "1–50 de 312" + anterior/siguiente.
+- Panel blanco, borde `--adm-border`, **radio 16 px**, sin sombra. Header sticky 36 px, `--adm-table-head`, 12 px/500 muted, sin mayúsculas; primera y última celda con 16 px de aire. Filas 40 px, 13 px, `tabular-nums`, hover `--adm-row-hover` (140 ms), **seleccionada en azul lavado** (`--adm-select-soft`). `pending` (o el `UrlPendingScope`): velo blanco 60 % + pastilla tinta "Actualizando…".
+- Primera columna = identidad clickeable (miniatura 32 px + nombre 500 + SKU mono 12 px muted). Números a la derecha. Fechas relativas con `title` absoluto. Acciones de fila en "…" al final. Con selección, la barra de filtros se reemplaza por la de acciones masivas.
+- Filtros: búsqueda en **pastilla** (`SearchInput`, 280 px) + selects de 10 px + "Limpiar filtros". Paginación: "1–50 de 312" + anterior/siguiente en pastillas.
 
-### 7.6 Formularios y dialogs
+### 7.6 Formularios, tabs, dialogs y overlays
 
-- Label arriba 13px/500; ayuda debajo 12px `--adm-fg-muted`; el error reemplaza la ayuda en `--adm-danger` 12px, sin ícono, seco: "Tiene que ser mayor a 0." Campo con error: borde `--adm-danger` + `aria-invalid`.
-- Inputs 36px, borde `--adm-input-border`, foco `--adm-focus`. Configuración en paneles de 2 columnas (título + descripción 1/3, campos 2/3); dialogs en 1 columna.
-- Guardado: barra sticky inferior cuando hay cambios: "Cambios sin guardar · Descartar · Guardar".
-- Dialogs 480px (confirmación) / 640px (form), radio 6px, título 16px/600, acciones a la derecha. ConfirmDialog destructivo: botón `--adm-danger` con el verbo exacto ("Archivar 3 productos"), nunca "Aceptar".
+- Label arriba 13 px/500; ayuda 12 px muted; el error la reemplaza en `--adm-danger`, seco. Inputs de 36 px, radio 10 px, borde `--adm-input-border`, transición de borde y halo de 140 ms; foco azul. Checkbox y radio con `accent-color` azul. **Switch** de 36 × 20: encendido azul, la perilla llega con un rebote corto (`--eco-ease-spring`).
+- Configuración en paneles de 2 columnas (título + descripción 1/3, campos 2/3).
+- **Botones** (radio 10 px, 140 ms, al apretar escala 0,97): `primary` tinta · `secondary` blanco con borde suave · `ghost` · `danger` carmín · `accent` pomelo con texto tinta (uno por pantalla: "empezá por acá", SaveBar) · `link` azul subrayado.
+- **Tabs** (`Tabs`, `TabsNav`): texto 14 px, subrayado tinta de 2 px que **se desliza** a la pestaña activa (240 ms); contador en pastilla (tinta con texto blanco en la activa, niebla en el resto). Antes de hidratar, la activa pinta su propio subrayado (sin salto).
+- **Dialogs** de 400/480/640/800 px, **radio 20 px**: entran subiendo 10 px con escala 0,97 y el backdrop tinta 48 % se funde (240 ms, `--eco-ease-out`); título 17 px/600; pie niebla con las acciones a la derecha. **Drawers**: entran 32 px desde el costado (420 ms) con el borde interior curvo de 20 px. ConfirmDialog destructivo: botón carmín con el verbo exacto.
+- **DropdownMenu**: radio 14 px, ítems de 8 px, crece desde el disparador (`.adm-pop-in`). **Tooltip**: burbuja tinta (la esquina que mira al disparador casi recta, BRAND §7.2) que entra con 2 px de corrimiento.
+- **Toasts** (sonner): pastilla tinta (radio 22 px) con texto claro que entra con rebote; sólo el ícono lleva el color semántico (variante `-on-dark`); la acción va en pastilla pomelo.
+- **Banners de plan** (`TrialBanner`, `LimitBanner`): fondo pomelo lavado, radio 16 px, burbuja chica con el ícono, número concreto (en `LimitBanner`, con barra de uso) + consecuencia + "Ver planes" en pastilla tinta. El aviso de Free es blanco y se cierra por 7 días. `PlanGate`: candado en burbuja durazno + "Disponible en <plan>" + link azul.
 
 ### 7.7 Badges de estado
 
-Alto 20px, radio 4px, 12px/500, punto de 6px del color del texto + etiqueta: el estado nunca se comunica sólo por color. Contraste ≥ 5.8:1 en todos.
+**Pastilla de 22 px**, 12 px/500, punto de 6 px del color del texto + etiqueta: el estado nunca se comunica sólo por color. Fondos lavados fríos y texto oscuro del mismo tono (tokens `--adm-badge-*`), contraste ≥ 5,9:1.
 
-| Estado | Etiqueta | Fondo | Texto y punto |
+| Tono | Fondo | Texto y punto | Estados |
 | --- | --- | --- | --- |
-| `pending` | Pendiente | `#F5EAD3` | `#7A4A00` |
-| `confirmed` | Confirmado | `#E2EBF4` | `#1F4B75` |
-| `preparing` | En preparación | `#ECE5F2` | `#5A3C82` |
-| `shipped` | Enviado | `#DCEFEC` | `#1C5C55` |
-| `delivered` | Entregado | `#E1EFDF` | `#2A5F2E` |
-| `cancelled` | Cancelado | `#ECEBE7` | `#5C5952` |
-| pago `pending` | Sin pagar | `#F5EAD3` | `#7A4A00` |
-| pago `partial` | Pago parcial | `#F7E4D6` | `#8A3C0C` |
-| pago `paid` | Pagado | `#E1EFDF` | `#2A5F2E` |
-| pago `refunded` | Reintegrado | `#ECEBE7` | `#5C5952` |
-| producto `draft` / `active` / `archived` | Borrador / Activo / Archivado | `#ECEBE7` / `#E1EFDF` / `#ECEBE7` | `#5C5952` / `#2A5F2E` / `#5C5952` |
-| stock bajo / sin stock | Stock bajo / Sin stock | `#F5EAD3` / `#F8E1DE` | `#7A4A00` / `#9B2218` |
+| `neutral` | `#EEF0F6` | `#4A5068` (7,0:1) | Cancelado, Reintegrado, Borrador, Archivado |
+| `amber` | `#FFF1D6` | `#8A4B00` (6,1:1) | Pendiente, Sin pagar, Stock bajo |
+| `blue` | `#E5E9FB` | `#23338A` (9,0:1) | Confirmado |
+| `purple` | `#F0E8FB` | `#5B2E9E` (7,6:1) | En preparación |
+| `teal` | `#DDF3F2` | `#0B6366` (6,1:1) | Enviado |
+| `green` | `#E0F3E8` | `#17683F` (5,9:1) | Entregado, Pagado, Activo, Publicada, En stock |
+| `orange` | `#FDEBDC` | `#93400A` (6,1:1) | Pago parcial |
+| `red` | `#FBE3E8` | `#A01434` (6,5:1) | Sin stock |
+| `accent` | pomelo-soft `#FFE9E2` | pomelo-ink `#B02C14` (5,6:1) | "En uso", "Nuevo" (marca) |
+| `ink` | tinta | blanco | Un dato que tiene que saltar |
+
+Mapas de estado → etiqueta + tono en `STATUS_BADGES` (`Badge.tsx`).
 
 ### 7.8 Dashboard
 
-- Orden por objetivo ("¿qué tengo que hacer hoy?"): encabezado con el nombre de la tienda y un resumen de una línea ("Para hoy: 3 por confirmar · 2 para despachar" o "Estás al día"), acciones "Copiar link" y avisos de pedidos; checklist de primeros pasos si está abierto; **"Para hacer"** (sólo lo que tiene pendientes: por confirmar, para despachar, pagos sin acreditar, reservas por vencer, arrepentimientos, stock bajo; cada fila lleva a la vista filtrada) + últimos pedidos (fila entera clickeable) en 8/4 con stock bajo y arrepentimientos; al final "Cómo viene la tienda" con el selector de período, la franja de métricas, el gráfico y más vendidos.
-- La franja: **una** franja `--adm-surface` con 4 métricas separadas por reglas verticales: etiqueta 12px muted ("Ventas hoy", "Pedidos por confirmar", "Ticket promedio 7 días", "Por cobrar") + número 28px/600 `tabular-nums` + delta 12px ("+12 % vs. semana anterior") en verde `--adm-success` si sube, rojo `--adm-danger` si baja, muted si no hay comparación; `--adm-warning` si es alerta. Sin íconos ni fondos de color.
-- Gráfico opcional "Ventas de los últimos 30 días": barras verticales `--adm-fg` al 80 %, hoy en `--adm-accent`, 3 líneas guía `--adm-border`, sin gradiente ni animación, tooltip con monto exacto. Nada de áreas, donuts ni radar.
+- Orden por objetivo ("¿qué tengo que hacer hoy?"): encabezado con el nombre de la tienda y un resumen de una línea, "Para hacer" (sólo lo que tiene pendientes; cada fila lleva a la vista filtrada) + últimos pedidos, stock bajo y arrepentimientos; al final "Cómo viene la tienda" con el selector de período, la franja de métricas, el gráfico y más vendidos. El detalle visual lo define la pantalla.
+- `StatStrip`: **una** franja blanca (radio 16 px) con métricas separadas por reglas verticales: etiqueta 12 px muted + número `.eco-num` 24 → 30 px + delta 12 px en `--adm-success` / `--adm-danger` / muted, o `--adm-warning` si es alerta. Sin íconos ni fondos de color. En el panel los números no cuentan (BRAND §9).
+- Gráfico: barras planas en tinta, sin gradiente ni animación, tooltip con monto exacto. Nada de áreas, donuts ni radar.
 
 ### 7.9 Empty states
 
-Dentro del panel de la tabla, alineado a la izquierda, padding 32px: título 16px ("Todavía no hay pedidos"), una línea útil ("Cuando alguien compre en tu tienda lo vas a ver acá. También podés cargar uno a mano.") y acción primaria ("Crear pedido manual") + secundaria ("Ver la tienda"). Con filtros sin resultados: "No hay pedidos con estos filtros." + "Limpiar filtros".
+Dentro del panel (o `bare` dentro de una tabla), alineado a la izquierda, padding 32 px: **burbuja durazno chica** (44 px, `.eco-bubble`) con el ícono lineal en tinta + título 16 px ("Todavía no hay pedidos") + una línea útil + acción primaria y secundaria. Sin ilustraciones. Con filtros sin resultados: "No hay pedidos con estos filtros." + "Limpiar filtros".
 
 **Selector de presets (Apariencia).** El acordeón "Preset" sólo muestra el tema actual (miniatura + estado) y "Ver y comparar los N presets"; ese botón cambia el formulario de 400px por una grilla de 540px (`PresetGallery`) con la vista previa real al lado. Cada tarjeta es una miniatura fiel (`PresetThumb`: `themeVars()` en el contenedor y unidades de container query, así que header, portada, columnas, `cards.style`/`imageRatio`, botón y acento son los del tema) + nombre, descripción y rubros. Tocar una tarjeta la **prueba** en la vista previa sin tocar el tema (`aria-pressed`); aplicar es un paso aparte ("Aplicar Atelier" en la toolbar, con la confirmación de siempre si hay cambios sin guardar o un tema personalizado); Esc vuelve. Estados: "En uso" (badge `accent`), "Base de tu tema" (badge neutral, `basePresetOf`) y candado lineal "Plan Pro": se puede probar, y la acción pasa a "Ver planes". Filtros: búsqueda por rubro o tono (con alias: "ropa" → moda), fondo claro/oscuro y "Sólo los de mi plan". Todo sale de `PRESET_LIST`: nada de ids ni cantidades fijas. El alta de tienda usa la misma miniatura con el nombre que va escribiendo el dueño.
 
 ### 7.10 Command palette
 
-Ctrl K / ⌘K. 640px de ancho, a 15vh del borde superior, `--adm-surface`, radio 6px, `--adm-shadow`. Input 44px sin borde: "Buscar pedidos, productos o ir a…". Resultados agrupados ("Ir a", "Acciones", "Pedidos", "Productos") con títulos 11px uppercase muted; filas 36px con ícono 16px, texto 14px y `Kbd` a la derecha; activa con `--adm-surface-2`. "#1043" abre ese pedido. 100 % teclado; Esc cierra y devuelve el foco.
+Ctrl K / ⌘K. 640 px, a 15vh del borde superior, radio 20 px, `--adm-shadow`. Input de 56 px y 15 px sin borde con la lupa (spinner pomelo mientras busca): "Buscar pedidos, productos o ir a…". Resultados agrupados ("Ir a", "Acciones", "Pedidos", "Productos") con rótulos 11 px en mayúsculas; filas de 40 px con radio 10 px, ícono 16 px y la tecla Enter que aparece deslizándose en la fila activa (niebla). Pie niebla con las teclas. "#1043" abre ese pedido. 100 % teclado; Esc cierra y devuelve el foco.
+
+### 7.11 Movimiento del panel (BRAND §9)
+
+Suave y corto; nada demora una tarea. Hover y foco 140 ms; popovers y tabs 240 ms; pastilla del sidebar 320 ms; drawers 420 ms; todo con `--eco-ease-out`. Rebote corto (`--eco-ease-spring`) sólo en lo que **aparece**: badge de pedidos, perilla del switch, SaveBar, toasts. Utilidades en `admin.css`: `.adm-pop-in`, `.adm-bounce-in`, `.adm-rise-in`. `prefers-reduced-motion` las corta (regla global de `globals.css`); ningún contenido depende de una animación para verse.
 
 ---
 

@@ -64,7 +64,7 @@ export function PriceSimulator({
 
   if (!material || !quality) {
     return (
-      <aside className={cn("rounded-adm border border-adm-border bg-adm-surface p-4 shadow-adm-card", className)}>
+      <aside className={cn("rounded-adm-lg border border-adm-border bg-adm-surface p-4", className)}>
         <p className="flex items-center gap-2 text-sm font-semibold text-adm-fg">
           <Calculator className="size-4" aria-hidden />
           Simulador de precio
@@ -97,7 +97,7 @@ export function PriceSimulator({
   return (
     <aside
       aria-label="Simulador de precio"
-      className={cn("overflow-hidden rounded-adm border border-adm-border bg-adm-surface shadow-adm-card", className)}
+      className={cn("overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface", className)}
     >
       <div className="adm-dark bg-adm-sidebar-bg px-4 py-3 text-adm-sidebar-fg">
         <p className="flex items-center gap-2 text-[11px] font-medium tracking-[0.06em] text-adm-sidebar-muted uppercase">

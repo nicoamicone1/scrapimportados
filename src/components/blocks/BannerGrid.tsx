@@ -31,28 +31,36 @@ function overlayCss(item: BannerItem, mode: Mode): string | undefined {
 }
 
 function BannerImage({ item, ctx, eager }: { item: BannerItem; ctx: BlockContext; eager: boolean }) {
-  if (!item.imageUrl) return <div aria-hidden className="absolute inset-0 bg-secondary" />;
+  // Sin foto: el marco ya es un plano de color del tema (`[data-plain]`), con el título en grande.
+  if (!item.imageUrl) return null;
   const src = ctx.device === "mobile" && item.imageUrlMobile ? item.imageUrlMobile : item.imageUrl;
   return (
     <picture>
       {item.imageUrlMobile && !ctx.device ? <source media="(max-width: 767px)" srcSet={item.imageUrlMobile} /> : null}
-      <img src={src} alt={item.title ?? ""} className="blk-media" loading={eager ? "eager" : "lazy"} decoding="async" />
+      { }
+      <img src={src} alt={item.title ?? ""} className="blk-media st-zoom" loading={eager ? "eager" : "lazy"} decoding="async" />
     </picture>
   );
 }
 
-function Overlaid({ item, mode, ctx }: { item: BannerItem; mode: Mode; ctx: BlockContext }) {
+function Overlaid({ item, mode, ctx, n }: { item: BannerItem; mode: Mode; ctx: BlockContext; n: number }) {
   const hasImage = Boolean(item.imageUrl);
   const light = hasImage && item.textColor === "light";
   return (
     <div
       className={cn(
         "absolute inset-0 flex flex-col p-4 @3xl:p-7",
+        !hasImage && "blk-banner-type",
         item.align === "center" ? "items-center justify-center text-center" : "justify-end",
         item.align === "right" && "items-end text-right",
         hasImage ? (light ? "blk-on-image" : "blk-on-image-dark") : "text-fg",
       )}
     >
+      {!hasImage ? (
+        <span aria-hidden className="blk-banner-num tnum">
+          {String(n).padStart(2, "0")}
+        </span>
+      ) : null}
       <div className={cn(mode === "campaign" ? "max-w-[560px]" : "max-w-[420px]")}>
         {item.title ? (
           <p className={cn("heading", mode === "campaign" && "blk-display")} style={mode === "campaign" ? undefined : { fontSize: "var(--text-xl)", lineHeight: 1.15, textWrap: "balance" }}>
@@ -109,7 +117,7 @@ export function BannerGrid({ block, ctx, index }: BlockProps<"banner_grid">) {
 
   return (
     <div
-      className={cn("blk-banners", full && s.gap !== "none" && "px-[var(--blk-gap)]")}
+      className={cn("blk-banners st-stagger", full && s.gap !== "none" && "px-[var(--blk-gap)]")}
       style={style}
       data-layout={feature ? "feature" : undefined}
       data-mobile={mobile}
@@ -122,13 +130,13 @@ export function BannerGrid({ block, ctx, index }: BlockProps<"banner_grid">) {
         const itemMode: Mode = feature ? (i === 0 ? "half" : "tile") : mode;
         const content: ReactNode = (
           <>
-            <div className={cn("blk-banner-frame", rounded && "blk-rounded")}>
+            <div className={cn("blk-banner-frame", rounded && "blk-shape")} data-plain={item.imageUrl ? undefined : i % 3}>
               <BannerImage item={item} ctx={ctx} eager={index === 0 && i < 2} />
               {!below && overlayCss(item, itemMode) ? (
                 <div aria-hidden className="absolute inset-0" style={{ background: overlayCss(item, itemMode) }} />
               ) : null}
               <div aria-hidden className="blk-grain" />
-              {!below ? <Overlaid item={item} mode={feature && i > 0 ? "tile" : itemMode} ctx={ctx} /> : null}
+              {!below ? <Overlaid item={item} mode={feature && i > 0 ? "tile" : itemMode} ctx={ctx} n={i + 1} /> : null}
             </div>
             {below ? (
               <div className="pt-[var(--card-pad)]">
@@ -139,11 +147,11 @@ export function BannerGrid({ block, ctx, index }: BlockProps<"banner_grid">) {
           </>
         );
         return href ? (
-          <SmartLink key={i} href={href} className="blk-banner">
+          <SmartLink key={i} href={href} className="blk-banner st-hover-zoom" style={{ "--i": i } as CSSProperties}>
             {content}
           </SmartLink>
         ) : (
-          <div key={i} className="blk-banner">
+          <div key={i} className="blk-banner" style={{ "--i": i } as CSSProperties}>
             {content}
           </div>
         );

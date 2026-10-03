@@ -4,6 +4,7 @@ import { BlockRenderer } from "@/components/blocks/BlockRenderer";
 import { JsonLd } from "@/components/store/JsonLd";
 import { ProductCard } from "@/components/store/ProductCard";
 import { StoreLink } from "@/components/store/StoreLink";
+import { previewHomeBlocks } from "@/lib/blocks/preview";
 import { resolveBlockData } from "@/lib/blocks/resolve";
 import { buildCategoryTree, listCategories } from "@/lib/store/categories";
 import { requireStore } from "@/lib/store/context";
@@ -59,9 +60,19 @@ export default async function HomePage({ params }: Props) {
     store,
   };
 
-  if (page && page.blocks.some((b) => !b.style.hidden)) {
-    const data = await resolveBlockData(store.id, page.blocks, display.promotions);
-    const visible = page.blocks.filter((b) => !b.style.hidden);
+  // `?estilo=<preset>` en la demo: la portada de fábrica de ese preset (S2, sólo lectura).
+  const preview = await previewHomeBlocks({
+    theme: settings.theme,
+    storeName: settings.name,
+    transferDiscount: card.transferPercent,
+    whatsapp: Boolean(card.whatsappPhone),
+    saved: page?.blocks,
+  });
+  const blocks = preview ?? page?.blocks ?? [];
+
+  if (blocks.some((b) => !b.style.hidden)) {
+    const data = await resolveBlockData(store.id, blocks, display.promotions);
+    const visible = blocks.filter((b) => !b.style.hidden);
     // El hero (primer bloque) o un heading nivel 1 ya ponen el h1; si no, uno oculto.
     const hasH1 = (visible[0]?.type === "hero") || visible.some((b) => b.type === "heading" && b.settings.level === 1);
     return (
@@ -69,7 +80,7 @@ export default async function HomePage({ params }: Props) {
         {jsonLd}
         {hasH1 ? null : <h1 className="sr-only">{settings.name}</h1>}
         <BlockRenderer
-          blocks={page.blocks}
+          blocks={blocks}
           data={data}
           promotions={display.promotions}
           theme={settings.theme}

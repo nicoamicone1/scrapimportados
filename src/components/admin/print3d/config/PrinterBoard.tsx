@@ -133,7 +133,7 @@ function PrinterCard({
   return (
     <article
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-adm border border-adm-border bg-adm-surface shadow-adm-card",
+        "relative flex flex-col overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface",
         status !== "active" && "bg-adm-surface/70",
       )}
     >

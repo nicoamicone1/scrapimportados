@@ -287,7 +287,7 @@ export function ProductsTable({ items, total, page, perPage, categories, hasFilt
       </div>
 
       {/* Mobile: lista de tarjetas (la tabla de 8 columnas no entra a 360 px). */}
-      <div className="relative rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
+      <div className="relative overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface shadow-adm-card md:hidden">
         {items.length === 0 ? (
           <div className="px-4 py-6">
             <p className="text-[15px] font-semibold text-adm-fg">{emptyTitle}</p>
@@ -521,13 +521,13 @@ function ProductRow({
       <TD className="w-10 pr-0">
         <Checkbox aria-label={`Seleccionar ${p.name}`} checked={selected} onChange={onToggle} />
       </TD>
-      <TD className="max-w-0 min-w-56 py-1">
+      <TD className="max-w-0 min-w-56 py-1.5">
         <div className="flex items-center gap-3">
           <Thumb url={p.image_url} />
           <div className="min-w-0">
             <Link
               href={`/admin/productos/${p.id}`}
-              className="block truncate font-medium text-adm-fg hover:underline"
+              className="block truncate font-medium text-adm-fg hover:text-adm-link hover:underline"
               title={p.name}
             >
               {p.name}
@@ -547,7 +547,7 @@ function ProductRow({
           {categoryNames.length ? categoryNames.slice(0, 2).join(", ") + (categoryNames.length > 2 ? ` +${categoryNames.length - 2}` : "") : "—"}
         </span>
       </TD>
-      <TD numeric>
+      <TD numeric className="font-semibold text-adm-fg">
         {single ? (
           <InlineNumber
             label={`Precio de ${p.name}`}
@@ -607,7 +607,7 @@ function ProductMobileItem(props: RowProps) {
       </label>
       <div className="min-w-0 flex-1 py-2">
         <Link href={`/admin/productos/${p.id}`} className="flex min-h-11 items-center gap-3 pr-1">
-          <Thumb url={p.image_url} size={44} />
+          <Thumb url={p.image_url} size={56} />
           <span className="min-w-0">
             <span className="line-clamp-2 text-sm font-medium text-adm-fg">{p.name}</span>
             <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-adm-fg-muted">

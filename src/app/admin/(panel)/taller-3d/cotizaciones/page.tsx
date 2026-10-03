@@ -91,7 +91,7 @@ export default async function QuotesPage({ searchParams }: PageProps<"/admin/tal
               rows.map((r) => (
                 <TR key={r.id}>
                   <TD className="max-w-[260px]">
-                    <Link href={`${BASE}/${r.id}`} className="block truncate font-medium text-adm-fg hover:text-adm-accent hover:underline">
+                    <Link href={`${BASE}/${r.id}`} className="block truncate font-medium text-adm-fg hover:text-adm-link hover:underline">
                       {r.contact.name ?? "Sin nombre"}
                     </Link>
                     <span className="block truncate text-xs text-adm-fg-muted">
@@ -112,7 +112,7 @@ export default async function QuotesPage({ searchParams }: PageProps<"/admin/tal
                     <div className="flex flex-col items-start gap-0.5">
                       <QuoteStatusBadge status={r.status} />
                       {r.status === "ordered" && r.order_id && r.order_number ? (
-                        <Link href={`/admin/pedidos/${r.order_id}`} className="tnum text-xs text-adm-accent hover:underline">
+                        <Link href={`/admin/pedidos/${r.order_id}`} className="tnum text-xs text-adm-link hover:underline">
                           Pedido #{r.order_number}
                         </Link>
                       ) : null}

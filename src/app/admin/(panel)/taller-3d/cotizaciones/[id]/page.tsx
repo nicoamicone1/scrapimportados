@@ -64,7 +64,7 @@ export default async function QuoteDetailPage({ params }: PageProps<"/admin/tall
       {quote.status === "ordered" && quote.order_id ? (
         <div className="mb-4 rounded-adm border border-adm-border bg-adm-accent-soft px-4 py-3 text-[13px]">
           Se convirtió en el{" "}
-          <Link href={`/admin/pedidos/${quote.order_id}`} className="tnum font-semibold text-adm-accent hover:underline">
+          <Link href={`/admin/pedidos/${quote.order_id}`} className="tnum font-semibold text-adm-link hover:underline">
             pedido #{quote.order_number ?? ""}
           </Link>
           . Sus trabajos ya están en la cola.

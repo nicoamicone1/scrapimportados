@@ -7,7 +7,9 @@ import { parseVideoUrl } from "@/components/blocks/video-url";
 import { RichTextEditor } from "@/components/admin/products/RichTextEditor";
 import { Field } from "@/components/ui/Field";
 import { BLOCK_META } from "@/lib/blocks/defaults";
-import type { BannerItem, Block, BlockOf, BlockStyle, BlockType } from "@/lib/blocks/schema";
+import { resolveHeroLayout } from "@/lib/blocks/hero";
+import type { BannerItem, Block, BlockOf, BlockStyle, BlockType, HeroLayout } from "@/lib/blocks/schema";
+import type { Theme } from "@/lib/theme";
 
 import {
   ColorField,
@@ -25,6 +27,7 @@ import {
   ToggleField,
   Warning,
 } from "./fields";
+import { CATEGORY_THUMBS, FEATURE_THUMBS, HERO_THUMBS, TWO_THUMBS, VisualChoice, type VisualOption } from "./LayoutPicker";
 import { CategoryIdsField, DateTimeField, IconPicker, ProductSourceField, useBuilderOptions } from "./pickers";
 
 /*
@@ -33,7 +36,15 @@ import { CategoryIdsField, DateTimeField, IconPicker, ProductSourceField, useBui
  * completo actualizado.
  */
 
-type Props<T extends BlockType> = { block: BlockOf<T>; set: (patch: Partial<BlockOf<T>["settings"]>) => void };
+type Props<T extends BlockType> = { block: BlockOf<T>; set: (patch: Partial<BlockOf<T>["settings"]>) => void; theme?: Theme };
+
+const HERO_LABELS: Record<Exclude<HeroLayout, "auto">, { label: string; hint: string }> = {
+  cover: { label: "A sangre", hint: "La foto ocupa todo el ancho y el texto va encima. Sin foto se arma como titular gigante." },
+  split: { label: "Partida", hint: "Mitad texto sobre el color de la marca, mitad foto con la forma del estilo. Sin foto muestra productos." },
+  framed: { label: "Enmarcada", hint: "La foto dentro de un marco y el texto en una tarjeta que la pisa. Sin foto muestra productos." },
+  poster: { label: "Titular", hint: "El título gigante a lo ancho, como una tapa. La foto (opcional) va como franja debajo." },
+  stack: { label: "Apilada", hint: "Título centrado y debajo una tira de productos (o la foto)." },
+};
 
 const ALIGN3 = [
   { value: "left" as const, label: <AlignLeft aria-hidden />, title: "Izquierda" },
@@ -41,11 +52,26 @@ const ALIGN3 = [
   { value: "right" as const, label: <AlignRight aria-hidden />, title: "Derecha" },
 ];
 
-function HeroForm({ block, set }: Props<"hero">) {
+function HeroForm({ block, set, theme }: Props<"hero">) {
   const s = block.settings;
   const { links } = useBuilderOptions();
+  const themeHero = theme?.style.hero ?? "cover";
+  const effective = resolveHeroLayout(s, themeHero);
+  const options: VisualOption<HeroLayout>[] = [
+    {
+      value: "auto",
+      label: "Del estilo",
+      hint: `Sigue el estilo de la tienda (hoy: ${HERO_LABELS[themeHero].label.toLowerCase()}). Si cambiás de estilo, cambia con él.`,
+      thumb: HERO_THUMBS[themeHero],
+    },
+    ...(Object.keys(HERO_LABELS) as Exclude<HeroLayout, "auto">[]).map((k) => ({ value: k, label: HERO_LABELS[k].label, hint: HERO_LABELS[k].hint, thumb: HERO_THUMBS[k] })),
+  ];
   return (
     <>
+      <Section title="Disposición">
+        <VisualChoice label="Cómo se arma la portada" value={s.layout} onChange={(layout) => set({ layout })} options={options} />
+        {s.layout === "cover" && !s.imageUrl ? <Note>Sin foto, la portada a sangre se arma como titular gigante.</Note> : null}
+      </Section>
       <Section title="Imagen">
         <ImageField label="Imagen" value={s.imageUrl} onChange={(imageUrl) => set({ imageUrl })} hint="Horizontal, mínimo 1600 px de ancho. Sin texto incrustado." />
         <ImageField
@@ -58,14 +84,41 @@ function HeroForm({ block, set }: Props<"hero">) {
           hint="Vertical 4:5. Si no la cargás, se recorta la principal."
         />
         <TextField label="Descripción de la foto" value={s.imageAlt ?? ""} onChange={(v) => set({ imageAlt: v || undefined })} maxLength={200} hint="Para lectores de pantalla y Google. Si es de un banco de imágenes, sumá el crédito." />
-        <RangeField label="Oscurecer la foto" value={s.overlay} min={0} max={80} onChange={(overlay) => set({ overlay })} />
-        {s.imageUrl && s.overlay < 25 ? <Warning>El texto puede no leerse sobre la foto. Subí el oscurecido a 25 % o más.</Warning> : null}
+        {effective === "cover" ? (
+          <>
+            <RangeField label="Oscurecer la foto" value={s.overlay} min={0} max={80} onChange={(overlay) => set({ overlay })} />
+            {s.imageUrl && s.overlay < 25 ? <Warning>El texto puede no leerse sobre la foto. Subí el oscurecido a 25 % o más.</Warning> : null}
+          </>
+        ) : null}
+      </Section>
+      <Section title="Productos">
+        <ToggleField
+          label="Mostrar productos"
+          description={effective === "stack" ? "Una tira de hasta 4 productos debajo del título." : "Si la portada no tiene foto, muestra hasta 4 productos en su lugar."}
+          checked={Boolean(s.products)}
+          onChange={(on) => set({ products: on ? { kind: "newest", limit: 4 } : null })}
+        />
+        {s.products ? <ProductSourceField value={s.products} onChange={(products) => set({ products })} limitHint="Se muestran 4 como máximo." /> : null}
       </Section>
       <Section title="Texto">
         <TextField label="Línea chica arriba" value={s.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v || undefined })} placeholder="Temporada otoño" maxLength={120} />
         <TextField label="Título" value={s.title} onChange={(title) => set({ title })} maxLength={200} multiline rows={2} hint="Concreto: qué vendés y por qué ahora." />
         <TextField label="Bajada" value={s.subtitle} onChange={(subtitle) => set({ subtitle })} maxLength={500} multiline rows={2} />
-        <Segmented label="Alineación" value={s.align} onChange={(align) => set({ align })} options={ALIGN3.filter((o) => o.value !== "right")} />
+        {effective !== "stack" && effective !== "split" ? (
+          <Segmented
+            label={effective === "framed" ? "Tarjeta de texto" : "Alineación"}
+            value={s.align}
+            onChange={(align) => set({ align })}
+            options={
+              effective === "framed"
+                ? [
+                    { value: "left", label: "Izquierda" },
+                    { value: "center", label: "Derecha" },
+                  ]
+                : ALIGN3.filter((o) => o.value !== "right")
+            }
+          />
+        ) : null}
         <Segmented
           label="Alto"
           value={s.height}
@@ -123,6 +176,16 @@ function SliderForm(props: Props<"product_slider">) {
           options={[2, 3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }))}
           hint="En celulares se ven 2 y un poco del tercero."
         />
+        <VisualChoice
+          label="Protagonista"
+          columns={2}
+          value={block.settings.highlight}
+          onChange={(highlight) => set({ highlight })}
+          options={[
+            { value: "none", label: "Todos iguales", thumb: TWO_THUMBS.gridEven },
+            { value: "first", label: "El primero grande", hint: "El primer producto ocupa el doble de ancho.", thumb: TWO_THUMBS.gridFirst },
+          ]}
+        />
       </Section>
     </>
   );
@@ -141,6 +204,16 @@ function GridForm(props: Props<"product_grid">) {
           onChange={(columns) => set({ columns })}
           options={[2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }))}
           hint="En celulares y tablets se usan las columnas del tema."
+        />
+        <VisualChoice
+          label="Protagonista"
+          columns={2}
+          value={s.highlight}
+          onChange={(highlight) => set({ highlight })}
+          options={[
+            { value: "none", label: "Todos iguales", thumb: TWO_THUMBS.gridEven },
+            { value: "first", label: "El primero grande", hint: "El primer producto ocupa 2 × 2 en computadora y todo el ancho en el celular.", thumb: TWO_THUMBS.gridFirst },
+          ]}
         />
         <ToggleField
           label="Limitar por filas"
@@ -295,7 +368,17 @@ function ImageTextForm({ block, set }: Props<"image_text">) {
   return (
     <>
       <Section title="Imagen">
-        <ImageField label="Imagen" value={s.imageUrl} onChange={(imageUrl) => set({ imageUrl })} aspect="4 / 3" />
+        <ImageField label="Imagen" value={s.imageUrl} onChange={(imageUrl) => set({ imageUrl })} aspect="4 / 3" hint="Toma la forma del estilo de la tienda (recta, redondeada, arco o burbuja)." />
+        <VisualChoice
+          label="Disposición"
+          columns={2}
+          value={s.layout}
+          onChange={(layout) => set({ layout })}
+          options={[
+            { value: "split", label: "Lado a lado", thumb: TWO_THUMBS.imageSplit },
+            { value: "overlap", label: "Tarjeta encima", hint: "La foto grande y el texto en una tarjeta que la pisa.", thumb: TWO_THUMBS.imageOverlap },
+          ]}
+        />
         <Segmented
           label="Posición de la imagen"
           value={s.imagePosition}
@@ -308,6 +391,7 @@ function ImageTextForm({ block, set }: Props<"image_text">) {
         />
       </Section>
       <Section title="Texto">
+        <TextField label="Línea chica arriba" value={s.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v || undefined })} maxLength={120} />
         <TextField label="Título" value={s.title} onChange={(title) => set({ title })} maxLength={200} />
         <Field label="Texto">
           <RichTextEditor value={s.html} onChange={(html) => set({ html })} placeholder="Contá la historia en dos o tres párrafos." />
@@ -327,16 +411,17 @@ function CategoryListForm({ block, set }: Props<"category_list">) {
         <CategoryIdsField value={s.categoryIds} onChange={(categoryIds) => set({ categoryIds })} />
       </Section>
       <Section title="Diseño">
-        <Segmented
+        <VisualChoice
           label="Estilo"
+          columns={2}
           value={s.style}
           onChange={(style) => set({ style })}
           options={[
-            { value: "cards", label: "Tarjetas" },
-            { value: "chips", label: "Chips" },
-            { value: "circles", label: "Círculos" },
+            { value: "cards", label: "Tarjetas", hint: "Foto de cada categoría con la forma del estilo. Sin foto, un plano de color con el nombre.", thumb: CATEGORY_THUMBS.cards },
+            { value: "chips", label: "Pastillas", hint: "Nombres con la cantidad de productos. Ocupa poco: ideal arriba de todo.", thumb: CATEGORY_THUMBS.chips },
+            { value: "circles", label: "Círculos", hint: "La foto de cada categoría (o de su primer producto) en un círculo; en burbuja o arco según el estilo.", thumb: CATEGORY_THUMBS.circles },
+            { value: "list", label: "Lista grande", hint: "Los nombres en letra grande, como el índice de una revista. Al pasar el mouse asoma la foto.", thumb: CATEGORY_THUMBS.list },
           ]}
-          hint={s.style === "circles" ? "Muestra la foto de cada categoría (o de su primer producto) en un círculo." : undefined}
         />
         {s.style === "cards" ? (
           <Segmented
@@ -374,12 +459,24 @@ function FeaturesForm({ block, set }: Props<"features">) {
         <Note>Datos concretos que ayuden a comprar: envíos, retiro, formas de pago, cambios.</Note>
       </Section>
       <Section title="Diseño">
-        <Segmented
-          label="Columnas en computadora"
-          value={s.columns}
-          onChange={(columns) => set({ columns })}
-          options={[2, 3, 4].map((n) => ({ value: n, label: String(n) }))}
+        <VisualChoice
+          label="Disposición"
+          value={s.layout}
+          onChange={(layout) => set({ layout })}
+          options={[
+            { value: "row", label: "Fila", hint: "Ícono, título y texto en fila, sin cajas.", thumb: FEATURE_THUMBS.row },
+            { value: "cards", label: "Tarjetas", hint: "Cada dato en una tarjeta con su número.", thumb: FEATURE_THUMBS.cards },
+            { value: "strip", label: "Tira", hint: "Barra compacta con separadores: ideal debajo de la portada.", thumb: FEATURE_THUMBS.strip },
+          ]}
         />
+        {s.layout !== "strip" ? (
+          <Segmented
+            label="Columnas en computadora"
+            value={s.columns}
+            onChange={(columns) => set({ columns })}
+            options={[2, 3, 4].map((n) => ({ value: n, label: String(n) }))}
+          />
+        ) : null}
       </Section>
     </>
   );
@@ -389,7 +486,23 @@ function FaqForm({ block, set }: Props<"faq">) {
   const s = block.settings;
   return (
     <Section title="Preguntas">
-      <TextField label="Título" value={s.title ?? ""} onChange={(v) => set({ title: v || undefined })} maxLength={200} />
+      <TextField
+        label="Título"
+        value={s.title ?? ""}
+        onChange={(v) => set({ title: v || undefined })}
+        maxLength={200}
+        hint="También sirve de ancla: «Cómo comprar» se abre con /#como-comprar."
+      />
+      <VisualChoice
+        label="Disposición"
+        columns={2}
+        value={s.layout}
+        onChange={(layout) => set({ layout })}
+        options={[
+          { value: "list", label: "Título arriba", thumb: TWO_THUMBS.faqList },
+          { value: "split", label: "Título al costado", hint: "En computadora el título queda a la izquierda mientras se leen las preguntas.", thumb: TWO_THUMBS.faqSplit },
+        ]}
+      />
       <ItemsEditor
         items={s.items}
         onChange={(items) => set({ items })}
@@ -417,6 +530,16 @@ function CountdownForm({ block, set }: Props<"countdown">) {
         <TextField label="Título" value={s.title} onChange={(title) => set({ title })} maxLength={200} />
         <TextField label="Texto" value={s.text ?? ""} onChange={(v) => set({ text: v || undefined })} maxLength={500} multiline rows={2} />
         <DateTimeField label="Termina el" value={s.endsAt} onChange={(endsAt) => set({ endsAt })} />
+        <VisualChoice
+          label="Disposición"
+          columns={2}
+          value={s.layout}
+          onChange={(layout) => set({ layout })}
+          options={[
+            { value: "inline", label: "Compacta", thumb: TWO_THUMBS.countdownInline },
+            { value: "banner", label: "Números gigantes", hint: "Los números a todo el ancho. Queda bien sobre el color primario.", thumb: TWO_THUMBS.countdownBanner },
+          ]}
+        />
         <CtaField label="Botón" optional value={s.cta} onChange={(cta) => set({ cta })} suggestions={links} />
       </Section>
       <Section title="Cuando termina">
@@ -439,6 +562,16 @@ function TestimonialsForm({ block, set }: Props<"testimonials">) {
   return (
     <Section title="Reseñas">
       <Warning>Usá sólo reseñas reales, con permiso de quien la escribió. Inventar reseñas engaña a tus clientes y puede traerte problemas legales.</Warning>
+      <VisualChoice
+        label="Disposición"
+        columns={2}
+        value={s.layout}
+        onChange={(layout) => set({ layout })}
+        options={[
+          { value: "cards", label: "Tarjetas", thumb: TWO_THUMBS.testimonialsCards },
+          { value: "quote", label: "Cita grande", hint: "La primera reseña en grande; las demás, debajo.", thumb: TWO_THUMBS.testimonialsQuote },
+        ]}
+      />
       <ItemsEditor
         items={s.items}
         onChange={(items) => set({ items })}
@@ -506,6 +639,92 @@ function Print3dCtaForm({ block, set }: Props<"print3d_cta">) {
   );
 }
 
+function MarqueeForm({ block, set }: Props<"marquee">) {
+  const s = block.settings;
+  const { links } = useBuilderOptions();
+  return (
+    <>
+      <Section title="Frases">
+        <ItemsEditor
+          items={s.items}
+          onChange={(items) => set({ items })}
+          max={12}
+          addLabel="Agregar frase"
+          create={() => ""}
+          itemTitle={(t) => t}
+          renderItem={(item, _update, i) => (
+            <TextField
+              label="Frase"
+              value={item}
+              onChange={(v) => set({ items: s.items.map((x, j) => (j === i ? v : x)) })}
+              maxLength={120}
+              placeholder="Envíos a todo el país"
+            />
+          )}
+        />
+        <Note>Frases cortas y concretas: envíos, cuotas, la promo de la semana. Se separan solas con un punto.</Note>
+      </Section>
+      <Section title="Diseño">
+        <VisualChoice
+          label="Tamaño"
+          columns={2}
+          value={s.size}
+          onChange={(size) => set({ size })}
+          options={[
+            { value: "sm", label: "Tira de datos", thumb: TWO_THUMBS.marqueeSm },
+            { value: "lg", label: "Titular gigante", hint: "Con la fuente de títulos, a todo el ancho. Una o dos frases.", thumb: TWO_THUMBS.marqueeLg },
+          ]}
+        />
+        <Segmented
+          label="Velocidad"
+          value={s.speed}
+          onChange={(speed) => set({ speed })}
+          options={[
+            { value: "slow", label: "Lenta" },
+            { value: "normal", label: "Normal" },
+          ]}
+          hint="Con el movimiento del estilo en «Sin movimiento» queda quieta. Siempre se puede pausar."
+        />
+        <Field label="Link de toda la tira" hint="Opcional. Vacío = sin link.">
+          <LinkInput value={s.href ?? ""} onChange={(v) => set({ href: v || undefined })} suggestions={links} />
+        </Field>
+      </Section>
+    </>
+  );
+}
+
+function LookbookForm({ block, set }: Props<"lookbook">) {
+  const s = block.settings;
+  const { links } = useBuilderOptions();
+  return (
+    <>
+      <Section title="Foto">
+        <ImageField label="Foto de la colección" value={s.imageUrl} onChange={(imageUrl) => set({ imageUrl })} aspect="4 / 5" frameClassName="w-40" hint="Vertical, con los productos en uso: un ambiente, un look, una mesa puesta." />
+        <TextField label="Descripción de la foto" value={s.imageAlt ?? ""} onChange={(v) => set({ imageAlt: v || undefined })} maxLength={200} />
+        <Segmented
+          label="Foto a la"
+          value={s.imagePosition}
+          onChange={(imagePosition) => set({ imagePosition })}
+          options={[
+            { value: "left", label: "Izquierda" },
+            { value: "right", label: "Derecha" },
+          ]}
+        />
+        {!s.imageUrl ? <Note>Sin foto, ese lado muestra el título en grande sobre el color secundario del estilo.</Note> : null}
+      </Section>
+      <Section title="Texto">
+        <TextField label="Línea chica arriba" value={s.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v || undefined })} maxLength={120} />
+        <TextField label="Título" value={s.title} onChange={(title) => set({ title })} maxLength={200} />
+        <TextField label="Texto" value={s.text} onChange={(text) => set({ text })} maxLength={500} multiline rows={2} />
+        <CtaField label="Link" optional value={s.cta} onChange={(cta) => set({ cta })} suggestions={links} />
+      </Section>
+      <Section title="Productos">
+        <ProductSourceField value={s.source} onChange={(source) => set({ source })} limitHint="Se muestran de 2 a 4." />
+      </Section>
+    </>
+  );
+}
+
 function DividerForm({ block, set }: Props<"divider">) {
   const s = block.settings;
   return (
@@ -570,7 +789,11 @@ function StyleForm({ style, onChange, type }: { style: BlockStyle; onChange: (s:
           { value: "normal", label: "Normal" },
           { value: "narrow", label: "Angosto" },
         ]}
-        hint={style.container === "full" && type !== "hero" && type !== "banner_grid" ? "A lo ancho conviene sólo para portadas, banners y bandas de color." : undefined}
+        hint={
+          style.container === "full" && type !== "hero" && type !== "banner_grid" && type !== "marquee"
+            ? "A lo ancho conviene sólo para portadas, banners y bandas de color."
+            : undefined
+        }
       />
       <ToggleField label="Ocultar en celulares" checked={Boolean(style.hideOnMobile)} onChange={(hideOnMobile) => set({ hideOnMobile: hideOnMobile || undefined })} />
       <ToggleField
@@ -583,14 +806,14 @@ function StyleForm({ style, onChange, type }: { style: BlockStyle; onChange: (s:
   );
 }
 
-function renderForm(block: Block, onChange: (b: Block) => void): ReactNode {
+function renderForm(block: Block, onChange: (b: Block) => void, theme?: Theme): ReactNode {
   const make =
     <T extends BlockType>(b: BlockOf<T>) =>
     (patch: Partial<BlockOf<T>["settings"]>) =>
       onChange({ ...b, settings: { ...b.settings, ...patch } } as Block);
   switch (block.type) {
     case "hero":
-      return <HeroForm block={block} set={make(block)} />;
+      return <HeroForm block={block} set={make(block)} theme={theme} />;
     case "product_slider":
       return <SliderForm block={block} set={make(block)} />;
     case "product_grid":
@@ -619,14 +842,18 @@ function renderForm(block: Block, onChange: (b: Block) => void): ReactNode {
       return <DividerForm block={block} set={make(block)} />;
     case "print3d_cta":
       return <Print3dCtaForm block={block} set={make(block)} />;
+    case "marquee":
+      return <MarqueeForm block={block} set={make(block)} />;
+    case "lookbook":
+      return <LookbookForm block={block} set={make(block)} />;
   }
 }
 
-export function BlockSettings({ block, onChange }: { block: Block; onChange: (b: Block) => void }) {
+export function BlockSettings({ block, onChange, theme }: { block: Block; onChange: (b: Block) => void; theme?: Theme }) {
   return (
     <div key={block.id}>
       <p className="px-4 pt-3 text-xs text-adm-fg-muted">{BLOCK_META[block.type].description}</p>
-      {renderForm(block, onChange)}
+      {renderForm(block, onChange, theme)}
       <StyleForm style={block.style} type={block.type} onChange={(style) => onChange({ ...block, style } as Block)} />
     </div>
   );

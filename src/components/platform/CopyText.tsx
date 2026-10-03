@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button, type ButtonSize, type ButtonVariant } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 
 /*
  * "Copiar" genérico para las pantallas de /platform (kit de redes). Es el
@@ -36,12 +37,14 @@ export function CopyText({
   ariaLabel,
   variant = "secondary",
   size = "sm",
+  className,
 }: {
   text: string;
   label?: string;
   ariaLabel?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  className?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,7 +69,7 @@ export function CopyText({
 
   return (
     <>
-      <Button variant={variant} size={size} className="min-w-[112px]" icon={copied ? <Check strokeWidth={1.5} /> : <Copy strokeWidth={1.5} />} onClick={copy} aria-label={ariaLabel}>
+      <Button variant={variant} size={size} className={cn("min-w-[112px]", className)} icon={copied ? <Check strokeWidth={1.5} /> : <Copy strokeWidth={1.5} />} onClick={copy} aria-label={ariaLabel}>
         {copied ? "Copiado" : label}
       </Button>
       <span className="sr-only" aria-live="polite">

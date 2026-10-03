@@ -1,9 +1,9 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { bestPaymentDiscount, type Promotion } from "@/lib/pricing";
-import { PRESETS, type Theme } from "@/lib/theme";
+import { parseTheme, PRESETS, type Theme } from "@/lib/theme";
 
 import { getPaymentMethods, type StorePaymentMethod } from "./payment-methods";
 import { getActivePromotions } from "./promotions";
@@ -73,6 +73,28 @@ async function devThemeOverride(settings: StoreSettings): Promise<StoreSettings>
   return settings;
 }
 
+/** Tienda cuya portada se puede ver con cualquier preset (`?estilo=`, ver `src/proxy.ts`). */
+export const PREVIEW_STORE_SLUG = "demo";
+
+/**
+ * Vista previa por preset (sólo la tienda demo, en cualquier entorno): el proxy
+ * pasa `x-store-preview-style` cuando la URL trae `?estilo=<preset>` (o la
+ * cookie de sesión que deja). Pisa el tema completo con el del preset, salvo el
+ * crédito del pie, que no es estilo. Nunca escribe en la base.
+ */
+async function previewThemeOverride(settings: StoreSettings): Promise<StoreSettings> {
+  try {
+    const h = await headers();
+    if (h.get("x-store-slug") !== PREVIEW_STORE_SLUG) return settings;
+    const id = h.get("x-store-preview-style");
+    if (!id || !Object.hasOwn(PRESETS, id)) return settings;
+    const preset = PRESETS[id as keyof typeof PRESETS];
+    return { ...settings, theme: { ...preset, footer: { ...preset.footer, showCredit: settings.theme.footer.showCredit } } };
+  } catch {
+    return settings;
+  }
+}
+
 export async function getStoreDisplay(storeId: string): Promise<StoreDisplay> {
   const [rawSettings, paymentMethods, promotions, zones, pickups] = await Promise.all([
     getSettings(storeId),
@@ -81,7 +103,10 @@ export async function getStoreDisplay(storeId: string): Promise<StoreDisplay> {
     getShippingZones(storeId),
     getPickupLocations(storeId),
   ]);
-  const settings = await devThemeOverride(rawSettings);
+  // `parseTheme` otra vez: la caché de settings puede traer un tema serializado
+  // antes de que el schema sumara campos (theme.style.*); así nunca falta uno.
+  const normalized = { ...rawSettings, theme: parseTheme(rawSettings.theme) };
+  const settings = await previewThemeOverride(await devThemeOverride(normalized));
   const best = bestPaymentDiscount(paymentMethods);
   const cards = settings.theme.cards;
   const hasWhatsapp = paymentMethods.some((m) => m.type === "whatsapp") && Boolean(settings.whatsapp_phone);

@@ -89,7 +89,7 @@ export function StockAlertsTable({ rows, filter, available }: { rows: StockAlert
               description={empty.description}
               action={
                 filter === "avisados" ? undefined : (
-                  <Link href="/admin/inventario?estado=agotado" className="text-[13px] font-medium text-adm-accent hover:underline">
+                  <Link href="/admin/inventario?estado=agotado" className="text-[13px] font-medium text-adm-link hover:underline">
                     Ver productos sin stock
                   </Link>
                 )

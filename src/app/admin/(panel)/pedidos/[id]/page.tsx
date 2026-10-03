@@ -9,6 +9,7 @@ import { CopyButton } from "@/components/admin/orders/CopyButton";
 import { MercadoPagoDetail } from "@/components/admin/orders/MercadoPagoDetail";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/orders/OrderBadges";
 import { OrderActionsProvider, OrderHeaderActions, OrderNextStep, OrderWhatsAppButton } from "@/components/admin/orders/OrderActions";
+import { OrderJourney } from "@/components/admin/orders/OrderJourney";
 import { OrderTimeline } from "@/components/admin/orders/OrderTimeline";
 import { PaymentsCard } from "@/components/admin/orders/PaymentsCard";
 import { ReservationControl } from "@/components/admin/orders/ReservationControl";
@@ -127,7 +128,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
         breadcrumb={[{ label: "Pedidos", href: "/admin/pedidos" }, { label: `#${order.number}` }]}
         title={
           <span className="flex flex-wrap items-center gap-2">
-            <span className="tnum">Pedido #{order.number}</span>
+            <span className="eco-display text-[24px] leading-7 sm:text-[26px]">Pedido #{order.number}</span>
             <OrderStatusBadge status={order.status} fulfillment={order.fulfillment} />
             <PaymentStatusBadge status={order.payment_status} />
           </span>
@@ -145,7 +146,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
       />
 
       {order.status === "cancelled" ? (
-        <div className="mb-4 rounded-adm border border-adm-border bg-adm-surface-2 px-4 py-3 text-[13px]">
+        <div className="mb-4 rounded-adm-lg border border-adm-border bg-adm-surface-2 px-4 py-3 text-[13px]">
           <span className="font-medium">Pedido cancelado</span>
           {order.cancelled_at ? ` el ${formatDateTime(order.cancelled_at, tz)}` : ""}
           {order.cancel_reason ? `. Motivo: ${cancelReasonLabel(order.cancel_reason)}.` : "."}
@@ -153,7 +154,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
         </div>
       ) : null}
 
-      <OrderNextStep expiryLabel={expiry?.label ?? null} />
+      <OrderNextStep
+        expiryLabel={expiry?.label ?? null}
+        journey={order.status === "cancelled" ? null : <OrderJourney status={order.status} fulfillment={order.fulfillment} />}
+      />
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_1fr]">
         <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
@@ -182,16 +186,16 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                               <img
                                 src={it.image_url}
                                 alt=""
-                                width={40}
-                                height={40}
-                                className="size-10 shrink-0 rounded-[4px] border border-adm-border object-cover"
+                                width={48}
+                                height={48}
+                                className="size-12 shrink-0 rounded-[10px] border border-adm-border bg-adm-surface-2 object-cover"
                               />
                             ) : (
-                              <span aria-hidden className="size-10 shrink-0 rounded-[4px] border border-adm-border bg-adm-surface-2" />
+                              <span aria-hidden className="size-12 shrink-0 rounded-[10px] border border-adm-border bg-adm-surface-2" />
                             )}
                             <div className="min-w-0">
                               {it.product_id ? (
-                                <Link href={`/admin/productos/${it.product_id}`} className="font-medium hover:underline">
+                                <Link href={`/admin/productos/${it.product_id}`} className="font-medium text-adm-fg hover:text-adm-link hover:underline">
                                   {it.name}
                                 </Link>
                               ) : (
@@ -240,9 +244,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                 label={order.fulfillment === "pickup" ? "Retiro" : `Envío${order.shipping_zone_name ? ` (${order.shipping_zone_name})` : ""}`}
                 value={Number(order.shipping_cost) > 0 ? money(Number(order.shipping_cost)) : "Sin cargo"}
               />
-              <div className="flex justify-between border-t border-adm-border pt-2 text-sm font-semibold">
-                <dt>Total</dt>
-                <dd>{money(Number(order.total))}</dd>
+              <div className="flex items-baseline justify-between border-t border-adm-border pt-2.5 pb-0.5">
+                <dt className="text-sm font-semibold">Total</dt>
+                <dd className="eco-num text-[22px] leading-7 text-adm-fg">{money(Number(order.total))}</dd>
               </div>
               <TotalRow label="Método de pago" value={paymentMethodName(methods, order.payment_method_code)} muted />
             </dl>
@@ -297,9 +301,19 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
           <Card>
             <CardHeader title="Cliente" />
             <CardBody className="space-y-3 text-[13px]">
-              <div>
+              <div className="flex items-start gap-3">
+                <span aria-hidden className="eco-bubble inline-flex size-10 shrink-0 items-center justify-center bg-adm-accent-2-soft text-[13px] font-semibold text-adm-accent-2-ink [--eco-bubble-r:14px]">
+                  {customer.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((w) => w[0] ?? "")
+                    .join("")
+                    .toUpperCase() || "?"}
+                </span>
+                <div className="min-w-0">
                 {customerRecord ? (
-                  <Link href={`/admin/clientes/${customerRecord.id}`} className="text-sm font-medium text-adm-accent hover:underline">
+                  <Link href={`/admin/clientes/${customerRecord.id}`} className="text-sm font-semibold text-adm-link underline decoration-adm-link/30 underline-offset-4 hover:decoration-adm-link">
                     {customer.name}
                   </Link>
                 ) : (
@@ -311,13 +325,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                     {money(Number(customerRecord.total_spent))} pagados
                   </p>
                 ) : null}
+                </div>
               </div>
               <dl className="space-y-1">
                 {customer.email ? (
                   <div>
                     <dt className="sr-only">Email</dt>
                     <dd>
-                      <a href={`mailto:${customer.email}`} className="break-all hover:underline">
+                      <a href={`mailto:${customer.email}`} className="break-all text-adm-link hover:underline">
                         {customer.email}
                       </a>
                     </dd>
@@ -327,7 +342,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                   <div>
                     <dt className="sr-only">Teléfono</dt>
                     <dd className="tnum">
-                      <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="hover:underline">
+                      <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="text-adm-link hover:underline">
                         {phone}
                       </a>
                     </dd>
@@ -382,7 +397,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
                           href={order.tracking_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-adm-accent hover:underline"
+                          className="text-xs font-medium text-adm-link underline underline-offset-4"
                         >
                           Abrir seguimiento
                         </a>

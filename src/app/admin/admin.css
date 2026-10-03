@@ -43,6 +43,42 @@
     --adm-success: #1b7a4b;
     --adm-info: var(--eco-azul-dark);
 
+    /* Semánticos sobre tinta (toasts, SaveBar, barra mobile): ≥ 7:1 sobre --eco-ink. */
+    --adm-success-on-dark: #6fdca6;
+    --adm-warning-on-dark: #ffc978;
+    --adm-info-on-dark: var(--eco-azul-light);
+
+    /* Selección: checkbox, radio, switch encendido, fila seleccionada (azul de interacción). */
+    --adm-select: var(--eco-azul);
+    --adm-select-soft: var(--eco-azul-soft);
+
+    /*
+     * Badges de estado (DESIGN §7.7): fondo lavado frío + texto oscuro del
+     * mismo tono (≥ 5,9:1). El estado se lee por la etiqueta; el color ayuda.
+     */
+    --adm-badge-neutral-bg: var(--eco-niebla-2);
+    --adm-badge-neutral-fg: #4a5068; /* 7.0:1 */
+    --adm-badge-amber-bg: #fff1d6;
+    --adm-badge-amber-fg: #8a4b00; /* 6.1:1 */
+    --adm-badge-blue-bg: #e5e9fb;
+    --adm-badge-blue-fg: #23338a; /* 9.0:1 */
+    --adm-badge-purple-bg: #f0e8fb;
+    --adm-badge-purple-fg: #5b2e9e; /* 7.6:1 */
+    --adm-badge-teal-bg: #ddf3f2;
+    --adm-badge-teal-fg: #0b6366; /* 6.1:1 */
+    --adm-badge-green-bg: #e0f3e8;
+    --adm-badge-green-fg: #17683f; /* 5.9:1 */
+    --adm-badge-orange-bg: #fdebdc;
+    --adm-badge-orange-fg: #93400a; /* 6.1:1 */
+    --adm-badge-red-bg: var(--adm-danger-soft);
+    --adm-badge-red-fg: #a01434; /* 6.5:1 */
+    --adm-badge-accent-bg: var(--eco-pomelo-soft);
+    --adm-badge-accent-fg: var(--eco-pomelo-ink); /* 5.6:1 */
+
+    /* La hoja (BRAND §7.2): el contenido apoya sobre la tinta del shell con la esquina superior izquierda curva. */
+    --adm-sheet-radius: 28px;
+    --adm-topbar-h: 56px;
+
     /* Sidebar oscuro. */
     --adm-sidebar-bg: var(--eco-ink);
     --adm-sidebar-fg: var(--eco-mist); /* 12.9:1 */
@@ -113,13 +149,14 @@
   }
 
   .admin-root ::selection {
-    background: color-mix(in oklab, var(--adm-accent) 22%, transparent);
+    background: color-mix(in oklab, var(--eco-azul) 20%, transparent);
   }
 
-  /* <dialog> nativo: backdrop y animación mínima. */
+  /* <dialog> nativo: backdrop que se funde y entrada con la curva de la marca (BRAND §9). */
   .admin-root dialog::backdrop,
   dialog.adm-dialog::backdrop {
-    background: rgb(16 22 47 / 0.45);
+    background: rgb(16 22 47 / 0.48);
+    animation: adm-fade-in var(--eco-dur-2) var(--eco-ease-out);
   }
 
   dialog.adm-dialog[open] {
@@ -137,31 +174,67 @@
   @keyframes adm-dialog-in {
     from {
       opacity: 0;
-      transform: translateY(4px);
+      transform: translateY(10px) scale(0.97);
     }
   }
 
   @keyframes adm-drawer-in {
     from {
-      transform: translateX(16px);
+      transform: translateX(32px);
       opacity: 0;
     }
   }
 
   @keyframes adm-drawer-in-left {
     from {
-      transform: translateX(-16px);
+      transform: translateX(-32px);
       opacity: 0;
     }
   }
 
-  /* Sidebar oscuro: foco ámbar claro (7.4:1 sobre sidebar-bg). */
+  /* Popovers (menús, selector de tienda): crecen desde el disparador. */
+  .admin-root .adm-pop-in {
+    animation: adm-pop-in var(--eco-dur-2) var(--eco-ease-out);
+  }
+
+  @keyframes adm-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.97);
+    }
+  }
+
+  /* Lo que "aparece" (badge de pedidos nuevos, chips de conteo): rebote corto. */
+  .admin-root .adm-bounce-in {
+    animation: adm-bounce-in var(--eco-dur-3) var(--eco-ease-spring) both;
+  }
+
+  @keyframes adm-bounce-in {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+  }
+
+  /* Barras flotantes (SaveBar, acciones masivas): suben con rebote corto. */
+  .admin-root .adm-rise-in {
+    animation: adm-rise-in var(--eco-dur-3) var(--eco-ease-spring) both;
+  }
+
+  @keyframes adm-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.98);
+    }
+  }
+
+  /* Sidebar, SaveBar, barra mobile y toasts sobre tinta: foco azul claro (7.34:1). */
   .admin-root .adm-dark {
     --adm-focus: 0 0 0 2px var(--adm-sidebar-bg), 0 0 0 4px var(--eco-azul-light);
     color-scheme: dark;
   }
 
-  /* Controles de formulario: foco = borde + halo ámbar (no el anillo doble). */
+  /* Controles de formulario: foco = borde + halo azul (no el anillo doble). */
   .admin-root :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea):focus-visible {
     border-color: var(--adm-focus-ring);
     box-shadow: 0 0 0 1px var(--adm-focus-ring), 0 0 0 4px rgb(47 75 255 / 0.22);
@@ -190,9 +263,10 @@
    * hay un campo con foco (teclado abierto). Los toasts suben para no taparla.
    */
   @media (max-width: 767.98px) {
+    /* Pastilla flotante de 64 px a 10 px del borde (+ safe area). */
     .admin-root:has(.adm-bottom-nav) {
-      --adm-bottom-nav-h: calc(56px + env(safe-area-inset-bottom));
-      --adm-toast-mobile-bottom: calc(var(--adm-bottom-nav-h) + 12px);
+      --adm-bottom-nav-h: calc(74px + env(safe-area-inset-bottom));
+      --adm-toast-mobile-bottom: calc(var(--adm-bottom-nav-h) + 10px);
     }
     .admin-root:has([data-adm-bottom-bar]) .adm-bottom-nav,
     .admin-root:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), textarea, select, [contenteditable="true"]):focus) .adm-bottom-nav {
@@ -204,6 +278,26 @@
     }
   }
   .admin-root:has([data-adm-bottom-bar]) {
-    --adm-toast-bottom: 76px;
+    --adm-toast-bottom: 88px;
   }
+}
+
+/*
+ * Toasts (sonner): pastilla tinta que entra con rebote (BRAND §10). Fuera de
+ * @layer porque sonner inyecta su CSS sin capa. El transform usa la curva con
+ * rebote; opacidad y alto, la de salida suave.
+ */
+.admin-root [data-sonner-toast] {
+  transition-timing-function: var(--eco-ease-spring), var(--eco-ease-out), var(--eco-ease-out), ease;
+}
+.admin-root [data-sonner-toast][data-removed="true"] {
+  transition-timing-function: var(--eco-ease-out);
+}
+.admin-root [data-sonner-toast][data-styled] [data-close-button] {
+  background: var(--eco-ink-2);
+  border-color: rgb(255 255 255 / 0.18);
+  color: var(--eco-mist);
+}
+.admin-root [data-sonner-toast][data-styled] [data-close-button]:hover {
+  background: var(--eco-ink-3);
 }

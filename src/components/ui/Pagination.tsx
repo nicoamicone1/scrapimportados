@@ -33,7 +33,7 @@ export function Pagination({ page, perPage, total, param = "page", className }: 
   };
 
   const btn =
-    "inline-flex h-8 items-center gap-1 rounded-adm border border-adm-input-border bg-adm-surface px-2.5 text-sm text-adm-fg transition-colors duration-[120ms] hover:border-adm-input-border-hover hover:bg-adm-hover pointer-coarse:h-11 pointer-coarse:px-3.5";
+    "inline-flex h-8 items-center gap-1 rounded-full border border-adm-input-border/45 bg-adm-surface px-3 text-sm text-adm-fg transition-[border-color,background-color,transform] duration-[140ms] ease-eco-out hover:border-adm-input-border hover:bg-adm-hover active:scale-[0.97] pointer-coarse:h-11 pointer-coarse:px-4";
   const disabled = "pointer-events-none opacity-40";
 
   return (

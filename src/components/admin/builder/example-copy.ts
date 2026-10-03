@@ -11,7 +11,8 @@ import type { Block, BlockType } from "@/lib/blocks/schema";
  */
 
 /** Campos que llevan afirmaciones (no títulos genéricos como "Novedades" o "Preguntas frecuentes"). */
-const CLAIM_KEYS = new Set(["title", "subtitle", "text", "html", "a", "expiredText"]);
+/** `items` cubre las frases sueltas de la marquesina (array de strings). */
+const CLAIM_KEYS = new Set(["title", "subtitle", "text", "html", "a", "expiredText", "items"]);
 /** Por debajo de este largo son títulos o CTAs genéricos que sirven a cualquier tienda. */
 const MIN_LENGTH = 30;
 /** Bloques cuyo copy por defecto es genérico y verdadero para cualquiera. */

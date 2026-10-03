@@ -4,10 +4,23 @@ import { SlidersHorizontal } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
+import { cn } from "@/lib/cn";
+
 import { Drawer } from "./Drawer";
 
-/** Botón "Filtrar" + drawer con los filtros (mobile/tablet). Al aplicar un filtro, cierra. */
-export function FilterDrawer({ children, activeCount, resultCount }: { children: ReactNode; activeCount: number; resultCount: number }) {
+/** Botón "Filtrar" + drawer con los filtros (mobile/tablet, o siempre con `always`). Al aplicar un filtro, cierra. */
+export function FilterDrawer({
+  children,
+  activeCount,
+  resultCount,
+  always = false,
+}: {
+  children: ReactNode;
+  activeCount: number;
+  resultCount: number;
+  /** También en desktop (`style.filters` = `bar` o `drawer`: no hay columna lateral). */
+  always?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const search = useSearchParams();
@@ -21,7 +34,7 @@ export function FilterDrawer({ children, activeCount, resultCount }: { children:
 
   return (
     <>
-      <button type="button" className="btn btn-secondary min-h-10 lg:hidden" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <button type="button" className={cn("btn btn-secondary cat-filter-btn min-h-10", !always && "lg:hidden")} onClick={() => setOpen(true)} aria-haspopup="dialog">
         <SlidersHorizontal className="size-4" aria-hidden strokeWidth={1.5} />
         Filtrar{activeCount ? ` (${activeCount})` : ""}
       </button>

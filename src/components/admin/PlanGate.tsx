@@ -52,7 +52,7 @@ export function PlanGate({ feature, children, mode = "block", label, description
         href={PLAN_PAGE}
         title={`Disponible desde el plan ${planName}`}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-adm border border-dashed border-adm-input-border px-3 text-sm text-adm-fg-muted transition-colors hover:border-adm-input-border-hover hover:text-adm-fg",
+          "inline-flex h-8 items-center gap-1.5 rounded-adm border border-dashed border-adm-input-border px-3 text-sm text-adm-fg-muted transition-colors duration-[140ms] ease-eco-out hover:border-adm-input-border-hover hover:text-adm-fg pointer-coarse:h-11",
           className,
         )}
       >
@@ -65,13 +65,13 @@ export function PlanGate({ feature, children, mode = "block", label, description
 
   const note = (
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-adm border border-adm-border bg-adm-surface text-adm-accent-2-ink">
-        <Lock className="size-3.5" strokeWidth={1.75} aria-hidden />
+      <span aria-hidden className="eco-bubble mt-0.5 inline-flex size-8 shrink-0 items-center justify-center bg-eco-durazno text-eco-ink [--eco-bubble-r:12px]">
+        <Lock className="size-4" strokeWidth={1.75} />
       </span>
       <div className="min-w-0 text-sm">
         <p className="font-medium text-adm-fg">Disponible en {planName}</p>
         {description ? <p className="mt-0.5 text-adm-fg-muted">{description}</p> : null}
-        <Link href={PLAN_PAGE} className="mt-1 inline-block text-[13px] font-medium text-adm-accent underline underline-offset-2 hover:no-underline">
+        <Link href={PLAN_PAGE} className="mt-1.5 inline-block text-[13px] font-medium text-adm-link underline underline-offset-[3px] hover:text-adm-link-hover hover:decoration-2">
           Ver planes
         </Link>
       </div>
@@ -85,14 +85,14 @@ export function PlanGate({ feature, children, mode = "block", label, description
           {children}
         </div>
         <div className="absolute inset-x-0 top-4 flex justify-center px-4">
-          <div className="max-w-md rounded-adm border border-adm-border bg-adm-surface px-4 py-3 shadow-adm-card">{note}</div>
+          <div className="max-w-md rounded-adm-lg border border-adm-border bg-adm-surface px-4 py-3.5 shadow-[var(--adm-shadow)]">{note}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={cn("rounded-adm border border-dashed border-adm-input-border bg-adm-surface/60 px-4 py-3.5", className)}>
+    <div className={cn("rounded-adm-lg border border-dashed border-adm-input-border/70 bg-adm-surface/60 px-4 py-4", className)}>
       {note}
     </div>
   );

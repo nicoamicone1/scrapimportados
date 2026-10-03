@@ -184,7 +184,7 @@ export function JobItemsTable({
         ) : (
           <ul>
             {rows.map((r) => (
-              <li key={r.id} className={cn("flex items-start border-b border-adm-border last:border-b-0", selected.has(r.id) && "bg-adm-accent-2-soft/60")}>
+              <li key={r.id} className={cn("flex items-start border-b border-adm-border last:border-b-0", selected.has(r.id) && "bg-[var(--adm-select-soft)]")}>
                 {reviewing ? (
                   <label className="flex h-14 w-12 shrink-0 cursor-pointer items-center justify-center">
                     <Checkbox

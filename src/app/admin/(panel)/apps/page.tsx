@@ -85,9 +85,15 @@ function AppCard({
   return (
     <article
       aria-labelledby={`app-${def.code}`}
-      className="overflow-hidden rounded-adm border border-adm-border bg-adm-surface shadow-adm-card lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]"
+      className="overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface shadow-adm-card lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]"
     >
-      <div className="flex flex-col bg-adm-sidebar-bg px-6 pt-5 pb-4">
+      <div className="relative isolate flex flex-col overflow-hidden bg-adm-sidebar-bg px-6 pt-5 pb-4">
+        {/* Arcos concéntricos de trazo fino detrás de la pieza (BRAND §7.2). */}
+        <svg aria-hidden viewBox="0 0 400 400" className="absolute top-1/2 left-1/2 -z-10 size-[520px] -translate-x-1/2 -translate-y-1/2">
+          {[190, 150, 110].map((r) => (
+            <circle key={r} cx="200" cy="200" r={r} fill="none" stroke="var(--eco-ink-3)" strokeWidth="1.5" />
+          ))}
+        </svg>
         <div className="flex items-center justify-between text-[11px] font-medium tracking-[0.07em] text-adm-sidebar-muted uppercase">
           <span>App de Ecommy</span>
           <span className="font-mono tracking-normal normal-case">{def.code}</span>
@@ -100,7 +106,7 @@ function AppCard({
 
       <div className="flex min-w-0 flex-col p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <h2 id={`app-${def.code}`} className="text-[22px] leading-7 font-semibold tracking-[-0.01em] text-adm-fg">
+          <h2 id={`app-${def.code}`} className="eco-display text-[26px] leading-8 text-adm-fg">
             {entry.name}
           </h2>
           <Badge tone={badge.tone}>{badge.label}</Badge>
@@ -112,12 +118,14 @@ function AppCard({
         <h3 className="mt-6 text-[11px] font-medium tracking-[0.06em] text-adm-fg-muted uppercase">Qué incluye</h3>
         <ol className="mt-2 grid gap-x-6 gap-y-4 sm:grid-cols-2">
           {def.includes.map((f, i) => (
-            <li key={f.title} className="border-t border-adm-border pt-3">
-              <div className="flex items-baseline gap-2">
-                <span className="tnum font-mono text-xs text-adm-accent-2-ink">{String(i + 1).padStart(2, "0")}</span>
-                <span className="text-sm font-medium text-adm-fg">{f.title}</span>
+            <li key={f.title} className="flex gap-3">
+              <span aria-hidden className="eco-num inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-eco-durazno text-[12px] text-adm-fg">
+                {i + 1}
+              </span>
+              <div className="min-w-0 pt-0.5">
+                <span className="text-sm font-semibold text-adm-fg">{f.title}</span>
+                <p className="mt-0.5 text-[13px] leading-relaxed text-adm-fg-muted">{f.text}</p>
               </div>
-              <p className="mt-1 text-[13px] leading-relaxed text-adm-fg-muted">{f.text}</p>
             </li>
           ))}
         </ol>
@@ -125,9 +133,9 @@ function AppCard({
         <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 border-t border-adm-border pt-4">
           <div>
             {entry.priceMonthly !== null ? (
-              <p className="tnum text-xl font-semibold text-adm-fg">
+              <p className="eco-num text-[26px] leading-8 text-adm-fg">
                 {formatMoney(entry.priceMonthly)}
-                <span className="text-sm font-normal text-adm-fg-muted"> /mes</span>
+                <span className="font-sans text-sm font-normal tracking-normal text-adm-fg-muted"> /mes</span>
               </p>
             ) : (
               <p className="text-base font-semibold text-adm-fg">Precio a consultar</p>
@@ -188,9 +196,9 @@ export default async function AppsPage() {
         ))}
       </div>
 
-      <p className="mt-6 max-w-[62ch] border-l-[3px] border-adm-accent-2 pl-3 text-[13px] leading-relaxed text-adm-fg-muted">
+      <p className="eco-bubble mt-6 max-w-[66ch] bg-adm-accent-2-soft px-4 py-3 text-[13px] leading-relaxed text-adm-fg [--eco-bubble-r:18px]">
         Las apps se activan a pedido: nos escribís, coordinamos el pago y la activamos en tu tienda. ¿Tu rubro necesita algo que no está acá?{" "}
-        <a href={suggest.mailto} className="font-medium text-adm-accent underline-offset-2 hover:underline">
+        <a href={suggest.mailto} className="font-medium text-adm-link underline decoration-2 underline-offset-4">
           Contanos
         </a>
         .

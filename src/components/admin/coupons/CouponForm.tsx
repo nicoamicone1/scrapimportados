@@ -278,7 +278,7 @@ export function CouponForm({ id, initial, initialProducts, categories, timezone 
                 className={cn(
                   "inline-flex h-8 cursor-pointer items-center rounded-adm border px-3 text-sm max-md:h-11 has-[:focus-visible]:shadow-[var(--adm-focus)]",
                   draft.scope === s
-                    ? "border-adm-accent bg-adm-accent-soft font-medium text-adm-accent"
+                    ? "border-adm-link bg-adm-accent-soft font-medium text-adm-link"
                     : "border-adm-input-border bg-adm-surface hover:bg-adm-hover",
                 )}
               >

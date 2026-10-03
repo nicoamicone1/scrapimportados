@@ -53,17 +53,19 @@ export function Switch({
       disabled={disabled}
       onClick={toggle}
       className={cn(
-        "relative inline-flex h-[18px] w-8 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-[120ms] disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:before:absolute pointer-coarse:before:-inset-x-2 pointer-coarse:before:-inset-y-3 pointer-coarse:before:content-['']",
-        isOn ? "border-adm-accent bg-adm-accent" : "border-adm-input-border bg-adm-surface-2",
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-[240ms] ease-eco-out disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:before:absolute pointer-coarse:before:-inset-x-2 pointer-coarse:before:-inset-y-3 pointer-coarse:before:content-['']",
+        // Encendido = selección (azul de interacción, BRAND §5.3).
+        isOn ? "border-[var(--adm-select)] bg-[var(--adm-select)]" : "border-adm-input-border bg-adm-surface-2",
         !label && className,
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "inline-block size-3 rounded-full shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-[120ms]",
+          // La perilla llega con un rebote corto (--eco-ease-spring).
+          "inline-block size-3.5 rounded-full shadow-[0_1px_2px_rgb(16_22_47/0.25)] transition-[transform,background-color] duration-[420ms] ease-eco-spring",
           // Apagado: perilla gris (5:1 sobre el riel) para que el estado no dependa sólo del color del riel.
-          isOn ? "translate-x-[15px] bg-white" : "translate-x-[2px] bg-adm-fg-muted",
+          isOn ? "translate-x-[18px] bg-white" : "translate-x-[2px] bg-adm-fg-muted",
         )}
       />
       {name ? <input type="hidden" name={name} value={isOn ? "on" : ""} /> : null}

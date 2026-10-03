@@ -63,7 +63,7 @@ export function StoreForm({ initial }: { initial: StoreSettingsInput }) {
             </Field>
             <p className="text-[13px] text-adm-fg-muted">
               El logo y el favicon se cambian en{" "}
-              <Link href="/admin/apariencia" className="text-adm-accent underline-offset-2 hover:underline">
+              <Link href="/admin/apariencia" className="text-adm-link underline-offset-2 hover:underline">
                 Apariencia
               </Link>
               .

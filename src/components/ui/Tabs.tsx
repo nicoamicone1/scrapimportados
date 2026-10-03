@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 
 import { cn } from "@/lib/cn";
 
 /*
- * Tabs con subrayado de 2px (no pills), DESIGN.md §7.4.
+ * Tabs con subrayado tinta que SE DESLIZA entre pestañas (DESIGN.md §7.4,
+ * BRAND §9: 240 ms con `--eco-ease-out`). Antes de hidratar, cada pestaña
+ * activa pinta su propio subrayado (sin salto); al medir, lo reemplaza el
+ * indicador único que se mueve.
  * - `Tabs`: pestañas con estado local y paneles (patrón WAI-ARIA tabs).
  * - `TabsNav`: pestañas como links (filtros por URL, ej. ?estado=pendiente).
  */
@@ -21,15 +24,68 @@ export interface TabItem {
 
 const tabClass = (active: boolean) =>
   cn(
-    "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 px-0.5 text-sm whitespace-nowrap transition-colors duration-[120ms] pointer-coarse:h-11",
-    active
-      ? "border-adm-accent font-medium text-adm-fg"
-      : "border-transparent text-adm-fg-muted hover:border-adm-border hover:text-adm-fg",
+    "relative inline-flex h-9 items-center gap-1.5 px-0.5 text-sm whitespace-nowrap transition-colors duration-[140ms] ease-eco-out pointer-coarse:h-11",
+    // Subrayado propio sólo hasta que el indicador deslizante está listo.
+    "after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full group-data-[slide]/tabs:after:hidden",
+    active ? "font-medium text-adm-fg after:bg-adm-accent" : "text-adm-fg-muted hover:text-adm-fg after:bg-transparent hover:after:bg-adm-border",
   );
 
-function Count({ n }: { n?: number }) {
+const listClass = "group/tabs relative flex gap-5 overflow-x-auto border-b border-adm-border [scrollbar-width:none]";
+
+function Count({ n, active }: { n?: number; active?: boolean }) {
   if (n === undefined) return null;
-  return <span className="tnum rounded-adm-sm bg-adm-surface-2 px-1 text-xs text-adm-fg-muted">{n}</span>;
+  return (
+    <span
+      className={cn(
+        "tnum inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] font-medium transition-colors duration-[140ms]",
+        active ? "bg-adm-accent text-adm-accent-fg" : "bg-adm-surface-2 text-adm-fg-muted",
+      )}
+    >
+      {n}
+    </span>
+  );
+}
+
+/** Mide la pestaña activa (`[data-active]`) y devuelve el estilo del indicador. */
+function useSlidingIndicator(listRef: RefObject<HTMLElement | null>, activeKey: string | undefined) {
+  const [style, setStyle] = useState<CSSProperties | null>(null);
+  const measured = useRef(false);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const measure = () => {
+      const el = list.querySelector<HTMLElement>("[data-active]");
+      if (!el) {
+        setStyle(null);
+        return;
+      }
+      setStyle({
+        width: el.offsetWidth,
+        transform: `translateX(${el.offsetLeft}px)`,
+        // La primera vez se ubica sin animar; después, se desliza.
+        transitionProperty: measured.current ? "transform, width" : "none",
+      });
+      measured.current = true;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(list);
+    return () => ro.disconnect();
+  }, [listRef, activeKey]);
+
+  return style;
+}
+
+function Indicator({ style }: { style: CSSProperties | null }) {
+  if (!style) return null;
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-adm-accent duration-[240ms] ease-eco-out"
+      style={style}
+    />
+  );
 }
 
 export interface TabsProps {
@@ -68,10 +124,11 @@ export function Tabs({ items, value, defaultValue, onValueChange, className, pan
   };
 
   const active = items.find((i) => i.value === current);
+  const indicator = useSlidingIndicator(listRef, current);
 
   return (
     <div className={className}>
-      <div ref={listRef} role="tablist" onKeyDown={onKeyDown} className="flex gap-5 overflow-x-auto border-b border-adm-border">
+      <div ref={listRef} role="tablist" onKeyDown={onKeyDown} data-slide={indicator ? "" : undefined} className={listClass}>
         {items.map((item) => {
           const isActive = item.value === current;
           return (
@@ -80,6 +137,7 @@ export function Tabs({ items, value, defaultValue, onValueChange, className, pan
               type="button"
               role="tab"
               data-value={item.value}
+              data-active={isActive ? "" : undefined}
               id={`${baseId}-tab-${item.value}`}
               aria-selected={isActive}
               aria-controls={`${baseId}-panel-${item.value}`}
@@ -89,10 +147,11 @@ export function Tabs({ items, value, defaultValue, onValueChange, className, pan
               className={cn(tabClass(isActive), "disabled:opacity-50")}
             >
               {item.label}
-              <Count n={item.count} />
+              <Count n={item.count} active={isActive} />
             </button>
           );
         })}
+        <Indicator style={indicator} />
       </div>
       {active?.content !== undefined ? (
         <div
@@ -118,14 +177,24 @@ export interface TabsNavItem {
 
 /** Pestañas-link para filtros por URL. */
 export function TabsNav({ items, className, label = "Filtros" }: { items: TabsNavItem[]; className?: string; label?: string }) {
+  const listRef = useRef<HTMLElement>(null);
+  const indicator = useSlidingIndicator(listRef, items.find((i) => i.active)?.href);
   return (
-    <nav aria-label={label} className={cn("flex gap-5 overflow-x-auto border-b border-adm-border", className)}>
+    <nav ref={listRef} aria-label={label} data-slide={indicator ? "" : undefined} className={cn(listClass, className)}>
       {items.map((item) => (
-        <Link key={item.href} href={item.href} aria-current={item.active ? "page" : undefined} className={tabClass(item.active)} scroll={false}>
+        <Link
+          key={item.href}
+          href={item.href}
+          aria-current={item.active ? "page" : undefined}
+          data-active={item.active ? "" : undefined}
+          className={tabClass(item.active)}
+          scroll={false}
+        >
           {item.label}
-          <Count n={item.count} />
+          <Count n={item.count} active={item.active} />
         </Link>
       ))}
+      <Indicator style={indicator} />
     </nav>
   );
 }

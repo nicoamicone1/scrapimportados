@@ -39,16 +39,20 @@ export function Countdown({ block, ctx }: BlockProps<"countdown">) {
     </div>
   ) : null;
 
+  const banner = s.layout === "banner";
   return (
-    <div>
+    <div className="blk-countdown" data-layout={s.layout ?? "inline"}>
       <CountdownClock
+        variant={banner ? "banner" : "inline"}
         endsAt={s.endsAt}
         serverNow={now}
         endLabel={endLabel}
         expired={expired}
         before={
           <>
-            <h2 className="blk-title">{s.title}</h2>
+            <h2 className="blk-title blk-sectitle">
+              <span>{s.title}</span>
+            </h2>
             {s.text ? <p className="mt-2 max-w-[60ch] text-fg-muted">{s.text}</p> : null}
           </>
         }

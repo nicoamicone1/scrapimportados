@@ -384,7 +384,7 @@ export function BulkPriceWizard({ categories, brands, tags, initialScope }: Bulk
                   className={cn(
                     "inline-flex h-8 cursor-pointer items-center gap-2 rounded-adm border px-3 text-sm max-md:h-11 has-[:focus-visible]:shadow-[var(--adm-focus)]",
                     scopeDraft.kind === kind
-                      ? "border-adm-accent bg-adm-accent-soft font-medium text-adm-accent"
+                      ? "border-adm-link bg-adm-accent-soft font-medium text-adm-link"
                       : "border-adm-input-border bg-adm-surface hover:bg-adm-hover",
                   )}
                 >
@@ -497,7 +497,7 @@ export function BulkPriceWizard({ categories, brands, tags, initialScope }: Bulk
                 key={opt.value}
                 className={cn(
                   "flex cursor-pointer items-start gap-2.5 rounded-adm border px-3 py-2 has-[:focus-visible]:shadow-[var(--adm-focus)] max-md:min-h-11",
-                  draft.type === opt.value ? "border-adm-accent bg-adm-accent-soft/60" : "border-transparent hover:bg-adm-hover",
+                  draft.type === opt.value ? "border-adm-link bg-adm-accent-soft/60" : "border-transparent hover:bg-adm-hover",
                 )}
               >
                 <input
@@ -506,7 +506,7 @@ export function BulkPriceWizard({ categories, brands, tags, initialScope }: Bulk
                   value={opt.value}
                   checked={draft.type === opt.value}
                   onChange={() => patchDraft({ type: opt.value })}
-                  className="mt-1 size-4 shrink-0 accent-[var(--adm-accent)]"
+                  className="mt-1 size-4 shrink-0 accent-[var(--adm-select)]"
                 />
                 <span>
                   <span className="block text-sm font-medium">{opt.label}</span>

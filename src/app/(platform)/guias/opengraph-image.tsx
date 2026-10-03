@@ -1,6 +1,22 @@
+import { APP_NAME } from "@/lib/version";
+
+import { OG_SIZE, renderOgCard } from "../og-card";
+
 /*
- * La misma imagen para compartir del sitio. Hace falta repetirla acá porque
- * esta página define su propio `openGraph` (título, descripción, url) y Next
- * reemplaza el objeto entero, imagen incluida.
+ * Imagen para compartir del índice de guías (la página define su propio
+ * `openGraph`, así que la imagen va acá).
  */
-export { alt, contentType, default, size } from "../opengraph-image";
+
+export const alt = `Guías de ${APP_NAME} para vender online en Argentina`;
+export const size = OG_SIZE;
+export const contentType = "image/png";
+
+export default function Image() {
+  return renderOgCard({
+    tone: "tinta",
+    eyebrow: "Guías",
+    title: "Vender online en Argentina, sin vueltas.",
+    highlight: "sin vueltas.",
+    line: "Qué pide la ley, cómo ordenar las ventas y cómo mudarte sin perder Google.",
+  });
+}

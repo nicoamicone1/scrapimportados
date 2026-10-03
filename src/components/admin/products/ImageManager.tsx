@@ -146,7 +146,7 @@ export function ImageManager({ productId, images, onChange, ensureProductId, use
       }}
       onDrop={onDrop}
       onPaste={onPaste}
-      className={cn("rounded-adm", dragOver && "ring-2 ring-adm-accent ring-offset-2 ring-offset-adm-surface")}
+      className={cn("rounded-adm", dragOver && "ring-2 ring-adm-link ring-offset-2 ring-offset-adm-surface")}
     >
       <input
         ref={inputRef}
@@ -166,15 +166,23 @@ export function ImageManager({ productId, images, onChange, ensureProductId, use
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-start gap-1 rounded-adm border border-dashed border-adm-input-border px-4 py-6 text-left hover:bg-adm-hover"
+          className={cn(
+            "group relative flex w-full items-center gap-4 overflow-hidden rounded-adm-lg border-2 border-dashed px-4 py-5 text-left transition-colors duration-[140ms] ease-eco-out sm:px-5 sm:py-6",
+            dragOver ? "border-adm-link bg-eco-azul-soft" : "border-eco-durazno bg-adm-accent-2-soft/50 hover:border-eco-pomelo hover:bg-adm-accent-2-soft",
+          )}
         >
-          <span className="flex items-center gap-2 text-sm font-medium text-adm-fg">
-            <ImagePlus className="size-4 text-adm-fg-muted" aria-hidden />
-            Subir imágenes
+          <span
+            aria-hidden
+            className="eco-bubble inline-flex size-14 shrink-0 items-center justify-center bg-eco-durazno text-adm-fg transition-transform duration-[240ms] ease-eco-spring [--eco-bubble-r:20px] group-hover:-translate-y-0.5"
+          >
+            <ImagePlus className="size-6" strokeWidth={1.75} />
           </span>
-          <span className="text-[13px] text-adm-fg-muted">
-            Elegilas del celular o la compu, arrastralas acá o pegalas con Ctrl+V. Se optimizan solas (WebP, máx. 1600 px).
-            {!productId ? " Al subir la primera se guarda el producto como borrador." : ""}
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-adm-fg">Subí las fotos del producto</span>
+            <span className="mt-0.5 block text-[13px] text-adm-fg-muted">
+              Elegilas del celular o la compu, arrastralas acá o pegalas con Ctrl+V. Se optimizan solas (WebP, máx. 1600 px).
+              {!productId ? " Al subir la primera se guarda el producto como borrador." : ""}
+            </span>
           </span>
         </button>
       ) : (
@@ -203,7 +211,7 @@ export function ImageManager({ productId, images, onChange, ensureProductId, use
                 <button
                   type="button"
                   onClick={() => inputRef.current?.click()}
-                  className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-adm border border-dashed border-adm-input-border text-[13px] text-adm-fg-muted hover:bg-adm-hover hover:text-adm-fg"
+                  className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-adm border-2 border-dashed border-eco-durazno bg-adm-accent-2-soft/40 text-[13px] font-medium text-adm-fg-muted transition-colors duration-[140ms] ease-eco-out hover:border-eco-pomelo hover:text-adm-fg"
                 >
                   <ImagePlus className="size-5" aria-hidden />
                   Agregar

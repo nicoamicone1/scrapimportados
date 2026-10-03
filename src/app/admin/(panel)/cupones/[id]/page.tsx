@@ -105,7 +105,7 @@ export default async function CuponPage({ params }: { params: Promise<{ id: stri
                       </TD>
                       <TD numeric>
                         {r.orderId ? (
-                          <Link href={`/admin/pedidos/${r.orderId}`} className="text-adm-accent hover:underline">
+                          <Link href={`/admin/pedidos/${r.orderId}`} className="text-adm-link hover:underline">
                             {r.orderNumber != null ? `#${r.orderNumber}` : "Ver"}
                           </Link>
                         ) : (

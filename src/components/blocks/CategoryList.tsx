@@ -9,13 +9,19 @@ import type { BlockProps } from "./types";
 
 /*
  * Categorías (DESIGN.md §6.12):
- * - cards: tiles con foto (propia o del primer producto) + nombre + cantidad.
- * - chips: links de texto con borde y radio pill.
- * - circles: foto circular 96px + nombre (único círculo permitido, sólo con fotos).
+ * - cards:   tiles con la forma del tema; sin foto, plano de color con el nombre en grande.
+ * - chips:   pastillas con la cantidad; se rellenan al pasar.
+ * - circles: foto en círculo (en burbuja si el tema es `bubble`); sin foto, la inicial.
+ * - list:    lista tipográfica grande, como el índice de una revista; al pasar
+ *            el mouse asoma la foto de la categoría (sólo desktop).
  */
 
 function countLabel(n: number) {
   return n === 1 ? "1 producto" : `${n} productos`;
+}
+
+function initial(name: string) {
+  return (name.trim().match(/[\p{L}\p{N}]/u)?.[0] ?? "").toUpperCase();
 }
 
 function TileImage({ tile, className, sizes }: { tile: CategoryTile; className?: string; sizes?: string }) {
@@ -28,7 +34,7 @@ function TileImage({ tile, className, sizes }: { tile: CategoryTile; className?:
       sizes={sizes}
       loading="lazy"
       decoding="async"
-      className={cn("absolute inset-0 size-full", tile.imageFit === "cover" ? "object-cover" : "object-contain p-[8%]", className)}
+      className={cn("absolute inset-0 size-full", tile.imageFit === "cover" ? "object-cover" : "object-contain p-[10%]", className)}
     />
   );
 }
@@ -37,17 +43,18 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
   const s = block.settings;
   const tiles = ctx.data.categories[block.id] ?? [];
   if (!tiles.length) return null;
-  const hover = ctx.theme.cards.hover === "zoom";
+  const zoom = ctx.theme.cards.hover !== "none";
 
   if (s.style === "chips") {
     return (
       <>
         <SectionTitle title={s.title} />
-        <ul className="blk-row-scroll" style={{ gap: "8px" }}>
-          {tiles.map((t) => (
-            <li key={t.id} className="shrink-0">
+        <ul className="blk-row-scroll st-stagger" style={{ gap: "8px" }}>
+          {tiles.map((t, i) => (
+            <li key={t.id} className="shrink-0" style={{ "--i": i % 6 } as CSSProperties}>
               <StoreLink href={t.href} className="blk-chip">
-                {t.name}
+                <span>{t.name}</span>
+                {t.productCount ? <span className="blk-chip-n tnum">{t.productCount}</span> : null}
               </StoreLink>
             </li>
           ))}
@@ -60,14 +67,43 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
     return (
       <>
         <SectionTitle title={s.title} />
-        <ul className="blk-row-scroll" style={{ gap: "calc(var(--gap-grid) * 1.5)" }}>
-          {tiles.map((t) => (
-            <li key={t.id} className="w-[104px] shrink-0">
-              <StoreLink href={t.href} className="group flex flex-col items-center gap-2 text-center">
-                <span className="relative size-24 overflow-hidden rounded-full bg-surface ring-1 ring-border transition-[box-shadow] duration-150 group-hover:ring-fg">
-                  <TileImage tile={t} sizes="96px" />
+        <ul className="blk-row-scroll blk-dots st-stagger">
+          {tiles.map((t, i) => (
+            <li key={t.id} className="blk-dot-item shrink-0" style={{ "--i": i % 6 } as CSSProperties}>
+              <StoreLink href={t.href} className="blk-dot-link group">
+                <span className={cn("blk-dot", !t.imageUrl && "blk-dot-plain")} data-tone={i % 3}>
+                  {t.imageUrl ? <TileImage tile={t} sizes="112px" className="st-zoom" /> : <span aria-hidden>{initial(t.name)}</span>}
                 </span>
-                <span className="text-sm leading-tight group-hover:underline">{t.name}</span>
+                <span className="blk-dot-name">{t.name}</span>
+              </StoreLink>
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  }
+
+  if (s.style === "list") {
+    return (
+      <>
+        <SectionTitle title={s.title} />
+        <ul className="blk-catlist st-stagger" data-many={tiles.length > 6 ? "" : undefined}>
+          {tiles.map((t, i) => (
+            <li key={t.id} style={{ "--i": i % 6 } as CSSProperties}>
+              <StoreLink href={t.href} className="blk-catlist-row group">
+                <span className="blk-catlist-i tnum" aria-hidden>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="blk-catlist-name">{t.name}</span>
+                {t.productCount ? <span className="blk-catlist-n tnum">{countLabel(t.productCount)}</span> : null}
+                <span className="blk-catlist-arrow" aria-hidden>
+                  →
+                </span>
+                {t.imageUrl ? (
+                  <span className="blk-catlist-peek blk-shape-sm" aria-hidden>
+                    <TileImage tile={t} sizes="200px" />
+                  </span>
+                ) : null}
               </StoreLink>
             </li>
           ))}
@@ -80,20 +116,20 @@ export function CategoryList({ block, ctx }: BlockProps<"category_list">) {
   return (
     <>
       <SectionTitle title={s.title} />
-      <ul className="blk-cols" style={{ "--m-cols": 2, "--t-cols": Math.min(cols, 3), "--cols": cols } as CSSProperties}>
-        {tiles.map((t) => (
-          <li key={t.id} className="min-w-0">
-            <StoreLink href={t.href} className="group block">
-              <span className="relative block overflow-hidden rounded-lg bg-surface" style={{ aspectRatio: "1 / 1" }}>
-                <TileImage
-                  tile={t}
-                  sizes={`(min-width: 1024px) ${Math.round(100 / cols)}vw, 50vw`}
-                  className={hover ? "transition-transform duration-[400ms] ease-out group-hover:scale-[1.03]" : undefined}
-                />
+      <ul className="blk-cols st-stagger" style={{ "--m-cols": 2, "--t-cols": Math.min(cols, 3), "--cols": cols } as CSSProperties}>
+        {tiles.map((t, i) => (
+          <li key={t.id} className="min-w-0" style={{ "--i": i % 6 } as CSSProperties}>
+            <StoreLink href={t.href} className={cn("blk-cat group block", zoom && "st-hover-zoom")}>
+              <span className={cn("blk-cat-frame blk-shape", !t.imageUrl && "blk-cat-plain")} data-tone={i % 3}>
+                {t.imageUrl ? (
+                  <TileImage tile={t} sizes={`(min-width: 1024px) ${Math.round(100 / cols)}vw, 50vw`} className="st-zoom" />
+                ) : (
+                  <span aria-hidden className="blk-cat-word">
+                    {t.name}
+                  </span>
+                )}
               </span>
-              <span className="mt-[var(--card-pad)] block text-base leading-snug group-hover:underline" style={{ fontWeight: "var(--body-strong-weight)" }}>
-                {t.name}
-              </span>
+              <span className="blk-cat-name">{t.name}</span>
               {t.productCount ? <span className="mt-0.5 block text-sm text-fg-muted">{countLabel(t.productCount)}</span> : null}
             </StoreLink>
           </li>

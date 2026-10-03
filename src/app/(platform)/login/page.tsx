@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AccountAside, AccountShell } from "@/components/platform/AccountShell";
+import { AccountAside, AccountShell, PanelGlimpse } from "@/components/platform/AccountShell";
+import { TEXT_LINK } from "@/components/platform/brand";
 import { getSession } from "@/lib/auth";
 
 import { LoginForm } from "./LoginForms";
@@ -37,21 +38,26 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <AccountAside
           eyebrow="Tu panel"
           title="Una cuenta, todas tus tiendas."
-          points={["Entrás directo a la última tienda que usaste.", "Desde Mis tiendas cambiás de tienda o creás otra: hasta 3 por cuenta."]}
+          points={[
+            "Entrás directo a la última tienda que usaste.",
+            "Pedidos con número, estado y pago en una fila.",
+            "Hasta 3 tiendas propias por cuenta.",
+          ]}
+          visual={<PanelGlimpse />}
         />
       }
     >
       {linkError ? (
-        <p role="alert" className="mb-6 rounded-adm border border-adm-border bg-adm-surface-2 px-3 py-2 text-[13px]">
-          El link venció o ya se usó. Pedí uno nuevo desde «¿Olvidaste tu contraseña?».
+        <p role="alert" className="mb-8 rounded-[16px] rounded-bl-[4px] bg-eco-pomelo-soft px-4 py-3 text-[14px] leading-snug text-eco-ink">
+          El link venció o ya se usó. Pedí uno nuevo desde «¿La olvidaste?», junto a la contraseña.
         </p>
       ) : null}
       <LoginForm next={next} initialEmail={email} />
-      <p className="mt-8 text-[13px] text-adm-fg-muted">
+      <p className="mt-10 border-t border-eco-line pt-6 text-[14px] text-adm-fg-muted">
         ¿Todavía no tenés cuenta?{" "}
         <Link
           href={`/registro${next !== DEFAULT_NEXT ? `?next=${encodeURIComponent(next)}` : ""}`}
-          className="font-medium text-adm-accent underline underline-offset-4 hover:no-underline"
+          className={TEXT_LINK}
         >
           Creá tu tienda gratis
         </Link>

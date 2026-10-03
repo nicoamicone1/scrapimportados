@@ -16,7 +16,7 @@ export function MovementsFilters({ variantLabel }: { variantLabel: string | null
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       {variantLabel ? (
-        <span className="inline-flex h-8 pointer-coarse:h-11 max-w-full items-center gap-1 rounded-adm border border-adm-accent bg-adm-surface pr-1 pl-2.5 text-[13px]">
+        <span className="inline-flex h-8 pointer-coarse:h-11 max-w-full items-center gap-1 rounded-full border border-adm-link bg-adm-accent-soft pr-1 pl-3 text-[13px]">
           <span className="truncate">
             Variante: <span className="font-medium">{variantLabel}</span>
           </span>

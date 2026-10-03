@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { signOut } from "@/app/admin/actions";
-import { AccountAside, AccountShell } from "@/components/platform/AccountShell";
-import { DISPLAY, FormAlert } from "@/components/platform/brand";
+import { ACCOUNT_TITLE, AccountAside, AccountShell, PanelGlimpse, SITE_SUBMIT } from "@/components/platform/AccountShell";
+import { FormAlert, TEXT_LINK } from "@/components/platform/brand";
+import { PlanCtaLink } from "@/components/platform/PlanCards";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import { cn } from "@/lib/cn";
 import { getSession } from "@/lib/auth";
 import { createPublicClient } from "@/lib/supabase/server";
 
@@ -14,7 +14,7 @@ import { acceptInvite } from "./actions";
 export const metadata: Metadata = { title: "Invitación" };
 export const dynamic = "force-dynamic";
 
-const TITLE = cn(DISPLAY, "text-[28px] leading-tight font-semibold tracking-[-0.02em]");
+const TITLE = ACCOUNT_TITLE;
 
 interface Invite {
   store_name: string;
@@ -48,26 +48,27 @@ export default async function InvitacionPage({ params, searchParams }: PageProps
           eyebrow="Invitación"
           title="Te sumaron a un equipo en Ecommy."
           points={["Ves y trabajás la tienda según el rol que te dieron.", "Con una sola cuenta entrás a todas las tiendas donde te sumen."]}
+          visual={<PanelGlimpse />}
         />
       }
     >
       {!invite ? (
         <div>
           <h1 className={TITLE}>La invitación no existe</h1>
-          <p className="mt-2 text-sm text-adm-fg-muted">Puede que ya la hayas usado o que la hayan anulado. Pedile a quien te invitó un link nuevo.</p>
-          <Link href="/login" className="mt-6 inline-block text-sm font-medium text-adm-accent hover:underline">
+          <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">Puede que ya la hayas usado o que la hayan anulado. Pedile a quien te invitó un link nuevo.</p>
+          <Link href="/login" className={`${TEXT_LINK} mt-6 inline-flex min-h-11 items-center`}>
             Ir a ingresar
           </Link>
         </div>
       ) : invite.expired ? (
         <div>
           <h1 className={TITLE}>La invitación venció</h1>
-          <p className="mt-2 text-sm text-adm-fg-muted">Las invitaciones duran 7 días. Pedile a quien te invitó a {invite.store_name} que te mande una nueva.</p>
+          <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">Las invitaciones duran 7 días. Pedile a quien te invitó a {invite.store_name} que te mande una nueva.</p>
         </div>
       ) : (
         <div>
           <h1 className={TITLE}>Sumate a {invite.store_name}</h1>
-          <p className="mt-2 text-sm text-adm-fg-muted">
+          <p className="mt-3 text-[15px] leading-relaxed text-adm-fg-muted">
             Te invitaron como <span className="font-medium text-adm-fg">{roleLabel}</span> con el email{" "}
             <span className="font-medium text-adm-fg">{invite.email}</span>.
           </p>
@@ -75,16 +76,13 @@ export default async function InvitacionPage({ params, searchParams }: PageProps
             <FormAlert className="mt-4">{error}</FormAlert>
           ) : null}
           {!user ? (
-            <div className="mt-6 flex flex-col gap-3">
-              <Link
-                href={`/registro?email=${encodeURIComponent(invite.email)}&next=${encodeURIComponent(here)}`}
-                className="inline-flex h-11 items-center justify-center rounded-adm bg-adm-accent px-4 text-[15px] font-medium text-adm-accent-fg hover:bg-adm-accent-hover"
-              >
+            <div className="mt-8 flex flex-col gap-3">
+              <PlanCtaLink href={`/registro?email=${encodeURIComponent(invite.email)}&next=${encodeURIComponent(here)}`} primary>
                 Crear mi cuenta
-              </Link>
+              </PlanCtaLink>
               <Link
                 href={`/login?email=${encodeURIComponent(invite.email)}&next=${encodeURIComponent(here)}`}
-                className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline"
+                className={`${TEXT_LINK} inline-flex min-h-11 items-center justify-center text-[15px]`}
               >
                 Ya tengo cuenta, ingresar
               </Link>
@@ -92,7 +90,7 @@ export default async function InvitacionPage({ params, searchParams }: PageProps
           ) : user.email?.toLowerCase() === invite.email ? (
             <form action={acceptInvite} className="mt-6">
               <input type="hidden" name="token" value={token} />
-              <SubmitButton size="lg" className="h-11 w-full text-[15px]" pendingText="Uniéndote…">
+              <SubmitButton size="lg" className={SITE_SUBMIT} pendingText="Uniéndote…">
                 Aceptar y entrar al panel
               </SubmitButton>
             </form>
@@ -102,7 +100,7 @@ export default async function InvitacionPage({ params, searchParams }: PageProps
                 Ingresaste como <span className="font-medium text-adm-fg">{user.email}</span>. La invitación es para otro email.
               </p>
               <form action={signOut} className="mt-4">
-                <SubmitButton variant="secondary" pendingText="Saliendo…">
+                <SubmitButton variant="secondary" size="lg" className="h-11 rounded-full px-5" pendingText="Saliendo…">
                   Salir y usar {invite.email}
                 </SubmitButton>
               </form>

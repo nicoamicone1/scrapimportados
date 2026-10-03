@@ -3,8 +3,8 @@ import { cn } from "@/lib/cn";
 
 /*
  * Ilustraciones de las apps (catálogo /admin/apps y estado vacío de cada app).
- * Línea plana sobre el verde-tinta del sidebar, sin gradientes ni brillos
- * (DESIGN.md §1.2): lo único en ámbar es lo que la app "produce".
+ * Línea plana sobre la tinta del sidebar, sin gradientes ni brillos
+ * (DESIGN.md §1.2): lo único en pomelo es lo que la app "produce".
  */
 
 /** Ancho de cada capa de la pieza, de abajo hacia arriba (un jarrón que se abre). */

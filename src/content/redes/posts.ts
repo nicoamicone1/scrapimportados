@@ -103,7 +103,7 @@ export const POSTS: RedPiece[] = [
     days: [3],
     hook: "Vendiste $ 100.000. ¿Cuánto te queda?",
     caption:
-      "No cobramos comisión por venta: tu cliente te transfiere a tu cuenta o lo acuerdan por WhatsApp. Lo que pagás es el plan, fijo por mes, y hay uno gratis hasta 50 productos.",
+      "No cobramos comisión por venta: tu cliente te transfiere, lo acuerdan por WhatsApp o paga con tarjeta en tu propio Mercado Pago. Lo que pagás es el plan, fijo por mes, y hay uno gratis hasta 50 productos.",
     cta: "Planes en ecommy.app/planes.",
     hashtags: HASHTAGS,
     check: "No nombrar comisiones de otras plataformas sin verificarlas (MARKETING.md §4).",
@@ -113,8 +113,8 @@ export const POSTS: RedPiece[] = [
       {
         template: "gancho",
         kicker: "¿Por qué?",
-        title: "No hay pasarela.",
-        body: "Tu cliente te transfiere a tu cuenta o lo acuerdan por WhatsApp.",
+        title: "La plata va directo a vos.",
+        body: "Por transferencia, por WhatsApp o con tarjeta en tu propio Mercado Pago.",
       },
       {
         template: "gancho",
@@ -125,8 +125,8 @@ export const POSTS: RedPiece[] = [
       {
         template: "gancho",
         tone: "tinta",
-        title: "¿Necesitás cobrar con tarjeta en cuotas dentro de la tienda?",
-        accent: "Hoy no lo tenemos. Te lo decimos antes.",
+        title: "¿Querés cobrar con tarjeta y en cuotas?",
+        accent: "Conectás tu Mercado Pago.",
         body: "Planes en ecommy.app/planes.",
       },
     ],
@@ -323,7 +323,7 @@ export const POSTS: RedPiece[] = [
       { template: "gancho", title: "En Ecommy elegís cuántas horas", accent: "reservás el stock." },
       { template: "gancho", title: "Si no llega el pago en ese plazo,", accent: "el pedido se cancela solo." },
       { template: "gancho", title: "El stock vuelve a estar disponible." },
-      { template: "gancho", tone: "tinta", title: "Vos no tenés que acordarte.", body: "Probalo 14 días." },
+      { template: "gancho", tone: "pomelo", title: "Vos no tenés que acordarte.", body: "Probalo 14 días." },
     ],
   },
   {
@@ -411,7 +411,7 @@ export const POSTS: RedPiece[] = [
         before: {
           label: "No te cambies si",
           items: [
-            "Vendés mucho con tarjeta en cuotas dentro de la tienda",
+            "Necesitás facturar desde la tienda",
             "Necesitás etiquetas de correo automáticas",
             "Sincronizás con Mercado Libre",
           ],

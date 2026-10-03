@@ -32,7 +32,7 @@ export default async function Taller3dLayout({ children }: { children: ReactNode
     return (
       <>
         <PageHeader title={APP.name} section="store" icon={<Printer />} />
-        <div className="overflow-hidden rounded-adm border border-adm-border bg-adm-surface shadow-adm-card md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <div className="flex items-center justify-center bg-adm-sidebar-bg px-8 py-8">
             <AppArt code="print3d" className="max-w-[260px] opacity-70" />
           </div>

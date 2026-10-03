@@ -66,3 +66,33 @@ export function landingPlanLines(plans: readonly PlanLike[]) {
     pages: `Inicio en todos los planes · landings ${at("content.landings")}`,
   };
 }
+
+/**
+ * Cada función de plan contada como lo que el comercio gana (tarjetas de
+ * planes). La etiqueta técnica (`FEATURES[k].label`) queda para la tabla
+ * comparativa; acá, una frase corta y cierta hoy.
+ */
+const FEATURE_BENEFITS: Record<FeatureKey, string> = {
+  "catalog.variants": "Talles y colores, cada uno con su stock",
+  "catalog.import_csv": "Cargás o actualizás el catálogo con una planilla",
+  "catalog.import_web": "Traés el catálogo de tu web actual",
+  "pricing.bulk": "Subís los precios de una categoría entera de una vez",
+  "pricing.tiers": "Precio mayorista según la cantidad",
+  "marketing.promotions": "Promos con fecha de inicio y de fin",
+  "marketing.coupons": "Cupones de descuento",
+  "marketing.abandoned": "Mail automático a quien dejó el carrito",
+  "content.landings": "Landings para campañas y páginas extra",
+  "theme.custom_css": "CSS propio para ajustar el diseño al detalle",
+  "theme.all_presets": "Todos los estilos de tienda",
+  "shipping.polygons": "Zonas de envío dibujadas en el mapa",
+  "orders.print": "Remitos listos para imprimir",
+  "orders.export": "Pedidos y catálogo a CSV cuando quieras",
+  "analytics.integrations": "Google Analytics, Tag Manager y Meta Pixel",
+  "domain.custom": "Tu dominio propio",
+  "team.members": "Tu equipo, cada uno con su usuario",
+  "audit.log": "Registro de quién cambió qué",
+};
+
+export function featureBenefit(key: FeatureKey): string {
+  return FEATURE_BENEFITS[key];
+}

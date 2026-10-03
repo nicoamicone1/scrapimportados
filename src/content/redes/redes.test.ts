@@ -1,8 +1,8 @@
 import { ImageResponse } from "next/og";
 import { describe, expect, it } from "vitest";
 
-import { SOCIAL_TONES, loadSocialFonts, renderRedSlide } from "@/app/_brand/social-templates";
-import { BRAND_AMBER, BRAND_CREAM, BRAND_INK, BRAND_MUTED } from "@/app/_brand/glyph";
+import { SOCIAL_TONES, loadBrandFonts, renderRedSlide } from "@/app/_brand/social-templates";
+import { BRAND_INK, BRAND_MIST, BRAND_MUTED, BRAND_NIEBLA, BRAND_PAPER, BRAND_POMELO } from "@/app/_brand/glyph";
 
 import {
   FORMAT_SIZE,
@@ -194,19 +194,25 @@ function contrast(a: string, b: string): number {
 }
 
 describe("plantillas", () => {
-  it("texto, acento y texto secundario pasan AA (4.5:1) sobre crema y sobre verde-tinta", () => {
-    for (const tone of Object.values(SOCIAL_TONES)) {
-      expect(contrast(tone.fg, tone.bg)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(tone.accent, tone.bg)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(tone.muted, tone.bg)).toBeGreaterThanOrEqual(4.5);
+  it("texto, acento y texto secundario pasan AA (4.5:1) sobre niebla, tinta y pomelo", () => {
+    for (const [name, tone] of Object.entries(SOCIAL_TONES)) {
+      expect(contrast(tone.fg, tone.bg), name).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(tone.accent, tone.bg), name).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(tone.muted, tone.bg), name).toBeGreaterThanOrEqual(4.5);
     }
-    expect(contrast(BRAND_INK, BRAND_AMBER)).toBeGreaterThanOrEqual(4.5); // CTA y banda "Completar"
-    expect(contrast(BRAND_MUTED, BRAND_CREAM)).toBeGreaterThanOrEqual(4.5); // leyenda de la captura
+    expect(contrast(BRAND_POMELO, BRAND_INK)).toBeGreaterThanOrEqual(4.5); // valor del dato y dominio sobre tinta
+    expect(contrast(BRAND_MIST, BRAND_INK)).toBeGreaterThanOrEqual(4.5); // entradilla del dato
+    expect(contrast(BRAND_INK, BRAND_POMELO)).toBeGreaterThanOrEqual(4.5); // CTA en pastilla, número de la lista y banda "Completar"
+    expect(contrast(BRAND_PAPER, BRAND_INK)).toBeGreaterThanOrEqual(4.5); // banda "Completar" sobre una placa pomelo
+    expect(contrast(BRAND_MUTED, BRAND_NIEBLA)).toBeGreaterThanOrEqual(4.5); // leyenda de la captura
   });
 
   it("Satori dibuja todas las placas en todos sus formatos (PNG del tamaño pedido)", { timeout: 60_000 }, async () => {
-    const fonts = await loadSocialFonts();
-    expect(fonts?.length).toBe(1);
+    // En vitest `loadBrandFonts` no sale a la red: devuelve Geist Regular.
+    const { fonts: loaded, display, text } = await loadBrandFonts();
+    expect(loaded.length).toBe(1);
+    expect([display, text]).toEqual(["Geist", "Geist"]);
+    const fonts = loaded.length ? loaded : undefined;
     for (const p of RED_PIECES) {
       for (const format of p.formats) {
         for (let i = 0; i < p.slides.length; i++) {
@@ -216,6 +222,7 @@ describe("plantillas", () => {
             index: i + 1,
             total: p.kind === "carrusel" ? p.slides.length : 1,
             pending: pendingTokens(slideTexts(slide)),
+            fonts: { display, text },
           });
           const png = new Uint8Array(await new ImageResponse(el, { ...FORMAT_SIZE[format], fonts }).arrayBuffer());
           expect([...png.slice(1, 4)].map((c) => String.fromCharCode(c)).join(""), `${p.id} ${i + 1} ${format}`).toBe("PNG");

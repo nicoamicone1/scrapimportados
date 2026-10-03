@@ -58,7 +58,7 @@ export function MercadoPagoDetail({ detail, preferenceId, timeZone }: { detail: 
                 href={`https://www.mercadopago.com.ar/activities/detail/${encodeURIComponent(paymentId)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[13px] text-adm-accent underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-1 text-[13px] text-adm-link underline-offset-2 hover:underline"
               >
                 Ver en Mercado Pago <ExternalLink className="size-3" aria-hidden />
               </a>

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
-import { loadSocialFonts, renderRedSlide } from "@/app/_brand/social-templates";
+import { loadBrandFonts, renderRedSlide } from "@/app/_brand/social-templates";
 import {
   FORMAT_SIZE,
   fillSlide,
@@ -15,7 +15,7 @@ import {
 import { getProfile, getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-/** Node: la fuente se lee con `fs` (ver `loadSocialFonts`). */
+/** Node: las fuentes se bajan con `fetch` y la de respaldo se lee con `fs` (ver `loadBrandFonts`). */
 export const runtime = "nodejs";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -50,16 +50,18 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/platform/red
 
   const values = fillValuesFrom(piece, (key) => params.get(key));
   const slide = fillSlide(piece, piece.slides[index - 1], values);
+  const brandFonts = await loadBrandFonts();
   const element = renderRedSlide(slide, {
     format,
     index,
     total: piece.kind === "carrusel" ? piece.slides.length : 1,
     pending: pendingTokens(slideTexts(slide)),
+    fonts: { display: brandFonts.display, text: brandFonts.text },
   });
 
   const headers: Record<string, string> = { ...NO_STORE };
   if (params.get("download") === "1") {
     headers["Content-Disposition"] = `attachment; filename="${redFileName(piece, index, format)}"`;
   }
-  return new ImageResponse(element, { ...FORMAT_SIZE[format], fonts: await loadSocialFonts(), headers });
+  return new ImageResponse(element, { ...FORMAT_SIZE[format], fonts: brandFonts.fonts.length ? brandFonts.fonts : undefined, headers });
 }

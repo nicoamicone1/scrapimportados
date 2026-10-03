@@ -65,7 +65,7 @@ export default async function UsuariosPage() {
 
       <UsersTable users={users} currentUserId={ctx.user.id} canManage={canManage} />
 
-      <details className="group mt-6 max-w-3xl rounded-adm border border-adm-border bg-adm-surface shadow-adm-card">
+      <details className="group mt-6 max-w-3xl rounded-adm-lg border border-adm-border bg-adm-surface">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
           <span>
             <span className="block text-[15px] font-semibold text-adm-fg">Qué puede hacer cada rol</span>

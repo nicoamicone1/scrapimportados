@@ -11,7 +11,7 @@ import { track } from "@/lib/store/analytics";
 import type { ProductOption, StoreVariant } from "@/lib/store/products";
 
 import { PriceTag } from "./PriceTag";
-import { ProductGallery, type GalleryImage } from "./ProductGallery";
+import { ProductGallery, type GalleryImage, type GalleryLayout } from "./ProductGallery";
 import { QtyStepper } from "./QtyStepper";
 import { StockAlertForm } from "./StockAlertForm";
 
@@ -48,6 +48,8 @@ export interface ProductViewProps {
   madeToOrder?: Record<string, string> | null;
   /** Entrega, descripción, ficha técnica (render del server). */
   children?: ReactNode;
+  /** `theme.style.gallery`: cómo se arma la ficha en desktop (ver ProductGallery). */
+  gallery?: GalleryLayout;
 }
 
 /** Artículo para "Elegí un talle" / "Elegí una opción". */
@@ -85,6 +87,7 @@ export function ProductView({
   contain,
   madeToOrder,
   children,
+  gallery = "thumbs",
 }: ProductViewProps) {
   const { add, open } = useCart();
   const { options, variants } = product;
@@ -204,125 +207,149 @@ export function ProductView({
   const sku = variant?.sku ?? (variants.length === 1 ? variants[0].sku : null);
   const readyLabel = madeToOrder ? ((variant ? madeToOrder[variant.id] : undefined) ?? madeToOrder["*"] ?? null) : null;
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-12 lg:gap-12">
-      <div className="lg:col-span-7">
-        <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)]">
-          <ProductGallery images={product.images} name={product.name} activeId={variant?.imageId ?? null} contain={contain} />
+  const sticky = "lg:sticky lg:top-[calc(var(--header-sticky-h,var(--header-h))+24px)]";
+  const galleryEl = (
+    <ProductGallery images={product.images} name={product.name} activeId={variant?.imageId ?? null} contain={contain} layout={gallery} />
+  );
+  const core = (
+    <>
+      {product.brand || sku ? (
+        <p className="flex flex-wrap gap-x-3 text-xs text-fg-muted">
+          {product.brand ? <span className="tracking-[0.06em] uppercase">{product.brand}</span> : null}
+          {sku ? <span className="font-mono">SKU {sku}</span> : null}
+        </p>
+      ) : null}
+      <h1 className="pdp-title h-page mt-1.5">{product.name}</h1>
+
+      <PriceTag
+        className="mt-4"
+        size="lg"
+        price={shown.price}
+        compareAt={shown.compareAt}
+        from={shown.from}
+        transferPercent={soldOut ? 0 : transferPercent}
+        transferLabel={transferLabel}
+        freeInstallments={soldOut ? 0 : freeInstallments}
+        net={net && !soldOut ? net : null}
+        muted={soldOut}
+        offer={shown.offer}
+        extra={
+          paymentMethods.length > 1 ? (
+            <button type="button" className="link text-fg-muted" aria-expanded={showMethods} onClick={() => setShowMethods((s) => !s)}>
+              Ver medios de pago
+            </button>
+          ) : null
+        }
+      />
+      {showMethods ? (
+        <ul className="mt-3 space-y-1.5 rounded-md border border-border p-3 text-sm">
+          {paymentMethods.map((m) => (
+            <li key={m.name} className="tnum flex justify-between gap-4">
+              <span>
+                {m.type === "whatsapp" ? "Acordás el pago con el vendedor por WhatsApp" : m.name}
+                {m.discountPercent > 0 ? <span className="text-fg-muted"> · {m.discountPercent}&nbsp;% off</span> : null}
+              </span>
+              <span className="font-semibold">{formatMoney(Math.round(priceWithDiscount(shown.price, m.discountPercent)))}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {readyLabel ? (
+        <p className="mt-3 text-sm">
+          <span className="font-medium">Se imprime a pedido</span>
+          <span className="text-fg-muted"> · listo aprox. el {readyLabel}</span>
+        </p>
+      ) : null}
+      {shown.tiers.length && !soldOut ? (
+        <TierTable rows={shown.tiers} qty={variant ? qty : 0} sharedAcrossVariants={variants.length > 1} />
+      ) : null}
+
+      <div className="mt-6 space-y-5 border-t border-border pt-6">
+        {options.map((option) => (
+          <fieldset key={option.name}>
+            <legend className="mb-2 text-sm font-medium">
+              {option.name}
+              {selected[option.name] ? <span className="font-normal text-fg-muted">: {selected[option.name]}</span> : null}
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {option.values.filter((v) => valueExists(option.name, v)).map((value) => {
+                const active = selected[option.name] === value;
+                const available = valueAvailable(option.name, value);
+                const anyStock = variants.some((v) => v.available && v.optionValues[option.name] === value);
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={active}
+                    data-unavailable={available ? undefined : "1"}
+                    onClick={() => choose(option.name, value)}
+                    disabled={!anyStock && !soldOut}
+                    className="chip"
+                    aria-label={available ? `${option.name} ${value}` : `${option.name} ${value}, sin stock`}
+                  >
+                    {value}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        ))}
+
+        {variant && !variant.available ? (
+          <p className="text-sm text-danger">
+            {options.length ? `${variant.title} sin stock` : "Sin stock"}
+          </p>
+        ) : lowStock && variant ? (
+          <p className="text-sm text-fg-muted">{variant.stock === 1 ? "Queda 1" : `Quedan ${variant.stock}`}</p>
+        ) : null}
+
+        <div className="flex gap-3">
+          {canBuy ? <QtyStepper value={qty} max={maxQty} size="md" label={product.name} onChange={(q) => setQty(Math.max(1, q))} /> : null}
+          <button type="button" onClick={onAdd} disabled={!canBuy} className="pdp-add btn btn-primary flex-1" data-added={added ? "1" : undefined} aria-live="polite">
+            {added ? <Check className="st-pop size-4" aria-hidden /> : null}
+            {soldOut ? "Sin stock" : missing ? choosePrompt(missing.name) : !canBuy ? "Sin stock" : added ? "Agregado" : "Agregar al carrito"}
+          </button>
+        </div>
+        {variant && !variant.available ? (
+          <StockAlertForm key={variant.id} productId={product.id} variantId={variant.id} />
+        ) : soldOut ? (
+          <StockAlertForm key="product" productId={product.id} variantId={null} />
+        ) : null}
+        {(soldOut || (variant && !variant.available)) && whatsappHref ? (
+          <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-block">
+            Consultar por WhatsApp
+          </a>
+        ) : null}
+      </div>
+    </>
+  );
+
+  // Carrusel a sangre: la galería ocupa todo el ancho y abajo van compra (5) y detalle (7).
+  if (gallery === "carousel") {
+    return (
+      <div className="pdp" data-gallery={gallery}>
+        {galleryEl}
+        <div className="mt-6 grid gap-8 lg:mt-10 lg:grid-cols-12 lg:gap-14">
+          <div className="lg:col-span-5">
+            <div className={sticky}>{core}</div>
+          </div>
+          <div className="pdp-more min-w-0 lg:col-span-7">{children}</div>
         </div>
       </div>
+    );
+  }
 
-      <div className="lg:col-span-5">
-        <div className="lg:sticky lg:top-[calc(var(--header-h)+24px)]">
-          {product.brand || sku ? (
-            <p className="flex flex-wrap gap-x-3 text-xs text-fg-muted">
-              {product.brand ? <span className="tracking-[0.06em] uppercase">{product.brand}</span> : null}
-              {sku ? <span className="font-mono">SKU {sku}</span> : null}
-            </p>
-          ) : null}
-          <h1 className="h-page mt-1.5">{product.name}</h1>
+  // thumbs 7/5 (la galería acompaña sticky) · grid 8/4 · stack 7/5 (las fotos se scrollean, el buy box queda).
+  const cols = gallery === "grid" ? ["lg:col-span-8", "lg:col-span-4"] : ["lg:col-span-7", "lg:col-span-5"];
+  return (
+    <div className="pdp grid gap-6 lg:grid-cols-12 lg:gap-12" data-gallery={gallery}>
+      <div className={cols[0]}>
+        <div className={gallery === "thumbs" ? sticky : undefined}>{galleryEl}</div>
+      </div>
 
-          <PriceTag
-            className="mt-4"
-            size="lg"
-            price={shown.price}
-            compareAt={shown.compareAt}
-            from={shown.from}
-            transferPercent={soldOut ? 0 : transferPercent}
-            transferLabel={transferLabel}
-            freeInstallments={soldOut ? 0 : freeInstallments}
-            net={net && !soldOut ? net : null}
-            muted={soldOut}
-            offer={shown.offer}
-            extra={
-              paymentMethods.length > 1 ? (
-                <button type="button" className="link text-fg-muted" aria-expanded={showMethods} onClick={() => setShowMethods((s) => !s)}>
-                  Ver medios de pago
-                </button>
-              ) : null
-            }
-          />
-          {showMethods ? (
-            <ul className="mt-3 space-y-1.5 rounded-md border border-border p-3 text-sm">
-              {paymentMethods.map((m) => (
-                <li key={m.name} className="tnum flex justify-between gap-4">
-                  <span>
-                    {m.type === "whatsapp" ? "Acordás el pago con el vendedor por WhatsApp" : m.name}
-                    {m.discountPercent > 0 ? <span className="text-fg-muted"> · {m.discountPercent}&nbsp;% off</span> : null}
-                  </span>
-                  <span className="font-semibold">{formatMoney(Math.round(priceWithDiscount(shown.price, m.discountPercent)))}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {readyLabel ? (
-            <p className="mt-3 text-sm">
-              <span className="font-medium">Se imprime a pedido</span>
-              <span className="text-fg-muted"> · listo aprox. el {readyLabel}</span>
-            </p>
-          ) : null}
-          {shown.tiers.length && !soldOut ? (
-            <TierTable rows={shown.tiers} qty={variant ? qty : 0} sharedAcrossVariants={variants.length > 1} />
-          ) : null}
-
-          <div className="mt-6 space-y-5 border-t border-border pt-6">
-            {options.map((option) => (
-              <fieldset key={option.name}>
-                <legend className="mb-2 text-sm font-medium">
-                  {option.name}
-                  {selected[option.name] ? <span className="font-normal text-fg-muted">: {selected[option.name]}</span> : null}
-                </legend>
-                <div className="flex flex-wrap gap-2">
-                  {option.values.filter((v) => valueExists(option.name, v)).map((value) => {
-                    const active = selected[option.name] === value;
-                    const available = valueAvailable(option.name, value);
-                    const anyStock = variants.some((v) => v.available && v.optionValues[option.name] === value);
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        aria-pressed={active}
-                        data-unavailable={available ? undefined : "1"}
-                        onClick={() => choose(option.name, value)}
-                        disabled={!anyStock && !soldOut}
-                        className="chip"
-                        aria-label={available ? `${option.name} ${value}` : `${option.name} ${value}, sin stock`}
-                      >
-                        {value}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            ))}
-
-            {variant && !variant.available ? (
-              <p className="text-sm text-danger">
-                {options.length ? `${variant.title} sin stock` : "Sin stock"}
-              </p>
-            ) : lowStock && variant ? (
-              <p className="text-sm text-fg-muted">{variant.stock === 1 ? "Queda 1" : `Quedan ${variant.stock}`}</p>
-            ) : null}
-
-            <div className="flex gap-3">
-              {canBuy ? <QtyStepper value={qty} max={maxQty} size="md" label={product.name} onChange={(q) => setQty(Math.max(1, q))} /> : null}
-              <button type="button" onClick={onAdd} disabled={!canBuy} className="btn btn-primary flex-1" aria-live="polite">
-                {added ? <Check className="size-4" aria-hidden /> : null}
-                {soldOut ? "Sin stock" : missing ? choosePrompt(missing.name) : !canBuy ? "Sin stock" : added ? "Agregado" : "Agregar al carrito"}
-              </button>
-            </div>
-            {variant && !variant.available ? (
-              <StockAlertForm key={variant.id} productId={product.id} variantId={variant.id} />
-            ) : soldOut ? (
-              <StockAlertForm key="product" productId={product.id} variantId={null} />
-            ) : null}
-            {(soldOut || (variant && !variant.available)) && whatsappHref ? (
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-block">
-                Consultar por WhatsApp
-              </a>
-            ) : null}
-          </div>
-
+      <div className={cols[1]}>
+        <div className={sticky}>
+          {core}
           {children}
         </div>
       </div>

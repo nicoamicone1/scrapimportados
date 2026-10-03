@@ -2,20 +2,21 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
-/** Panel del admin: superficie blanca, borde `--adm-border`, radio 6px, sombra de superficie. */
+/** Clases del panel (para superficies que no son `<section>`): blanco, borde `--adm-border`, radio 16 px. */
+export const PANEL = "rounded-adm-lg border border-adm-border bg-adm-surface";
+
+/**
+ * Panel del admin (BRAND §10): superficie blanca, radio 16 px y borde
+ * decorativo; sin sombra (borde o sombra, no las dos).
+ */
 export function Card({ className, ...props }: ComponentPropsWithoutRef<"section">) {
-  return (
-    <section
-      className={cn("rounded-adm border border-adm-border bg-adm-surface shadow-adm-card", className)}
-      {...props}
-    />
-  );
+  return <section className={cn(PANEL, className)} {...props} />;
 }
 
 /** Etiqueta chica sobre un título ("Pagos", "Paso 2 de 3"). */
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cn("text-[11px] font-medium tracking-[0.06em] text-adm-fg-muted uppercase", className)}>{children}</p>
+    <p className={cn("text-[11px] font-semibold tracking-[0.08em] text-adm-fg-muted uppercase", className)}>{children}</p>
   );
 }
 
@@ -36,7 +37,7 @@ export function CardHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className={cn("flex items-start justify-between gap-4 border-b border-adm-border px-4 py-3", className)}>
+    <header className={cn("flex items-start justify-between gap-4 border-b border-adm-border px-4 py-3.5 sm:px-5", className)}>
       <div className="min-w-0">
         {eyebrow ? <Eyebrow className="mb-0.5">{eyebrow}</Eyebrow> : null}
         {title ? <h2 className="text-[15px] leading-6 font-semibold text-adm-fg">{title}</h2> : null}
@@ -49,13 +50,13 @@ export function CardHeader({
 }
 
 export function CardBody({ className, ...props }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cn("p-4", className)} {...props} />;
+  return <div className={cn("p-4 sm:p-5", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: ComponentPropsWithoutRef<"footer">) {
   return (
     <footer
-      className={cn("flex items-center justify-end gap-2 rounded-b-adm border-t border-adm-border bg-adm-table-head px-4 py-3", className)}
+      className={cn("flex items-center justify-end gap-2 rounded-b-adm-lg border-t border-adm-border bg-adm-table-head px-4 py-3 sm:px-5", className)}
       {...props}
     />
   );

@@ -9,6 +9,8 @@ import { MaintenanceGate } from "@/components/store/MaintenanceGate";
 import { StoreBaseProvider } from "@/components/store/StoreBase";
 import { WhatsAppFab } from "@/components/store/WhatsAppFab";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
+import { heroIsFullBleed } from "@/lib/blocks/hero";
+import { previewHomeBlocks } from "@/lib/blocks/preview";
 import { getProfile, listMyStores } from "@/lib/auth";
 import ConfigureMoney from "@/components/store/ConfigureMoney";
 import { CartProvider } from "@/lib/cart";
@@ -92,8 +94,18 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
   const fontsHref = themeFontsHref(theme);
   const dark = isDarkTheme(theme);
 
-  const firstBlock = home?.blocks.find((b) => !b.style.hidden);
-  const homeStartsWithHero = firstBlock?.type === "hero" && Boolean(firstBlock.settings.imageUrl);
+  // El header transparente sólo va sobre una portada con foto a sangre (no en
+  // split/framed/poster/stack). Con `?estilo=` en la demo manda la portada de fábrica.
+  const previewBlocks = await previewHomeBlocks({
+    theme,
+    storeName: settings.name,
+    transferDiscount: display.card.transferPercent,
+    whatsapp: Boolean(display.card.whatsappPhone),
+    saved: home?.blocks,
+  });
+  const firstBlock = (previewBlocks ?? home?.blocks)?.find((blk) => !blk.style.hidden);
+  const homeStartsWithHero =
+    firstBlock?.type === "hero" && Boolean(firstBlock.settings.imageUrl) && heroIsFullBleed(firstBlock, theme.style.hero);
 
   const maintenance = settings.maintenance.enabled;
   const adminBypass = maintenance ? await isAdminViewer(store.id) : false;
@@ -121,6 +133,11 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
         data-shape={theme.style.shape}
         data-card={theme.style.card}
         data-motion={theme.style.motion}
+        data-grid={theme.style.grid}
+        data-filters={theme.style.filters}
+        data-gallery={theme.style.gallery}
+        data-header={theme.header.layout}
+        data-footer={theme.footer.style}
       >
         <NavigationProgress color="var(--primary)" />
         <a href="#contenido" className="skip-link">

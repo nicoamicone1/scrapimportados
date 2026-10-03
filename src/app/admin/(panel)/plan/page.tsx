@@ -1,8 +1,8 @@
 import { CreditCard, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 
+import { ProgressArc } from "@/components/admin/dashboard/ProgressArc";
 import { PlanCards, PlanComparison } from "@/components/platform/PlanCards";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
 import { requireAdmin } from "@/lib/auth";
@@ -31,32 +31,32 @@ const STATUS_TEXT: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
-function UsageBar({ label, used, max }: { label: string; used: number; max: number | null }) {
-  const pct = max === null ? 0 : max === 0 ? 100 : Math.min(100, Math.round((used / max) * 100));
+/** Uso contra el límite en el arco de la marca (BRAND §7.2); desde el 80 % se tiñe de pomelo. */
+function UsageArc({ label, used, max }: { label: string; used: number; max: number | null }) {
   const full = max !== null && used >= max;
   const near = !full && max !== null && max > 0 && used / max >= 0.8;
+  const pct = max === null ? 0 : max === 0 ? 100 : Math.min(100, Math.round((used / max) * 100));
+  const usedText = used.toLocaleString("es-AR");
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-3 text-[13px]">
-        <span>{label}</span>
-        <span className="tnum text-adm-fg-muted">
-          <span className={cn("font-medium", full || near ? "text-adm-accent-2-ink" : "text-adm-fg")}>{used.toLocaleString("es-AR")}</span>
-          {max === null ? " · sin límite" : ` de ${max.toLocaleString("es-AR")}`}
-        </span>
-      </div>
-      <div
-        role={max !== null ? "progressbar" : undefined}
-        aria-label={max !== null ? label : undefined}
-        aria-valuemin={max !== null ? 0 : undefined}
-        aria-valuemax={max !== null ? max : undefined}
-        aria-valuenow={max !== null ? Math.min(used, max) : undefined}
-        className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-adm-surface-2"
+    <div className="flex min-w-0 items-center gap-3">
+      <ProgressArc
+        value={max === null ? 0 : Math.min(used, max)}
+        max={max === null ? 1 : Math.max(max, 1)}
+        size={52}
+        stroke={6}
+        tone={full || near ? "pomelo" : "ink"}
+        label={max === null ? `${label}: ${usedText}, sin límite` : `${label}: ${usedText} de ${max.toLocaleString("es-AR")}`}
       >
-        {max !== null ? <div className={cn("h-full rounded-full", full || near ? "bg-adm-accent-2" : "bg-adm-accent")} style={{ width: `${pct}%` }} /> : null}
+        <span className="tnum text-[11px] font-semibold text-adm-fg">{max === null ? "∞" : `${pct}%`}</span>
+      </ProgressArc>
+      <div className="min-w-0">
+        <p className="truncate text-[13px] text-adm-fg-muted">{label}</p>
+        <p className="tnum text-[13px]">
+          <span className={cn("eco-num text-[17px]", full || near ? "text-adm-accent-2-ink" : "text-adm-fg")}>{usedText}</span>
+          <span className="text-adm-fg-muted">{max === null ? " · sin límite" : ` de ${max.toLocaleString("es-AR")}`}</span>
+        </p>
+        {full || near ? <p className="text-xs font-medium text-adm-accent-2-ink">{full ? "Llegaste al límite del plan." : "Cerca del límite."}</p> : null}
       </div>
-      {full || near ? (
-        <p className="mt-1 text-xs text-adm-accent-2-ink">{full ? "Llegaste al límite del plan." : "Cerca del límite."}</p>
-      ) : null}
     </div>
   );
 }
@@ -94,7 +94,7 @@ function ReturnNotice({ mp, billing, planName }: { mp: string | undefined; billi
   if (mp !== "ok" && mp !== "error") return null;
   if (mp === "error") {
     return (
-      <p role="status" className="mb-4 rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">
+      <p role="status" className="mb-4 rounded-adm-lg bg-adm-danger-soft px-3 py-2 text-[13px]">
         El pago en MercadoPago no se completó y tu plan no cambió. Podés intentarlo de nuevo o pedir el plan por WhatsApp.
       </p>
     );
@@ -106,7 +106,7 @@ function ReturnNotice({ mp, billing, planName }: { mp: string | undefined; billi
         : `Listo: MercadoPago confirmó el cobro y tu plan ${planName} está activo. Te avisamos por mail.`
       : "Volviste de MercadoPago. Cuando confirme el pago (suele tardar unos minutos) activamos el plan y te avisamos por mail; no hace falta que pagues de nuevo.";
   return (
-    <p role="status" className="mb-4 rounded-adm bg-adm-accent-soft px-3 py-2 text-[13px]">
+    <p role="status" className="mb-4 rounded-adm-lg bg-adm-accent-soft px-3 py-2 text-[13px]">
       {text}
     </p>
   );
@@ -174,11 +174,11 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
       />
 
       {limitNotice ? (
-        <p role="status" className="mb-4 flex items-start gap-2.5 rounded-adm bg-adm-accent-2-soft px-3 py-2.5 text-[13px] text-adm-fg">
+        <p role="status" className="mb-4 flex items-start gap-2.5 rounded-adm-lg bg-adm-accent-2-soft px-4 py-3 text-[13px] text-adm-fg">
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-adm-accent-2-ink" aria-hidden />
           <span>
             {limitNotice}{" "}
-            <a href="#cambiar-plan" className="font-medium text-adm-accent underline underline-offset-2">
+            <a href="#cambiar-plan" className="font-medium text-adm-link underline decoration-2 underline-offset-4">
               Ver planes
             </a>
           </span>
@@ -188,32 +188,61 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
       <ReturnNotice mp={mp} billing={billing} planName={planLabel} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <Card>
-          <CardHeader title={`Plan ${planLabel}`} description={plan.status === "trialing" ? "Prueba gratuita con todas las funciones de este plan." : undefined} />
-          <CardBody className="space-y-3 text-sm">
-            <p className="flex items-baseline gap-1.5">
-              <span className="tnum text-[26px] leading-none font-semibold tracking-[-0.02em]">{price.amount}</span>
-              {price.suffix ? <span className="text-[13px] text-adm-fg-muted">{price.suffix}</span> : null}
+        {/* El plan actual: la hoja tinta protagonista (BRAND §7.2). */}
+        <section aria-labelledby="plan-actual" className="flex flex-col overflow-hidden rounded-adm-lg border border-adm-border bg-adm-surface shadow-adm-card">
+          <div className="relative isolate flex min-h-52 flex-1 flex-col overflow-hidden bg-eco-ink px-5 pt-5 pb-6 text-white sm:px-6">
+            <svg aria-hidden viewBox="0 0 200 200" className="absolute -right-20 -bottom-24 -z-10 size-72">
+              <circle cx="100" cy="100" r="86" fill="none" stroke="var(--eco-ink-3)" strokeWidth="2" />
+              <circle cx="100" cy="100" r="66" fill="none" stroke="var(--eco-ink-3)" strokeWidth="2" />
+              <circle cx="100" cy="100" r="44" fill="none" stroke="var(--eco-pomelo)" strokeWidth="14" />
+            </svg>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-semibold tracking-[0.1em] text-eco-bruma uppercase">Tu plan</p>
+              <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-eco-ink-2 px-2.5 text-xs font-medium text-eco-mist ring-1 ring-eco-ink-3">
+                <span aria-hidden className={cn("size-1.5 rounded-full", plan.status === "past_due" ? "bg-adm-danger-on-dark" : "bg-eco-pomelo")} />
+                {STATUS_TEXT[plan.status] ?? plan.status}
+              </span>
+            </div>
+            <h2 id="plan-actual" className="eco-display mt-3 text-[34px] leading-none text-white">
+              {planLabel}
+            </h2>
+            {plan.status === "trialing" ? <p className="mt-2 text-[13px] text-eco-mist">Prueba gratuita con todas las funciones de este plan.</p> : null}
+            <ul className="mt-4 flex max-w-[30ch] flex-col gap-1.5 text-[13px] text-eco-mist" aria-label="Lo principal del plan">
+              {(["products", "staff", "images_per_product"] as const).map((k) => {
+                const max = plan.limits[k];
+                return (
+                  <li key={k} className="flex items-center gap-2">
+                    <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-eco-pomelo" />
+                    {max === null ? `${LIMITS[k].label} sin límite` : `Hasta ${max.toLocaleString("es-AR")} ${LIMITS[k].unit}${k === "images_per_product" ? " por producto" : ""}`}
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-auto flex flex-wrap items-baseline gap-x-1.5 pt-6">
+              <span className="eco-num text-[34px] leading-none text-white">{price.amount}</span>
+              {price.suffix ? <span className="text-[13px] text-eco-bruma">{price.suffix}</span> : null}
               {yearlyNow && plan.priceYearly ? (
-                <span className="tnum text-[13px] text-adm-fg-muted">
+                <span className="tnum text-[13px] text-eco-bruma">
                   · {formatMoney(monthlyEquivalent(plan.priceYearly), { currency: plan.currency })} por mes
                 </span>
               ) : null}
             </p>
+          </div>
+          <div className="space-y-3 p-4 text-sm empty:hidden sm:px-5">
             {plan.status === "trialing" && plan.trialEndsAt ? (
-              <p className="rounded-adm bg-adm-accent-2-soft px-3 py-2 text-[13px]">
+              <p className="rounded-adm-lg bg-adm-accent-2-soft px-3 py-2 text-[13px]">
                 Te {days === 1 ? "queda 1 día" : `quedan ${days} días`} de prueba (hasta el {formatDate(plan.trialEndsAt)}). Si no elegís un plan, la
                 tienda pasa a Free: no se borra nada, pero lo que excede Free queda bloqueado.
               </p>
             ) : null}
             {plan.status === "past_due" && mpState === "past_due" ? (
-              <p className="rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">
+              <p className="rounded-adm-lg bg-adm-danger-soft px-3 py-2 text-[13px]">
                 MercadoPago no pudo cobrar el plan. Revisá el medio de pago en la sección Suscripciones de tu cuenta de MercadoPago: reintenta el
                 cobro solo.
                 {periodEnd ? ` Si no entra, el ${formatDate(new Date(new Date(periodEnd).getTime() + GRACE_MS))} la tienda pasa a Free.` : ""}
               </p>
             ) : plan.status === "past_due" ? (
-              <p className="rounded-adm bg-adm-danger-soft px-3 py-2 text-[13px]">Tenemos un pago pendiente. Escribinos para regularizarlo.</p>
+              <p className="rounded-adm-lg bg-adm-danger-soft px-3 py-2 text-[13px]">Tenemos un pago pendiente. Escribinos para regularizarlo.</p>
             ) : null}
             {awaitingFirstCharge ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -232,13 +261,13 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
                 {isOwner ? <CancelRenewalButton planName={planLabel} until={periodEnd ? formatDate(periodEnd) : null} /> : null}
               </div>
             ) : mpState === "cancelling" ? (
-              <p className="rounded-adm bg-adm-accent-2-soft px-3 py-2 text-[13px]">
+              <p className="rounded-adm-lg bg-adm-accent-2-soft px-3 py-2 text-[13px]">
                 Cancelaste la renovación: seguís con {planLabel}
                 {periodEnd ? ` hasta el ${formatDate(periodEnd)}` : " hasta el final del período pago"}. Después la tienda pasa a Free sin borrar
                 nada. Si cambiaste de idea, volvé a suscribirte abajo: MercadoPago cobra desde que lo autorizás.
               </p>
             ) : mpState === "pending" ? (
-              <p className="rounded-adm bg-adm-surface-2 px-3 py-2 text-[13px]">
+              <p className="rounded-adm-lg bg-adm-surface-2 px-3 py-2 text-[13px]">
                 Empezaste el pago{pendingPlan ? ` de ${pendingPlan}` : ""} con MercadoPago. Si ya lo completaste, se activa apenas MercadoPago lo
                 confirme; si no, podés volver a intentarlo abajo.
               </p>
@@ -254,20 +283,23 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
                 <CancelRenewalButton planName={planLabel} until={null} pastDue />
               </div>
             ) : null}
-          </CardBody>
-        </Card>
+          </div>
+        </section>
 
-        <Card>
-          <CardHeader title="Uso" description="Lo que usa hoy tu tienda contra los límites del plan." />
-          <CardBody className="grid gap-4 sm:grid-cols-2">
+        <section aria-labelledby="uso-title" className="rounded-adm-lg border border-adm-border bg-adm-surface p-4 shadow-adm-card sm:p-5">
+          <h2 id="uso-title" className="text-[15px] font-semibold text-adm-fg">
+            Uso
+          </h2>
+          <p className="mt-0.5 text-[13px] text-adm-fg-muted">Lo que usa hoy tu tienda contra los límites del plan.</p>
+          <div className="mt-4 grid gap-x-6 gap-y-5 sm:grid-cols-2">
             {usageSorted.map(([key, used]) => (
-              <UsageBar key={key} label={LIMITS[key].label} used={used} max={plan.limits[key]} />
+              <UsageArc key={key} label={LIMITS[key].label} used={used} max={plan.limits[key]} />
             ))}
-          </CardBody>
-        </Card>
+          </div>
+        </section>
       </div>
 
-      <h2 id="cambiar-plan" className="mt-8 mb-2 scroll-mt-20 text-[15px] font-semibold">
+      <h2 id="cambiar-plan" className="eco-display mt-10 mb-2 scroll-mt-20 text-[20px] leading-6">
         Cambiar de plan
       </h2>
       <p className="mb-2 max-w-2xl text-[13px] text-adm-fg-muted">
@@ -281,7 +313,7 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
       </p>
       {anyMp ? (
         <details className="mb-4 max-w-2xl text-[13px] text-adm-fg-muted">
-          <summary className="inline-flex min-h-8 cursor-pointer items-center text-adm-accent underline underline-offset-2 max-sm:min-h-11">
+          <summary className="inline-flex min-h-8 cursor-pointer items-center text-adm-link underline underline-offset-2 max-sm:min-h-11">
             Cómo funciona el cobro
           </summary>
           <p className="mt-1">
@@ -348,7 +380,7 @@ export default async function PlanPage({ searchParams }: PageProps<"/admin/plan"
         }}
       />
 
-      <h2 className="mt-8 mb-3 text-[15px] font-semibold">Comparación completa</h2>
+      <h2 className="eco-display mt-10 mb-3 text-[20px] leading-6">Comparación completa</h2>
       <PlanComparison plans={plans} />
     </>
   );

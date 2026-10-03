@@ -185,7 +185,7 @@ export async function getWorkshop(supabase: Supa, storeId: string): Promise<Work
       lifetime_hours: num(p.lifetime_hours, 5000),
       hours_used: num(p.hours_used),
       status: p.status === "maintenance" || p.status === "inactive" ? p.status : "active",
-      color: p.color || "#E86A33",
+      color: p.color || "#B02C14",
       position: num(p.position),
     })),
     materials: (materialsRes.data ?? []).map((m) => ({

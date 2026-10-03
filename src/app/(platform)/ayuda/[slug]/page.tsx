@@ -1,9 +1,11 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleDoc } from "@/components/platform/ArticleDoc";
+import { DISPLAY } from "@/components/platform/brand";
+import { cn } from "@/lib/cn";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
 import { getHelpArticle, HELP_ARTICLES, helpSectionTitle, relatedHelp } from "@/content/ayuda";
@@ -76,7 +78,7 @@ export default async function AyudaArticlePage({ params }: PageProps<"/ayuda/[sl
               href={article.panel.href}
               target="_blank"
               rel="noopener"
-              className="inline-flex h-9 items-center gap-1.5 rounded-adm border border-adm-input-border bg-adm-surface px-3 text-[13px] font-medium text-adm-fg transition-colors hover:bg-adm-hover"
+              className="site-pill-secondary inline-flex h-11 items-center gap-2 rounded-full border-2 border-eco-ink px-5 text-[14px] font-semibold text-eco-ink transition-colors duration-[240ms] hover:bg-eco-ink hover:text-white"
             >
               Abrir {article.panel.label} en el panel
               <ArrowUpRight className="size-4" strokeWidth={1.5} aria-hidden />
@@ -88,33 +90,40 @@ export default async function AyudaArticlePage({ params }: PageProps<"/ayuda/[sl
         after={
           <>
             {related.length ? (
-              <nav aria-labelledby="relacionados-t" className="mt-14">
-                <h2 id="relacionados-t" className="text-[13px] font-medium text-adm-fg-muted">
+              <nav aria-labelledby="relacionados-t" className="mt-16">
+                <h2 id="relacionados-t" className={cn(DISPLAY, "text-[22px]")}>
                   Relacionados
                 </h2>
-                <ul className="mt-2 border-b border-adm-border">
+                <ul className="mt-4 grid gap-3">
                   {related.map((r) => (
-                    <li key={r.slug} className="border-t border-adm-border py-3">
-                      <Link href={`/ayuda/${r.slug}`} className="text-[15px] font-medium text-adm-fg underline-offset-4 hover:text-adm-accent hover:underline">
-                        {r.title}
+                    <li key={r.slug}>
+                      <Link href={`/ayuda/${r.slug}`} className="site-lift group flex items-center gap-4 border border-eco-line bg-adm-surface px-5 py-4">
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[16px] leading-snug font-semibold">{r.title}</span>
+                          <span className="mt-1 block text-[14px] leading-relaxed text-adm-fg-muted">{r.description}</span>
+                        </span>
+                        <span aria-hidden className="site-arrow flex size-9 shrink-0 items-center justify-center rounded-full bg-eco-niebla-2">
+                          <ArrowRight className="size-4" strokeWidth={2} />
+                        </span>
                       </Link>
-                      <p className="mt-0.5 text-[13px] leading-relaxed text-adm-fg-muted">{r.description}</p>
                     </li>
                   ))}
                 </ul>
               </nav>
             ) : null}
-            <p className="mt-10 rounded-adm border border-adm-border bg-adm-surface px-4 py-4 text-[14px] leading-relaxed">
-              <span className="font-medium">¿No encontraste lo que buscabas?</span>{" "}
-              <Link href="/contacto" className="text-adm-accent underline underline-offset-2">
-                Escribinos
-              </Link>{" "}
-              con la dirección de tu tienda y qué querés hacer, o{" "}
-              <Link href="/ayuda" className="text-adm-accent underline underline-offset-2">
-                volvé al centro de ayuda
-              </Link>
-              .
-            </p>
+            <div className="eco-bubble mt-12 bg-eco-ink px-6 py-6 text-[15px] leading-relaxed text-eco-mist [--eco-bubble-r:24px] sm:px-7">
+              <p className={cn(DISPLAY, "text-[20px] text-white")}>¿No encontraste lo que buscabas?</p>
+              <p className="mt-2">
+                <Link href="/contacto" className="font-semibold text-eco-azul-light underline decoration-2 underline-offset-4">
+                  Escribinos
+                </Link>{" "}
+                con la dirección de tu tienda y qué querés hacer, o{" "}
+                <Link href="/ayuda" className="font-semibold text-eco-azul-light underline decoration-2 underline-offset-4">
+                  volvé al centro de ayuda
+                </Link>
+                .
+              </p>
+            </div>
           </>
         }
       >

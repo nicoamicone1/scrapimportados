@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, FileText, History, Monitor, MoreHorizontal, Plus, Smartphone, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, History, LayoutTemplate, Monitor, MoreHorizontal, Plus, Smartphone, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +29,7 @@ import type { PreviewDevice } from "../appearance/preview-css";
 import { BlockList } from "./BlockList";
 import { BlockPalette } from "./BlockPalette";
 import { BlockSettings } from "./BlockSettings";
+import { StarterTemplatesDialog, starterBlocksFor } from "./StarterTemplates";
 import { BuilderPreview } from "./BuilderPreview";
 import { blocksWithExampleCopy } from "./example-copy";
 import { ImageField, Section } from "./fields";
@@ -108,6 +109,7 @@ export function PageEditor({
   const [pane, setPane] = useState<"blocks" | "preview" | "settings">("blocks");
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
   const [confirmExamples, setConfirmExamples] = useState(false);
   const publishAnyway = useRef(false);
@@ -217,6 +219,22 @@ export function PageEditor({
       },
     });
   }, [blocks, selectedId]);
+
+  /** Plantilla de portada: reemplaza los bloques; se deshace desde el aviso (nada llega a la tienda hasta guardar). */
+  const applyStarter = (preset: Parameters<typeof starterBlocksFor>[0]) => {
+    const previous = blocks;
+    const next = starterBlocksFor(preset, {
+      storeName,
+      transferDiscount: options.starter?.transferDiscount ?? 0,
+      whatsapp: options.starter?.whatsapp ?? true,
+    });
+    setBlocks(next);
+    setSelectedId(null);
+    setPane("preview");
+    toast("Aplicaste la plantilla. Cambiá textos y fotos antes de publicar.", {
+      action: { label: "Deshacer", onClick: () => setBlocks(previous) },
+    });
+  };
 
   const toggleHidden = useCallback(
     (id: string) =>
@@ -441,17 +459,22 @@ export function PageEditor({
               <h2 className="text-[13px] font-semibold text-adm-fg">
                 Bloques <span className="tnum font-normal text-adm-fg-muted">{blocks.length}</span>
               </h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setSelectedId(null);
-                  setPane("settings");
-                }}
-                aria-pressed={!selectedId}
-              >
-                Página
-              </Button>
+              <div className="flex items-center gap-0.5">
+                <Button size="sm" variant="ghost" icon={<LayoutTemplate />} onClick={() => setTemplatesOpen(true)} title="Empezar desde una plantilla">
+                  Plantillas
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setSelectedId(null);
+                    setPane("settings");
+                  }}
+                  aria-pressed={!selectedId}
+                >
+                  Página
+                </Button>
+              </div>
             </div>
             <div className="adm-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-2">
               {blocks.length ? (
@@ -465,7 +488,12 @@ export function PageEditor({
                   onDelete={deleteBlock}
                 />
               ) : (
-                <p className="px-2 py-3 text-[13px] text-adm-fg-muted">Todavía no hay bloques. Empezá por una portada o un carrusel de productos.</p>
+                <div className="px-2 py-3 text-[13px] text-adm-fg-muted">
+                  <p>Todavía no hay bloques.</p>
+                  <button type="button" onClick={() => setTemplatesOpen(true)} className="mt-1 font-medium text-adm-link underline decoration-2 underline-offset-4 hover:text-adm-link-hover">
+                    Empezá desde una plantilla
+                  </button>
+                </div>
               )}
             </div>
             <div className="border-t border-adm-border p-3">
@@ -497,7 +525,7 @@ export function PageEditor({
                     <X />
                   </Button>
                 </div>
-                <BlockSettings block={selected} onChange={updateBlock} />
+                <BlockSettings block={selected} onChange={updateBlock} theme={theme} />
               </>
             ) : (
               <PageSettings
@@ -542,6 +570,13 @@ export function PageEditor({
       </div>
 
       <BlockPalette open={paletteOpen} onOpenChange={setPaletteOpen} onPick={addBlock} />
+      <StarterTemplatesDialog
+        open={templatesOpen}
+        onOpenChange={setTemplatesOpen}
+        theme={theme}
+        context={{ storeName, transferDiscount: options.starter?.transferDiscount ?? 0, whatsapp: options.starter?.whatsapp ?? true }}
+        onPick={applyStarter}
+      />
 
       <ConfirmDialog
         open={confirmExamples}

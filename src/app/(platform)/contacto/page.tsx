@@ -1,16 +1,19 @@
-import { Mail, MessageCircle } from "lucide-react";
+import { ArrowRight, Check, Mail, MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DISPLAY } from "@/components/platform/brand";
-import { FaqList } from "@/components/platform/FaqList";
+import { CTA_ARROW, CTA_GHOST_DARK, CTA_PRIMARY, DISPLAY, EYEBROW, TEXT_LINK } from "@/components/platform/brand";
+import { FaqAccordion } from "@/components/platform/faq-accordion";
 import { platformFaq } from "@/components/platform/faq";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { exampleStoreAddress, PLATFORM_EMAIL, platformWhatsappHref } from "@/components/platform/site";
 import { getSession } from "@/lib/auth";
 import { billingEnabled } from "@/lib/billing/mercadopago";
+import { cn } from "@/lib/cn";
 
 import { plansOrEmpty, platformMailto } from "../_lib/public-site";
+import { ArcWord, CornerArc, Rings } from "../site-shapes";
+import "../site.css";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -42,142 +45,158 @@ export default async function ContactoPage() {
   const proProducts = plans.find((p) => p.code === "pro")?.limits.products ?? null;
   const faq = platformFaq({ storeAddress: exampleStoreAddress(), plans, mpEnabled: billingEnabled() });
 
+  const business: [string, string][] = [
+    ["Catálogo grande", proProducts ? `más de ${proProducts.toLocaleString("es-AR")} productos, el tope de Pro.` : "catálogos muy grandes, con importaciones y acompañamiento a medida."],
+    ["Varias tiendas", "más de las 3 que permite una cuenta, o varias marcas con un mismo equipo."],
+    ["Dominio propio", "te acompañamos a conectarlo y a revisar que quede todo andando."],
+    ["Mudanza asistida", "pasamos el catálogo desde tu tienda actual y cargamos las redirecciones para no perder lo que ya tenés en Google."],
+  ];
+
   return (
     <PlatformPage signedIn={Boolean(user)}>
-      <section className="border-b border-adm-border bg-adm-surface">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-12 sm:px-6 md:py-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16">
-          <div className="min-w-0">
-            <h1 className={`${DISPLAY} text-[30px] leading-tight font-semibold tracking-[-0.02em] sm:text-[36px]`}>Contacto</h1>
-            <p className="mt-3 max-w-[46ch] text-[17px] leading-snug">Escribinos: respondemos en horario hábil, de lunes a viernes.</p>
-            <p className="mt-3 max-w-[56ch] text-[14px] leading-relaxed text-adm-fg-muted">
+      <section className="relative overflow-hidden">
+        <CornerArc corner="tr" size={520} className="hidden bg-eco-durazno/70 md:block" />
+        <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-16 sm:px-6 md:pt-20 md:pb-24">
+          <div className="eco-pop max-w-[60ch]">
+            <p className={EYEBROW}>Contacto</p>
+            <h1 className={cn(DISPLAY, "mt-4 text-[48px] leading-[0.96] sm:text-[72px]")}>
+              <ArcWord>Hablemos</ArcWord>.
+            </h1>
+            <p className="mt-6 max-w-[46ch] text-[19px] leading-[1.4] sm:text-[21px]">Respondemos en horario hábil, de lunes a viernes.</p>
+            <p className="mt-4 max-w-[58ch] text-[15px] leading-relaxed text-adm-fg-muted">
               Si ya tenés una tienda, contanos su dirección (del estilo {exampleStoreAddress("taller-luna")}) y qué pasó o qué querés hacer. Con
               eso vamos directo, sin ida y vuelta.
             </p>
-
-            <p className="mt-6 max-w-[560px] border-l-[3px] border-adm-accent-2 pl-3 text-[14px] leading-relaxed">
-              Antes de escribir, mirá el{" "}
-              <Link href="/ayuda" className="font-medium text-adm-accent underline underline-offset-2">
-                centro de ayuda
-              </Link>
-              : ahí está, paso a paso, cómo cargar productos, cobrar, armar las zonas de envío y cumplir con los legales.
-            </p>
-
-            <dl className="mt-6 max-w-[560px] border-b border-adm-border">
-              <div className="grid gap-x-6 gap-y-1 border-t border-adm-border py-5 sm:grid-cols-[8rem_minmax(0,1fr)]">
-                <dt className="flex items-center gap-2 text-[13px] text-adm-fg-muted">
-                  <Mail className="size-[18px]" strokeWidth={1.5} aria-hidden />
-                  Mail
-                </dt>
-                <dd>
-                  <a
-                    href={platformMailto("Consulta sobre Ecommy")}
-                    className="text-[20px] font-semibold tracking-[-0.01em] text-adm-accent underline-offset-4 hover:underline"
-                  >
-                    {PLATFORM_EMAIL}
-                  </a>
-                  <p className="mt-1 text-[13px] leading-relaxed text-adm-fg-muted">
-                    Para todo: consultas antes de empezar, soporte, planes y pagos, y pedidos sobre tus datos personales.
-                  </p>
-                </dd>
-              </div>
-              {whatsapp ? (
-                <div className="grid gap-x-6 gap-y-1 border-t border-adm-border py-5 sm:grid-cols-[8rem_minmax(0,1fr)]">
-                  <dt className="flex items-center gap-2 text-[13px] text-adm-fg-muted">
-                    <MessageCircle className="size-[18px]" strokeWidth={1.5} aria-hidden />
-                    WhatsApp
-                  </dt>
-                  <dd>
-                    <a
-                      href={whatsapp}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="tnum text-[20px] font-semibold tracking-[-0.01em] text-adm-accent underline-offset-4 hover:underline"
-                    >
-                      {whatsappDisplay}
-                    </a>
-                    <p className="mt-1 text-[13px] leading-relaxed text-adm-fg-muted">
-                      Para consultas rápidas y para coordinar un cambio de plan. Abre el chat con el mensaje empezado.
-                    </p>
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
           </div>
 
-          <aside id="business" aria-labelledby="business-t" className="scroll-mt-6 self-start rounded-adm border border-adm-border bg-adm-bg p-5 sm:p-6">
-            <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">Plan Business</p>
-            <h2 id="business-t" className="mt-2 text-[22px] leading-tight font-semibold tracking-[-0.02em]">
-              Cuando Pro te queda chico, lo armamos a medida.
-            </h2>
-            <ul className="mt-4 text-[14px] leading-relaxed">
-              <li className="border-t border-adm-border py-2.5">
-                <span className="font-medium">Catálogo grande:</span>{" "}
-                <span className="text-adm-fg-muted">
-                  {proProducts ? `más de ${proProducts.toLocaleString("es-AR")} productos, el tope de Pro.` : "más productos de los que permite Pro."}
-                </span>
-              </li>
-              <li className="border-t border-adm-border py-2.5">
-                <span className="font-medium">Varias tiendas:</span>{" "}
-                <span className="text-adm-fg-muted">más de las 3 que permite una cuenta, o varias marcas con un mismo equipo.</span>
-              </li>
-              <li className="border-t border-adm-border py-2.5">
-                <span className="font-medium">Dominio propio:</span>{" "}
-                <span className="text-adm-fg-muted">te acompañamos a conectarlo y a revisar que quede todo andando.</span>
-              </li>
-              <li className="border-y border-adm-border py-2.5">
-                <span className="font-medium">Mudanza asistida:</span>{" "}
-                <span className="text-adm-fg-muted">pasamos el catálogo desde tu tienda actual y cargamos las redirecciones para no perder lo que ya tenés en Google.</span>
-              </li>
-            </ul>
-            <p className="mt-4 text-[13px] leading-relaxed text-adm-fg-muted">
-              Contanos qué vendés, cuántos productos tenés y cuántas tiendas necesitás. Te respondemos con una propuesta y un precio.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-12 grid gap-5 lg:grid-cols-12">
+            <div className={cn("grid content-start gap-5 lg:col-span-7", whatsapp && "sm:grid-cols-2")}>
               <a
-                href={platformMailto(BUSINESS_SUBJECT, BUSINESS_BODY)}
-                className="inline-flex h-10 items-center gap-2 rounded-adm bg-adm-accent px-4 text-sm font-medium text-adm-accent-fg transition-colors hover:bg-adm-accent-hover"
+                href={platformMailto("Consulta sobre Ecommy")}
+                className="site-lift group flex min-w-0 flex-col justify-between gap-8 border border-eco-line bg-adm-surface p-6 sm:p-7"
               >
-                <Mail className="size-4" strokeWidth={1.5} aria-hidden />
-                Escribir por mail
+                <span className="flex items-center justify-between gap-4">
+                  <span className="flex size-12 items-center justify-center rounded-[18px] rounded-bl-[4px] bg-eco-durazno text-eco-ink">
+                    <Mail className="size-5" strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <span aria-hidden className="site-arrow flex size-10 items-center justify-center rounded-full bg-eco-niebla-2 text-eco-ink">
+                    <ArrowRight className="size-4" strokeWidth={2} />
+                  </span>
+                </span>
+                <span>
+                  <span className="block text-[13px] font-semibold tracking-[0.06em] text-adm-fg-muted uppercase">Mail</span>
+                  <span className={cn(DISPLAY, "mt-1 block text-[22px] leading-tight break-all sm:text-[26px]")}>{PLATFORM_EMAIL}</span>
+                  <span className="mt-2 block text-[14px] leading-relaxed text-adm-fg-muted">
+                    Para todo: consultas antes de empezar, soporte, planes y pagos, y pedidos sobre tus datos personales.
+                  </span>
+                </span>
               </a>
-              {whatsappBusiness ? (
+              {whatsapp ? (
                 <a
-                  href={whatsappBusiness}
+                  href={whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-2 rounded-adm border border-adm-input-border bg-adm-surface px-4 text-sm font-medium text-adm-fg transition-colors hover:bg-adm-hover"
+                  className="site-lift group flex min-w-0 flex-col justify-between gap-8 border border-eco-line bg-adm-surface p-6 sm:p-7"
                 >
-                  <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden />
-                  Escribir por WhatsApp
+                  <span className="flex items-center justify-between gap-4">
+                    <span className="flex size-12 items-center justify-center rounded-[18px] rounded-bl-[4px] bg-eco-azul-soft text-adm-link">
+                      <MessageCircle className="size-5" strokeWidth={1.75} aria-hidden />
+                    </span>
+                    <span aria-hidden className="site-arrow flex size-10 items-center justify-center rounded-full bg-eco-niebla-2 text-eco-ink">
+                      <ArrowRight className="size-4" strokeWidth={2} />
+                    </span>
+                  </span>
+                  <span>
+                    <span className="block text-[13px] font-semibold tracking-[0.06em] text-adm-fg-muted uppercase">WhatsApp</span>
+                    <span className={cn(DISPLAY, "tnum mt-1 block text-[22px] leading-tight sm:text-[26px]")}>{whatsappDisplay}</span>
+                    <span className="mt-2 block text-[14px] leading-relaxed text-adm-fg-muted">
+                      Para consultas rápidas y para coordinar un cambio de plan. Abre el chat con el mensaje empezado.
+                    </span>
+                    <span className="sr-only">(se abre en otra pestaña)</span>
+                  </span>
                 </a>
               ) : null}
+              <p className={cn("eco-bubble bg-eco-azul-soft px-5 py-4 text-[15px] leading-relaxed [--eco-bubble-r:20px]", whatsapp && "sm:col-span-2")}>
+                Antes de escribir, mirá el{" "}
+                <Link href="/ayuda" className={TEXT_LINK}>
+                  centro de ayuda
+                </Link>
+                : ahí está, paso a paso, cómo cargar productos, cobrar, armar las zonas de envío y cumplir con los legales.
+              </p>
             </div>
-          </aside>
+
+            <aside
+              id="business"
+              aria-labelledby="business-t"
+              className="eco-bubble relative scroll-mt-24 self-start overflow-hidden bg-eco-ink p-7 text-eco-mist [--eco-bubble-r:32px] sm:p-9 lg:col-span-5"
+            >
+              <Rings size={520} count={5} className="-top-60 -right-52 text-eco-ink-3" />
+              <div className="relative">
+                <p className="text-[12px] font-semibold tracking-[0.1em] text-eco-pomelo uppercase">Plan Business</p>
+                <h2 id="business-t" className={cn(DISPLAY, "mt-3 text-[28px] leading-[1.04] text-white sm:text-[32px]")}>
+                  Cuando Pro te queda chico, lo armamos a medida.
+                </h2>
+                <ul className="mt-6 space-y-3 text-[14px] leading-relaxed">
+                  {business.map(([t, d]) => (
+                    <li key={t} className="flex gap-3">
+                      <span aria-hidden className="mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full rounded-bl-[4px] bg-eco-pomelo text-eco-ink">
+                        <Check className="size-3" strokeWidth={3} />
+                      </span>
+                      <span>
+                        <span className="font-semibold text-white">{t}:</span> {d}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-6 text-[14px] leading-relaxed text-eco-bruma">
+                  Contanos qué vendés, cuántos productos tenés y cuántas tiendas necesitás. Te respondemos con una propuesta y un precio.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <a href={platformMailto(BUSINESS_SUBJECT, BUSINESS_BODY)} className={CTA_PRIMARY}>
+                    Escribir por mail
+                    <span className={CTA_ARROW}>
+                      <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
+                    </span>
+                  </a>
+                  {whatsappBusiness ? (
+                    <a href={whatsappBusiness} target="_blank" rel="noopener noreferrer" className={CTA_GHOST_DARK}>
+                      <MessageCircle className="size-4" strokeWidth={1.75} aria-hidden />
+                      Por WhatsApp
+                      <span className="sr-only">(se abre en otra pestaña)</span>
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
 
-      <section id="preguntas" aria-labelledby="preguntas-t" className="scroll-mt-4">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 id="preguntas-t" className="text-[26px] leading-tight font-semibold tracking-[-0.025em] sm:text-[30px]">
+      <section id="preguntas" aria-labelledby="preguntas-t" className="scroll-mt-20 border-t border-eco-line bg-adm-surface">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <p className={EYEBROW}>Preguntas</p>
+            <h2 id="preguntas-t" className={cn(DISPLAY, "mt-3 text-[32px] leading-none sm:text-[40px]")}>
               Preguntas frecuentes
             </h2>
-            <Link href="/planes" className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
+            <Link href="/planes" className={cn(TEXT_LINK, "mt-5 inline-flex min-h-11 items-center text-[15px]")}>
               Ver planes y precios
             </Link>
           </div>
-          <FaqList className="mt-8" items={faq} />
-          <p className="mt-10 max-w-[68ch] border-t border-adm-border pt-5 text-[13px] leading-relaxed text-adm-fg-muted">
-            Las condiciones completas están en los{" "}
-            <Link href="/terminos" className="text-adm-accent underline underline-offset-2">
-              términos del servicio
-            </Link>{" "}
-            y en la{" "}
-            <Link href="/privacidad" className="text-adm-accent underline underline-offset-2">
-              política de privacidad
-            </Link>
-            .
-          </p>
+          <div>
+            <FaqAccordion items={faq} />
+            <p className="mt-8 max-w-[68ch] text-[14px] leading-relaxed text-adm-fg-muted">
+              Las condiciones completas están en los{" "}
+              <Link href="/terminos" className={TEXT_LINK}>
+                términos del servicio
+              </Link>{" "}
+              y en la{" "}
+              <Link href="/privacidad" className={TEXT_LINK}>
+                política de privacidad
+              </Link>
+              .
+            </p>
+          </div>
         </div>
       </section>
     </PlatformPage>

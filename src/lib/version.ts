@@ -6,7 +6,7 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.8.0";
+export const APP_VERSION = "0.9.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.9.0",
+    date: "2026-10-03",
+    title: "Identidad nueva y estilos de tienda con disposición propia",
+    sections: {
+      added: [
+        "Identidad nueva de Ecommy: tinta noche y pomelo, el logo en una burbuja, títulos en Archivo expandida y movimiento suave con curva en el sitio y el panel.",
+        "Estilos de tienda con personalidad propia: cada uno de los 10 cambia la disposición (encabezado, portada, tarjeta de producto, grilla, filtros, ficha y pie), no sólo los colores.",
+        "Portada con cinco disposiciones: foto a sangre, partida, enmarcada, titular gigante o apilada. Sin foto, se arma sola con tus productos.",
+        "Bloques nuevos para tus páginas: marquesina y colección destacada, y más variantes de beneficios, categorías, testimonios, preguntas frecuentes y cuenta regresiva.",
+        "Páginas › «Empezar desde una plantilla»: el inicio de fábrica de cada estilo, listo para aplicar y con Deshacer.",
+        "Apariencia: «Disposición y movimiento» y «Catálogo y ficha» para elegir encabezado, tarjeta, grilla, filtros, galería, forma de las imágenes y cuánto se mueve la tienda.",
+        "Inicio del panel: lo más urgente primero con su botón, la tarjeta «Tu tienda» con la vista real y el link para copiar, ventas en curva y primeros pasos con progreso.",
+        "Pedidos: recorrido del pedido paso a paso en el detalle y vistas rápidas en la lista.",
+        "Sitio de Ecommy: probá tu tienda escribiendo el nombre de tu negocio, calculadora de comisión y demostraciones del panel para usar ahí mismo.",
+      ],
+      changed: [
+        "Las tiendas nuevas arrancan con el inicio pensado para su rubro. Las que nunca guardaron su apariencia toman la disposición nueva de su estilo; las que la guardaron conservan colores, tipografías, encabezado y pie.",
+        "Panel: menú con la tienda activa arriba, barra inferior flotante en el celular, botones principales en tinta, links y foco en azul, estados en pastilla y la barra de guardado flotante.",
+        "Planes, ingreso, registro, alta de tienda, ayuda, guías, contacto, mails de Ecommy y placas de redes con la identidad nueva.",
+        "Los estilos Mercado y Lapacho cambian de paleta y tipografía para diferenciarse de Atelier.",
+        "El sitio y la ayuda ya explican el cobro con tarjeta y cuotas con Mercado Pago.",
+      ],
+      fixed: [
+        "Banners y categorías sin imagen ya no se ven como cajas grises: muestran un plano de color con el nombre.",
+        "El encabezado transparente de la tienda sólo se usa sobre una portada con foto a sangre.",
+      ],
+    },
+  },
   {
     version: "0.8.0",
     date: "2026-10-02",

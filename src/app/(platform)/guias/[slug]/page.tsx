@@ -1,8 +1,13 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleDoc } from "@/components/platform/ArticleDoc";
+import { CTA_ARROW, CTA_PRIMARY, DISPLAY, EYEBROW } from "@/components/platform/brand";
+import { cn } from "@/lib/cn";
+
+import { CornerArc } from "../../site-shapes";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
 import { JsonLd } from "@/components/store/JsonLd";
@@ -87,36 +92,45 @@ export default async function GuiaPage({ params }: PageProps<"/guias/[slug]">) {
         headings={extractHeadings(guide.body)}
         after={
           <>
-            <aside aria-labelledby="cta-t" className="mt-14 rounded-adm border border-adm-border bg-adm-surface p-5 sm:p-6">
-              <p className="text-[12px] font-medium tracking-[0.08em] text-adm-accent-2-ink uppercase">{APP_NAME}</p>
-              <h2 id="cta-t" className="mt-2 text-[22px] leading-tight font-semibold tracking-[-0.02em]">
-                {guide.cta.title}
-              </h2>
-              <p className="mt-2 max-w-[56ch] text-[15px] leading-relaxed text-adm-fg-muted">{guide.cta.text}</p>
-              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-                <Link
-                  href="/registro"
-                  className="inline-flex h-10 items-center rounded-adm bg-adm-accent px-4 text-sm font-medium text-adm-accent-fg transition-colors hover:bg-adm-accent-hover"
-                >
-                  Crear tu tienda gratis
-                </Link>
-                <Link href="/planes" className="text-sm font-medium text-adm-accent underline underline-offset-4 hover:no-underline">
-                  Ver planes
-                </Link>
+            <aside aria-labelledby="cta-t" className="eco-bubble relative mt-16 overflow-hidden bg-eco-durazno p-7 text-eco-ink [--eco-bubble-r:32px] sm:p-9">
+              <CornerArc corner="tr" size={260} className="bg-eco-pomelo-soft" />
+              <div className="relative">
+                <p className={EYEBROW}>{APP_NAME}</p>
+                <h2 id="cta-t" className={cn(DISPLAY, "mt-3 max-w-[20ch] text-[28px] leading-[1.04] sm:text-[34px]")}>
+                  {guide.cta.title}
+                </h2>
+                <p className="mt-3 max-w-[54ch] text-[16px] leading-relaxed">{guide.cta.text}</p>
+                <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+                  <Link href="/registro" className={CTA_PRIMARY}>
+                    Crear tu tienda gratis
+                    <span className={CTA_ARROW}>
+                      <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
+                    </span>
+                  </Link>
+                  <Link href="/planes" className="inline-flex min-h-11 items-center text-[15px] font-semibold underline decoration-2 underline-offset-4">
+                    Ver planes
+                  </Link>
+                </div>
+                <p className="mt-4 text-[13px]">14 días de Pro gratis, sin tarjeta. Sin comisión por venta.</p>
               </div>
-              <p className="mt-4 text-[13px] text-adm-fg-muted">14 días de Pro gratis, sin tarjeta. Sin comisión por venta.</p>
             </aside>
 
             {others.length ? (
-              <nav aria-labelledby="otras-t" className="mt-12">
-                <h2 id="otras-t" className="text-[13px] font-medium text-adm-fg-muted">
+              <nav aria-labelledby="otras-t" className="mt-14">
+                <h2 id="otras-t" className={cn(DISPLAY, "text-[22px]")}>
                   Otras guías
                 </h2>
-                <ul className="mt-2 border-b border-adm-border">
+                <ul className="mt-4 grid gap-3">
                   {others.map((g) => (
-                    <li key={g.slug} className="border-t border-adm-border py-3">
-                      <Link href={`/guias/${g.slug}`} className="text-[15px] font-medium text-adm-fg underline-offset-4 hover:text-adm-accent hover:underline">
-                        {g.title}
+                    <li key={g.slug}>
+                      <Link href={`/guias/${g.slug}`} className="site-lift group flex items-center gap-4 border border-eco-line bg-adm-surface px-5 py-4">
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[12px] font-semibold tracking-[0.06em] text-eco-pomelo-ink uppercase">{g.section}</span>
+                          <span className="mt-1 block text-[16px] leading-snug font-semibold">{g.title}</span>
+                        </span>
+                        <span aria-hidden className="site-arrow flex size-9 shrink-0 items-center justify-center rounded-full bg-eco-niebla-2">
+                          <ArrowRight className="size-4" strokeWidth={2} />
+                        </span>
                       </Link>
                     </li>
                   ))}
