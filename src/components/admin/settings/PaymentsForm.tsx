@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import { savePaymentsSettings } from "@/app/admin/(panel)/configuracion/actions";
 import { useOptionalAdminStore } from "@/components/admin/AdminStoreContext";
@@ -37,6 +37,7 @@ const TYPE_LABEL: Record<Method["type"], string> = {
   whatsapp: "WhatsApp",
   cash: "Efectivo",
   other: "Otro",
+  mercadopago: "Mercado Pago · tarjetas y cuotas",
 };
 
 
@@ -53,7 +54,19 @@ function asNumber(value: unknown): number {
   return Number.NaN;
 }
 
-export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInput; store: StoreInfo }) {
+export function PaymentsForm({
+  initial,
+  store,
+  mercadoPagoConnected = false,
+  beforeForm,
+}: {
+  initial: PaymentsSettingsInput;
+  store: StoreInfo;
+  /** Sin la cuenta conectada el método de Mercado Pago no se puede activar. */
+  mercadoPagoConnected?: boolean;
+  /** Bloque entre el encabezado y el formulario (tarjeta de Mercado Pago). */
+  beforeForm?: ReactNode;
+}) {
   const form = useSettingsForm(initial, savePaymentsSettings);
   const { values: v, set, error } = form;
   const money = (n: number) => formatMoney(n, { currency: store.currency, locale: store.locale });
@@ -110,6 +123,8 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
         description="Cómo te pagan, qué datos pedís al comprar y cuánto tiempo se reserva el stock."
       />
 
+      {beforeForm}
+
       <Card className="max-w-5xl px-5 md:px-6">
         <form
           onSubmit={(e) => {
@@ -156,11 +171,15 @@ export function PaymentsForm({ initial, store }: { initial: PaymentsSettingsInpu
                     <Badge tone={m.is_active ? "green" : "neutral"}>{m.is_active ? "Activo" : "Inactivo"}</Badge>
                     <Switch
                       checked={m.is_active}
+                      disabled={m.type === "mercadopago" && !mercadoPagoConnected && !m.is_active}
                       onCheckedChange={(on) => set(`methods.${i}.is_active`, on)}
                       aria-label={`${m.is_active ? "Desactivar" : "Activar"} ${m.name}`}
                     />
                   </div>
                   <div className="space-y-4 p-3">
+                    {m.type === "mercadopago" && !mercadoPagoConnected ? (
+                      <p className="text-xs text-adm-fg-muted">Conectá tu cuenta de Mercado Pago (arriba) para activarlo.</p>
+                    ) : null}
                     <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
                       <Field label="Nombre en el checkout" error={error(`methods.${i}.name`)}>
                         <Input value={m.name} onChange={(e) => set(`methods.${i}.name`, e.target.value)} maxLength={60} />

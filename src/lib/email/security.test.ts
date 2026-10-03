@@ -215,6 +215,8 @@ describe("notifyOrderCreated y el cupo de create_order", () => {
     status: "pending",
     paymentStatus: "pending",
     paymentMethodCode: "whatsapp",
+    paymentProvider: null,
+    paymentDetail: null,
     paymentDiscountPercent: 0,
     paymentDiscount: 0,
     fulfillment: "pickup",

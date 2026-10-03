@@ -2,6 +2,21 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.8.0 — 2026-10-02 · Tarjetas y cuotas sin interés con Mercado Pago
+
+### Agregado
+
+- Cobro con tarjeta: conectás tu cuenta de Mercado Pago en un paso (Configuración › Pagos) y tus clientes pagan con crédito, débito o dinero en cuenta, en cuotas. La plata entra directo a tu cuenta.
+- Cuotas sin interés: elegís las que ofrecés (3, 6, 9 o 12) y la tienda las anuncia en cada producto y en el checkout («6 cuotas sin interés de $ X»), con el paso a paso para activarlas en Mercado Pago y la tabla de comisiones.
+- Checkout: «Tarjeta de crédito o débito» con el valor de cada cuota; al confirmar te lleva a Mercado Pago y vuelve al pedido.
+- Página del pedido: «Estamos confirmando tu pago», pago en revisión, rechazo con el motivo y «Reintentar el pago», y «Pagaste con Visa ••4242 en 6 cuotas».
+- Los pagos aprobados marcan el pedido como pagado solos (con el descuento de stock si lo tenés al pagar) y le llega el mail de pago confirmado al comprador. Devoluciones y contracargos también se reflejan.
+- Pedido en el panel: detalle del pago de Mercado Pago (estado, cuotas, tarjeta e ID con link).
+
+### Cambiado
+
+- Un pedido con un pago de Mercado Pago en revisión no se cancela por vencimiento de la reserva durante 48 h.
+
 ## v0.7.0 — 2026-10-02 · Apps de Ecommy y Taller 3D
 
 ### Agregado

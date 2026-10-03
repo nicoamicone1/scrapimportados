@@ -21,6 +21,8 @@ export interface ProductCardProps {
   /** % de descuento del mejor método (0 = no mostrar la línea). */
   transferPercent?: number;
   transferLabel?: string;
+  /** Cuotas sin interés (0 = no se muestran). */
+  freeInstallments?: number;
   /** Precio sin impuestos nacionales (null/undefined = no se muestra). */
   net?: { defaultVat: number; label: string } | null;
   /** Teléfono para "Consultar por WhatsApp" en agotados. */
@@ -45,6 +47,7 @@ export function ProductCard({
   cards,
   transferPercent = 0,
   transferLabel,
+  freeInstallments = 0,
   net,
   whatsappPhone,
   store,
@@ -156,6 +159,7 @@ export function ProductCard({
           from={price.from}
           transferPercent={product.available ? transferPercent : 0}
           transferLabel={transferLabel}
+          freeInstallments={product.available ? freeInstallments : 0}
           net={net && product.available ? { vat: resolveVatPercent(product.vatPercent, net.defaultVat), label: net.label } : null}
           muted={!product.available}
           size="sm"

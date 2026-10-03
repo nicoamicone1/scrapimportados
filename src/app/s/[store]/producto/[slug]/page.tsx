@@ -250,6 +250,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
           initialVariantId={variantParam}
           transferPercent={bestPaymentDiscount(paymentMethods)?.discountPercent ?? 0}
           transferLabel={card.transferLabel}
+          freeInstallments={card.freeInstallments}
           net={net}
           lowStockThreshold={settings.low_stock_threshold}
           paymentMethods={paymentMethods.map((m) => ({ name: m.name, discountPercent: m.discountPercent, type: m.type }))}
@@ -302,6 +303,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
                 cards={card.cards}
                 transferPercent={card.transferPercent}
                 transferLabel={card.transferLabel}
+                freeInstallments={card.freeInstallments}
                 net={card.net}
                 whatsappPhone={card.whatsappPhone}
                 store={store}

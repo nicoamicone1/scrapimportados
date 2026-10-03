@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 
+import { MercadoPagoCard } from "@/components/admin/settings/MercadoPagoCard";
 import { PaymentsForm } from "@/components/admin/settings/PaymentsForm";
 import { getAdminSettings, listPaymentMethodsAdmin } from "@/lib/admin/settings";
+import { requireAdmin } from "@/lib/auth";
+import { getMercadoPagoAdminState } from "@/lib/payments/admin";
 import type { PaymentsSettingsInput } from "@/lib/schemas/settings";
 import { DEFAULT_ORDER_TEMPLATE } from "@/lib/store/whatsapp";
 
 export const metadata: Metadata = { title: "Pagos y checkout · Configuración" };
 
 export default async function PagosSettingsPage() {
-  const [s, methods] = await Promise.all([getAdminSettings(), listPaymentMethodsAdmin()]);
+  const ctx = await requireAdmin();
+  const [s, methods, mp] = await Promise.all([getAdminSettings(), listPaymentMethodsAdmin(), getMercadoPagoAdminState(ctx)]);
   const t = s.checkout.transfer;
   const initial: PaymentsSettingsInput = {
     methods: methods.map((m) => ({
@@ -48,6 +52,8 @@ export default async function PagosSettingsPage() {
     <PaymentsForm
       initial={initial}
       store={{ name: s.name, whatsappPhone: s.whatsapp_phone ?? "", currency: s.currency, locale: s.locale }}
+      mercadoPagoConnected={mp.account?.status === "connected"}
+      beforeForm={<MercadoPagoCard state={mp} currency={s.currency} locale={s.locale} />}
     />
   );
 }

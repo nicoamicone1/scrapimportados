@@ -4,6 +4,8 @@ import { cronAuthorized } from "@/lib/cron-auth";
 import { runAbandonedNotices } from "@/lib/email/abandoned-notices";
 import { collectActivationNotices, deliverActivationNotices } from "@/lib/email/activation-notices";
 import { collectTrialNotices, deliverTrialNotices } from "@/lib/email/trial-notices";
+import { paymentsDb, refreshExpiringAccounts } from "@/lib/payments/accounts";
+import { paymentsEnabled } from "@/lib/payments/config";
 import { createPublicClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -55,5 +57,15 @@ export async function GET(request: NextRequest) {
   const activationReport = await deliverActivationNotices(await collectActivationNotices(now), now, notifiedToday);
   const abandonedReport = await runAbandonedNotices(now, 60_000);
   const emails = { ...trialReport, ...activationReport, ...abandonedReport };
-  return NextResponse.json({ ok: true, result: data, emails });
+  // Tokens de Mercado Pago de las tiendas (docs/PAYMENTS.md §4): se renuevan antes de vencer.
+  let payments: { checked: number; refreshed: number } | null = null;
+  const db = paymentsEnabled() ? paymentsDb() : null;
+  if (db) {
+    try {
+      payments = await refreshExpiringAccounts(db);
+    } catch (err) {
+      console.error("[cron] payments:", err instanceof Error ? err.message : err);
+    }
+  }
+  return NextResponse.json({ ok: true, result: data, emails, payments });
 }

@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updatePlan } from "@/app/(platform)/platform/actions";
-import { updatePlanMercadoPago, updatePlanYearly } from "@/app/(platform)/platform/planes/actions";
+import { updatePlanMercadoPago, updatePlanPaymentFee, updatePlanYearly } from "@/app/(platform)/platform/planes/actions";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
@@ -24,6 +24,8 @@ export interface EditablePlan {
   mpPlanId: string | null;
   /** Pago anual: `price_yearly` ("" = sin anual) y `mp_plan_id_yearly`. `null` = falta la migración 0019. */
   yearly: { price: string; mpPlanId: string } | null;
+  /** Comisión de Ecommy por venta online (%, `plans.payment_fee_percent`). `null` = falta la migración 0023. */
+  paymentFeePercent: string | null;
 }
 
 /** Edición de un plan: precio, features y límites (vacío = ilimitado / "a medida"). */
@@ -40,6 +42,7 @@ export function PlanEditor({ value }: { value: EditablePlan }) {
   const [mpPlanId, setMpPlanId] = useState(value.mpPlanId ?? "");
   const [priceYearly, setPriceYearly] = useState(value.yearly?.price ?? "");
   const [mpPlanIdYearly, setMpPlanIdYearly] = useState(value.yearly?.mpPlanId ?? "");
+  const [feePercent, setFeePercent] = useState(value.paymentFeePercent ?? "0");
   const [pending, startTransition] = useTransition();
   const monthly = price === "" ? null : Number(price);
   // Vista previa de la línea pública o, si el anual no se puede ofrecer, por qué (lo mismo que rechaza al guardar).
@@ -82,6 +85,14 @@ export function PlanEditor({ value }: { value: EditablePlan }) {
         }
         if (yr.data.detail) toast.info(`MercadoPago (anual): ${yr.data.detail}`);
       }
+      if (value.paymentFeePercent !== null && feePercent.trim() !== value.paymentFeePercent) {
+        const fee = await updatePlanPaymentFee({ code: value.code, feePercent: feePercent.trim() === "" ? 0 : Number(feePercent.replace(",", ".")) });
+        if (!fee.ok) {
+          toast.error(`Plan guardado, pero no la comisión por venta: ${fee.error}`);
+          router.refresh();
+          return;
+        }
+      }
       toast.success(`Plan ${name} guardado.`);
       router.refresh();
     });
@@ -110,6 +121,14 @@ export function PlanEditor({ value }: { value: EditablePlan }) {
             hint="Id del plan de suscripción creado en MercadoPago con el mismo precio. Vacío = este plan no se paga con MercadoPago."
           >
             <Input value={mpPlanId} onChange={(e) => setMpPlanId(e.target.value)} maxLength={80} className="font-mono text-xs" placeholder="2c9380848…" />
+          </Field>
+        ) : null}
+        {value.paymentFeePercent !== null ? (
+          <Field
+            label="Comisión de Ecommy por venta online (%)"
+            hint="Se descuenta de cada pago con tarjeta de las tiendas de este plan (marketplace_fee de Mercado Pago). 0 = sin comisión."
+          >
+            <Input type="number" min={0} max={10} step="0.1" value={feePercent} onChange={(e) => setFeePercent(e.target.value)} className="max-w-[140px]" />
           </Field>
         ) : null}
         {value.yearly !== null ? (

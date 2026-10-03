@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
+import { installmentAmount } from "@/lib/payments/installments";
 import { netPrice, priceWithDiscount, type QuantityOffer } from "@/lib/pricing";
 
 export interface PriceTagProps {
@@ -13,6 +14,8 @@ export interface PriceTagProps {
   transferPercent?: number;
   /** "transferencia" → "$ X con transferencia". */
   transferLabel?: string;
+  /** Cuotas sin interés (Mercado Pago conectado): "3 cuotas sin interés de $ X". 0 = no se muestra. */
+  freeInstallments?: number;
   /** Precio sin impuestos nacionales (Ley 27.743): alícuota + leyenda. */
   net?: { vat: number; label: string } | null;
   size?: "sm" | "md" | "lg";
@@ -30,7 +33,8 @@ export interface PriceTagProps {
 /**
  * Precio del storefront (DESIGN.md §6.2): actual en `--fg` (o `--accent` si
  * es promo) + anterior tachado + línea "con transferencia" + neto sin
- * impuestos. Siempre `--font-body` y `tabular-nums`. Nunca cuotas.
+ * impuestos + cuotas sin interés (sólo si la tienda cobra con Mercado Pago y
+ * declaró las que ofrece, docs/PAYMENTS.md §6). Siempre `--font-body` y `tabular-nums`.
  * Sin hooks: se usa desde Server y Client Components.
  */
 export function PriceTag({
@@ -39,6 +43,7 @@ export function PriceTag({
   from,
   transferPercent = 0,
   transferLabel = "transferencia",
+  freeInstallments = 0,
   net,
   size = "md",
   currency,
@@ -54,6 +59,7 @@ export function PriceTag({
   const onSale = !muted && compareAt != null && compareAt > price;
   const transferPrice = transferPercent > 0 && !muted ? priceWithDiscount(price, transferPercent) : null;
   const netValue = net ? netPrice(price, net.vat) : null;
+  const installments = freeInstallments > 1 && !muted && price > 0 ? freeInstallments : 0;
 
   return (
     <div className={cn("tnum font-body", className)}>
@@ -102,6 +108,19 @@ export function PriceTag({
         </p>
       ) : extra ? (
         <p className="mt-1.5 text-sm text-fg-muted">{extra}</p>
+      ) : null}
+      {installments ? (
+        <p className={cn("text-fg-muted", size === "lg" ? "mt-1 text-sm" : "mt-0.5 text-xs")}>
+          {size === "lg" ? (
+            <>
+              <strong className="font-semibold text-fg">{installments} cuotas sin interés</strong> de {fmt(installmentAmount(price, installments))}
+            </>
+          ) : (
+            <>
+              {installments} cuotas sin interés de {fmt(installmentAmount(price, installments))}
+            </>
+          )}
+        </p>
       ) : null}
       {netValue != null && net ? (
         <p className={cn("text-fg-muted", size === "lg" ? "mt-1 text-xs" : "mt-0.5 text-[length:var(--text-xs)] leading-tight")}>

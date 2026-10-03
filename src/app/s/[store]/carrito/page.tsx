@@ -58,6 +58,7 @@ export default async function CartPage({ params }: PageProps<"/s/[store]/carrito
                     cards={card.cards}
                     transferPercent={card.transferPercent}
                     transferLabel={card.transferLabel}
+                    freeInstallments={card.freeInstallments}
                     net={card.net}
                     whatsappPhone={card.whatsappPhone}
                     store={store}

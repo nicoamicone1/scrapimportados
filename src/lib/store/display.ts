@@ -27,6 +27,8 @@ export interface CardDisplay {
   transferPercent: number;
   /** Nombre del método ("transferencia"), para "$ X con transferencia". */
   transferLabel: string;
+  /** Cuotas sin interés para "3 cuotas sin interés de $ X" (0 = no se muestra; sólo con Mercado Pago conectado). */
+  freeInstallments: number;
   /** Precio sin impuestos nacionales (null = no se muestra). */
   net: NetPriceDisplay | null;
   /** Teléfono para "Consultar por WhatsApp" en agotados (null si el método no está activo). */
@@ -108,6 +110,9 @@ export async function getStoreDisplay(storeId: string): Promise<StoreDisplay> {
       cards,
       transferPercent: best && cards.showTransferPrice ? best.discountPercent : 0,
       transferLabel: best ? transferLabelFor(best.name) : "transferencia",
+      freeInstallments: paymentMethods.some((m) => m.type === "mercadopago")
+        ? Math.min(settings.checkout.mercadopago.free_installments, settings.checkout.mercadopago.max_installments)
+        : 0,
       net:
         settings.tax.show_net_price && cards.showNetPrice
           ? { defaultVat: settings.tax.default_vat_percent, label: settings.tax.label }

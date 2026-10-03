@@ -348,6 +348,7 @@ export async function CatalogView({ basePath, store, linkBase, searchParams, dis
     cards: display.card.cards,
     transferPercent: display.card.transferPercent,
     transferLabel: display.card.transferLabel,
+    freeInstallments: display.card.freeInstallments,
     net: display.card.net,
     whatsappPhone: display.card.whatsappPhone,
     store,

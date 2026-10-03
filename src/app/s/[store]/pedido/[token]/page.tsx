@@ -10,10 +10,14 @@ import { formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireStore } from "@/lib/store/context";
 import { markdownToHtml } from "@/lib/store/markdown";
+import { getOnlinePaymentInfo } from "@/lib/store/payment-methods";
+import { installmentLabel } from "@/lib/payments/installments";
 import { BUNDLE_DISCOUNT_LABEL, splitPromotions } from "@/lib/store/order-bundle";
 import { deliveryText, getOrderByToken, type PublicOrder } from "@/lib/store/orders";
 import { absoluteUrl } from "@/lib/store/seo";
 import { buildOrderMessage, buildReceiptMessage, waLink } from "@/lib/store/whatsapp";
+
+import { MercadoPagoPayment } from "./MercadoPagoPayment";
 
 export const metadata: Metadata = {
   title: "Tu pedido",
@@ -86,6 +90,10 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
   const method = order.paymentMethod;
   const isTransfer = method?.type === "transfer" || order.paymentMethodCode === "transfer";
   const isWhatsapp = method?.type === "whatsapp" || order.paymentMethodCode === "whatsapp";
+  const isMercadoPago = method?.type === "mercadopago" || order.paymentProvider === "mercadopago";
+  const back = typeof sp.pago === "string" && ["ok", "pendiente", "error"].includes(sp.pago) ? sp.pago : null;
+  const mp = isMercadoPago ? (await getOnlinePaymentInfo(store.id)) : null;
+  const freeInstallments = mp && mp.freeInstallments > 1 ? mp.freeInstallments : 0;
   const t = order.transfer;
   const hasBankData = Boolean(t.cbu || t.alias);
   const phone = order.store.whatsappPhone;
@@ -154,6 +162,22 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
       </header>
 
       {/* La acción va primero (DESIGN.md §6.11) */}
+      {isMercadoPago && (unpaid || order.paymentStatus === "paid") ? (
+        <MercadoPagoPayment
+          token={order.token}
+          paid={order.paymentStatus === "paid"}
+          cancelled={cancelled}
+          back={back}
+          detail={order.paymentDetail}
+          totalLabel={money(order.total)}
+          installmentsHint={
+            freeInstallments
+              ? `Hasta ${installmentLabel(order.total, freeInstallments, { currency: order.currency, locale: order.store.locale })}, con tarjeta de crédito.`
+              : null
+          }
+        />
+      ) : null}
+
       {!cancelled && unpaid && isTransfer ? (
         <section className="mt-6 rounded-lg border border-border bg-surface p-5" aria-labelledby="pagar">
           <h2 id="pagar" className="font-body text-base font-semibold tracking-normal normal-case">
@@ -234,7 +258,8 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/s/
           </h2>
           <ol className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
             <li className="border-t border-border pt-3">
-              <span className="tnum text-fg-muted">1.</span> {isTransfer ? "Transferís y nos mandás el comprobante." : "Acordamos el pago por WhatsApp."}
+              <span className="tnum text-fg-muted">1.</span>{" "}
+              {isTransfer ? "Transferís y nos mandás el comprobante." : isMercadoPago ? "Pagás con Mercado Pago." : "Acordamos el pago por WhatsApp."}
             </li>
             <li className="border-t border-border pt-3">
               <span className="tnum text-fg-muted">2.</span> Confirmamos el pago y te avisamos.

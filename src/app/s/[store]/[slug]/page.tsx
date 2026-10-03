@@ -50,7 +50,7 @@ export default async function BuilderPage({ params }: Props) {
         promotions={display.promotions}
         theme={settings.theme}
         transferPercent={card.transferPercent}
-        cardProps={{ transferLabel: card.transferLabel, net: card.net, whatsappPhone: card.whatsappPhone, store }}
+        cardProps={{ transferLabel: card.transferLabel, freeInstallments: card.freeInstallments, net: card.net, whatsappPhone: card.whatsappPhone, store }}
         timezone={settings.timezone}
       />
     </>

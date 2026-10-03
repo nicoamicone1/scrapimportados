@@ -997,6 +997,9 @@ export type Database = {
           notes: string | null
           number: number
           paid_at: string | null
+          payment_detail: Json | null
+          payment_provider: string | null
+          payment_provider_ref: string | null
           payment_discount: number
           payment_discount_percent: number
           payment_method_code: string | null
@@ -1040,6 +1043,9 @@ export type Database = {
           notes?: string | null
           number?: number
           paid_at?: string | null
+          payment_detail?: Json | null
+          payment_provider?: string | null
+          payment_provider_ref?: string | null
           payment_discount?: number
           payment_discount_percent?: number
           payment_method_code?: string | null
@@ -1083,6 +1089,9 @@ export type Database = {
           notes?: string | null
           number?: number
           paid_at?: string | null
+          payment_detail?: Json | null
+          payment_provider?: string | null
+          payment_provider_ref?: string | null
           payment_discount?: number
           payment_discount_percent?: number
           payment_method_code?: string | null
@@ -1347,6 +1356,7 @@ export type Database = {
           name: string
           position: number
           price_monthly: number | null
+          payment_fee_percent: number
           price_yearly: number | null
           updated_at: string
         }
@@ -1363,6 +1373,7 @@ export type Database = {
           name: string
           position?: number
           price_monthly?: number | null
+          payment_fee_percent?: number
           price_yearly?: number | null
           updated_at?: string
         }
@@ -1379,6 +1390,7 @@ export type Database = {
           name?: string
           position?: number
           price_monthly?: number | null
+          payment_fee_percent?: number
           price_yearly?: number | null
           updated_at?: string
         }
@@ -3139,6 +3151,65 @@ export type Database = {
           },
         ]
       }
+      store_payment_accounts: {
+        Row: {
+          access_token_enc: string | null
+          connected_at: string | null
+          connected_by: string | null
+          created_at: string
+          last_error: string | null
+          live_mode: boolean
+          mp_user_id: number | null
+          provider: string
+          public_key: string | null
+          refresh_token_enc: string | null
+          status: string
+          store_id: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_enc?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          created_at?: string
+          last_error?: string | null
+          live_mode?: boolean
+          mp_user_id?: number | null
+          provider?: string
+          public_key?: string | null
+          refresh_token_enc?: string | null
+          status?: string
+          store_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_enc?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          created_at?: string
+          last_error?: string | null
+          live_mode?: boolean
+          mp_user_id?: number | null
+          provider?: string
+          public_key?: string | null
+          refresh_token_enc?: string | null
+          status?: string
+          store_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_payment_accounts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           address: string | null
@@ -3821,6 +3892,13 @@ export type Database = {
         Returns: number
       }
       run_daily_maintenance: { Args: never; Returns: Json }
+      payments_apply_mp_payment: {
+        Args: { p_amount: number; p_detail: Json; p_order_id: string; p_payment_id: string; p_status: string; p_store_id: string }
+        Returns: Json
+      }
+      payments_store_context: { Args: { p_store_id: string }; Returns: Json }
+      store_payment_account_status: { Args: { p_store_id: string }; Returns: Json }
+      store_payments_online: { Args: { p_store_id: string }; Returns: boolean }
       store_has_module: {
         Args: { p_code: string; p_store_id: string }
         Returns: boolean

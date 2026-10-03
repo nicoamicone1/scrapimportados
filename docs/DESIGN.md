@@ -770,7 +770,7 @@ Un solo componente para card, ficha, carrito y checkout. Props: `price`, `compar
 
 - `lg` (ficha): precio `--text-xl` mobile / `--text-2xl` desktop en `--font-body`. Debajo: "Pagando con transferencia **$ 41.310** (10 % off)" + link "Ver medios de pago" que abre un popover con los métodos activos.
 - Accesibilidad: `<span class="sr-only">Precio anterior:</span>` antes del tachado y `Precio actual:` antes del vigente.
-- Nunca cuotas ("6 cuotas sin interés"): no hay pasarela.
+- Cuotas ("6 cuotas sin interés de $ X") sólo si la tienda cobra con Mercado Pago y declaró las cuotas sin interés que ofrece (docs/PAYMENTS.md §6). Nunca cuotas con interés ni "hasta 12 cuotas" genérico en la card.
 
 ### 6.3 Ficha de producto
 
@@ -995,7 +995,7 @@ Ctrl K / ⌘K. 640px de ancho, a 15vh del borde superior, `--adm-surface`, radio
 9. [ ] Ritmo: no hay 3 bloques seguidos con el mismo `paddingY`; títulos más cerca de su contenido que de la sección anterior.
 10. [ ] Imágenes con `alt` real, `aspect-ratio` reservado (sin CLS), `sizes` correcto, prioridad sólo para la primera del viewport.
 11. [ ] Estados cubiertos: carga, vacío con contenido útil y acción, error (qué pasó + cómo seguir), sin stock, deshabilitado.
-12. [ ] Sin lorem ipsum, sin reseñas inventadas, sin logos de tarjetas ni cuotas.
+12. [ ] Sin lorem ipsum, sin reseñas inventadas, sin logos de tarjetas; cuotas sólo las sin interés reales del comercio (Mercado Pago conectado).
 13. [ ] Íconos lucide 16–20px; `aria-hidden` si decoran, `aria-label` si son el único contenido del botón.
 14. [ ] `prefers-reduced-motion` respetado; transiciones ≤ 200 ms (drawers ≤ 280 ms); nada animado al cargar.
 15. [ ] Formularios: label real arriba, `autocomplete`, errores junto al campo con `aria-describedby` y `aria-invalid`.

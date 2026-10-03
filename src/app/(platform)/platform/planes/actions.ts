@@ -99,6 +99,31 @@ export async function updatePlanMercadoPago(
   });
 }
 
+const feeSchema = z.object({
+  code: z.string().min(1),
+  feePercent: z.coerce.number().min(0, "No puede ser negativa.").max(10, "Hasta 10 %."),
+});
+
+/**
+ * Comisión de Ecommy por venta cobrada online con Mercado Pago (0023,
+ * docs/PAYMENTS.md §3): `plans.payment_fee_percent` → `marketplace_fee` de
+ * cada preferencia. Rige para los pagos que se inicien desde ahora.
+ */
+export async function updatePlanPaymentFee(input: z.input<typeof feeSchema>): Promise<ActionResult> {
+  return runAction(async () => {
+    const { supabase } = await requirePlatformAdmin();
+    const parsed = feeSchema.safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    const { error } = await supabase
+      .from("plans")
+      .update({ payment_fee_percent: Math.round(parsed.data.feePercent * 100) / 100 })
+      .eq("code", parsed.data.code);
+    if (error) return fail(error.message);
+    revalidatePath("/platform/planes");
+    return ok();
+  });
+}
+
 const yearlySchema = z.object({
   code: z.string().min(1),
   /** "" = sin pago anual. */

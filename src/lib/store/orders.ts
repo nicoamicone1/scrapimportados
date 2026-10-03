@@ -3,6 +3,8 @@ import "server-only";
 import type { Json } from "@/lib/supabase/database.types";
 import { createPublicClient } from "@/lib/supabase/server";
 
+import type { MpPaymentDetailView } from "./mercadopago-labels";
+
 import { asArray, asBool, asNumber, asObject, asString } from "./utils";
 
 /** Pedido público leído por token (`get_order_by_token`). SIN cache: el estado cambia. */
@@ -45,6 +47,10 @@ export interface PublicOrder {
   status: "pending" | "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "paid" | "partial" | "refunded";
   paymentMethodCode: string;
+  /** 'mercadopago' si el pedido pasó por Checkout Pro (0023). */
+  paymentProvider: string | null;
+  /** Último pago de Mercado Pago (estado, cuotas, medio). */
+  paymentDetail: MpPaymentDetailView | null;
   paymentDiscountPercent: number;
   paymentDiscount: number;
   fulfillment: "delivery" | "pickup";
@@ -84,6 +90,21 @@ function nullable(v: Json | undefined): string | null {
   return s ? s : null;
 }
 
+function parsePaymentDetail(v: Json | undefined): MpPaymentDetailView | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const d = asObject(v);
+  const status = asString(d.status);
+  if (!status) return null;
+  const installments = asNumber(d.installments);
+  return {
+    status,
+    statusDetail: nullable(d.status_detail),
+    installments: installments > 0 ? installments : null,
+    paymentMethodId: nullable(d.payment_method_id),
+    lastFour: nullable(d.last_four),
+  };
+}
+
 const STATUSES = ["pending", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
 const PAYMENT_STATUSES = ["pending", "paid", "partial", "refunded"] as const;
 
@@ -112,6 +133,8 @@ export function parsePublicOrder(raw: Json, token: string): PublicOrder | null {
       ? (paymentStatus as PublicOrder["paymentStatus"])
       : "pending",
     paymentMethodCode: asString(o.payment_method_code),
+    paymentProvider: nullable(o.payment_provider),
+    paymentDetail: parsePaymentDetail(o.payment_detail),
     paymentDiscountPercent: asNumber(o.payment_discount_percent),
     paymentDiscount: asNumber(o.payment_discount),
     fulfillment: asString(o.fulfillment) === "pickup" ? "pickup" : "delivery",

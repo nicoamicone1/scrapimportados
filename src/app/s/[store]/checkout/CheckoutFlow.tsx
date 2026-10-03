@@ -14,6 +14,7 @@ import { useCartSync } from "@/components/store/useCartSync";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
+import { installmentAmount } from "@/lib/payments/installments";
 import { computeCart, type CartTotals, type Promotion } from "@/lib/pricing";
 import { PROVINCE_OPTIONS } from "@/lib/shipping/provinces";
 import { trackOnce } from "@/lib/store/analytics";
@@ -67,6 +68,24 @@ export interface CheckoutFlowProps {
   net: { defaultVat: number; label: string } | null;
   /** Ofrece "Avisame por mail si dejo el pedido sin terminar" (carritos abandonados, 0020). */
   remindersEnabled?: boolean;
+  /** Cuotas del método de Mercado Pago (docs/PAYMENTS.md §6). */
+  installments?: { max: number; free: number };
+}
+
+/** Tarjeta genérica (sin marcas). */
+function CardGlyph() {
+  return (
+    <svg viewBox="0 0 24 16" className="h-4 w-6 shrink-0 text-fg-muted" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+      <rect x="0.7" y="0.7" width="22.6" height="14.6" rx="2.3" />
+      <path d="M0.7 5h22.6" />
+      <path d="M4 11h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function installmentsText(inst: { max: number; free: number } | undefined): string {
+  if (!inst || inst.max <= 1) return "Crédito, débito o dinero en Mercado Pago";
+  return inst.free > 1 ? `Hasta ${inst.free} cuotas sin interés` : `Hasta ${inst.max} cuotas`;
 }
 
 export type Step = 1 | 2 | 3 | 4;
@@ -303,6 +322,7 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
   const [itemErrors, setItemErrors] = useState<Record<string, string>>({});
   const [quoting, startQuote] = useTransition();
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   // Carrito abandonado: token de la sesión (localStorage) y consentimiento.
   // El tilde nace SIEMPRE destildado: el token guardado (de una visita anterior
@@ -505,6 +525,7 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
     setItemErrors({});
     // WhatsApp: la ventana se abre en el click (si no, el navegador la bloquea) y se completa después.
     const popup = method.type === "whatsapp" ? window.open("", "_blank") : null;
+    if (method.type === "mercadopago") setRedirecting(true);
     const res = await createOrder({
       customer,
       fulfillment,
@@ -518,6 +539,7 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
     if (!res.ok) {
       popup?.close();
       setSubmitting(false);
+      setRedirecting(false);
       setFormError(res.error);
       const fe = res.fieldErrors ?? {};
       const perItem: Record<string, string> = {};
@@ -540,11 +562,26 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
       else popup.close();
     }
     clear();
+    // Mercado Pago: el pago se hace en su checkout y vuelve a /pedido/<token>?pago=…
+    if (res.data.paymentUrl) {
+      window.location.assign(res.data.paymentUrl);
+      return;
+    }
+    setRedirecting(false);
     router.push(toPath(`/pedido/${res.data.token}?nuevo=1`));
   };
 
   // --- Estados vacíos ----------------------------------------------------------
   if (!hydrated) return <div className="mt-6 h-64 rounded-lg bg-surface" aria-hidden />;
+  if (redirecting && !items.length) {
+    return (
+      <div className="mt-10 flex flex-col items-center gap-3 text-center" role="status">
+        <Loader2 className="size-6 animate-spin text-fg-muted" aria-hidden />
+        <p className="font-medium">Te llevamos a Mercado Pago para pagar…</p>
+        <p className="text-sm text-fg-muted">Tu pedido ya está reservado. No cierres esta pestaña.</p>
+      </div>
+    );
+  }
   if (!items.length && !submitting) {
     return (
       <div className="mt-6">
@@ -825,10 +862,19 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
                   <input type="radio" name="payment" value={m.code} checked={method?.code === m.code} onChange={() => setMethodCode(m.code)} />
                   <span className="flex-1">
                     <span className="flex items-baseline justify-between gap-3">
-                      <span className="font-medium">{m.type === "whatsapp" ? "Acordás el pago con el vendedor por WhatsApp" : m.name}</span>
+                      <span className="flex items-center gap-2 font-medium">
+                        {m.type === "mercadopago" ? <CardGlyph /> : null}
+                        {m.type === "whatsapp" ? "Acordás el pago con el vendedor por WhatsApp" : m.name}
+                      </span>
                       {m.discountPercent > 0 ? <span className="tnum text-sm text-accent">−{m.discountPercent}&nbsp;%</span> : null}
                     </span>
-                    <span className="tnum block text-sm text-fg-muted">Total {formatMoney(t.total)}</span>
+                    {m.type === "mercadopago" ? <span className="block text-sm">{installmentsText(props.installments)}</span> : null}
+                    <span className="tnum block text-sm text-fg-muted">
+                      Total {formatMoney(t.total)}
+                      {m.type === "mercadopago" && (props.installments?.free ?? 0) > 1
+                        ? ` o ${props.installments!.free} × ${formatMoney(installmentAmount(t.total, props.installments!.free))} sin interés`
+                        : ""}
+                    </span>
                     {m.instructions ? <span className="block text-xs text-fg-muted">{m.instructions}</span> : null}
                   </span>
                 </label>
@@ -897,12 +943,23 @@ export function CheckoutFlow(props: CheckoutFlowProps) {
             aria-busy={submitting || undefined}
           >
             {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            {submitting ? "Confirmando pedido…" : "Confirmar pedido"}
+            {redirecting
+              ? "Te llevamos a Mercado Pago…"
+              : submitting
+                ? "Confirmando pedido…"
+                : method?.type === "mercadopago"
+                  ? "Pagar con Mercado Pago"
+                  : "Confirmar pedido"}
           </button>
+          <p className="sr-only" aria-live="polite">
+            {redirecting ? "Pedido confirmado. Te llevamos a Mercado Pago para pagar." : ""}
+          </p>
           <p className="mt-2 text-xs text-fg-muted">
             {method?.type === "whatsapp"
               ? "Al confirmar se abre WhatsApp con tu pedido armado. "
-              : "En el próximo paso te mostramos cómo pagar. "}
+              : method?.type === "mercadopago"
+                ? "Al confirmar te llevamos a Mercado Pago para pagar con tarjeta, débito o dinero en cuenta. "
+                : "En el próximo paso te mostramos cómo pagar. "}
             Al confirmar aceptás los{" "}
             {props.termsHref ? (
               <StoreLink href={props.termsHref} className="link" target="_blank">

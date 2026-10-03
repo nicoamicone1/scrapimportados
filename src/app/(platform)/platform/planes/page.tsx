@@ -28,6 +28,9 @@ export default async function PlatformPlansPage() {
         (yr.data ?? []).map((p) => [p.code, { price: p.price_yearly === null ? "" : String(Number(p.price_yearly)), mpPlanId: p.mp_plan_id_yearly ?? "" }]),
       );
   const mpConfigured = Boolean(process.env.MP_ACCESS_TOKEN?.trim());
+  // Comisión por venta online (0023): sin la migración no se muestra el campo.
+  const fee = await supabase.from("plans").select("code, payment_fee_percent");
+  const fees = fee.error ? null : new Map((fee.data ?? []).map((p) => [p.code, String(Number(p.payment_fee_percent))]));
 
   return (
     <div className="min-h-dvh">
@@ -68,6 +71,7 @@ export default async function PlatformPlansPage() {
                 plan: parsePlan({ ...p, status: "active" }),
                 mpPlanId: mpIds ? (mpIds.get(p.code) ?? "") : null,
                 yearly: yearly ? (yearly.get(p.code) ?? { price: "", mpPlanId: "" }) : null,
+                paymentFeePercent: fees ? (fees.get(p.code) ?? "0") : null,
               }}
             />
           ))}

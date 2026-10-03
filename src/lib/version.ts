@@ -6,14 +6,14 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.7.0";
+export const APP_VERSION = "0.8.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
  * con `app_meta.schema_version` (Configuración muestra un aviso si la base
  * está atrasada). Subila junto con la migración que la actualiza.
  */
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 
 export interface ChangelogEntry {
   version: string;
@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.8.0",
+    date: "2026-10-02",
+    title: "Tarjetas y cuotas sin interés con Mercado Pago",
+    sections: {
+      added: [
+        "Cobro con tarjeta: conectás tu cuenta de Mercado Pago en un paso (Configuración › Pagos) y tus clientes pagan con crédito, débito o dinero en cuenta, en cuotas. La plata entra directo a tu cuenta.",
+        "Cuotas sin interés: elegís las que ofrecés (3, 6, 9 o 12) y la tienda las anuncia en cada producto y en el checkout («6 cuotas sin interés de $ X»), con el paso a paso para activarlas en Mercado Pago y la tabla de comisiones.",
+        "Checkout: «Tarjeta de crédito o débito» con el valor de cada cuota; al confirmar te lleva a Mercado Pago y vuelve al pedido.",
+        "Página del pedido: «Estamos confirmando tu pago», pago en revisión, rechazo con el motivo y «Reintentar el pago», y «Pagaste con Visa ••4242 en 6 cuotas».",
+        "Los pagos aprobados marcan el pedido como pagado solos (con el descuento de stock si lo tenés al pagar) y le llega el mail de pago confirmado al comprador. Devoluciones y contracargos también se reflejan.",
+        "Pedido en el panel: detalle del pago de Mercado Pago (estado, cuotas, tarjeta e ID con link).",
+      ],
+      changed: [
+        "Un pedido con un pago de Mercado Pago en revisión no se cancela por vencimiento de la reserva durante 48 h.",
+      ],
+      fixed: [],
+    },
+  },
   {
     version: "0.7.0",
     date: "2026-10-02",

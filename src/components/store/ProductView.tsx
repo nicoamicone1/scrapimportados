@@ -32,6 +32,8 @@ export interface ProductViewProps {
   promotions: Promotion[];
   initialVariantId: string | null;
   transferPercent: number;
+  /** Cuotas sin interés (Mercado Pago conectado; 0 = no se muestran). */
+  freeInstallments?: number;
   transferLabel: string;
   /** Alícuota ya resuelta + leyenda (null = no se muestra). */
   net: { vat: number; label: string } | null;
@@ -74,6 +76,7 @@ export function ProductView({
   promotions,
   initialVariantId,
   transferPercent,
+  freeInstallments = 0,
   transferLabel,
   net,
   lowStockThreshold,
@@ -227,6 +230,7 @@ export function ProductView({
             from={shown.from}
             transferPercent={soldOut ? 0 : transferPercent}
             transferLabel={transferLabel}
+            freeInstallments={soldOut ? 0 : freeInstallments}
             net={net && !soldOut ? net : null}
             muted={soldOut}
             offer={shown.offer}

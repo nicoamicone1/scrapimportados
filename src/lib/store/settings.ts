@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 
 import { tagFor } from "@/lib/cache-tags";
 import { configureMoney } from "@/lib/money";
+import { normalizeFreeInstallments, normalizeMaxInstallments, type FreeInstallments } from "@/lib/payments/installments";
 import { createPublicClient } from "@/lib/supabase/server";
 import type { Json, Tables } from "@/lib/supabase/database.types";
 import { parseTheme, type Theme } from "@/lib/theme";
@@ -30,6 +31,19 @@ export interface CheckoutSettings {
   reservation_hours: number;
   /** Aviso por mail de carritos abandonados (migración 0020, plan `marketing.abandoned`). */
   abandoned_reminders: boolean;
+  /** Cobro con tarjeta por Mercado Pago (docs/PAYMENTS.md §3). */
+  mercadopago: MercadoPagoCheckoutSettings;
+}
+
+export interface MercadoPagoCheckoutSettings {
+  /** Cuotas máximas que ofrece el checkout de MP (1–24). */
+  max_installments: number;
+  /** Cuotas sin interés que el comercio activó en su cuenta de MP (0 = no comunica). */
+  free_installments: FreeInstallments;
+  /** Sólo aprobado o rechazado (sin pagos "en revisión"). */
+  binary_mode: boolean;
+  /** Nombre en el resumen de la tarjeta (hasta 13). */
+  statement_descriptor: string;
 }
 
 /** Precio sin impuestos nacionales (spec §13 · P0-15). */
@@ -137,6 +151,17 @@ export function parseCheckout(value: Json): CheckoutSettings {
     min_order_total: asNumber(c.min_order_total, 0),
     reservation_hours: asNumber(c.reservation_hours, 48),
     abandoned_reminders: asBool(c.abandoned_reminders, false),
+    mercadopago: parseMercadoPagoCheckout(c.mercadopago),
+  };
+}
+
+export function parseMercadoPagoCheckout(value: Json | undefined): MercadoPagoCheckoutSettings {
+  const m = asObject(value ?? {});
+  return {
+    max_installments: normalizeMaxInstallments(m.max_installments ?? 12),
+    free_installments: normalizeFreeInstallments(m.free_installments),
+    binary_mode: asBool(m.binary_mode, true),
+    statement_descriptor: asString(m.statement_descriptor).slice(0, 13),
   };
 }
 

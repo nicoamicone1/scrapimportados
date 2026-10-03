@@ -205,13 +205,28 @@ export type StoreSettingsOutput = z.output<typeof storeSettingsSchema>;
 export const paymentMethodSchema = z.object({
   id: z.string().uuid(),
   code: z.string(),
-  type: z.enum(["transfer", "whatsapp", "cash", "other"]),
+  type: z.enum(["transfer", "whatsapp", "cash", "other", "mercadopago"]),
   name: trimmed(60).min(1, "Ingresá un nombre."),
   is_active: z.boolean(),
   discount_percent: percent,
   instructions_md: z.string().trim().max(2000, "Hasta 2000 caracteres."),
 });
 export type PaymentMethodInput = z.input<typeof paymentMethodSchema>;
+
+/** Cobro con tarjeta por Mercado Pago (docs/PAYMENTS.md §3): `store_settings.checkout.mercadopago`. */
+export const mercadoPagoSettingsSchema = z.object({
+  max_installments: num().pipe(z.number().int("Usá un número entero.").min(1, "Mínimo 1 cuota.").max(24, "Hasta 24 cuotas.")),
+  free_installments: z.coerce
+    .number()
+    .refine((n) => [0, 3, 6, 9, 12].includes(n), "Elegí 0, 3, 6, 9 o 12."),
+  binary_mode: z.boolean(),
+  statement_descriptor: z
+    .string()
+    .trim()
+    .max(13, "Hasta 13 caracteres.")
+    .refine((v) => /^[A-Za-z0-9 ]*$/.test(v), "Sólo letras sin acento, números y espacios."),
+});
+export type MercadoPagoSettingsInput = z.input<typeof mercadoPagoSettingsSchema>;
 
 export const transferSchema = z.object({
   bank_name: trimmed(80),

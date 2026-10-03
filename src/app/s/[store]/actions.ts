@@ -5,6 +5,7 @@ import { z } from "zod";
 import { fail, GENERIC_ERROR, ok, zodFail, type ActionResult } from "@/lib/actions";
 import { notifyOrderCreated, notifyWithdrawal } from "@/lib/email/notify";
 import { formatMoney } from "@/lib/money";
+import { startMercadoPagoPayment } from "@/lib/payments/checkout";
 import { computeCart, type Coupon, type CartTotals } from "@/lib/pricing";
 import { normalizeProvince, provinceName, quoteShipping } from "@/lib/shipping";
 import { describeIssue, validateCart, type CartPatch } from "@/lib/store/cart-validation";
@@ -261,6 +262,10 @@ export interface CreateOrderResult {
   number: number;
   /** Link a WhatsApp con el pedido armado (método whatsapp). */
   whatsappUrl: string | null;
+  /** Checkout de Mercado Pago (método mercadopago): el cliente redirige ahí. */
+  paymentUrl: string | null;
+  /** El pedido quedó creado pero no se pudo abrir Mercado Pago (se reintenta desde el pedido). */
+  paymentError: string | null;
   totals: Pick<CartTotals, "total">;
 }
 
@@ -432,7 +437,46 @@ export async function createOrder(input: unknown): Promise<ActionResult<CreateOr
       }
     }
 
-    return ok({ token: result.public_token, number: result.number, whatsappUrl, totals: { total: totals.total } });
+    let paymentUrl: string | null = null;
+    let paymentError: string | null = null;
+    if (method.type === "mercadopago") {
+      const order = await getOrderByToken(store.id, result.public_token);
+      const started = order
+        ? await startMercadoPagoPayment({ storeId: store.id, settings, order, orderUrl: absoluteUrl(store, `/pedido/${order.token}`) })
+        : { error: GENERIC_ERROR };
+      if ("url" in started) paymentUrl = started.url;
+      else paymentError = started.error;
+    }
+
+    return ok({ token: result.public_token, number: result.number, whatsappUrl, paymentUrl, paymentError, totals: { total: totals.total } });
+  } catch (err) {
+    console.error(err);
+    return fail(GENERIC_ERROR);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pagar / reintentar el pago con Mercado Pago desde la página del pedido
+// ---------------------------------------------------------------------------
+
+export async function startOrderPayment(token: unknown): Promise<ActionResult<{ paymentUrl: string }>> {
+  const parsed = z.string().regex(/^[0-9a-f]{32}$/).safeParse(token);
+  if (!parsed.success) return fail("El pedido no existe.");
+  try {
+    const store = await currentStore();
+    if (!store) return fail(STORE_UNAVAILABLE);
+    const [order, settings, methods] = await Promise.all([
+      getOrderByToken(store.id, parsed.data),
+      fetchSettingsFresh(store.id),
+      fetchPaymentMethodsFresh(store.id),
+    ]);
+    if (!order) return fail("El pedido no existe.");
+    if (order.paymentStatus === "paid") return fail("Este pedido ya está pago.");
+    if (order.status === "cancelled") return fail("Este pedido está cancelado. Escribile a la tienda si querés retomarlo.");
+    if (order.expiresAt && Date.parse(order.expiresAt) <= Date.now()) return fail("La reserva de este pedido venció. Hacé el pedido de nuevo.");
+    if (!methods.some((m) => m.type === "mercadopago")) return fail("Esta tienda no está cobrando con tarjeta en este momento.");
+    const started = await startMercadoPagoPayment({ storeId: store.id, settings, order, orderUrl: absoluteUrl(store, `/pedido/${order.token}`) });
+    return "url" in started ? ok({ paymentUrl: started.url }) : fail(started.error);
   } catch (err) {
     console.error(err);
     return fail(GENERIC_ERROR);

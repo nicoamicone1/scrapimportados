@@ -25,6 +25,7 @@ export default async function CheckoutPage({ params }: PageProps<"/s/[store]/che
   const { settings, zones } = display;
   // Carritos abandonados (0020): el tilde de aviso sólo si la tienda lo prendió y su plan lo incluye.
   const remindersEnabled = await checkoutRemindersEnabled(store.id, settings.checkout.abandoned_reminders);
+  const mp = settings.checkout.mercadopago;
   const terms = settings.policies.terms_md ? `/politicas/${findPolicy("terms")!.slug}` : null;
 
   return (
@@ -52,6 +53,7 @@ export default async function CheckoutPage({ params }: PageProps<"/s/[store]/che
         currency={settings.currency}
         net={settings.tax.show_net_price ? { defaultVat: settings.tax.default_vat_percent, label: settings.tax.label } : null}
         remindersEnabled={remindersEnabled}
+        installments={{ max: mp.max_installments, free: Math.min(mp.free_installments, mp.max_installments) }}
       />
     </div>
   );

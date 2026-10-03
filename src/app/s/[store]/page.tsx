@@ -53,6 +53,7 @@ export default async function HomePage({ params }: Props) {
 
   const cardProps = {
     transferLabel: card.transferLabel,
+    freeInstallments: card.freeInstallments,
     net: card.net,
     whatsappPhone: card.whatsappPhone,
     store,

@@ -118,6 +118,16 @@ export async function savePaymentsSettings(input: unknown): Promise<ActionResult
     if (!v.methods.some((m) => m.is_active)) {
       return fail("Tiene que quedar al menos un método de pago activo.", { methods: ["Activá al menos un método de pago."] });
     }
+    // Mercado Pago sólo se activa con la cuenta conectada (también lo frena un trigger de 0023).
+    const mpIndex = v.methods.findIndex((m) => m.type === "mercadopago" && m.is_active);
+    if (mpIndex !== -1) {
+      const { data: account } = await ctx.supabase.rpc("store_payment_account_status", { p_store_id: ctx.store.id });
+      if ((account as { status?: string } | null)?.status !== "connected") {
+        return fail("Conectá tu cuenta de Mercado Pago antes de activar el cobro con tarjeta.", {
+          [`methods.${mpIndex}.is_active`]: ["Conectá Mercado Pago primero."],
+        });
+      }
+    }
     const transfer = v.methods.find((m) => m.type === "transfer");
     if (transfer?.is_active && (!v.transfer.cbu && !v.transfer.alias)) {
       return fail("Para cobrar por transferencia cargá el CBU/CVU o el alias.", {

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { RefreshOrdersBadge } from "@/components/admin/OrdersBadge";
 import { AutosaveNotes } from "@/components/admin/orders/AutosaveNotes";
 import { CopyButton } from "@/components/admin/orders/CopyButton";
+import { MercadoPagoDetail } from "@/components/admin/orders/MercadoPagoDetail";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/orders/OrderBadges";
 import { OrderActionsProvider, OrderHeaderActions, OrderNextStep, OrderWhatsAppButton } from "@/components/admin/orders/OrderActions";
 import { OrderTimeline } from "@/components/admin/orders/OrderTimeline";
@@ -248,6 +249,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
           </Card>
 
           <Print3dOrderPanel orderId={order.id} />
+
+          {order.payment_provider === "mercadopago" ? (
+            <MercadoPagoDetail detail={order.payment_detail} preferenceId={order.payment_provider_ref} timeZone={tz} />
+          ) : null}
 
           <PaymentsCard
             orderId={order.id}

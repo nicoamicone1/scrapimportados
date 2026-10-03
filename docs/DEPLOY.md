@@ -28,6 +28,10 @@ Estado actual de producción (spec §14.4):
 | `HASH_SECRET` | secreto largo aleatorio (marcado *sensitive*), opcional | HMAC del IP para los cupos de carritos guardados; si falta se usa `CRON_SECRET` (ver §4d) |
 | `EMAIL_UNSUBSCRIBE_MAILTO` | casilla que atiende bajas, opcional | `mailto:` del encabezado `List-Unsubscribe` de los mails de carrito abandonado (ver §4d) |
 | `MP_ACCESS_TOKEN` | access token de **producción** de la cuenta de MercadoPago de Ecommy (marcado *sensitive*, nunca `NEXT_PUBLIC_`) | cobro automático de planes (docs/BILLING.md). Sin él `/admin/plan` sólo ofrece el pedido por WhatsApp y el webhook responde 503 |
+| `MP_PAYMENTS_CLIENT_ID` | número de la app de Mercado Pago **"Ecommy Tiendas"** (Checkout Pro + OAuth): `954124726074456` | cobro con tarjeta y cuotas de las tiendas (docs/PAYMENTS.md). Sin él (o sin los dos de abajo) el admin no ofrece "Conectar Mercado Pago" |
+| `MP_PAYMENTS_CLIENT_SECRET` | Client Secret de producción de esa app (marcado *sensitive*) | canje del OAuth y renovación de tokens de los comercios |
+| `PAYMENTS_TOKEN_KEY` | 32 bytes en base64 (`openssl rand -base64 32`, *sensitive*) | cifra los tokens de Mercado Pago de los comercios. **Si se cambia o se pierde, todas las tiendas tienen que reconectar** |
+| `MP_PAYMENTS_WEBHOOK_SECRET` | opcional: clave secreta de webhooks de "Ecommy Tiendas" (*sensitive*) | valida `x-signature` en `/api/payments/mercadopago/webhook` si viene; el pago igual se relee siempre en MP |
 | `MP_WEBHOOK_SECRET` | clave secreta del webhook (MercadoPago → Tus integraciones → Webhooks) (marcado *sensitive*) | valida la firma `x-signature` de `/api/billing/mercadopago/webhook`. Sin ella el webhook responde 503 |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | `G-XXXXXXXXXX` | GA4 del sitio de Ecommy (landing, planes, registro, contacto). Opcional; sin él no se carga ningún script. Las tiendas tienen su propio GA4 en Configuración › SEO |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | token de Search Console | sólo el valor `content` del meta que da Google, sin el meta entero. Opcional |
