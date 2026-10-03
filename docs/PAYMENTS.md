@@ -174,9 +174,9 @@ Rutas:
   read / offline access / write (el formulario pide un captcha: lo guarda el dueño).
 - Migración `0023_store_payments` aplicada en producción (esquema 14). Todos los planes
   con `payment_fee_percent = 0`.
-- Vercel (prod + preview): `MP_PAYMENTS_CLIENT_ID` y `PAYMENTS_TOKEN_KEY` cargadas.
-  Faltan `MP_PAYMENTS_CLIENT_SECRET` (Credenciales de producción de la app) y
-  `SUPABASE_SERVICE_ROLE_KEY` (también la necesita el cobro de planes).
+- Vercel (prod + preview): `MP_PAYMENTS_CLIENT_ID`, `PAYMENTS_TOKEN_KEY` y
+  `SUPABASE_SERVICE_ROLE_KEY` cargadas. Falta `MP_PAYMENTS_CLIENT_SECRET` (Credenciales de
+  producción de la app). Detalle de todas las variables: docs/VARIABLES.md.
 - Código (además de §4): `preference-body.ts` (cuerpo puro, con tests), `checkout.ts`
   (link de pago para `createOrder` / `startOrderPayment`), `repo.ts` (webhook ↔ Supabase),
   `oauth-state.ts` (cookie cifrada), `admin.ts` (estado para Configuración › Pagos).
