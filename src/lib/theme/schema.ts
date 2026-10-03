@@ -71,6 +71,22 @@ export const themeFontsSchema = z
     }
   });
 
+export const themeStyleSchema = z.object({
+  /** Disposición de la portada (bloque hero en `layout: "auto"`): foto a sangre, mitad y mitad, enmarcada, tipográfica o apilada. */
+  hero: z.enum(["cover", "split", "framed", "poster", "stack"]),
+  /** Encabezados de sección: solo, con regla, centrado, numerado o con etiqueta. */
+  titles: z.enum(["plain", "rule", "centered", "index", "tag"]),
+  /** Forma de las imágenes de campaña, categorías y banners (nunca la foto de la ficha). */
+  shape: z.enum(["rect", "soft", "arch", "bubble"]),
+  /** Disposición de la tarjeta de producto: apilada, texto sobre la foto, en caja o en fila. */
+  card: z.enum(["stack", "overlay", "boxed", "row"]),
+  /** Movimiento: ninguno, suave (entradas y hovers con curva) o animado (marquesinas, escalonados). */
+  motion: z.enum(["none", "soft", "lively"]),
+});
+export type ThemeStyle = z.infer<typeof themeStyleSchema>;
+
+export const DEFAULT_THEME_STYLE: ThemeStyle = { hero: "cover", titles: "plain", shape: "rect", card: "stack", motion: "soft" };
+
 export const themeSchema = z.object({
   preset: z.enum(PRESET_IDS),
   colors: themeColorsSchema,
@@ -117,6 +133,13 @@ export const themeSchema = z.object({
      */
     showCredit: z.boolean().default(true),
   }),
+  /**
+   * Carácter del estilo (docs/DESIGN.md §3.9): lo que hace que dos presets no
+   * se parezcan aunque compartan colores. Se emite como `data-hero|titles|
+   * shape|card|motion` en `.store-root`. Tiene default: los temas guardados
+   * antes de 2026-10 siguen validando.
+   */
+  style: themeStyleSchema.default(DEFAULT_THEME_STYLE),
   effects: z.object({
     shadows: z.enum(["none", "soft", "strong"]),
     dividers: z.boolean(),

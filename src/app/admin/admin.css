@@ -7,77 +7,80 @@
 /* En @layer base: las utilidades de Tailwind siempre ganan sobre esto. */
 @layer base {
   .admin-root {
-    /* Base: crema cálida + superficies blancas (spec §14.6). */
-    --adm-bg: var(--eco-cream);
+    /* Base: niebla fría + superficies blancas (BRAND §5). */
+    --adm-bg: var(--eco-niebla);
     --adm-surface: var(--eco-paper);
-    --adm-surface-2: var(--eco-sand);
-    --adm-hover: #faf8f3;
+    --adm-surface-2: var(--eco-niebla-2);
+    --adm-hover: #f7f8fb;
     --adm-border: var(--eco-line); /* decorativo (1.38:1): paneles y reglas */
-    --adm-input-border: #968f80; /* 3.21:1 sobre blanco: delimita el control (WCAG 1.4.11) */
-    --adm-input-border-hover: #7a7465;
-    --adm-fg: var(--eco-ink); /* 16.09:1 blanco · 13.43:1 crema */
-    --adm-fg-muted: var(--eco-text-muted); /* 4.64:1 sobre bg, 5.07:1 sobre table-head */
-    --adm-fg-subtle: #c9c1b0; /* iconos lineales de empty states (decorativo) */
+    --adm-input-border: #7e86a0; /* 3.62:1 blanco · 3.32:1 niebla: delimita el control (WCAG 1.4.11) */
+    --adm-input-border-hover: #5b627a;
+    --adm-fg: var(--eco-ink); /* 17.83:1 blanco · 16.37:1 niebla */
+    --adm-fg-muted: var(--eco-text-muted); /* 6.05:1 blanco · 5.55:1 niebla */
+    --adm-fg-subtle: #b9bfd3; /* iconos lineales de empty states (decorativo) */
 
-    /* Acento primario: pino. */
-    --adm-accent: var(--eco-pine);
-    --adm-accent-hover: var(--eco-pine-dark);
-    --adm-accent-soft: var(--eco-pine-soft);
-    --adm-accent-fg: #ffffff; /* 9.69:1 */
+    /* Acción primaria del panel: tinta (botones, tabs activas). Links y selección: azul. */
+    --adm-accent: var(--eco-ink);
+    --adm-accent-hover: var(--eco-ink-3);
+    --adm-accent-soft: var(--eco-azul-soft);
+    --adm-accent-fg: #ffffff; /* 17.83:1 */
+    --adm-link: var(--eco-azul); /* 5.88:1 blanco · 5.40:1 niebla */
+    --adm-link-hover: var(--eco-azul-dark);
 
-    /* Acento secundario: ámbar (foco, progreso, "nuevo", highlights, CTA de onboarding). */
-    --adm-accent-2: var(--eco-amber);
-    --adm-accent-2-hover: var(--eco-amber-dark);
-    --adm-accent-2-soft: var(--eco-amber-soft);
-    --adm-accent-2-fg: var(--eco-ink); /* 7.37:1 sobre ámbar */
-    --adm-accent-2-ink: var(--eco-amber-ink); /* ámbar legible como texto/icono (5.07:1 sobre soft) */
+    /* Acento de marca: pomelo (progreso, "nuevo", highlights, CTA de onboarding). Nunca foco ni error. */
+    --adm-accent-2: var(--eco-pomelo);
+    --adm-accent-2-hover: var(--eco-pomelo-dark);
+    --adm-accent-2-soft: var(--eco-pomelo-soft);
+    --adm-accent-2-fg: var(--eco-ink); /* 5.76:1 sobre pomelo */
+    --adm-accent-2-ink: var(--eco-pomelo-ink); /* pomelo legible como texto/icono (5.60:1 sobre soft) */
 
-    --adm-danger: #b42318;
-    --adm-danger-hover: #9a1d13;
-    --adm-danger-on-dark: #f3b1a8; /* error sobre tinta (SaveBar, sidebar): 9.6:1 */
-    --adm-danger-soft: #f8e1de;
+    /* Peligro en carmín (azulado) para no confundirse con el pomelo de marca. */
+    --adm-danger: #c01a3f; /* 6.07:1 blanco */
+    --adm-danger-hover: #a01434;
+    --adm-danger-on-dark: #ffb3c2; /* error sobre tinta (SaveBar, sidebar) */
+    --adm-danger-soft: #fbe3e8;
     --adm-warning: #9a5b00;
-    --adm-success: #2f6b3f;
-    --adm-info: #2b5a84;
+    --adm-success: #1b7a4b;
+    --adm-info: var(--eco-azul-dark);
 
     /* Sidebar oscuro. */
     --adm-sidebar-bg: var(--eco-ink);
     --adm-sidebar-fg: var(--eco-mist); /* 12.9:1 */
-    --adm-sidebar-muted: var(--eco-sage); /* 6.03:1 sobre sidebar-bg */
+    --adm-sidebar-muted: var(--eco-bruma); /* 7.16:1 sobre sidebar-bg */
     --adm-sidebar-hover: var(--eco-ink-2);
-    --adm-sidebar-active: var(--eco-pine); /* texto sidebar-fg encima: 7.76:1 */
-    --adm-sidebar-border: #2a3531;
+    --adm-sidebar-active: var(--eco-ink-3);
+    --adm-sidebar-border: var(--eco-ink-3);
 
     /* Tintas por sección: franja (base), fondo del icono (-bg) e icono (-fg). */
-    --adm-tint-orders: var(--eco-amber);
-    --adm-tint-orders-bg: var(--eco-amber-soft);
-    --adm-tint-orders-fg: var(--eco-amber-ink);
-    --adm-tint-catalog: var(--eco-pine);
-    --adm-tint-catalog-bg: var(--eco-pine-soft);
-    --adm-tint-catalog-fg: var(--eco-pine);
-    --adm-tint-marketing: #b8542a;
-    --adm-tint-marketing-bg: #f6e3da;
-    --adm-tint-marketing-fg: #9e4520;
-    --adm-tint-store: #3d5a80;
-    --adm-tint-store-bg: #e3e9f1;
-    --adm-tint-store-fg: #3d5a80;
+    --adm-tint-orders: var(--eco-pomelo);
+    --adm-tint-orders-bg: var(--eco-pomelo-soft);
+    --adm-tint-orders-fg: var(--eco-pomelo-ink);
+    --adm-tint-catalog: var(--eco-azul);
+    --adm-tint-catalog-bg: var(--eco-azul-soft);
+    --adm-tint-catalog-fg: var(--eco-azul-dark);
+    --adm-tint-marketing: #c2257a;
+    --adm-tint-marketing-bg: #fbe4f0;
+    --adm-tint-marketing-fg: #a01c64;
+    --adm-tint-store: #0f7c80;
+    --adm-tint-store-bg: #ddf1f1;
+    --adm-tint-store-fg: #0b6366;
     --adm-tint-system: var(--eco-text-muted);
-    --adm-tint-system-bg: #ebe8e1;
-    --adm-tint-system-fg: #5c5952;
+    --adm-tint-system-bg: var(--eco-niebla-2);
+    --adm-tint-system-fg: #4a5068;
 
     /* Tablas. */
-    --adm-table-head: #f7f4ee;
-    --adm-row-hover: #faf8f3;
+    --adm-table-head: #f7f8fb;
+    --adm-row-hover: #f7f8fb;
 
     /* Skeletons. */
-    --adm-skeleton: #e4ddcf;
-    --adm-skeleton-shine: #f3efe7;
+    --adm-skeleton: #e4e7f0;
+    --adm-skeleton-shine: #f4f5f9;
 
     --adm-radius: var(--eco-radius);
-    --adm-focus-ring: #a8702a; /* ámbar oscuro: 4.19:1 blanco · 3.49:1 crema (BRAND §5.4) */
+    --adm-focus-ring: var(--eco-azul); /* 5.88:1 blanco · 5.40:1 niebla */
     --adm-focus: 0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-focus-ring);
-    --adm-shadow-surface: 0 1px 2px rgb(26 35 32 / 0.06);
-    --adm-shadow: 0 12px 32px -12px rgb(26 35 32 / 0.25), 0 0 0 1px var(--adm-border);
+    --adm-shadow-surface: 0 1px 2px rgb(16 22 47 / 0.05);
+    --adm-shadow: 0 18px 44px -16px rgb(16 22 47 / 0.28), 0 0 0 1px var(--adm-border);
 
     /* Skeletons compartidos (globals.css `.sk`). */
     --sk-base: var(--adm-skeleton);
@@ -116,7 +119,7 @@
   /* <dialog> nativo: backdrop y animación mínima. */
   .admin-root dialog::backdrop,
   dialog.adm-dialog::backdrop {
-    background: rgb(26 35 32 / 0.4);
+    background: rgb(16 22 47 / 0.45);
   }
 
   dialog.adm-dialog[open] {
@@ -154,14 +157,14 @@
 
   /* Sidebar oscuro: foco ámbar claro (7.4:1 sobre sidebar-bg). */
   .admin-root .adm-dark {
-    --adm-focus: 0 0 0 2px var(--adm-sidebar-bg), 0 0 0 4px var(--adm-accent-2);
+    --adm-focus: 0 0 0 2px var(--adm-sidebar-bg), 0 0 0 4px var(--eco-azul-light);
     color-scheme: dark;
   }
 
   /* Controles de formulario: foco = borde + halo ámbar (no el anillo doble). */
   .admin-root :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea):focus-visible {
     border-color: var(--adm-focus-ring);
-    box-shadow: 0 0 0 1px var(--adm-focus-ring), 0 0 0 4px rgb(224 164 88 / 0.35);
+    box-shadow: 0 0 0 1px var(--adm-focus-ring), 0 0 0 4px rgb(47 75 255 / 0.22);
   }
 
   /* Overlay "cargando" de tablas y paneles (useUrlTransition / prop pending). */

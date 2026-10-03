@@ -116,6 +116,11 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
         data-dark={dark ? "1" : undefined}
         data-glow={dark && theme.effects.shadows !== "none" ? "1" : undefined}
         data-shadows={theme.effects.shadows}
+        data-hero={theme.style.hero}
+        data-titles={theme.style.titles}
+        data-shape={theme.style.shape}
+        data-card={theme.style.card}
+        data-motion={theme.style.motion}
       >
         <NavigationProgress color="var(--primary)" />
         <a href="#contenido" className="skip-link">

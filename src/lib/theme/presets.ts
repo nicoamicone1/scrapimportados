@@ -58,6 +58,7 @@ const atelier: Theme = {
   header: { layout: "logo-center", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "airy", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 3 } },
   footer: { style: "columns", showSocial: true, showPayments: false, showCredit: true },
+  style: { hero: "cover", titles: "centered", shape: "rect", card: "stack", motion: "soft" },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -96,6 +97,7 @@ const mercado: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "framed", titles: "plain", shape: "arch", card: "boxed", motion: "soft" },
   effects: { shadows: "none", dividers: false, imageFilter: "grain" },
 };
 
@@ -136,6 +138,7 @@ const nordico: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "compact", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 5 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "split", titles: "rule", shape: "soft", card: "boxed", motion: "none" },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -174,6 +177,7 @@ const editorial: Theme = {
   header: { layout: "minimal", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "comfortable", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 4 } },
   footer: { style: "simple", showSocial: true, showPayments: false, showCredit: true },
+  style: { hero: "poster", titles: "index", shape: "rect", card: "overlay", motion: "lively" },
   effects: { shadows: "none", dividers: true, imageFilter: "none" },
 };
 
@@ -213,6 +217,7 @@ const neon: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "split", titles: "tag", shape: "soft", card: "boxed", motion: "lively" },
   effects: { shadows: "soft", dividers: false, imageFilter: "none" },
 };
 
@@ -252,6 +257,7 @@ const botica: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "framed", titles: "tag", shape: "soft", card: "stack", motion: "soft" },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -291,6 +297,7 @@ const recreo: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "stack", titles: "plain", shape: "bubble", card: "boxed", motion: "lively" },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -330,6 +337,7 @@ const lapacho: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "airy", containerWidth: "wide", gridColumns: { mobile: 1, desktop: 3 } },
   footer: { style: "minimal", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "cover", titles: "plain", shape: "rect", card: "stack", motion: "soft" },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 
@@ -370,6 +378,7 @@ const galpon: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: false, showSearch: true },
   layout: { density: "compact", containerWidth: "wide", gridColumns: { mobile: 2, desktop: 5 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "split", titles: "rule", shape: "rect", card: "row", motion: "none" },
   effects: { shadows: "none", dividers: true, imageFilter: "none" },
 };
 
@@ -409,6 +418,7 @@ const bodega: Theme = {
   header: { layout: "logo-left", sticky: true, transparentOnHome: true, showSearch: true },
   layout: { density: "comfortable", containerWidth: "normal", gridColumns: { mobile: 2, desktop: 4 } },
   footer: { style: "columns", showSocial: true, showPayments: true, showCredit: true },
+  style: { hero: "cover", titles: "centered", shape: "arch", card: "stack", motion: "soft" },
   effects: { shadows: "none", dividers: false, imageFilter: "none" },
 };
 

@@ -1,5 +1,7 @@
 # Ecommy: manual de marca
 
+> **Identidad 2026-10 (v0.9).** Reemplaza a la paleta pino + ámbar + crema y a las reglas de "sin pastillas, sin animación al scrollear". Qué cambió y por qué: la paleta anterior (verde bosque, ámbar, crema) es la combinación que hoy entrega cualquier generador; la plataforma no tenía un gesto propio y la landing explicaba el producto con texto en vez de mostrarlo. Ahora: **tinta noche + pomelo**, Archivo expandida, **la burbuja** como forma propia, movimiento suave con curva y el producto real (capturas y bloques interactivos) como única ilustración.
+
 > Fuente de verdad de la marca **Ecommy** (la plataforma): landing y sitio público (`src/app/(platform)`), panel (`src/app/admin`), alta de tienda, placas de redes (`src/app/_brand`) e imagen para compartir.
 > Documentos hermanos: [`DESIGN.md`](DESIGN.md) (dirección de diseño y storefront temable; manda en los detalles de componentes), [`MARKETING.md`](MARKETING.md) §0 (hoja de datos: cada afirmación sale de ahí), [`SOCIAL-KIT.md`](SOCIAL-KIT.md) §0 (tono en redes).
 > Si este manual y `DESIGN.md` chocan en **marca** (color, tipografía, logo, voz), manda este. En storefront y presets manda `DESIGN.md`: ahí la marca es la del comercio (§12).
@@ -37,8 +39,9 @@
 | --- | --- | --- |
 | **Cercana** | Voseo, frases cortas, habla del rubro del usuario ("si tenés una ferretería…"). | Canchera, chistosa, "¡Hola, crack!", lunfardo forzado. |
 | **Experta** | Sabe de inflación, transferencias, Data Fiscal y zonas de reparto; lo dice en palabras de mostrador. | Técnica: "SKU" sólo donde el usuario ya lo usa; nada de "sincronizar el inventario multicanal". |
-| **Argentina sin folklore** | Pesos, CUIT, barrios, códigos postales, "transferencia", "retiro en el local". Grotesca tipográfica porteña (§6). | Mate, fileteado, celeste y blanco, banderitas, "che boludo". |
-| **Honesta** | Dice lo que no hace ("Hoy no hay cobro con tarjeta"), muestra pantallas reales, avisa límites antes. | Autodespectiva ni defensiva; tampoco promesas vacías ("llevá tu negocio al siguiente nivel"). |
+| **Argentina sin folklore** | Pesos, CUIT, barrios, códigos postales, "transferencia", "retiro en el local". Tipografía de cartel porteña (§6). | Mate, fileteado, celeste y blanco, banderitas, "che boludo". |
+| **Honesta** | Dice lo que no hace, muestra pantallas reales, avisa límites antes. |
+| **Vital** | Color caliente, curvas, cosas que se mueven con gracia: vender es una actividad alegre. | Infantil, ruidosa, con confeti ni emojis. | Autodespectiva ni defensiva; tampoco promesas vacías ("llevá tu negocio al siguiente nivel"). |
 | **Ordenada** | Una idea por pantalla, una acción principal, números alineados, estados claros. | Rígida ni burocrática: no pide datos que puede inferir. |
 
 ---
@@ -83,106 +86,89 @@
 
 | Pieza | Especificación (fuente: `src/app/_brand/glyph.tsx`) |
 | --- | --- |
-| **Glifo "e"** | Trazo, no tipografía. Grilla 100 × 100, recorte `viewBox 16 16 68 68`. Panza: círculo r = 26 centrado en (50, 50). Barra horizontal de x 24 a 76 en y 50. Apertura abajo a la derecha: el arco termina en (69,9; 66,7), ~40° bajo la horizontal. Trazo 13 (= r/2), extremos rectos. |
-| **Tile** | Cuadrado `--eco-ink` con el glifo `--eco-amber` ocupando el 62 % del lado, centrado. Radio = 18 % del lado (28 px → 5 px). |
-| **Wordmark** | "Ecommy" en Archivo 600, tracking −0,01 em, color `--eco-ink` (claro) o `--eco-mist` (oscuro). Altura de x ≈ 40 % del tile. |
-| **Lockup horizontal** | Tile + wordmark, separación = 0,36 × lado del tile (28 px → 10 px), centrado vertical. Es la versión por defecto. |
-
-**Cambio respecto de hoy:** `BrandMark` (PlatformChrome y sidebar) dibuja la "e" con texto `font-bold` del sistema, que cambia según el SO (Segoe, SF, Roboto) y no coincide con el glifo de `next/og`. **Todas las apariciones usan `BrandGlyph`/`BrandTile` (SVG).** Ninguna "e" de logo como texto vivo. Además: el wordmark se entrega como SVG con el texto convertido a trazos (`src/app/_brand/wordmark.tsx`, a crear); mientras tanto, en la landing va en texto vivo con Archivo y en el panel con el stack del sistema 600.
+| **Glifo "e"** | Trazo, no tipografía. Grilla 100 × 100, recorte `viewBox 16 16 68 68`. Panza: círculo r = 26 centrado en (50, 50). Barra horizontal de x 24 a 76 en y 50. Apertura abajo a la derecha. Trazo 13 (= r/2), extremos rectos. Es el origen de todas las curvas de la marca (§7.2). |
+| **Burbuja** | El contenedor del glifo: cuadrado `--eco-pomelo` con tres esquinas al 34 % del lado y la inferior izquierda al 8 % (`bubbleRadii`). Es a la vez el globo del mensaje con el que llega el pedido y la etiqueta de precio. Glifo `--eco-ink` al 58 % del lado, centrado. |
+| **Wordmark** | "ecommy" en minúsculas, Archivo expandida 750 (`.eco-display`), color `--eco-ink` (claro) o blanco (sobre tinta). Altura ≈ 72 % del lado de la burbuja. |
+| **Lockup horizontal** | Burbuja + wordmark, separación 0,32 × lado, centrado vertical (`BrandLockup`). Es la versión por defecto. |
 
 ### 4.2 Versiones
 
-| Fondo | Tile | Glifo | Wordmark |
+| Fondo | Burbuja | Glifo | Wordmark |
 | --- | --- | --- | --- |
-| Claro (`--eco-paper`, `--eco-cream`) | `--eco-ink` | ámbar | `--eco-ink` |
-| Oscuro (`--eco-ink`: sidebar, footer, placas) | `--eco-pine` (si no, desaparece) | ámbar | `--eco-mist` |
-| Pino (`--eco-pine`) | `--eco-ink` | ámbar | blanco |
-| Monocromo (sellos, remito impreso) | sin tile | `--eco-ink` o negro | igual color |
-| Favicon / app icon | tile a sangre, radio 18 % | ámbar | — |
+| Claro (`--eco-paper`, `--eco-niebla`) | pomelo | tinta | tinta |
+| Tinta (sidebar, footer, bandas, placas) | pomelo (no cambia) | tinta | blanco |
+| Pomelo (bandas de marca) | tinta | pomelo | tinta |
+| Monocromo (sellos, remito impreso) | tinta o negro | blanco | igual color |
+| Favicon | burbuja a sangre | tinta | — |
+| App icon iOS | cuadrado pomelo (iOS recorta) | tinta | — |
 
-### 4.3 Resguardo y tamaños mínimos
+### 4.3 Resguardo, tamaños y animación
 
-- Área de resguardo: 25 % del lado del tile en los cuatro lados (tile de 28 px → 7 px libres). Nada de texto, bordes ni íconos adentro.
-- Mínimos: tile solo **16 px** (favicon); lockup **20 px** de tile; glifo suelto **12 px**. Debajo de eso, sólo el nombre en texto.
-- Tamaños de uso: header de landing y sidebar 28 px; footer 28 px; placas 1080 px → tile 96–120 px.
+- Resguardo: 25 % del lado en los cuatro lados. Mínimos: burbuja sola 16 px; lockup 20 px; glifo suelto 12 px.
+- Tamaños de uso: header de landing 32 px; sidebar 28 px; footer 36 px; placas 1080 px → 96–120 px.
+- **El logo sí se anima, de una sola manera:** el trazo de la "e" se dibuja (`BrandMark draw`, `.eco-draw`, 1,1 s) al cargar la landing, el login y los estados de espera. Nada de rebotes, giros ni latidos.
 
 ### 4.4 Usos incorrectos
 
-No estirar ni rotar · no cambiar el ámbar del glifo por otro color de la paleta (salvo monocromo) · no agregar sombra, brillo, gradiente ni contorno · no meter el glifo en un círculo · no poner el tile ink sobre fondo ink sin pasar a pino · no escribir "ECOMMY" en mayúsculas ni "eCommy"/"Ecommy.app" como logo · no usar el logo dentro del storefront de un comercio (§12) · no animarlo.
+No estirar ni rotar · no cambiar la esquina recta de lugar (siempre abajo a la izquierda) · no meter el glifo en un círculo ni en un cuadrado de radios iguales · no usar otro color que pomelo/tinta/blanco · no agregar sombra, brillo ni gradiente · no escribir "ECOMMY" ni "eCommy" · no usar el logo dentro del storefront de un comercio (§12).
 
 ---
 
 ## 5. Color
 
+**Idea:** un solo color caliente que nadie usa en el rubro (Tiendanube es azul, Mercado Libre amarillo, Shopify verde, WhatsApp verde) sobre una base fría y limpia. El pomelo es la marca; la tinta noche es la estructura; el azul es sólo para interactuar. Los colores de verdad los ponen las tiendas de los clientes: por eso el marco de Ecommy es sobrio y las muestras de tiendas son lo más colorido de cada pantalla.
+
 ### 5.1 Paleta
 
-Contraste WCAG 2.x calculado. "AA texto" = ≥ 4,5:1; "AA UI" = ≥ 3:1 (bordes, íconos, foco, texto ≥ 24 px).
+Contraste WCAG 2.x calculado. "AA texto" = ≥ 4,5:1; "AA UI" = ≥ 3:1.
 
-| Token marca | Hex | Rol | Contraste clave |
+| Token | Hex | Rol | Contraste clave |
 | --- | --- | --- | --- |
-| `--eco-ink` | `#1A2320` | Verde-tinta: texto principal, sidebar, footer, bandas oscuras, tile | 16,09 sobre blanco · 13,43 sobre crema |
-| `--eco-ink-2` | `#232E2A` | Hover sobre ink | — |
-| `--eco-pine` | `#2E4A3F` | Pino: acción primaria, links, tab activa, ítem activo | 9,69 blanco encima · 8,09 sobre crema |
-| `--eco-pine-dark` | `#243C33` | Hover del primario | — |
-| `--eco-pine-soft` | `#E6EFE9` | Fondo de selección/onboarding | pino encima 8,25 |
-| `--eco-amber` | `#E0A458` | Ámbar: el punto de atención | ink encima 7,37 · **sobre blanco 2,18 / crema 1,82: nunca texto en claro** |
-| `--eco-amber-dark` | `#D3954A` | Hover de botón ámbar | — |
-| `--eco-amber-soft` | `#F8ECD9` | Fondo lavado: fila seleccionada, banner de límite | amber-ink encima 5,07 |
-| `--eco-amber-ink` | `#8A5A12` | Ámbar como texto/ícono en claro (eyebrows, íconos de pedidos) | 5,91 blanco · 4,93 crema |
-| `--eco-cream` | `#EFEAE1` | Fondo de página del panel y bandas cálidas de la landing | — |
-| `--eco-paper` | `#FFFFFF` | Superficies: paneles, tablas, header, hero | — |
-| `--eco-sand` | `#F4F1EA` | Superficie 2: buscador, readonly, chips | — |
-| `--eco-line` | `#E2DBCD` | Bordes de paneles y reglas (decorativos) | 1,38 (no lleva info) |
-| `--eco-text-muted` | `#6B6860` | Texto secundario | 5,56 blanco · 4,64 crema |
-| `--eco-sage` | `#8FA39A` | Texto secundario sobre ink | 6,03 sobre ink |
-| `--eco-mist` | `#E8E6DF` | Texto sobre ink | 12,88 sobre ink |
+| `--eco-ink` | `#10162F` | Tinta noche: texto, bandas oscuras, sidebar, footer, **botón primario del panel** | 17,83 blanco · 16,37 niebla |
+| `--eco-ink-2` | `#1A2244` | Hover / superficie elevada sobre tinta | — |
+| `--eco-ink-3` | `#2A3358` | Bordes y activos sobre tinta | — |
+| `--eco-pomelo` | `#FF5A3C` | **El color de la marca**: burbuja del logo, CTA de marca, acentos | tinta encima 5,76 · **blanco encima 3,10: nunca texto blanco chico** |
+| `--eco-pomelo-dark` | `#F2472A` | Hover del CTA de marca | — |
+| `--eco-pomelo-soft` | `#FFE9E2` | Fondo lavado: banners, selección de marca | pomelo-ink encima 5,60 |
+| `--eco-pomelo-ink` | `#B02C14` | Pomelo como texto/ícono sobre claro (eyebrows) | 5,99 niebla |
+| `--eco-durazno` | `#FFD3C4` | Formas grandes de marca (arcos, burbujas, bandas) | tinta encima 13,05 |
+| `--eco-azul` | `#2F4BFF` | Interacción: links, foco, selección, tab activa | 5,88 blanco · 5,40 niebla |
+| `--eco-azul-dark` | `#2238D9` | Hover de links; info | 7,97 blanco |
+| `--eco-azul-soft` | `#E8ECFF` | Fondo de selección | azul encima 5,00 |
+| `--eco-azul-light` | `#8FA0FF` | Foco y links sobre tinta | 7,34 sobre tinta |
+| `--eco-paper` | `#FFFFFF` | Superficies | — |
+| `--eco-niebla` | `#F4F5F9` | Fondo de página | — |
+| `--eco-niebla-2` | `#EEF0F6` | Superficie 2: buscador, readonly, chips | — |
+| `--eco-line` | `#DFE2EC` | Bordes decorativos | — |
+| `--eco-text-muted` | `#5B627A` | Texto secundario | 6,05 blanco · 5,55 niebla |
+| `--eco-bruma` | `#9AA3C7` | Texto secundario sobre tinta | 7,16 |
+| `--eco-mist` | `#E9ECF8` | Texto sobre tinta | 15,13 |
 
-**Semánticos** (sin cambios): danger `#B42318` (6,57 sobre blanco), warning `#9A5B00` (5,43), success `#2F6B3F` (6,37), info `#2B5A84` (7,25); badges de estado según DESIGN §7.7. **Tintas de sección** (terracota `#B8542A`, azul `#3D5A80`, gris `#6B6860`, más pino y ámbar) son señalética del panel: no salen del panel, nunca en landing ni piezas de marca.
+**Semánticos:** danger `#C01A3F` (carmín azulado, para no confundirse con el pomelo; 6,07 blanco), warning `#9A5B00`, success `#1B7A4B`, info `--eco-azul-dark`. **Tintas de sección del panel:** pedidos pomelo, catálogo azul, marketing magenta `#C2257A`, tienda petróleo `#0F7C80`, sistema gris azulado; no salen del panel.
+
+Los nombres anteriores (`--eco-pine`, `--eco-amber`, `--eco-cream`, `--eco-sand`, `--eco-sage`) quedan como alias y no se usan en código nuevo.
 
 ### 5.2 Proporción
 
 | % | Qué | Dónde |
 | --- | --- | --- |
-| 60 | Claros: paper + cream + sand | Fondos y superficies |
-| 25 | Ink: texto, sidebar, footer, una banda oscura por página como máximo en la landing | Estructura |
-| 10 | Pino | CTA primario, links, estados activos |
-| ≤ 5 | Ámbar | Glifo, foco, progreso, badge de pedidos, un acento por vista |
+| 60 | Claros: paper + niebla | Fondos y superficies |
+| 25 | Tinta | Texto, sidebar, footer, bandas oscuras, botones del panel |
+| 10 | Pomelo + durazno | CTA de marca, logo, formas grandes, highlights |
+| 5 | Azul | Links, foco, selección |
 
 ### 5.3 Reglas
 
-- **Pino = acción.** Botón primario, link, tab activa, selección. Si algo es pino, se puede tocar.
-- **Ámbar = atención, escaso.** Glifo, anillo de foco, barra de progreso de navegación, badge de pedidos nuevos, barra de ítem activo del sidebar, "Guardar" en la SaveBar (sobre ink), CTA primario **sólo sobre fondo ink** (texto ink encima). Botón `accent` en claro: máximo uno por pantalla ("Empezá por acá").
-- Ámbar nunca como texto o ícono chico sobre claro: usar `--eco-amber-ink`. Nunca como fondo de sección grande. Nunca ámbar y pino como dos CTAs del mismo grupo.
-- Ink sobre ámbar o crema; blanco sobre pino. Nada de gris claro sobre crema.
-- Sin gradientes, sin transparencias sobre foto, sin colores `tailwind-500`.
-- Modo oscuro: la marca no tiene modo oscuro de página; las superficies oscuras son bandas de ink con los pares de la tabla.
+- **Pomelo = marca y llamada.** CTA de la landing (siempre con texto tinta), logo, progreso, badge de pedidos nuevos, "empezá por acá". En el panel es acento, no acción: máximo un botón pomelo por pantalla.
+- **Tinta = acción en el panel.** El botón primario del panel es tinta con texto blanco: no compite con el pomelo de marca ni se confunde con el carmín de peligro.
+- **Azul = interacción.** Links (siempre subrayados dentro de texto), anillo de foco, fila seleccionada, tab activa. Nunca decorativo.
+- Pomelo nunca como anillo de foco ni borde de input (se lee como error). Pomelo como texto chico sobre claro: `--eco-pomelo-ink`.
+- **Gradientes: sólo entre vecinos de la marca** (pomelo → durazno, tinta → tinta-2) y sólo en formas grandes. Nunca violeta/rosa/cian, nunca en texto ni botones.
+- La marca no tiene modo oscuro de página: las superficies oscuras son bandas de tinta.
 
-### 5.4 Correcciones de contraste (cambios a aplicar)
+### 5.4 Tokens
 
-| Token | Hoy | Propuesto | Por qué |
-| --- | --- | --- | --- |
-| `--adm-focus-ring` | `#B97A2E` | `#A8702A` | Sobre crema da 2,98:1 (< 3:1, WCAG 1.4.11/2.4.13). Nuevo: 4,19 blanco · 3,49 crema; sigue siendo ámbar. |
-| `--adm-input-border` | `#D9D2C3` | `#968F80` | El borde es lo único que delimita el input: 1,5:1 no llega al 3:1 que pide DESIGN §8.3. Nuevo: 3,21 sobre blanco. Hover `#7A7465`. Los bordes de panel (`--adm-border`) siguen claros: son decorativos. |
-| `--adm-fg` | `#1C1917` | `#1A2320` (`--eco-ink`) | Dos negros casi iguales; `#1C1917` es `stone-900` de Tailwind. Una sola tinta, con el verde de la marca (16,09 / 13,43). |
-
-### 5.5 Tokens
-
-Primitivos de marca `--eco-*` en `:root` (globals.css, capa de marca); los semánticos `--adm-*` de `admin.css` los referencian (`--adm-accent: var(--eco-pine)`, etc.). **La landing y el panel consumen `--adm-*`** (ya comparten `.admin-root`); `--eco-*` se usa directo sólo para momentos de marca (logo, bandas ink, placas, OG) y en `_brand/glyph.tsx` (las constantes `BRAND_*` deben coincidir). El storefront no usa ninguno de los dos.
-
-```css
-:root {
-  --eco-ink:#1A2320; --eco-ink-2:#232E2A; --eco-pine:#2E4A3F; --eco-pine-dark:#243C33; --eco-pine-soft:#E6EFE9;
-  --eco-amber:#E0A458; --eco-amber-dark:#D3954A; --eco-amber-soft:#F8ECD9; --eco-amber-ink:#8A5A12;
-  --eco-cream:#EFEAE1; --eco-paper:#FFFFFF; --eco-sand:#F4F1EA; --eco-line:#E2DBCD;
-  --eco-text-muted:#6B6860; --eco-sage:#8FA39A; --eco-mist:#E8E6DF;
-  --eco-font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --eco-font-text: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --eco-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --eco-radius-sm:4px; --eco-radius:6px; --eco-radius-lg:10px;
-  --eco-ease-out: cubic-bezier(.2,0,0,1); --eco-ease-in: cubic-bezier(.4,0,1,1);
-  --eco-dur-1:120ms; --eco-dur-2:200ms; --eco-dur-3:280ms;
-}
-```
+Primitivos `--eco-*` en `:root` (`globals.css`); los semánticos `--adm-*` (`admin.css`) los referencian. La landing y el panel consumen `--adm-*` y, en momentos de marca, `--eco-*` directo (`bg-eco-pomelo`, `text-eco-ink`, `bg-eco-durazno`…). `_brand/glyph.tsx` repite los hex para `next/og`. El storefront no usa ninguno.
 
 ---
 
@@ -192,67 +178,91 @@ Primitivos de marca `--eco-*` en `:root` (globals.css, capa de marca); los semá
 
 | Uso | Familia | Por qué |
 | --- | --- | --- |
-| **Display de marca** (wordmark, h1/h2 de landing, números grandes de planes, placas) | **Archivo** (Omnibus-Type, Buenos Aires), variable `wght` 500–700 | Grotesca diseñada en Argentina para ser leída en pantalla: "argentina sin folklore". Cifras firmes, buen ancho. No está en la lista prohibida. |
-| Texto de landing y todo el panel | Stack del sistema (`--eco-font-text` = `--font-admin`) | Nitidez nativa y cero carga. El panel es herramienta. |
-| Código, SKU, cupones, tokens | `--eco-font-mono` | Distinguir lo que se copia. |
+| **Display** (wordmark, h1/h2, números grandes, títulos de página del panel) | **Archivo** variable, **expandida y pesada**: `font-stretch: 112 %`, peso 750 (`.eco-display`); números `.eco-num` | Diseñada en Buenos Aires (Omnibus-Type). En ancho normal es neutra; expandida y pesada tiene voz de cartel de vidriera. Es la firma tipográfica. |
+| Texto de la landing y del sitio público | Archivo ancho normal 400/500 (`BODY`) | Una sola familia: el sitio se ve igual en Android, iOS y Windows. |
+| Texto del panel | Stack del sistema | Herramienta: nitidez nativa. |
+| Código, SKU, cupones | `--eco-font-mono` | Distinguir lo que se copia. |
 
-**Cambio respecto de hoy:** la landing usa sólo el stack del sistema, que en Android es Roboto (default prohibido por DESIGN §1) y no tiene firma propia. Archivo entra **sólo** en display, con `next/font/google` (autohospedada: no agrega ninguna hoja de Google Fonts al HTML, así que respeta DESIGN §8.19), `subsets: ["latin"]`, `display: "swap"`, `adjustFontFallback` para CLS ≈ 0, un único archivo variable (~35 KB), variable CSS `--font-archivo`. El panel no la carga (el wordmark del sidebar va como SVG, §4.1). Si el LCP mobile empeora > 100 ms, el h1 vuelve al sistema y Archivo queda para h2 y wordmark.
+Carga: `src/app/_brand/fonts.ts` (`next/font/google`, ejes `wght` + `wdth`, autohospedada, `display: swap`). La aplican el layout de la plataforma y el del panel.
 
 ### 6.2 Escala
 
 | Nivel | Landing | Panel |
 | --- | --- | --- |
-| Eyebrow | 12 / 500, mayúsculas, tracking 0,08 em, `--eco-amber-ink` | — |
-| H1 | Archivo 40 → 52 → 60 px / 600, interlínea 1,02, tracking −0,035 em, máx. 12–14 ch | 20 / 600 (título de página) |
-| H2 | Archivo 30 → 36 px / 600, interlínea 1,08, tracking −0,025 em | 16 / 600 (panel, dialog) |
-| Lead | 19 → 21 px / 400, interlínea 1,3, máx. 34 ch | — |
-| Cuerpo | 15–16 px / 400, interlínea 1,6, máx. 52–65 ch | 14 px / 400 |
+| Eyebrow | 12 / 600, mayúsculas, tracking 0,1 em, `--eco-pomelo-ink` | — |
+| H1 | display 44 → 60 → 76 px, interlínea 0,96, máx. 12–14 ch | display 22–24 px (título de página) |
+| H2 | display 32 → 44 px, interlínea 1 | 16 / 600 (panel, dialog) |
+| Lead | 19 → 22 px / 400, interlínea 1,35, máx. 36 ch | — |
+| Cuerpo | 16–17 px / 400, interlínea 1,6, máx. 60 ch | 14 px / 400 |
 | Meta | 13 px | 13 px (tablas), 12 px (ayuda, badges) |
-| Número destacado | Archivo 28–40 px / 600 `tabular-nums` (precios de planes) | 28 / 600 `tabular-nums` (dashboard) |
+| Número destacado | `.eco-num` 32–64 px | `.eco-num` 28–36 px (métricas) |
 
-Pesos: 400, 500, 600 (700 sólo Archivo display ≥ 40 px). Sin itálicas para énfasis: se usa 500. `tabular-nums` en todo precio, cantidad, fecha y columna numérica; números alineados a la derecha en tablas. Nunca mayúsculas sostenidas salvo eyebrows y grupos del sidebar (11 px).
+Una palabra del titular puede ir resaltada: subrayado con un arco pomelo dibujado (SVG, `.eco-draw`) o dentro de una burbuja pomelo/durazno. Máximo un resaltado por titular. `tabular-nums` en todo precio y cantidad.
 
 ---
 
 ## 7. Forma y espacio
 
-| | Landing | Panel |
-| --- | --- | --- |
-| Base | 4 px | 4 px |
-| Contenedor | `max-w-6xl` (1152 px), gutter 16 → 24 px | Fluido; formularios máx. 960 px |
-| Grilla | 12 col; hero 1,1fr / 1fr; texto a la izquierda | Config 1/3 título + 2/3 campos; dashboard 8/4 |
-| Ritmo vertical | Secciones 56–80 px, **asimétrico** (nunca 3 secciones seguidas con el mismo padding); título más cerca de su contenido | Gaps 8 / 12 / 16 px; panel 16 px (20 en formularios) |
-| Densidad | Aireada: una idea por banda | Densa: filas 40 px, controles 32 (tablas) / 36 px (formularios) |
-| Radios | 6 px botones, inputs, cards; 10 px marcos de capturas grandes; tile 18 % | 6 px todo; 4 px badges y miniaturas |
-| Bordes | 1 px `--eco-line`; inputs `--adm-input-border` | Igual |
-| Sombras | Ninguna en reposo; capturas con borde, no sombra | `--adm-shadow-surface` en superficies; `--adm-shadow` sólo en dialogs, menús y command palette |
-| Targets táctiles | ≥ 44 px en mobile | ≥ 44 px en mobile (los 32 px de tabla son sólo desktop) |
+### 7.1 Radios
 
-Sin pills (salvo switches), sin `rounded-2xl`, sin glass, sin blobs.
+| | Landing y sitio público | Panel |
+| --- | --- | --- |
+| Botones | **Pastilla** (`rounded-full`), 48 px | 10 px (`rounded-adm`), 36 px |
+| Inputs | 12 px | 10 px |
+| Cards, paneles | 20 px (`rounded-eco-lg`) | 16 px (`rounded-adm-lg`) paneles; 10 px controles; 6 px badges |
+| Bandas y capturas grandes | 32 px (`rounded-eco-xl`) | — |
+
+### 7.2 La curva: tres gestos y nada más
+
+1. **La burbuja** (`.eco-bubble`, `.eco-bubble-r`, `.eco-bubble-up`): tres esquinas amplias y una casi recta. Para lo que "habla": el logo, la captura protagonista, la tarjeta destacada (plan recomendado, primer paso del onboarding), los mensajes de WhatsApp de las demos, los tooltips de ayuda. No va en todo: si todo es burbuja, nada lo es.
+2. **El arco:** cuartos y medios círculos planos (durazno, pomelo, tinta-2) derivados de la panza de la "e", detrás de capturas y en esquinas de bandas; y arcos de trazo fino (anillos concéntricos) como fondo. Siempre nítidos, nunca difuminados: no son blobs.
+3. **La hoja:** las bandas de color son hojas con esquinas de 32 px que se apilan (la banda tinta "entra" sobre la clara con sus esquinas superiores redondeadas). Nada de cortes rectos entre secciones de distinto color.
+
+### 7.3 Espacio y sombra
+
+- Base 4 px. Contenedor de landing `max-w-6xl`/`max-w-7xl`, gutter 16 → 24 px. Ritmo asimétrico (56–120 px).
+- Panel: densidad de herramienta (filas 40–44 px, controles 36 px). Las curvas no agregan aire: cambian el radio, no el padding.
+- Sombras: suaves y teñidas de tinta (`rgb(16 22 47 / …)`). En la landing, las capturas flotan con sombra amplia y baja opacidad; en el panel, `--adm-shadow-surface` en superficies y `--adm-shadow` en capas.
+- Targets táctiles ≥ 44 px.
 
 ---
 
-## 8. Iconografía, imágenes y fotografía
+## 8. Imágenes: el producto es la ilustración
 
-- **Íconos:** `lucide-react`, trazo **1,5** (1,75 sólo dentro de botones de 14–16 px para igualar el peso del texto 500). Tamaños 16 px (panel, botones) y 20 px (landing, features). Color `currentColor`; ámbar sólo vía `--eco-amber-ink` o sobre ink. Nunca dentro de círculos de color ni como ilustración (> 24 px). `aria-hidden` si decoran.
-- **Producto real, no ilustración.** La landing muestra el producto: mocks construidos con componentes reales (`LandingMocks.tsx`, `PresetSpecimens.tsx`) o capturas del panel y de `demo.ecommy.app`. Nada de celulares flotando, renders 3D, ilustraciones de personas con cajas ni stock de "equipo sonriente".
-- Capturas: con borde 1 px y radio 10 px, datos verosímiles en rioplatense (productos y precios argentinos), nunca datos de clientes reales sin permiso escrito.
-- **Fotografía** (si se usa, en redes o guías): manos y mostradores reales de comercios argentinos, luz natural, sin filtros ni saturación; nunca fotos de stock genéricas. Placas de redes: fondo ink con rectángulo crema para la captura (SOCIAL-KIT).
-- Empty states: ícono lineal 20–24 px en `--adm-fg-subtle` como mucho; el contenido es el texto y la acción.
+- **Todo lo visual es producto real.** Tres niveles, en este orden de preferencia: (1) **bloques interactivos reales**: componentes del producto funcionando dentro de la landing (el cambio de estilo de una tienda en vivo, la suba de precios con vista previa, el pedido que llega por WhatsApp, el mapa de zonas); (2) **capturas reales** del panel y de tiendas reales generadas con `scripts/shots.cjs` (`public/img/platform/…`); (3) mocks construidos con los componentes reales cuando la captura no alcanza.
+- Las capturas van en marcos con radio 20–32 px o en burbuja, con sombra amplia, a veces inclinadas 1–2° y superpuestas, sobre un arco durazno. Datos verosímiles en rioplatense; nunca datos de clientes reales sin permiso.
+- Nada de stock, renders 3D, ilustraciones de personas, íconos gigantes ni emojis.
+- **Íconos:** `lucide-react`, trazo 1,75; 16–20 px. En la landing pueden ir dentro de una burbuja chica durazno/tinta (32–40 px) cuando encabezan un bloque.
+- Sin cifras, testimonios ni logos inventados (MARKETING §0).
 
 ---
 
-## 9. Movimiento
+## 9. Movimiento: suave y con curva
 
-| Qué | Duración | Easing |
+El movimiento es parte de la marca: todo entra y responde con una curva de desaceleración larga, y lo que "aparece" hace un rebote corto.
+
+| Token | Valor | Uso |
 | --- | --- | --- |
-| Hover y foco (color, fondo, borde) | 120 ms | `--eco-ease-out` |
-| Popover, menú, tooltip, toast | 160–200 ms | entrada `ease-out`, salida `ease-in` |
-| Drawer, dialog, panel lateral | 240–280 ms | `ease-out` |
-| Barra de progreso de navegación | continua, ámbar 2 px | — |
-| Skeleton `.sk` | shimmer 1,2 s | lineal |
+| `--eco-ease-out` | `cubic-bezier(.22,1,.36,1)` | Todo lo que entra o responde |
+| `--eco-ease-in-out` | `cubic-bezier(.65,0,.35,1)` | Lo que se desplaza de un lugar a otro, loops |
+| `--eco-ease-spring` | `linear(…)` con un rebote de ~16 % | Lo que aparece: burbujas, toasts, checks, badges, la flecha del CTA |
+| `--eco-dur-1…4` | 140 / 240 / 420 / 720 ms | hover · popovers · drawers y paneles · entradas grandes |
 
-Anima: respuesta a una acción (abrir, cerrar, guardar, agregar), cambios de estado, progreso. **No anima:** contenido al cargar o al scrollear (sin fade-up), logo, números que "cuentan", botones con `scale`, sombras que crecen. `prefers-reduced-motion: reduce` → transiciones de opacidad ≤ 120 ms, sin desplazamiento ni shimmer.
+**Repertorio** (utilidades en `globals.css`; no inventar otras sin sumarlas ahí):
+
+| Qué | Cómo |
+| --- | --- |
+| Entrada al scrollear | `.eco-reveal`, `.eco-reveal-left/right`, `.eco-reveal-scale`: CSS ligado al scroll (`animation-timeline: view()`), sin JS; sin soporte, el contenido se ve fijo (nunca oculto). Sólo en la landing y el sitio público. |
+| Entrada al montar | `.eco-pop` (sube + rebote), escalonado con `--i`. Hero, dialogs, toasts, tarjetas del onboarding. |
+| Trazo que se dibuja | `.eco-draw`: el logo, los arcos de resaltado, los checks. |
+| Flotación | `.eco-float`: capturas y burbujas decorativas del hero, lenta (7 s) y de 10 px. |
+| Marquesina | `.eco-marquee`: rubros, estilos. Se pausa al hover. |
+| Hover de CTA | El círculo de la flecha se corre y gira 45° con rebote; el botón no escala (sí `active:scale-[.98]`). |
+| Hover de card | Sube 2–4 px y el radio de una esquina cambia (de card a burbuja) en 420 ms. |
+| Números | Pueden contar hasta su valor una vez, al entrar en pantalla (≤ 900 ms), sólo en la landing. En el panel los números no cuentan. |
+| Panel | Transiciones de 140–240 ms en hover y foco; dialogs y drawers con `--eco-ease-out`; fila que se guarda, parpadeo suave de fondo; barra de progreso pomelo de 3 px. Nada que demore una tarea. |
+
+Reglas: `prefers-reduced-motion: reduce` desactiva todo (regla global). Nada parpadea, nada se mueve en loop cerca de un formulario, ninguna animación bloquea un clic, y el contenido nunca depende de una animación para leerse.
 
 ---
 
@@ -260,19 +270,21 @@ Anima: respuesta a una acción (abrir, cerrar, guardar, agregar), cambios de est
 
 | Componente | Regla |
 | --- | --- |
-| **Botón primario** | Pino, texto blanco 500, 36 px (panel) / 44 px (landing y mobile), radio 6 px. **Uno por vista**. Verbo + objeto. Ícono de flecha opcional a la derecha sólo en landing. |
-| Secundario | Blanco, borde `--adm-input-border`, texto ink. |
-| Ghost / link | Sin fondo; hover `--eco-sand`. Los CTAs secundarios de la landing son link de texto, no un segundo botón igual. |
-| Accent (ámbar) | Texto ink. Sobre ink: CTA principal de bandas oscuras y "Guardar" de la SaveBar. Sobre claro: máx. uno por pantalla. |
-| Danger | `--adm-danger`, sólo en confirmaciones con verbo exacto. |
-| Links | Pino; dentro de texto, **siempre subrayados** (pino vs. tinta no llega a 3:1, el color solo no alcanza). En navegación, sin subrayado y hover a ink. |
-| Badges | DESIGN §7.7: 20 px, radio 4 px, punto + etiqueta; el estado nunca sólo por color. "Plan Pro": badge neutro con candado lineal. |
-| Cards | Superficie blanca, borde 1 px, radio 6 px, sin sombra (panel: `shadow-surface`). Nada de grillas de cards con ícono en círculo. |
-| Formularios | Label arriba 13/500, ayuda 12 px muted, error reemplaza la ayuda; `aria-invalid` + `aria-describedby`; `autocomplete`; defaults precargados. |
-| Estados vacíos | A la izquierda: título 16 px + una línea útil + acción primaria (+ secundaria). Sin ilustraciones. |
-| Toasts | `sonner` neutro: superficie, borde, texto ink; sólo el ícono 16 px lleva color semántico. Éxito con "Deshacer" cuando se pueda. Errores persistentes van inline, no en toast. |
-| Banners de plan y límites | Fondo `--eco-amber-soft`, texto ink, ícono `--eco-amber-ink`, radio 6 px, dentro del contenido (no modal). Número concreto + consecuencia + "Ver planes". Aparece desde el 80 % del límite; al 100 % el botón de crear se deshabilita con la explicación al lado. Prueba Pro: días restantes y qué pasa al vencer. Nunca bloquea lo ya creado ni tapa la tarea. |
-| SaveBar | Sticky abajo, fondo ink, "Cambios sin guardar · Descartar · Guardar" (ámbar). |
+| **CTA de marca** (landing, alta) | Pastilla pomelo, texto tinta 600, 48 px, con la flecha en un círculo tinta (`CTA_PRIMARY` + `CTA_ARROW`). **Uno por vista.** Verbo + objeto. |
+| CTA secundario (landing) | Pastilla con borde tinta de 2 px (`CTA_SECONDARY`), o link de texto. Sobre tinta: `CTA_GHOST_DARK`. |
+| **Botón primario del panel** | Tinta, texto blanco 500, 36 px, radio 10 px. Uno por vista. |
+| Secundario / ghost (panel) | Blanco con borde `--adm-input-border` / sin fondo, hover `--eco-niebla-2`. |
+| Accent (panel) | Pomelo con texto tinta: "Guardar" de la SaveBar (sobre tinta) y "empezá por acá". Máx. uno por pantalla. |
+| Danger | Carmín `--adm-danger`, sólo en confirmaciones con verbo exacto. |
+| Links | Azul; dentro de texto, siempre subrayados (2 px, offset 4). |
+| Chips y filtros | Pastilla. Seleccionado: tinta con texto blanco, o `--eco-azul-soft` con texto azul. |
+| Badges de estado | Pastilla 22 px, punto + etiqueta; el estado nunca sólo por color. |
+| Cards | Superficie blanca, radio 16–20 px, borde `--eco-line` o sombra suave (no las dos). La destacada es una burbuja. |
+| Formularios | Label arriba 13/500, ayuda 12 px, error reemplaza la ayuda; foco azul. |
+| Estados vacíos | Una burbuja durazno chica con el ícono lineal + título + una línea útil + acción primaria. Sin ilustraciones. |
+| Toasts | Pastilla tinta con texto claro que entra con rebote; ícono con color semántico. |
+| Banners de plan y límites | Fondo `--eco-pomelo-soft`, texto tinta, radio 16 px; número concreto + consecuencia + "Ver planes". |
+| SaveBar | Pastilla flotante tinta, centrada abajo: "Cambios sin guardar · Descartar · Guardar" (pomelo). |
 
 ---
 
@@ -301,7 +313,7 @@ Lo que mide la auditoría. Cada pantalla tiene que poder contestar "¿para qué 
 | --- | --- | --- |
 | Storefront (`<tienda>.ecommy.app`, dominio propio) | La del comercio vía tema/preset (DESIGN §3–§4) | Sólo "Hecho con Ecommy" en el footer: texto 12 px `--fg-muted` del tema, sin logo ni color de Ecommy. Obligatorio en Free (con link a `ecommy.app`); desde Starter se apaga en Apariencia › Pie de página (`theme.footer.showCredit`). Pendiente: volver a exigirlo si la tienda baja a Free sin guardar Apariencia (ver `docs/ux-audit/presets-apariencia.md`). |
 | Checkout, página de pedido, mensaje de WhatsApp, remito | Comercio | Nunca. El cliente final le compra al comercio. |
-| Presets | Los pone el comercio (colores, fuentes, logo). Ningún preset usa pino + ámbar + crema como combinación de fábrica, para no parecer "la tienda de Ecommy". | Nunca. |
+| Presets | Los pone el comercio (colores, fuentes, logo). Ningún preset usa tinta noche + pomelo como combinación de fábrica, para no parecer "la tienda de Ecommy". | Nunca. |
 | Panel | Ecommy (shell, sidebar, tokens `--adm-*`) | Siempre; dentro de la vista previa, el tema de la tienda. |
 | Alta de tienda y onboarding | Ecommy alrededor; la miniatura del preset muestra el nombre que escribe el dueño | Shell. |
 | Landing, planes, ayuda, guías, OG, redes | Ecommy | Completo. Los muestrarios de presets (`PresetSpecimens`) muestran las marcas de ejemplo con su propia tipografía, no la de Ecommy. |
@@ -312,18 +324,18 @@ Lo que mide la auditoría. Cada pantalla tiene que poder contestar "¿para qué 
 
 Para cada interfaz auditada (landing, panel, alta, placas). Marcá cada ítem; si no se cumple, explicá por qué en el reporte.
 
-1. [ ] El logo es `BrandGlyph`/`BrandTile` (SVG), versión correcta para el fondo, con resguardo del 25 % y ≥ tamaño mínimo; ninguna "e" de logo en texto vivo.
-2. [ ] Sólo colores de §5 vía `--adm-*` / `--eco-*`; cero hex literales nuevos, cero clases de color de Tailwind, cero gradientes.
-3. [ ] Proporción respetada: ámbar ≤ 5 % y nunca como texto en claro (se usa `--eco-amber-ink`); pino sólo en lo accionable.
+1. [ ] El logo es `BrandMark`/`BrandTile` (burbuja pomelo + "e" tinta, SVG), con la esquina recta abajo a la izquierda, resguardo del 25 % y ≥ tamaño mínimo.
+2. [ ] Sólo colores de §5 vía `--adm-*` / `--eco-*`; cero hex literales nuevos, cero clases de color de Tailwind; gradientes sólo entre vecinos de la marca y en formas grandes.
+3. [ ] Pomelo = marca (CTA con texto tinta, nunca texto blanco chico, nunca foco ni borde de input); tinta = botón primario del panel; azul = links, foco y selección.
 4. [ ] Exactamente una acción primaria por vista; los CTAs secundarios son secundarios o links.
-5. [ ] Contraste: texto ≥ 4,5:1, bordes de input / íconos / foco ≥ 3:1 (con las correcciones de §5.4 aplicadas).
-6. [ ] Tipografía: Archivo sólo en display de marca; texto y panel en el stack del sistema; ninguna fuente prohibida (Inter, Poppins, Montserrat, Roboto como elección, Playfair); `tabular-nums` en todo número.
-7. [ ] Radios 4 / 6 / 10 px; sombras sólo en capas superpuestas; sin pills, glass ni blobs.
-8. [ ] Íconos lucide 16/20 px, trazo 1,5, sin círculos de color.
-9. [ ] Imágenes = producto real o mock con componentes reales; ningún render, stock genérico ni ilustración decorativa.
+5. [ ] Contraste: texto ≥ 4,5:1, bordes de input / íconos / foco ≥ 3:1.
+6. [ ] Tipografía: display en Archivo expandida (`.eco-display`, `.eco-num`); texto del sitio en Archivo normal; panel en el stack del sistema; `tabular-nums` en todo número.
+7. [ ] Forma: pastillas en CTAs y chips; radios 10/16 px en el panel y 20/32 px en la landing; la burbuja sólo en lo que "habla"; arcos nítidos, nunca blobs difuminados ni glass.
+8. [ ] Íconos lucide 16–20 px, trazo 1,75.
+9. [ ] Imágenes = bloque interactivo real, captura real o mock con componentes reales; ningún render, stock ni ilustración decorativa.
 10. [ ] Copy en voseo, verbo + objeto en botones, un dato concreto por frase, sin palabras prohibidas ni emojis ni exclamaciones en serie.
-11. [ ] Cada afirmación de producto coincide con MARKETING §0; cero cifras, testimonios o logos inventados.
+11. [ ] Cada afirmación de producto coincide con el producto de hoy (CHANGELOG + MARKETING §0); cero cifras, testimonios o logos inventados.
 12. [ ] Estados cubiertos con el tono de §3.2: carga (skeleton), vacío con acción, error con salida, éxito con Deshacer cuando aplica, límite de plan con número.
-13. [ ] Movimiento sólo como respuesta, ≤ 280 ms, nada al cargar ni al scrollear; `prefers-reduced-motion` respetado.
+13. [ ] Movimiento del repertorio de §9, con las curvas `--eco-ease-*`; el contenido nunca depende de una animación; `prefers-reduced-motion` respetado; en el panel nada demora una tarea.
 14. [ ] A 360 px: sin scroll horizontal, targets ≥ 44 px, tareas diarias completas desde el celular.
 15. [ ] Storefront y presets: ningún rastro de Ecommy salvo el crédito de §12.

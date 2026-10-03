@@ -12,5 +12,5 @@ export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
 export default function Icon() {
-  return new ImageResponse(<BrandTile size={32} radius={6} glyph={0.72} />, { ...size });
+  return new ImageResponse(<BrandTile size={32} glyph={0.64} />, { ...size });
 }

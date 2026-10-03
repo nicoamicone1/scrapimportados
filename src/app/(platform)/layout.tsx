@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Archivo } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { googleSiteVerification } from "@/components/platform/analytics";
@@ -8,20 +7,9 @@ import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { Toaster } from "@/components/ui/Toaster";
 import { APP_NAME } from "@/lib/version";
 
-import "../admin/admin.css";
+import { archivo } from "../_brand/fonts";
 
-/*
- * Archivo (Omnibus-Type, Buenos Aires): sólo display de marca (BRAND §6):
- * h1/h2 del sitio, precios de planes y wordmark. `next/font` la autohospeda
- * (ninguna hoja de Google en el HTML) y ajusta el fallback para CLS ≈ 0.
- * Se usa con la clase `DISPLAY` de `components/platform/brand`.
- */
-const archivo = Archivo({
-  subsets: ["latin"],
-  display: "swap",
-  adjustFontFallback: true,
-  variable: "--font-archivo",
-});
+import "../admin/admin.css";
 
 export const metadata: Metadata = {
   title: { default: "Ecommy · Tu tienda online con tu marca", template: "%s · Ecommy" },

@@ -1,6 +1,7 @@
 # Ecommy — Dirección de diseño
 
 > **Marca de la plataforma (logo, color, tipografía, voz):** [`BRAND.md`](BRAND.md). En marca manda ese documento; en storefront y presets, éste.
+> **Rediseño 2026-10 (v0.9) en curso.** `BRAND.md` cambió (tinta noche + pomelo, burbuja, movimiento con curva) y el tema del storefront suma `theme.style` (`hero`, `titles`, `shape`, `card`, `motion`: §3.9). Donde este documento prohíbe pastillas, radios grandes, animación de entrada o composición centrada **como regla general**, ahora decide el estilo de cada preset: lo que sigue prohibido es que todos los presets se parezcan. Las secciones §1, §3–§6 (storefront) y §7 (panel) se actualizan con este rediseño.
 > Documento OBLIGATORIO para todo agente que toque UI (storefront, bloques, admin).
 > Complementa `docs/ECOMMY-SPEC.md` (§8 Tema, §9 Bloques). Si algo acá contradice la spec en datos o schema, manda la spec; en estética, manda este documento.
 > Punto de partida: el storefront actual (`src/app/globals.css`, `src/components/*`) funciona pero es genérico: violeta + naranja fijos, `rounded-2xl` y `shadow-card` en todo, header con gradiente, barrita de color en cada título, chips pill por todos lados. **Nada de eso sobrevive** en el storefront temable.

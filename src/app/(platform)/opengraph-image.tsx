@@ -39,7 +39,7 @@ export default async function OpengraphImage() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <BrandTile size={64} radius={10} glyph={0.6} />
+        <BrandTile size={64} />
         <div style={{ fontSize: 40, letterSpacing: -1 }}>{APP_NAME}</div>
       </div>
 

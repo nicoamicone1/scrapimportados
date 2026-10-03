@@ -20,33 +20,63 @@
  */
 
 :root {
-  --eco-ink: #1a2320;
-  --eco-ink-2: #232e2a;
-  --eco-pine: #2e4a3f;
-  --eco-pine-dark: #243c33;
-  --eco-pine-soft: #e6efe9;
-  --eco-amber: #e0a458;
-  --eco-amber-dark: #d3954a;
-  --eco-amber-soft: #f8ecd9;
-  --eco-amber-ink: #8a5a12;
-  --eco-cream: #efeae1;
-  --eco-paper: #ffffff;
-  --eco-sand: #f4f1ea;
-  --eco-line: #e2dbcd;
-  --eco-text-muted: #6b6860;
-  --eco-sage: #8fa39a;
-  --eco-mist: #e8e6df;
+  /* Identidad 2026-10 (docs/BRAND.md §5): tinta noche + pomelo + azul de interacción sobre niebla fría. */
+  --eco-ink: #10162f; /* tinta noche: texto, bandas oscuras, sidebar, botón primario del panel */
+  --eco-ink-2: #1a2244; /* hover / superficie elevada sobre tinta */
+  --eco-ink-3: #2a3358; /* bordes y activos sobre tinta */
+  --eco-pomelo: #ff5a3c; /* el color de la marca: logo, CTA de marca (texto tinta encima: 5,76:1) */
+  --eco-pomelo-dark: #f2472a; /* hover */
+  --eco-pomelo-soft: #ffe9e2; /* fondo lavado */
+  --eco-pomelo-ink: #b02c14; /* pomelo como texto/ícono sobre claro (5,99:1 niebla · 5,60:1 soft) */
+  --eco-durazno: #ffd3c4; /* formas grandes de marca (arcos, burbujas) */
+  --eco-azul: #2f4bff; /* interacción: links, foco, selección (5,88:1 blanco) */
+  --eco-azul-dark: #2238d9;
+  --eco-azul-soft: #e8ecff;
+  --eco-azul-light: #8fa0ff; /* foco y links sobre tinta (7,34:1) */
+  --eco-paper: #ffffff; /* superficies */
+  --eco-niebla: #f4f5f9; /* fondo de página */
+  --eco-niebla-2: #eef0f6; /* superficie 2: buscador, readonly, chips */
+  --eco-line: #dfe2ec; /* bordes decorativos */
+  --eco-text-muted: #5b627a; /* 6,05:1 blanco · 5,55:1 niebla */
+  --eco-bruma: #9aa3c7; /* texto secundario sobre tinta (7,16:1) */
+  --eco-mist: #e9ecf8; /* texto sobre tinta (15,13:1) */
+
+  /* Alias de la paleta anterior (pino/ámbar/crema). No usar en código nuevo. */
+  --eco-pine: var(--eco-ink);
+  --eco-pine-dark: var(--eco-ink-2);
+  --eco-pine-soft: var(--eco-azul-soft);
+  --eco-amber: var(--eco-pomelo);
+  --eco-amber-dark: var(--eco-pomelo-dark);
+  --eco-amber-soft: var(--eco-pomelo-soft);
+  --eco-amber-ink: var(--eco-pomelo-ink);
+  --eco-cream: var(--eco-niebla);
+  --eco-sand: var(--eco-niebla-2);
+  --eco-sage: var(--eco-bruma);
+
   --eco-font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --eco-font-text: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --eco-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --eco-radius-sm: 4px;
-  --eco-radius: 6px;
-  --eco-radius-lg: 10px;
-  --eco-ease-out: cubic-bezier(0.2, 0, 0, 1);
-  --eco-ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --eco-dur-1: 120ms;
-  --eco-dur-2: 200ms;
-  --eco-dur-3: 280ms;
+
+  /* Forma: curvas amplias + "burbuja" (tres esquinas redondas y una casi recta). */
+  --eco-radius-sm: 8px;
+  --eco-radius: 12px;
+  --eco-radius-lg: 20px;
+  --eco-radius-xl: 32px;
+  --eco-bubble-r: 28px;
+
+  /* Movimiento: suave y con curva (docs/BRAND.md §9). */
+  --eco-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --eco-ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --eco-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --eco-ease-spring: linear(
+    0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161,
+    1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%,
+    1.003 76.9%, 1.004 83.8%, 1
+  );
+  --eco-dur-1: 140ms;
+  --eco-dur-2: 240ms;
+  --eco-dur-3: 420ms;
+  --eco-dur-4: 720ms;
 }
 
 @theme inline {
@@ -122,6 +152,19 @@
   /* Marca Ecommy (primitivos de BRAND.md §5.5) */
   --color-eco-ink: var(--eco-ink);
   --color-eco-ink-2: var(--eco-ink-2);
+  --color-eco-ink-3: var(--eco-ink-3);
+  --color-eco-pomelo: var(--eco-pomelo);
+  --color-eco-pomelo-dark: var(--eco-pomelo-dark);
+  --color-eco-pomelo-soft: var(--eco-pomelo-soft);
+  --color-eco-pomelo-ink: var(--eco-pomelo-ink);
+  --color-eco-durazno: var(--eco-durazno);
+  --color-eco-azul: var(--eco-azul);
+  --color-eco-azul-dark: var(--eco-azul-dark);
+  --color-eco-azul-soft: var(--eco-azul-soft);
+  --color-eco-azul-light: var(--eco-azul-light);
+  --color-eco-niebla: var(--eco-niebla);
+  --color-eco-niebla-2: var(--eco-niebla-2);
+  --color-eco-bruma: var(--eco-bruma);
   --color-eco-pine: var(--eco-pine);
   --color-eco-pine-dark: var(--eco-pine-dark);
   --color-eco-pine-soft: var(--eco-pine-soft);
@@ -140,8 +183,13 @@
   --radius-eco-sm: var(--eco-radius-sm);
   --radius-eco: var(--eco-radius);
   --radius-eco-lg: var(--eco-radius-lg);
+  --radius-eco-xl: var(--eco-radius-xl);
   --ease-eco-out: var(--eco-ease-out);
   --ease-eco-in: var(--eco-ease-in);
+  --ease-eco-in-out: var(--eco-ease-in-out);
+  --ease-eco-spring: var(--eco-ease-spring);
+  --color-adm-link: var(--adm-link);
+  --color-adm-link-hover: var(--adm-link-hover);
 }
 
 @theme {
@@ -151,9 +199,10 @@
   --font-admin: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius-pill: 9999px;
-  --radius-adm: 6px;
-  --radius-adm-sm: 4px;
-  --shadow-adm: 0 12px 32px -12px rgb(26 35 32 / 0.25), 0 0 0 1px var(--eco-line);
+  --radius-adm: 10px;
+  --radius-adm-sm: 6px;
+  --radius-adm-lg: 16px;
+  --shadow-adm: 0 18px 44px -16px rgb(16 22 47 / 0.28), 0 0 0 1px var(--eco-line);
   --container-store: var(--container, 1280px);
 }
 
@@ -269,6 +318,145 @@ body {
 }
 
 /*
+ * Marca Ecommy: utilidades compartidas por landing, sitio público y panel
+ * (docs/BRAND.md §6, §7 y §9). El storefront NO las usa: su forma y su
+ * movimiento salen del tema (`theme.style`, docs/DESIGN.md §3.9).
+ */
+@layer components {
+  /* Display: Archivo expandida y pesada (eje wdth). */
+  .eco-display {
+    font-family: var(--eco-font-display);
+    font-stretch: 112%;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  .eco-num {
+    font-family: var(--eco-font-display);
+    font-stretch: 112%;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* La burbuja: tres esquinas amplias y la inferior izquierda casi recta (mensaje + etiqueta de precio). */
+  .eco-bubble {
+    border-radius: var(--eco-bubble-r);
+    border-end-start-radius: calc(var(--eco-bubble-r) * 0.2);
+  }
+  .eco-bubble-r {
+    border-radius: var(--eco-bubble-r);
+    border-end-end-radius: calc(var(--eco-bubble-r) * 0.2);
+  }
+  .eco-bubble-up {
+    border-radius: var(--eco-bubble-r);
+    border-start-start-radius: calc(var(--eco-bubble-r) * 0.2);
+  }
+
+  /* Entrada en tiempo (al montar): sube con rebote suave. `--i` escalona. */
+  .eco-pop {
+    animation: eco-pop var(--eco-dur-4) var(--eco-ease-spring) both;
+    animation-delay: calc(var(--i, 0) * 80ms);
+  }
+  /* Flotación lenta para piezas decorativas (capturas, burbujas). */
+  .eco-float {
+    animation: eco-float 7s var(--eco-ease-in-out) infinite alternate;
+    animation-delay: calc(var(--i, 0) * -1.3s);
+  }
+  /* Trazo que se dibuja (el glifo "e", arcos). Requiere pathLength="1" en el path. */
+  .eco-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: eco-draw 1.1s var(--eco-ease-in-out) 0.15s forwards;
+  }
+  /* Marquesina horizontal: el hijo directo se duplica en el markup. */
+  .eco-marquee {
+    display: flex;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .eco-marquee > * {
+    flex: none;
+    animation: eco-marquee var(--marquee-dur, 40s) linear infinite;
+  }
+  .eco-marquee:hover > * {
+    animation-play-state: paused;
+  }
+}
+
+/* Entrada ligada al scroll, sin JS: donde no hay soporte el contenido se ve fijo (nunca oculto). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .eco-reveal {
+      animation: eco-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 42%;
+    }
+    .eco-reveal-left {
+      animation: eco-slide-left linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 46%;
+    }
+    .eco-reveal-right {
+      animation: eco-slide-right linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 46%;
+    }
+    .eco-reveal-scale {
+      animation: eco-grow linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 34%;
+    }
+  }
+}
+
+@keyframes eco-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 32px, 0) scale(0.98);
+  }
+}
+@keyframes eco-slide-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-40px, 16px, 0) rotate(-1.5deg);
+  }
+}
+@keyframes eco-slide-right {
+  from {
+    opacity: 0;
+    transform: translate3d(40px, 16px, 0) rotate(1.5deg);
+  }
+}
+@keyframes eco-grow {
+  from {
+    transform: scale(0.9);
+    border-radius: 56px;
+  }
+}
+@keyframes eco-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.94);
+  }
+}
+@keyframes eco-float {
+  to {
+    transform: translate3d(0, -10px, 0) rotate(0.6deg);
+  }
+}
+@keyframes eco-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes eco-marquee {
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+/*
  * Skeletons con shimmer sutil (admin y storefront). Colores por variables:
  * admin → `--sk-base/--sk-shine` en `.admin-root`; storefront → tema.
  */
@@ -297,14 +485,14 @@ body {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 1000;
-  height: 2px;
+  height: 3px;
   pointer-events: none;
 }
 .nav-progress > span {
   display: block;
   height: 100%;
   width: 100%;
-  background: var(--nav-progress-color, var(--eco-amber));
+  background: var(--nav-progress-color, var(--eco-pomelo));
   transform-origin: 0 50%;
   transform: scaleX(var(--p, 0));
   transition: transform var(--eco-dur-2) var(--eco-ease-out), opacity 240ms var(--eco-ease-out) 80ms;

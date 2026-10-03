@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import { Toaster } from "@/components/ui/Toaster";
 
+import { archivo } from "../_brand/fonts";
+
 import "./admin.css";
 
 export const metadata: Metadata = {
@@ -12,7 +14,7 @@ export const metadata: Metadata = {
 /** Todo el admin vive dentro de `.admin-root` (tokens `--adm-*`). */
 export default function AdminRootLayout({ children }: LayoutProps<"/admin">) {
   return (
-    <div className="admin-root">
+    <div className={`admin-root ${archivo.variable}`}>
       {children}
       <Toaster />
     </div>
