@@ -175,7 +175,7 @@ export function StoreDemo({
       <div className="min-w-0 lg:col-start-1 lg:row-start-2">
         <fieldset>
           <legend className="text-[14px] font-semibold text-eco-ink">Qué vendés</legend>
-          <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <div className="mt-3 flex flex-wrap gap-2">
             {kinds.map((k) => {
               const on = k.kind === current.kind;
               return (

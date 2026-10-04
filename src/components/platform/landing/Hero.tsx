@@ -59,12 +59,12 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
         <div className="min-w-0">
           <p className="eco-pop inline-flex items-center gap-2 rounded-full bg-eco-paper py-1.5 pr-3.5 pl-2 text-[13px] font-medium text-eco-ink shadow-[0_0_0_1px_var(--eco-line)]">
             <span className="eco-bubble size-5 bg-eco-pomelo [--eco-bubble-r:8px]" aria-hidden />
-            Para los que venden por WhatsApp
+            Tu ecommerce completo, sin comisión por venta
           </p>
           <h1 className={cn(H1, "eco-pop mt-6 max-w-[11ch] xl:text-[84px]")} style={i(1)}>
-            Dejá de pasar precios por{" "}
+            Tu tienda online, lista para{" "}
             <span className="lp-mark">
-              privado
+              vender
               <svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden>
                 <path d="M3 14 C 50 4, 140 2, 197 11" pathLength={1} fill="none" stroke="var(--eco-pomelo)" strokeWidth="7" strokeLinecap="round" className="eco-draw" />
               </svg>
@@ -72,7 +72,7 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
             .
           </h1>
           <p className="eco-pop mt-7 max-w-[36ch] text-[19px] leading-[1.35] text-eco-ink sm:text-[21px]" style={i(2)}>
-            Tu catálogo con precio, stock y carrito. El cliente confirma y el pedido te llega por WhatsApp, armado: con el total, el envío y la dirección.
+            Catálogo con variantes y stock, carrito, envíos por zona y cobro con tarjeta o transferencia. Cada pedido queda en tu panel, con el total, el envío y la dirección.
           </p>
           <div className="eco-pop mt-9 flex flex-wrap items-center gap-x-6 gap-y-3" style={i(3)}>
             <Link href={startHref} className={cn(CTA_PRIMARY, "h-14 pl-7 text-[16px]")}>

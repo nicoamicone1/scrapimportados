@@ -32,7 +32,7 @@ import { APP_NAME } from "@/lib/version";
 
 const TITLE = "Ecommy · Tu tienda online, sin comisión por venta";
 const DESCRIPTION =
-  "Creá tu tienda online con catálogo, stock y carrito. Los pedidos te llegan armados por WhatsApp y cobrás por transferencia o con tarjeta en tu Mercado Pago, sin comisión por venta de Ecommy. 14 días de Pro gratis, sin tarjeta.";
+  "Creá tu tienda online completa: catálogo con variantes y stock, carrito, envíos por zona y cobro por transferencia o con tarjeta en tu Mercado Pago, sin comisión por venta de Ecommy. 14 días de Pro gratis, sin tarjeta.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -67,7 +67,7 @@ function steps(plans: readonly PlanLike[]): [StepCopy, StepCopy, StepCopy] {
     },
     {
       title: "Compartís el link",
-      text: "En la bio de Instagram, en tus estados o donde ya vendés. El cliente arma el carrito y confirma: el pedido queda registrado y te llega por WhatsApp.",
+      text: "En la bio de Instagram, en tus estados o donde ya vendés. El cliente arma el carrito y paga: el pedido queda registrado en tu panel, listo para preparar.",
       time: "el mismo día que publicás",
     },
   ];
@@ -263,18 +263,6 @@ export default async function LandingPage() {
 
       {/* Probá tu tienda: efecto de posesión ----------------------------- */}
       <Sheet id="probar" label="probar-t" className="bg-eco-paper [--lp-pb:96px] md:[--lp-pb:128px]">
-        <div aria-hidden className="eco-marquee border-b border-eco-line py-4 [--marquee-dur:60s]">
-          {[0, 1].map((n) => (
-            <p key={n} className={cn(DISPLAY, "flex shrink-0 items-center gap-6 pr-6 text-[20px] text-eco-ink sm:text-[26px]")}>
-              {kinds.flatMap((k) => k.catalog.slice(0, 2)).map((t) => (
-                <span key={`${n}-${t}`} className="flex items-center gap-6 whitespace-nowrap">
-                  {t}
-                  <span className="eco-bubble size-3 bg-eco-pomelo [--eco-bubble-r:5px]" />
-                </span>
-              ))}
-            </p>
-          ))}
-        </div>
         <div className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 md:pt-20">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
             <div className="eco-reveal">
