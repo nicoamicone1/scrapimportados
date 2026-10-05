@@ -2,6 +2,23 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## v0.10.0 — 2026-10-05 · Hoy se resuelve desde el inicio, respuestas listas para WhatsApp y qué pasó esta semana
+
+Tesis de producto: [`PRODUCT-THESIS.md`](PRODUCT-THESIS.md).
+
+### Agregado
+
+- Inicio › «Resolver desde acá»: los pedidos por confirmar y por preparar con su siguiente paso en un toque («Confirmar pago», «Marcar preparado», «Marcar enviado»), con Deshacer y «Avisar por WhatsApp» sin abrir cada pedido.
+- Inicio: la cabecera dice cuántas cosas tenés para resolver y, cuando no queda nada, «Listo por hoy».
+- Inicio › «Qué pasó esta semana»: por qué vendiste más o menos que la semana pasada, con el producto que más cayó o subió, los precios que cambiaste y lo que se quedó sin stock. Sale de tus datos, sin inteligencia artificial.
+- Responder (`/admin/responder`): te preguntan por WhatsApp si tenés algo; buscás el producto, elegís la variante y copiás la respuesta con precio, stock, descuento por transferencia, cuotas y link. Sin stock, la respuesta ofrece el aviso de reposición. También respuestas listas para envío por zona, retiro y cómo pagar. Ecommy nunca manda nada solo.
+- Ayuda: «Responder consultas de WhatsApp».
+
+### Cambiado
+
+- Sitio de Ecommy: la landing cuenta la operación (vendés por WhatsApp e Instagram, Ecommy pone el orden) en lugar de la lista de funciones, con la sección «Antes / Con Ecommy» y «Hecho para vender en Argentina».
+- Inicio: «Últimos pedidos» no repite los que ya están para resolver.
+
 ## v0.9.0 — 2026-10-03 · Identidad nueva y estilos de tienda con disposición propia
 
 ### Agregado
