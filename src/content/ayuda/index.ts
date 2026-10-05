@@ -13,6 +13,7 @@ import * as planes from "./planes-prueba-y-equipo";
 import * as portada from "./portada-y-paginas";
 import * as primerosPasos from "./primeros-pasos";
 import * as remitos from "./remitos-y-exportar";
+import * as responder from "./responder-consultas-whatsapp";
 import * as zonas from "./zonas-de-envio";
 
 /*
@@ -27,6 +28,7 @@ const MODULES: { meta: HelpArticleMeta; body: HelpArticle["body"] }[] = [
   importarTienda,
   cambiarPrecios,
   pedidos,
+  responder,
   remitos,
   zonas,
   estilo,
