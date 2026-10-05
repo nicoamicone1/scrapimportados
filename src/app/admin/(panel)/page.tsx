@@ -9,14 +9,18 @@ import { OnboardingChecklist } from "@/components/admin/dashboard/OnboardingChec
 import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { StoreCard } from "@/components/admin/dashboard/StoreCard";
 import { AllClear, TodoBoard, type TodoItem } from "@/components/admin/dashboard/TodoBoard";
+import { WeekInsightsCard } from "@/components/admin/dashboard/WeekInsights";
+import { WorkQueue } from "@/components/admin/dashboard/WorkQueue";
 import { ExpireSweep } from "@/components/admin/orders/ExpireSweep";
 import { ExpiryText, OrderStatusBadge, PaymentStatusBadge, RelativeTime } from "@/components/admin/orders/OrderBadges";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { requireAdmin } from "@/lib/auth";
-import { getDashboard } from "@/lib/admin/dashboard";
+import { getDashboard, getWorkQueue } from "@/lib/admin/dashboard";
+import { getWeekInsights } from "@/lib/admin/insights";
 import { parsePeriod, PERIOD_LABELS, PERIODS, type PeriodKey } from "@/lib/admin/dashboard-utils";
 import { getStoreInfo, sweepExpiredOrders } from "@/lib/admin/orders";
+import { todoHeadline } from "@/lib/admin/work-queue";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber } from "@/lib/money";
 import { getOnboardingStatus } from "@/lib/onboarding";
@@ -41,10 +45,12 @@ function greeting(timeZone: string, now = new Date()) {
 
 /**
  * Inicio del panel (DESIGN §7.8, BRAND §1 y §11). Contesta en este orden:
- * ¿qué tengo que hacer hoy? (cabecera con el resumen + "Para hacer" con la
- * más urgente en burbuja), ¿mi tienda está online? (miniatura real con el
- * link), ¿qué falta para dejarla lista? (primeros pasos en arco), los últimos
- * pedidos y, al final, cómo viene (métricas, curva de ventas, más vendidos).
+ * ¿qué tengo que hacer hoy? (cabecera con "Tenés N cosas para resolver" +
+ * "Para hacer" con la más urgente en burbuja), resolverlo ahí mismo ("Resolver
+ * desde acá": los pedidos con su siguiente paso en un toque), ¿mi tienda está
+ * online? (miniatura real con el link), ¿qué falta para dejarla lista?
+ * (primeros pasos en arco), los últimos pedidos y, al final, cómo viene
+ * (métricas, curva de ventas, más vendidos).
  * En el celular lo urgente queda arriba y todo es una columna.
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/admin">) {
@@ -60,7 +66,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
     supabase.from("store_settings").select("theme, tagline").eq("store_id", ctx.store.id).maybeSingle(),
     supabase.from("products").select("name").eq("store_id", ctx.store.id).eq("status", "active").order("updated_at", { ascending: false }).limit(6),
   ]);
-  const d = await getDashboard(supabase, period, store);
+  const [d, queue, week] = await Promise.all([
+    getDashboard(supabase, period, store),
+    getWorkQueue(supabase, store, ctx.store),
+    getWeekInsights(supabase, store),
+  ]);
   const money = (v: number) => formatMoney(v, { currency: store.currency });
   const url = storeUrl(ctx.store);
 
@@ -126,6 +136,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
     ] satisfies TodoItem[]
   ).filter((t) => t.count > 0);
 
+  // Cosas distintas, no la suma de los contadores (un pendiente impago está
+  // en "por confirmar", "sin pagar" y "por vencer" a la vez): los pedidos
+  // accionables una sola vez, más arrepentimientos y variantes con stock bajo.
+  const headline = todoHeadline(queue.total + d.withdrawals.total + d.lowStock.total, d.totalOrders > 0);
+  // Lo que ya está en "Resolver desde acá" no se repite en "Últimos pedidos".
+  const queued = new Set(queue.items.map((o) => o.id));
+  const recent = queue.items.length ? d.recent.filter((o) => !queued.has(o.id)).slice(0, 5) : d.recent;
+
   const { hello, date } = greeting(store.timezone);
   const theme = parseTheme(settings.data?.theme ?? {});
 
@@ -154,31 +172,37 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
             {hello} · <span suppressHydrationWarning>{date}</span>
           </p>
           <h1 className="eco-display mt-1.5 text-[28px] leading-[1.05] text-adm-fg sm:text-[34px]">{ctx.store.name}</h1>
-          <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[13px]">
-            {todo.length ? (
-              <>
-                <span className="sr-only">Para hoy: </span>
-                {todo.slice(0, 3).map((t, i) => (
-                  <Link
-                    key={t.key}
-                    href={t.href}
-                    className={cn(
-                      "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 font-medium transition-colors duration-[140ms] ease-eco-out",
-                      i === 0 ? "bg-adm-accent-2-soft text-adm-fg hover:bg-eco-durazno" : "bg-adm-surface-2 text-adm-fg hover:bg-adm-border",
-                    )}
-                  >
-                    <span className="eco-num text-[13px]">{formatNumber(t.count)}</span>
-                    {t.short}
-                  </Link>
-                ))}
-              </>
-            ) : (
+          {headline ? (
+            <p className="mt-2 flex items-center gap-2 text-[17px] leading-6 font-semibold text-adm-fg">
+              {todo.length ? null : <span aria-hidden className="size-2 shrink-0 rounded-full bg-adm-success" />}
+              {headline}
+            </p>
+          ) : null}
+          {todo.length ? (
+            <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[13px]">
+              <span className="sr-only">Para hoy: </span>
+              {todo.slice(0, 3).map((t, i) => (
+                <Link
+                  key={t.key}
+                  href={t.href}
+                  className={cn(
+                    "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 font-medium transition-colors duration-[140ms] ease-eco-out pointer-coarse:h-10",
+                    i === 0 ? "bg-adm-accent-2-soft text-adm-fg hover:bg-eco-durazno" : "bg-adm-surface-2 text-adm-fg hover:bg-adm-border",
+                  )}
+                >
+                  <span className="eco-num text-[13px]">{formatNumber(t.count)}</span>
+                  {t.short}
+                </Link>
+              ))}
+            </p>
+          ) : !headline ? (
+            <p className="mt-2.5 text-[13px]">
               <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-adm-surface-2 px-2.5 font-medium text-adm-fg">
                 <span aria-hidden className="size-1.5 rounded-full bg-adm-success" />
-                {d.totalOrders ? "Estás al día" : "Todavía no entró ningún pedido"}
+                Todavía no entró ningún pedido
               </span>
-            )}
-          </p>
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <NotificationsToggle />
@@ -191,16 +215,21 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
             Una sola grilla: en desktop la columna derecha (tienda y avisos)
             ocupa todas las filas y la izquierda fluye sin huecos; en el
             celular el orden es el del DOM (lo urgente primero). */}
-        <div className="grid items-start gap-4 lg:grid-cols-12 lg:grid-rows-[repeat(4,auto)_1fr] lg:gap-x-5 lg:gap-y-4">
+        <div className="grid items-start gap-4 lg:grid-cols-12 lg:grid-rows-[repeat(5,auto)_1fr] lg:gap-x-5 lg:gap-y-4">
           <div className="min-w-0 lg:col-span-8 lg:col-start-1">
             {todo.length ? <TodoBoard items={todo} /> : <AllClear hasOrders={d.totalOrders > 0} />}
           </div>
+          {queue.items.length ? (
+            <div className="min-w-0 lg:col-span-8 lg:col-start-1">
+              <WorkQueue items={queue.items} total={queue.total} timeZone={store.timezone} />
+            </div>
+          ) : null}
           {onboardingOpen ? (
             <div className="min-w-0 lg:col-span-8 lg:col-start-1">
               <OnboardingChecklist ctx={ctx} status={onboarding} />
             </div>
           ) : null}
-          <aside aria-label="Tu tienda y avisos" className="min-w-0 space-y-4 lg:col-span-4 lg:col-start-9 lg:row-span-5 lg:row-start-1">
+          <aside aria-label="Tu tienda y avisos" className="min-w-0 space-y-4 lg:col-span-4 lg:col-start-9 lg:row-span-6 lg:row-start-1">
             {storeCard}
             {d.withdrawals.rows.length ? <WithdrawalsCard d={d} /> : null}
             {d.totalOrders || d.lowStock.rows.length ? <LowStockCard d={d} /> : null}
@@ -209,11 +238,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
             <div className="min-w-0 lg:col-span-8 lg:col-start-1">
               <NoOrdersYet secondary={onboardingOpen} />
             </div>
-          ) : (
+          ) : recent.length ? (
             <div className="min-w-0 lg:col-span-8 lg:col-start-1">
-              <RecentOrders d={d} timeZone={store.timezone} />
+              <RecentOrders orders={recent} filtered={recent.length !== d.recent.length} timeZone={store.timezone} />
             </div>
-          )}
+          ) : null}
           {d.expiring.length ? (
             <div className="min-w-0 lg:col-span-8 lg:col-start-1">
               <ExpiringCard d={d} timeZone={store.timezone} />
@@ -250,6 +279,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
                 href="/admin/pedidos?pago=impago"
               />
             </div>
+
+            {/* Qué pasó esta semana: el porqué de los números, sin IA (PRODUCT-THESIS §4.3). Siempre compara 7 días. */}
+            <WeekInsightsCard data={week} currency={store.currency} />
 
             <div className="grid items-start gap-4 lg:grid-cols-12 lg:gap-5">
               <section aria-labelledby="ventas-title" className="min-w-0 rounded-adm-lg border border-adm-border bg-adm-surface p-4 shadow-adm-card sm:p-5 lg:col-span-8">
@@ -417,11 +449,15 @@ function initials(name: string) {
   return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "")).toUpperCase() || "?";
 }
 
-function RecentOrders({ d, timeZone }: { d: DashboardData; timeZone: string }) {
+function RecentOrders({ orders, filtered, timeZone }: { orders: DashboardData["recent"]; filtered: boolean; timeZone: string }) {
   return (
-    <ListCard title="Últimos pedidos" action={<SeeAll href="/admin/pedidos">Ver todos</SeeAll>}>
+    <ListCard
+      title="Últimos pedidos"
+      description={filtered ? "Sin los que tenés arriba para resolver." : undefined}
+      action={<SeeAll href="/admin/pedidos">Ver todos</SeeAll>}
+    >
       <ul className="divide-y divide-adm-border border-t border-adm-border">
-        {d.recent.map((o) => (
+        {orders.map((o) => (
           <li key={o.id}>
             <Link
               href={`/admin/pedidos/${o.id}`}
