@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Menu,
+  MessageSquareReply,
   Package,
   Palette,
   Receipt,
@@ -73,6 +74,13 @@ export const NAV: NavGroup[] = [
       { label: "Carritos abandonados", href: "/admin/pedidos/abandonados", icon: ShoppingCart, keywords: ["abandonados", "checkout", "recuperar", "carrito", "sin terminar"] },
       // B: clientes
       { label: "Clientes", href: "/admin/clientes", icon: UsersRound, keywords: ["compradores"] },
+      // Respuestas listas: consultas de WhatsApp con precio, stock y link (PRODUCT-THESIS §4.2)
+      {
+        label: "Responder",
+        href: "/admin/responder",
+        icon: MessageSquareReply,
+        keywords: ["whatsapp", "consulta", "stock", "precio", "respuesta", "respuestas listas", "contestar"],
+      },
     ],
   },
   {

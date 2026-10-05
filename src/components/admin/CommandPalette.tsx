@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FilePlus2,
   Loader2,
+  MessageSquareReply,
   Package,
   PackagePlus,
   Receipt,
@@ -68,6 +69,7 @@ interface PaletteAction {
 const ACTIONS: PaletteAction[] = [
   { id: "new-product", label: "Nuevo producto", href: "/admin/productos/nuevo", icon: PackagePlus, keywords: ["crear", "alta", "artículo"] },
   { id: "new-order", label: "Nuevo pedido manual", href: "/admin/pedidos/nuevo", icon: ReceiptText, keywords: ["crear", "venta", "orden"] },
+  { id: "reply", label: "Responder una consulta", href: "/admin/responder", icon: MessageSquareReply, keywords: ["whatsapp", "stock", "precio", "contestar"] },
   { id: "new-promo", label: "Nueva promoción", href: "/admin/promociones/nuevo", icon: BadgePercent, keywords: ["crear", "oferta", "descuento"] },
   { id: "new-coupon", label: "Nuevo cupón", href: "/admin/cupones/nuevo", icon: TicketPlus, keywords: ["crear", "código", "descuento"] },
   { id: "new-page", label: "Nueva página", href: "/admin/paginas?nueva=1", icon: FilePlus2, keywords: ["crear", "landing", "builder"] },

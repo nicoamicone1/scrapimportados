@@ -33,8 +33,11 @@ export function sampleTotals() {
 const i = (n: number) => ({ "--i": n }) as CSSProperties;
 
 /**
- * Hero: el dolor concreto, la promesa en una línea, UNA acción de marca con
- * la reversión de riesgo pegada, y a la derecha el producto funcionando: la
+ * Hero: el dolor (vender por WhatsApp e Instagram con planilla y memoria) y
+ * la promesa (orden), no la lista de módulos (docs/PRODUCT-THESIS.md §4.4).
+ * La bajada cuenta el circuito: pedido en la tienda → pago → pedido
+ * registrado → "Hoy" en el panel. UNA acción de marca con la reversión de
+ * riesgo pegada, y a la derecha el producto funcionando: la
  * tienda real (captura) en un marco con curva y, encima, el celular del
  * comerciante con el pedido entrando por WhatsApp (el mensaje lo arma
  * `buildOrderMessage`, el mismo que usa la tienda). Todo sobre un arco
@@ -59,12 +62,12 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
         <div className="min-w-0">
           <p className="eco-pop inline-flex items-center gap-2 rounded-full bg-eco-paper py-1.5 pr-3.5 pl-2 text-[13px] font-medium text-eco-ink shadow-[0_0_0_1px_var(--eco-line)]">
             <span className="eco-bubble size-5 bg-eco-pomelo [--eco-bubble-r:8px]" aria-hidden />
-            Tu ecommerce completo, sin comisión por venta
+            Hecho para vender en Argentina · Sin comisión por venta
           </p>
-          <h1 className={cn(H1, "eco-pop mt-6 max-w-[11ch] xl:text-[84px]")} style={i(1)}>
-            Tu tienda online, lista para{" "}
+          <h1 className={cn(H1, "eco-pop mt-6 max-w-[12ch] xl:text-[80px]")} style={i(1)}>
+            Vendés por WhatsApp e Instagram. Ahora, con{" "}
             <span className="lp-mark">
-              vender
+              orden
               <svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden>
                 <path d="M3 14 C 50 4, 140 2, 197 11" pathLength={1} fill="none" stroke="var(--eco-pomelo)" strokeWidth="7" strokeLinecap="round" className="eco-draw" />
               </svg>
@@ -72,7 +75,8 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
             .
           </h1>
           <p className="eco-pop mt-7 max-w-[36ch] text-[19px] leading-[1.35] text-eco-ink sm:text-[21px]" style={i(2)}>
-            Catálogo con variantes y stock, carrito, envíos por zona y cobro con tarjeta o transferencia. Cada pedido queda en tu panel, con el total, el envío y la dirección.
+            Tu cliente arma el pedido en tu tienda y paga como siempre, por transferencia o Mercado Pago. A vos te llega registrado y, al
+            abrir el panel, sabés qué tenés que hacer hoy.
           </p>
           <div className="eco-pop mt-9 flex flex-wrap items-center gap-x-6 gap-y-3" style={i(3)}>
             <Link href={startHref} className={cn(CTA_PRIMARY, "h-14 pl-7 text-[16px]")}>

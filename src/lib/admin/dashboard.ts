@@ -11,9 +11,14 @@ import {
   type ResolvedPeriod,
   type SeriesPoint,
 } from "@/lib/admin/dashboard-utils";
-import { amountPaid } from "@/lib/admin/order-utils";
-import { toListItem, type OrderListItem, type StoreInfo } from "@/lib/admin/orders";
+import { amountPaid, balanceDue, hasReservation } from "@/lib/admin/order-utils";
+import { orderPublicUrl, toListItem, type OrderListItem, type StoreInfo } from "@/lib/admin/orders";
+import { toWhatsAppNumber, whatsAppTemplateFor } from "@/lib/admin/whatsapp";
+import { prioritizeWorkQueue, WORK_QUEUE_LIMIT, type WorkQueueItem } from "@/lib/admin/work-queue";
+import { formatDateTime } from "@/lib/dates";
+import { formatMoney } from "@/lib/money";
 import type { Tables } from "@/lib/supabase/database.types";
+import type { StoreUrlTarget } from "@/lib/tenant/urls";
 
 /**
  * Lecturas del dashboard del admin (sin caché). La tienda sale de
@@ -174,4 +179,115 @@ export async function getDashboard(
       shippingReady: (zones.count ?? 0) + (pickups.count ?? 0) > 0,
     },
   };
+}
+
+// ---------------------------------------------------------------------
+// "Resolver desde acá": la cola de trabajo del inicio
+// ---------------------------------------------------------------------
+
+export interface WorkQueue {
+  items: WorkQueueItem[];
+  /** Pedidos accionables en total (por confirmar + por preparar/despachar). */
+  total: number;
+}
+
+const QUEUE_COLUMNS = `${LIST_COLUMNS}, public_token, pickup_location_id, customer_id`;
+
+/**
+ * Pedidos que se pueden resolver desde el inicio (PRODUCT-THESIS §4.1):
+ * pendientes primero, después confirmados y en preparación
+ * (`prioritizeWorkQueue`). Cada fila trae el contexto de WhatsApp armado igual
+ * que la ficha del pedido (link público, alias/CBU, saldo, retiro y reserva),
+ * así el cliente abre el mensaje sin otra consulta.
+ */
+export async function getWorkQueue(
+  supabase: Supa,
+  store: StoreInfo,
+  target: StoreUrlTarget,
+  limit: number = WORK_QUEUE_LIMIT,
+): Promise<WorkQueue> {
+  const sid = store.storeId;
+  // Traemos de más en cada grupo para que el orden fino (reservas que vencen) lo decida la lógica pura.
+  const fetchSize = limit * 2;
+  const [pending, fulfil] = await Promise.all([
+    supabase
+      .from("orders")
+      .select(QUEUE_COLUMNS, { count: "exact" })
+      .eq("store_id", sid)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(fetchSize),
+    supabase
+      .from("orders")
+      .select(QUEUE_COLUMNS, { count: "exact" })
+      .eq("store_id", sid)
+      .in("status", ["confirmed", "preparing"])
+      .order("created_at", { ascending: true })
+      .limit(fetchSize),
+  ]);
+  if (pending.error) console.error("[dashboard.workQueue]", pending.error.message);
+  if (fulfil.error) console.error("[dashboard.workQueue]", fulfil.error.message);
+
+  const rows = [...(pending.data ?? []), ...(fulfil.data ?? [])];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const picked = prioritizeWorkQueue(rows.map(toListItem), limit);
+  const pickedRows = picked.map((o) => byId.get(o.id)!);
+
+  // Saldo de los pagos parciales, retiro y teléfono de la ficha del cliente (si el snapshot no lo tiene).
+  const partialIds = picked.filter((o) => o.paymentStatus === "partial").map((o) => o.id);
+  const pickupIds = [...new Set(pickedRows.map((r) => r.pickup_location_id).filter((v): v is string => Boolean(v)))];
+  const customerIds = [
+    ...new Set(
+      pickedRows
+        .filter((r, i) => !picked[i].customer.phone && r.customer_id)
+        .map((r) => r.customer_id as string),
+    ),
+  ];
+  const [payments, pickups, customers] = await Promise.all([
+    partialIds.length
+      ? supabase.from("order_payments").select("order_id, amount").eq("store_id", sid).in("order_id", partialIds)
+      : Promise.resolve({ data: [] as { order_id: string; amount: number }[] }),
+    pickupIds.length
+      ? supabase.from("pickup_locations").select("id, name, address, hours_text").eq("store_id", sid).in("id", pickupIds)
+      : Promise.resolve({ data: [] as Pick<Tables<"pickup_locations">, "id" | "name" | "address" | "hours_text">[] }),
+    customerIds.length
+      ? supabase.from("customers").select("id, phone").eq("store_id", sid).in("id", customerIds)
+      : Promise.resolve({ data: [] as Pick<Tables<"customers">, "id" | "phone">[] }),
+  ]);
+  const pickupById = new Map((pickups.data ?? []).map((p) => [p.id, p]));
+  const phoneByCustomer = new Map((customers.data ?? []).map((c) => [c.id, c.phone]));
+
+  const items = picked.map((o, i): WorkQueueItem => {
+    const row = pickedRows[i];
+    const phone = o.customer.phone ?? (row.customer_id ? (phoneByCustomer.get(row.customer_id) ?? null) : null);
+    if (!phone || !toWhatsAppNumber(phone)) return { ...o, whatsApp: null };
+
+    const money = (v: number) => formatMoney(v, { currency: o.currency });
+    const paid = o.paymentStatus === "partial" ? amountPaid((payments.data ?? []).filter((p) => p.order_id === o.id)) : 0;
+    const balance = balanceDue(o.total, paid);
+    const pickup = row.pickup_location_id ? pickupById.get(row.pickup_location_id) : undefined;
+    const reservation = hasReservation({ status: o.status, payment_status: o.paymentStatus, expires_at: o.expiresAt });
+    return {
+      ...o,
+      whatsApp: {
+        phone,
+        kind: whatsAppTemplateFor({ status: o.status, payment_status: o.paymentStatus, fulfillment: o.fulfillment }),
+        context: {
+          storeName: store.name,
+          customerName: o.customer.name,
+          number: o.number,
+          total: money(o.total),
+          balance: balance > 0 && balance !== o.total ? money(balance) : null,
+          orderUrl: orderPublicUrl(target, row.public_token),
+          tracking: null,
+          pickup: pickup ? { name: pickup.name, address: pickup.address, hours: pickup.hours_text } : null,
+          transfer: { alias: store.transfer.alias, cbu: store.transfer.cbu },
+          paymentMethodCode: o.paymentMethodCode,
+          expiresLabel: reservation && o.expiresAt ? formatDateTime(o.expiresAt, store.timezone) : null,
+        },
+      },
+    };
+  });
+
+  return { items, total: (pending.count ?? 0) + (fulfil.count ?? 0) };
 }

@@ -6,7 +6,7 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.9.0";
+export const APP_VERSION = "0.10.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
@@ -28,6 +28,25 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.10.0",
+    date: "2026-10-05",
+    title: "Hoy se resuelve desde el inicio, respuestas listas para WhatsApp y qué pasó esta semana",
+    sections: {
+      added: [
+        "Inicio › «Resolver desde acá»: los pedidos por confirmar y por preparar con su siguiente paso en un toque («Confirmar pago», «Marcar preparado», «Marcar enviado»), con Deshacer y «Avisar por WhatsApp» sin abrir cada pedido.",
+        "Inicio: la cabecera dice cuántas cosas tenés para resolver y, cuando no queda nada, «Listo por hoy».",
+        "Inicio › «Qué pasó esta semana»: por qué vendiste más o menos que la semana pasada, con el producto que más cayó o subió, los precios que cambiaste y lo que se quedó sin stock. Sale de tus datos, sin inteligencia artificial.",
+        "Responder: te preguntan por WhatsApp si tenés algo; buscás el producto, elegís la variante y copiás la respuesta con precio, stock, descuento por transferencia, cuotas y link. Sin stock, la respuesta ofrece el aviso de reposición. También respuestas listas para envío por zona, retiro y cómo pagar. Ecommy nunca manda nada solo.",
+        "Ayuda: «Responder consultas de WhatsApp».",
+      ],
+      changed: [
+        "Sitio de Ecommy: la landing cuenta la operación (vendés por WhatsApp e Instagram, Ecommy pone el orden) en lugar de la lista de funciones, con la sección «Antes / Con Ecommy» y «Hecho para vender en Argentina».",
+        "Inicio: «Últimos pedidos» no repite los que ya están para resolver.",
+      ],
+      fixed: [],
+    },
+  },
   {
     version: "0.9.0",
     date: "2026-10-03",
