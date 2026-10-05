@@ -19,7 +19,7 @@ Si cambia algo de esta tabla, cambiá el copy en los cuatro documentos. Los plan
 | Dirección de la tienda | `<tienda>.ecommy.app`; dominio propio desde Pro (hoy el alta es manual, ver checklist §8) | `docs/DEPLOY.md` §6 |
 | Tienda demo | `https://demo.ecommy.app` (catálogo de electro, bazar y accesorios importado de la web de un proveedor) | `storeHref({ slug: "demo" })`, `data/products.json` |
 | Estilos | 10 presets por rubro: Nórdico, Mercado, Atelier, Editorial, Botica, Recreo, Lapacho, Galpón, Bodega, Neón. Free usa 2 (Nórdico y Mercado); Starter en adelante, los 10 | `src/lib/theme/presets.ts`, `FREE_THEME_PRESETS` |
-| Cobro | Transferencia (con descuento opcional, visible en la card y la ficha) o "acordar por WhatsApp" con el pedido armado; el pedido queda registrado antes de derivar | `PriceTag.tsx`, landing |
+| Cobro | Transferencia (con descuento opcional, visible en la card y la ficha), "acordar por WhatsApp" con el pedido armado, o tarjeta y cuotas sin interés (3, 6, 9 o 12) con la cuenta de Mercado Pago del comercio (v0.8); el pedido queda registrado antes de derivar | `PriceTag.tsx`, landing, `CHANGELOG.md` v0.8 |
 | Reserva de stock | Plazo configurable: el pedido impago vence solo y devuelve el stock | `run_daily_maintenance()`, config de checkout |
 | Envíos | Zonas por polígono dibujado en el mapa, provincia o código postal, con costo y plazo; retiro en el local; envío gratis desde un monto con barra "te faltan $ X" | `/admin/envios`, `FreeShippingBar.tsx` |
 | Importar | CSV (crear productos o actualizar precio/stock por SKU) desde Starter; desde otra web (WooCommerce, Shopify o cualquier sitio con datos estructurados; "Detectar" muestra qué se puede traer antes de importar) en Pro | `/admin/importar`, `src/lib/scraper/` |
@@ -27,7 +27,7 @@ Si cambia algo de esta tabla, cambiá el copy en los cuatro documentos. Los plan
 | Legal AR (todos los planes) | Botón de arrepentimiento con bandeja en el panel, link a Defensa del Consumidor, QR de Data Fiscal, "precio sin impuestos nacionales", plantillas de políticas | `Footer.tsx`, `/admin/configuracion/legales` |
 | SEO y medición | Título y descripción por producto con vista previa, sitemap, robots, JSON-LD, Open Graph, redirecciones 301 (con importación CSV). GA4, Tag Manager y Meta Pixel cargando sólo el ID: desde Starter | `/admin/configuracion/seo` |
 | Operación | Remitos para imprimir, pedidos manuales, aviso de pedidos nuevos en el panel, inventario con historial, equipo con invitación por link y roles, auditoría (Pro), exportación CSV (Pro) | admin |
-| Lo que NO hay (hoy) | Pasarela de pago/cuotas online, etiquetas de correo (OCA, Andreani), sincronización con Mercado Libre, facturación electrónica, emails automáticos al comprador (en curso), cuentas de cliente con login, carritos abandonados, precios mayoristas por cantidad, app store | `FEATURES-AUDIT.md` §3 |
+| Lo que NO hay (hoy) | Otras pasarelas además de Mercado Pago, etiquetas de correo (OCA, Andreani), sincronización con Mercado Libre, facturación electrónica, emails automáticos al comprador (en curso), cuentas de cliente con login, carritos abandonados, precios mayoristas por cantidad, app store | `FEATURES-AUDIT.md` §3 |
 
 ### Planes (defaults de la migración)
 
@@ -51,19 +51,21 @@ Los precios son de ejemplo (spec §14.1): **el precio real lo decidís vos**. En
 
 ## 1. Posicionamiento
 
-**En una frase.** Ecommy es la tienda online para comercios argentinos que ya venden por WhatsApp y transferencia: tu catálogo con tu marca, cada pedido registrado y sin comisión por venta.
+> Reescrito el 2026-10-05 a partir de [`PRODUCT-THESIS.md`](PRODUCT-THESIS.md): el relato pasa de *la tienda* a *la operación*.
 
-**En un párrafo.** La mayoría de las pymes argentinas ya vende: por Instagram, por WhatsApp, en el local. Lo que les falta no es una pasarela, es orden. Ecommy les da una tienda con su marca donde el cliente ve precio, stock y envío, arma el pedido y paga como ya paga (transferencia con descuento o acordándolo por WhatsApp). El pedido queda registrado y le llega al comercio armado, con total y dirección. Ecommy no cobra comisión por venta, trae de fábrica lo que la ley argentina exige (botón de arrepentimiento, precio sin impuestos nacionales, Data Fiscal) y resuelve las tareas que en Argentina se hacen todas las semanas: actualizar precios por inflación, cargar la lista del proveedor y cobrar el envío según el barrio.
+**En una frase.** Ecommy es el lugar donde un comercio argentino que vende por WhatsApp, Instagram y su tienda sabe qué tiene que hacer hoy, lo resuelve ahí mismo y entiende qué pasó. Sin comisión por venta.
 
-**Promesa.** Armás la tienda en una tarde con tu catálogo, compartís el link y los pedidos te llegan ordenados. Cobrás como ya cobrás, sin que nadie se quede con un porcentaje.
+**En un párrafo.** La mayoría de las pymes argentinas ya vende: por Instagram, por WhatsApp, en el local. Lo que les falta no es otra tienda ni una pasarela: es orden. Hoy un pedido pasa por siete lugares (el mensaje de Instagram, el chat, la calculadora, la app del banco, la planilla, las notas del celular y la memoria del dueño). Con Ecommy pasa por uno: el cliente arma el pedido en la tienda del comercio, con precio, stock y envío; paga como ya paga (transferencia con descuento, tarjeta y cuotas con el Mercado Pago del comercio, o acordándolo por WhatsApp); el pedido queda registrado y le llega armado. Al abrir el panel, el comerciante ve cuántas cosas tiene para resolver hoy y las resuelve ahí mismo; cuando le preguntan por WhatsApp, copia una respuesta lista con precio, stock y link; y cada semana ve qué cambió y por qué. Todo con lo que en Argentina se hace todas las semanas ya resuelto (precios por inflación con Deshacer, envíos por barrio, botón de arrepentimiento, Ley 27.743, Data Fiscal) y sin comisión por venta.
 
-**Categoría en la que competimos.** "Tienda online para pymes y emprendedores en Argentina". No competimos como "plataforma de e-commerce global" ni como "catálogo de WhatsApp". El lugar es el medio: más que el catálogo de WhatsApp Business, más simple y más barato de operar que una tienda con pasarela.
+**Promesa.** Seguís vendiendo por donde ya vendés. Cada pedido queda registrado, al abrir el panel sabés qué hacer hoy y lo resolvés ahí mismo. Cobrás como ya cobrás, sin que nadie se quede con un porcentaje.
+
+**Categoría en la que competimos.** La operación del comercio chico que vende por WhatsApp e Instagram: tienda, pedidos, cobros y el día de hoy en un solo lugar. No competimos como "tienda online" a secas (la categoría más ocupada: Tiendanube, Shopify), ni como "plataforma de e-commerce global", ni como "catálogo de WhatsApp". El rival no es otra plataforma: es la planilla + WhatsApp + Mercado Pago + las notas del celular + la memoria del dueño. En buscadores y comparaciones seguimos diciendo "tienda online para pymes en Argentina" (es lo que la gente busca), pero el relato es el orden, no la tienda.
 
 ### A quién NO le sirve (decilo sin vueltas)
 
 Decirlo ahorra soporte, reembolsos y malas reseñas. Si el prospecto cae acá, recomendale otra cosa.
 
-1. **Necesita cobrar con tarjeta y en cuotas dentro de la tienda.** Hoy no hay pasarela. Se puede mandar un link de pago de Mercado Pago por WhatsApp, a mano y fuera de Ecommy. Si más de la mitad de sus ventas son con tarjeta online, todavía no es para él.
+1. **Necesita cobrar con un procesador que no sea Mercado Pago.** Con tarjeta y en cuotas se cobra a través de la cuenta de Mercado Pago del comercio (desde v0.8); otras pasarelas, todavía no.
 2. **Despacha muchos paquetes por correo y necesita etiquetas y cotización automática** (OCA, Andreani, Correo Argentino). No está.
 3. **Vende fuerte en Mercado Libre y necesita sincronizar stock.** No hay integración.
 4. **Necesita facturación electrónica automática por cada venta.** Sigue con su sistema de facturación.

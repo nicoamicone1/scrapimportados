@@ -1,4 +1,5 @@
-import { ArrowRight, Minus } from "lucide-react";
+import { ArrowRight, Banknote, CreditCard, FileText, Landmark, MapPin, Minus, Percent, QrCode, Undo2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -8,16 +9,18 @@ import { DISPLAY, EYEBROW, H2, TEXT_LINK } from "@/components/platform/brand";
 import { FaqAccordion } from "@/components/platform/faq-accordion";
 import { LazyFontSheets } from "@/components/platform/LazyFontSheets";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
+import { BeforeAfter } from "@/components/platform/landing/BeforeAfter";
 import { CommissionCalc } from "@/components/platform/landing/CommissionCalc";
 import { BrowserFrame, PhoneShot } from "@/components/platform/landing/Frames";
 import { Hero, SAMPLE_ORDER, sampleTotals } from "@/components/platform/landing/Hero";
 import { CatalogDemo, CheckoutDemo, PricesDemo, ZonesDemo } from "@/components/platform/landing/PanelDemos";
+import { RepliesScene, WeekScene } from "@/components/platform/landing/PanelScenes";
 import { SHOTS } from "@/components/platform/landing/shots";
 import { Steps, type StepCopy } from "@/components/platform/landing/Steps";
 import { StoreDemo, type DemoKind } from "@/components/platform/landing/StoreDemo";
 import { PlanCards, PlanCtaLink } from "@/components/platform/PlanCards";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
-import { landingPlanLines, type PlanLike } from "@/components/platform/plan-notes";
+import { availability, landingPlanLines, type PlanLike } from "@/components/platform/plan-notes";
 import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site";
 import { presetSpecimens, SPECIMEN_SCENES, specimenPlanLabel } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
@@ -30,9 +33,9 @@ import { platformOrigin, storeHref } from "@/lib/tenant/urls";
 import { PRESET_LIST } from "@/lib/theme";
 import { APP_NAME } from "@/lib/version";
 
-const TITLE = "Ecommy · Tu tienda online, sin comisión por venta";
+const TITLE = "Ecommy · Vendés por WhatsApp e Instagram, con orden";
 const DESCRIPTION =
-  "Creá tu tienda online completa: catálogo con variantes y stock, carrito, envíos por zona y cobro por transferencia o con tarjeta en tu Mercado Pago, sin comisión por venta de Ecommy. 14 días de Pro gratis, sin tarjeta.";
+  "Para comercios argentinos que venden por WhatsApp e Instagram: tu tienda, cada pedido registrado y un panel que te dice qué hacer hoy. Cobrás por transferencia o con tu Mercado Pago, sin comisión por venta. 14 días de Pro gratis.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -67,7 +70,7 @@ function steps(plans: readonly PlanLike[]): [StepCopy, StepCopy, StepCopy] {
     },
     {
       title: "Compartís el link",
-      text: "En la bio de Instagram, en tus estados o donde ya vendés. El cliente arma el carrito y paga: el pedido queda registrado en tu panel, listo para preparar.",
+      text: "En la bio de Instagram, en tus estados o donde ya vendés. El cliente arma el pedido y paga; a vos te llega registrado y aparece en Hoy, listo para preparar.",
       time: "el mismo día que publicás",
     },
   ];
@@ -107,9 +110,9 @@ function also(plans: readonly PlanLike[]): { title: string; text: string; plans:
   const lines = landingPlanLines(plans);
   return [
     {
-      title: "Ley argentina, resuelta",
-      text: "Botón de arrepentimiento, precio sin impuestos nacionales (Ley 27.743), Data Fiscal de ARCA y el aviso de Defensa del Consumidor.",
-      plans: "Todos los planes",
+      title: "Pedidos manuales y remitos",
+      text: "El pedido que te hacen por teléfono o en el local lo cargás a mano y queda con el resto. El remito sale listo para imprimir.",
+      plans: capitalize(availability(plans, "orders.print")),
     },
     {
       title: "SEO técnico",
@@ -135,6 +138,67 @@ function also(plans: readonly PlanLike[]): { title: string; text: string; plans:
       title: "Carritos abandonados y precios por cantidad",
       text: "Un mail para retomar el pedido que quedó a medias, y «desde 6 unidades» con su precio, hasta 4 tramos.",
       plans: "Desde Starter",
+    },
+  ];
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * "Hecho para vender en Argentina" (PRODUCT-THESIS §4.4, BRAND §2): lo que ya
+ * está en el producto, dicho en palabras de mostrador. Sin banderitas.
+ */
+function argentina(plans: readonly PlanLike[]): { icon: LucideIcon; title: string; text: string; plans: string }[] {
+  return [
+    {
+      icon: Banknote,
+      title: "Transferencia con descuento",
+      text: "Cargás tu alias y el porcentaje. Cada producto muestra el precio con transferencia y tu cliente copia el alias desde su pedido.",
+      plans: "Todos los planes",
+    },
+    {
+      icon: CreditCard,
+      title: "Mercado Pago, con cuotas",
+      text: "Conectás tu cuenta y cobrás con tarjeta en 3, 6, 9 o 12 cuotas sin interés, anunciadas en cada producto. La plata entra a tu Mercado Pago.",
+      plans: "Todos los planes",
+    },
+    {
+      icon: Percent,
+      title: "Precios al ritmo de la inflación",
+      text: "Subís un 8 % a toda una categoría, con redondeo y vista previa. Si te equivocaste, Deshacer y vuelve todo como estaba.",
+      plans: capitalize(availability(plans, "pricing.bulk")),
+    },
+    {
+      icon: MapPin,
+      title: "Envíos por barrio",
+      text: "Dibujás en el mapa hasta dónde llega tu moto, con su costo y su plazo, o cargás zonas por código postal. Y retiro en el local.",
+      plans: capitalize(availability(plans, "shipping.polygons")),
+    },
+    {
+      icon: Undo2,
+      title: "Botón de arrepentimiento",
+      text: "El que pide la ley, en el pie de tu tienda, con su bandeja en el panel para que no se te pase ninguno.",
+      plans: "Todos los planes",
+    },
+    {
+      icon: Landmark,
+      title: "Ley 27.743, sin cuentas",
+      text: "Activás la leyenda y debajo de cada precio aparece el precio sin impuestos nacionales, calculado con tu alícuota.",
+      plans: "Todos los planes",
+    },
+    {
+      icon: QrCode,
+      title: "Data Fiscal",
+      text: "Subís el QR de ARCA una vez y queda en el pie de tu tienda, con tu razón social y tu CUIT.",
+      plans: "Todos los planes",
+    },
+    {
+      icon: FileText,
+      title: "Defensa del Consumidor",
+      text: "El aviso para reclamos en el pie y plantillas de términos, privacidad y cambios para completar con tus datos.",
+      plans: "Todos los planes",
     },
   ];
 }
@@ -260,6 +324,27 @@ export default async function LandingPage() {
       <LazyFontSheets />
 
       <Hero startHref={start} startLabel={startLabel} demoHref={demo} demoAddress={exampleStoreAddress("demo")} orderUrl={`https://${luna}/pedido/8f3k2`} />
+
+      {/* Antes / Con Ecommy: la operación, no la tienda ------------------ */}
+      <Sheet id="antes" label="antes-t" className="bg-eco-pomelo-soft [--lp-pb:96px] md:[--lp-pb:128px]">
+        <div className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 md:pt-20">
+          <div className="eco-reveal grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
+            <div>
+              <p className={EYEBROW}>Antes y con Ecommy</p>
+              <h2 id="antes-t" className={cn(H2, "mt-3 max-w-[16ch] sm:text-[52px]")}>
+                Un pedido, siete lugares. Con Ecommy, uno solo.
+              </h2>
+            </div>
+            <p className="max-w-[46ch] text-[16px] leading-relaxed text-eco-ink">
+              El mensaje de Instagram, el chat, la calculadora, la app del banco, la planilla, las notas del celular y tu memoria. Seguís
+              vendiendo por donde vendés: lo que cambia es dónde queda cada pedido.
+            </p>
+          </div>
+          <div className="mt-12">
+            <BeforeAfter />
+          </div>
+        </div>
+      </Sheet>
 
       {/* Probá tu tienda: efecto de posesión ----------------------------- */}
       <Sheet id="probar" label="probar-t" className="bg-eco-paper [--lp-pb:96px] md:[--lp-pb:128px]">
@@ -404,11 +489,15 @@ export default async function LandingPage() {
             <div className="eco-reveal">
               <p className={EYEBROW}>El panel</p>
               <h2 id="panel-t" className={cn(H2, "mt-3 max-w-[14ch] sm:text-[52px]")}>
-                Lo de todos los días, en un toque.
+                Entrás y sabés qué hacer hoy.
               </h2>
               <p className="mt-5 max-w-[44ch] text-[16px] leading-relaxed text-eco-text-muted">
-                Al entrar ves lo que hay que hacer hoy: pedidos por confirmar, para despachar, pagos sin acreditar y stock bajo. Y funciona igual
-                en el celular, con la barra de abajo al alcance del pulgar.
+                Arriba de todo, cuántas cosas tenés para resolver: pagos por confirmar, pedidos para preparar, envíos por despachar. Las resolvés
+                ahí mismo, sin abrir cada pedido: confirmás el pago, pasás a preparación y avisás por WhatsApp. Cuando no queda nada, «Listo por
+                hoy».
+              </p>
+              <p className="mt-3 max-w-[44ch] text-[16px] leading-relaxed text-eco-text-muted">
+                En el celular, igual: la barra de abajo queda al alcance del pulgar.
               </p>
             </div>
             <div className="relative min-w-0 pb-10 sm:pr-10 sm:pb-6">
@@ -420,6 +509,34 @@ export default async function LandingPage() {
                 <PhoneShot shot={SHOTS.panelPedidosMobile} sizes="210px" className="lp-tilt-r aspect-[540/1169]" />
               </div>
             </div>
+          </div>
+
+          {/* Escenas del panel: la semana explicada y las respuestas listas. */}
+          <div className="mt-24 grid gap-x-10 gap-y-16 lg:grid-cols-2">
+            <article aria-labelledby="escena-semana" className="eco-reveal min-w-0">
+              <h3 id="escena-semana" className={cn(DISPLAY, "text-[24px] leading-tight text-eco-ink sm:text-[28px]")}>
+                Qué pasó esta semana
+              </h3>
+              <p className="mt-2 max-w-[52ch] text-[15px] leading-relaxed text-eco-text-muted">
+                No sólo cuánto vendiste: por qué. Qué producto cayó, qué precio subiste, qué se quedó sin stock. Sale de tus pedidos, tus cambios
+                de precio y tu inventario, y cada línea te lleva a donde se arregla.
+              </p>
+              <div className="mt-6 sm:pr-6">
+                <WeekScene />
+              </div>
+            </article>
+            <article aria-labelledby="escena-respuestas" className="eco-reveal min-w-0 lg:mt-20">
+              <h3 id="escena-respuestas" className={cn(DISPLAY, "text-[24px] leading-tight text-eco-ink sm:text-[28px]")}>
+                Respuestas listas
+              </h3>
+              <p className="mt-2 max-w-[52ch] text-[15px] leading-relaxed text-eco-text-muted">
+                Te preguntan por WhatsApp si tenés algo. Buscás el producto en el panel y copiás la respuesta armada, con precio, stock y link.
+                La mandás vos, desde tu WhatsApp.
+              </p>
+              <div className="mt-6 sm:pl-6">
+                <RepliesScene storeAddress={luna} />
+              </div>
+            </article>
           </div>
 
           <div className="mt-24 grid gap-x-8 gap-y-16 lg:grid-cols-12">
@@ -474,6 +591,36 @@ export default async function LandingPage() {
               </dl>
             </div>
           </div>
+        </div>
+      </Sheet>
+
+      {/* Hecho para vender en Argentina ----------------------------------- */}
+      <Sheet id="argentina" label="argentina-t" className="bg-eco-durazno [--lp-pb:96px] md:[--lp-pb:128px]">
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <div className="eco-reveal min-w-0">
+            <p className={EYEBROW}>Hecho para vender en Argentina</p>
+            <h2 id="argentina-t" className={cn(H2, "mt-3 max-w-[14ch]")}>
+              Lo que acá se hace todas las semanas, ya viene resuelto.
+            </h2>
+            <p className="mt-5 max-w-[40ch] text-[16px] leading-relaxed text-eco-ink">
+              Precios que cambian seguido, clientes que pagan por transferencia, una moto que reparte por barrio y una ley que pide botones y
+              leyendas. Todo eso ya está en tu tienda, en pesos y con las palabras de siempre.
+            </p>
+          </div>
+          <ul className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {argentina(plans).map(({ icon: Icon, title, text, plans: planLine }) => (
+              <li key={title} className="eco-reveal flex min-w-0 gap-4">
+                <span aria-hidden className="eco-bubble flex size-10 shrink-0 items-center justify-center bg-eco-ink text-eco-durazno [--eco-bubble-r:14px]">
+                  <Icon className="size-5" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-[16px] font-semibold text-eco-ink">{title}</h3>
+                  <p className="mt-1 text-[14px] leading-relaxed text-eco-ink">{text}</p>
+                  <p className="mt-1.5 text-[12px] font-semibold text-eco-pomelo-ink">{planLine}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </Sheet>
 
@@ -560,7 +707,7 @@ export default async function LandingPage() {
           <InkMark size={136} />
           <div>
             <h2 id="cta-t" className={cn(H2, "max-w-[17ch] text-[40px] leading-[0.98] sm:text-[60px] lg:text-[76px]")}>
-              La tienda la armás hoy. Lo que falta es tu primera venta.
+              La tienda la armás hoy. Mañana abrís el panel y sabés qué hacer.
             </h2>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link

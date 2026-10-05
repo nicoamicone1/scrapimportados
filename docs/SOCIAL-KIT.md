@@ -41,7 +41,7 @@
 ### 1.1 Instagram (máx. 150 caracteres)
 
 ```
-Tiendas online para comercios argentinos. Cobrás por transferencia o WhatsApp, sin comisión por venta. Probá Pro 14 días, sin tarjeta.
+Vendés por WhatsApp e Instagram. Ahora, con orden: tienda, pedidos y cobros en un lugar. Sin comisión por venta. Probá Pro 14 días gratis.
 ```
 
 Link: `https://www.ecommy.app/?utm_source=instagram&utm_medium=bio&utm_campaign=lanzamiento`

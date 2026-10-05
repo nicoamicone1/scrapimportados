@@ -46,7 +46,7 @@ export function PlatformHeader({ signedIn }: { signedIn: boolean }) {
   const account = signedIn ? { href: "/app", label: "Mis tiendas" } : { href: "/login", label: "Ingresar" };
   return (
     <ScrollAwareHeader className="lp-header sticky top-0 z-40 px-3 pt-2 sm:px-4 sm:pt-3">
-      <div className="lp-header-bar relative mx-auto flex items-center gap-3 rounded-full px-1 sm:px-3">
+      <div className="lp-header-bar relative mx-auto flex items-center gap-2 rounded-full px-1 sm:gap-3 sm:px-3">
         <Link href="/" aria-label={`${APP_NAME}, inicio`} className="flex shrink-0 items-center rounded-full p-1">
           <HeaderLockup />
         </Link>
