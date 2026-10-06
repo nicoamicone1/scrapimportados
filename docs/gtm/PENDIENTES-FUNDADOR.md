@@ -10,8 +10,8 @@
 | 2 | Aplicar la migración `supabase/migrations/0024_free_plan_moda.sql` | Supabase SQL Editor del proyecto `asudscbvsrmulbpozjmq` o `supabase db push` | Free pasa a 25 productos, remitos y Responder desde Starter. Sin esto el código tolera la diferencia pero `/planes` sigue mostrando 50 | ☐ |
 | 3 | Regenerar tipos | `supabase gen types typescript` → `src/lib/supabase/database.types.ts` | Sólo si la migración agrega columnas (ver nota del agente de planes en el changelog) | ☐ |
 | 4 | Agregar en Vercel `NEXT_PUBLIC_DEMO_STORE_SLUG=ropa` (production) | Vercel → Settings → Environment Variables | El CTA "Ver una tienda de ropa funcionando" apunta ahí. Hasta que exista la tienda `ropa`, dejá `demo` | ☐ |
-| 5 | Sembrar la tienda demo de ropa | Terminal local con `.env.local` del proyecto: `SEED_EMAIL=… SEED_PASSWORD=… npx tsx scripts/seed-demo-ropa.mts` (ver `docs/DEMO-ROPA.md`) | Sin demo de ropa no hay CTA secundario ni video para los DMs | ☐ |
-| 6 | Reemplazar las imágenes placeholder de la demo por fotos propias o con permiso | Panel de la tienda `ropa` → Productos | La demo se muestra en Puro Diseño el sábado | ☐ |
+| 5 | Sembrar la tienda demo de ropa | Terminal local con `.env.local` del proyecto (URL y anon key de Supabase, ROOT_DOMAIN): primero `npx tsx scripts/seed-demo-ropa.mts --dry-run`, después `SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npx tsx scripts/seed-demo-ropa.mts` con tu cuenta de admin de plataforma (deja la tienda `ropa` en Pro para que no venza). Ver `docs/DEMO-ROPA.md` | Sin demo de ropa no hay CTA secundario ni video para los DMs | ☐ |
+| 6 | Reemplazar las imágenes placeholder (SVG de color) de la demo por fotos propias o con permiso, y regenerar la captura `public/img/platform/tienda-demo.webp` del hero con la tienda de ropa | Panel de la tienda `ropa` → Productos; `scripts/landing-shots.cjs` | La demo se muestra en Puro Diseño el sábado y la captura del hero todavía es de la tienda de electro | ☐ |
 
 ## 1. Medición (sin esto no se puede leer el funnel)
 
@@ -27,7 +27,8 @@
 | # | Qué | Por qué | Estado |
 | --- | --- | --- | --- |
 | 11 | Decidir desde qué cuenta de Instagram mandás los DMs: la tuya personal (mejor tasa de respuesta, menos riesgo de bloqueo) o `@ecommy.app`. Recomendación: la personal, con "Hago Ecommy" en la bio y link a la demo de ropa | Las cuentas nuevas se bloquean tras unas docenas de DMs por día | ☐ |
-| 12 | Interactuar 2 días (historias, comentarios) con los primeros 40 perfiles de `prospectos.csv` antes del primer DM | Evita caer en "Solicitudes" | ☐ |
+| 12 | **Verificar en la app de Instagram las 126 filas de `prospectos.csv`** (90 segundos por fila, unas 3 horas): seguidores, último post, señales de la bio; completar el score real y descartar las que no lleguen a 6. Desde acá Instagram bloqueó la lectura de perfiles, así que todos los scores son provisorios (paso 0 de `fuentes.md`). Empezá por las 8 con score 5 o 6 | Sin esto no sabés a quién escribirle | ☐ |
+| 12b | Interactuar 2 días (historias, comentarios) con los primeros 40 perfiles verificados antes del primer DM | Evita caer en "Solicitudes" | ☐ |
 | 13 | Entrada a Feria Puro Diseño (9 a 11 de octubre, La Rural) y 50 tarjetas con QR a `https://www.ecommy.app/empezar?utm_source=feria&utm_medium=qr&utm_campaign=purodiseno` | Es la fuente más concentrada de la semana 1 | ☐ |
 | 14 | Grabar el video de 40 segundos: pedido de la demo de ropa llegando a tu WhatsApp con talle, color, total y dirección (pantalla del celular, sin editar) | Es el follow-up 1 de WhatsApp y el follow-up 2 de Instagram | ☐ |
 | 15 | Cuenta gratuita en Apify (sin tarjeta, USD 5 de crédito) para la segunda tanda de prospectos (día 22) | Scrapea hashtags sin usar tu cuenta de IG | ☐ |
