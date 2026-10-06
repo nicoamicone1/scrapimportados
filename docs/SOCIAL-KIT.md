@@ -136,7 +136,7 @@ Cada pieza tiene una **condición de verdad**: lo que tiene que pasar en la grab
 
 - **Formato:** carrusel de 5 placas o reel con texto.
 - **Gancho:** "Vendiste $ 100.000. ¿Cuánto te queda?"
-- **Desarrollo:** placa 2: "Con Ecommy: $ 100.000. No cobramos comisión por venta." Placa 3: "¿Por qué? No hay pasarela: tu cliente te transfiere a tu cuenta o lo acuerdan por WhatsApp." Placa 4: "Lo que pagás es el plan: fijo por mes. Hay uno gratis hasta 50 productos." Placa 5: "¿Necesitás cobrar con tarjeta en cuotas dentro de la tienda? Hoy no lo tenemos. Te lo decimos antes."
+- **Desarrollo:** placa 2: "Con Ecommy: $ 100.000. No cobramos comisión por venta." Placa 3: "¿Por qué? No hay pasarela: tu cliente te transfiere a tu cuenta o lo acuerdan por WhatsApp." Placa 4: "Lo que pagás es el plan: fijo por mes. Hay uno gratis hasta 25 productos." Placa 5: "¿Necesitás cobrar con tarjeta en cuotas dentro de la tienda? Hoy no lo tenemos. Te lo decimos antes."
 - **CTA:** "Planes en ecommy.app/planes."
 - **Condición:** no nombrar comisiones de otras plataformas sin verificarlas ([`MARKETING.md`](MARKETING.md) §4).
 
@@ -208,7 +208,7 @@ Cada pieza tiene una **condición de verdad**: lo que tiene que pasar en la grab
 - **Gancho:** "No todas las ventas entran por la web."
 - **Desarrollo:** `/admin/pedidos/nuevo` → cargo una venta del mostrador o de WhatsApp → descuenta stock → imprimo el remito para armar el paquete.
 - **CTA:** "Link en la bio."
-- **Texto:** "Pedidos manuales que descuentan stock y remitos para imprimir, en todos los planes."
+- **Texto:** "Pedidos manuales que descuentan stock en todos los planes, y remitos para imprimir desde Starter."
 
 ### P13 · Invito a mi socia al panel
 
@@ -388,13 +388,13 @@ Para DMs, comentarios y WhatsApp. Cortas, sin a la defensiva.
 
 | Objeción | Respuesta |
 | --- | --- |
-| "¿Cuánto sale?" | "Hay un plan gratis hasta 50 productos, y los pagos son un fijo por mes sin comisión por venta. Todos los precios: ecommy.app/planes. Toda tienda nueva arranca con 14 días de Pro sin tarjeta." |
+| "¿Cuánto sale?" | "Hay un plan gratis hasta 25 productos, y los pagos son un fijo por mes sin comisión por venta. Todos los precios: ecommy.app/planes. Toda tienda nueva arranca con 14 días de Pro sin tarjeta." |
 | "¿Cobran comisión?" | "No. Tus clientes te transfieren a tu cuenta o lo acuerdan con vos por WhatsApp. La plata va directo a vos." |
 | "¿Puedo cobrar con tarjeta o Mercado Pago?" | "Hoy no dentro de la tienda. Muchos comercios mandan un link de pago de Mercado Pago por WhatsApp después del pedido. Si la tarjeta es la mayoría de tus ventas, prefiero decírtelo antes." |
 | "Mis clientes compran por WhatsApp." | "Perfecto: la tienda termina en WhatsApp con el pedido armado (producto, talle, total, dirección). Te ahorrás las preguntas y el pedido queda registrado." |
 | "No tengo tiempo de cargar todo." | "Cargá los 10 que más vendés y compartí el link. Si tenés una planilla, la subís en CSV. Si querés, lo hacemos juntos en 15 minutos." |
 | "Ya estoy en otra plataforma." | "Podés probar Ecommy 14 días al lado de la tuya e importar tu catálogo. Si vendés con tarjeta en cuotas o despachás mucho por correo, quizás te conviene quedarte donde estás." |
-| "¿Qué pasa cuando termina la prueba?" | "Si no elegís plan, pasás a Free. No se borra nada; lo que excede el plan (por ejemplo, más de 50 productos) queda bloqueado para crear hasta que subas." |
+| "¿Qué pasa cuando termina la prueba?" | "Si no elegís plan, pasás a Free. No se borra nada; lo que excede el plan (por ejemplo, más de 25 productos) queda bloqueado para crear hasta que subas." |
 | "¿Puedo usar mi dominio?" | "Sí, desde el plan Pro. Mientras tanto tu tienda está en tutienda.ecommy.app." |
 | "¿Hace facturas?" | "No. Seguís facturando con tu sistema; Ecommy registra pedidos y pagos." |
 | "¿Integra con OCA, Andreani o Mercado Libre?" | "Todavía no. Los envíos se configuran por zona con su costo, y retiro en el local." |
@@ -411,7 +411,7 @@ Cargalas en WhatsApp Business → Herramientas → Respuestas rápidas. Reemplaz
 | Atajo | Texto |
 | --- | --- |
 | `/demo` | `Te dejo una tienda funcionando para que la recorras desde el celular: https://demo.ecommy.app. Podés hacer un pedido de prueba y ver cómo llega.` |
-| `/precios` | `Todos los planes están en https://www.ecommy.app/planes. Hay uno gratis hasta 50 productos y no cobramos comisión por venta. Toda tienda nueva arranca con 14 días de Pro sin tarjeta.` |
+| `/precios` | `Todos los planes están en https://www.ecommy.app/planes. Hay uno gratis hasta 25 productos y no cobramos comisión por venta. Toda tienda nueva arranca con 14 días de Pro sin tarjeta.` |
 | `/crear` | `Creás tu tienda acá: https://www.ecommy.app/registro. Son tres pasos: nombre, WhatsApp y cómo cobrás. Si te trabás en algo, escribime.` |
 | `/pago` | `Genial. Para activar el plan [plan] ([mensual / anual]) transferí $ [monto] al alias [alias] (titular [nombre], CUIT [cuit]). Mandame el comprobante por acá y lo activo en el día, con la factura.` |
 | `/activado` | `Listo, [tienda] ya tiene el plan [plan] hasta el [fecha]. Cualquier cosa, escribime por acá.` |

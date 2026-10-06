@@ -7,17 +7,22 @@ import { SUPABASE_URL } from "@/lib/supabase/env";
 import { platformOrigin, storeUrl } from "@/lib/tenant/urls";
 
 import { emailEnabled, isEmail, platformFrom, sendEmail, wasSent, warnEmailDisabled } from "./send";
-import { noProductsEmail, shareStoreEmail } from "./templates";
+import { firstOrderEmail, isApparelKind, noProductsEmail, shareStoreEmail } from "./templates";
 
 /*
  * Avisos de activación para tiendas nuevas (cron diario, /api/cron/daily).
- * Siguen el embudo de docs/LAUNCH-PLAN.md §2: tienda creada → producto
- * cargado → link compartido → primer pedido.
+ * Siguen el embudo de docs/LAUNCH-PLAN.md §2 y docs/gtm/PLAN-GTM.md §10:
+ * 48 h sin productos → día 3 prueba de fuego → día 7 compartir.
  *
  *  1. `activation_no_products` (día 2): la tienda tiene ≥ 48 h y 0 productos
  *     no archivados. Si llega al día 7 (hasta el 30) sin productos y este
  *     aviso nunca salió, sale igual (una sola vez en total).
- *  2. `activation_share` (día 7 a 30): ≥ 1 producto activo, el dueño no marcó
+ *  2. `activation_first_order` (día 3 a 30, "la prueba de fuego"): en prueba
+ *     vigente, ≥ 1 producto activo y sin pedido real. Pedido real = pedido
+ *     web no cancelado cuyo email de comprador no es el del dueño (la misma
+ *     definición que las consultas de docs/LAUNCH-PLAN.md §2.2, con
+ *     `profiles.email`). Si a la vez le toca el 3, sale primero este.
+ *  3. `activation_share` (día 7 a 30): ≥ 1 producto activo, el dueño no marcó
  *     `onboarding.shared` y la tienda no tiene pedidos.
  *
  * Una tienda recibe como máximo UN aviso por corrida y nunca dos con menos de
@@ -37,6 +42,8 @@ const DAY_MS = 86_400_000;
 
 /** Horas desde el alta a partir de las que sale el aviso de "sin productos". */
 export const NO_PRODUCTS_AFTER_HOURS = 48;
+/** Día a partir del que sale "la prueba de fuego" (primer pedido real). */
+export const FIRST_ORDER_AFTER_DAYS = 3;
 /** Día a partir del que sale el aviso de "compartí la tienda". */
 export const SHARE_AFTER_DAYS = 7;
 /** Después de este día ya no se manda ningún aviso de activación. */
@@ -45,13 +52,13 @@ export const ACTIVATION_WINDOW_DAYS = 30;
 export const MIN_GAP_DAYS = 2;
 /** Tiendas candidatas por corrida (las más nuevas primero). */
 export const ACTIVATION_STORE_LIMIT = 200;
-/** Consultas de conteo en paralelo (una tienda = 1 a 3 consultas `head`). */
+/** Consultas de conteo en paralelo (una tienda = 1 a 4 consultas `head`). */
 const COUNT_CONCURRENCY = 8;
 /** Presupuesto de tiempo para mandar (Resend admite ~2 envíos por segundo). */
 const DELIVERY_BUDGET_MS = 180_000;
 
-export type ActivationKind = "activation_no_products" | "activation_share";
-export const ACTIVATION_KINDS: readonly ActivationKind[] = ["activation_no_products", "activation_share"];
+export type ActivationKind = "activation_no_products" | "activation_first_order" | "activation_share";
+export const ACTIVATION_KINDS: readonly ActivationKind[] = ["activation_no_products", "activation_first_order", "activation_share"];
 
 type Admin = SupabaseClient<Database>;
 
@@ -71,6 +78,11 @@ export interface ActivationStoreRow {
   activeProducts: number | null;
   /** Pedidos de la tienda (cualquier estado); `null` = no se contaron. */
   orders: number | null;
+  /**
+   * Pedidos reales: web, no cancelados, de un comprador que no es el dueño;
+   * `null` = no se contaron (o no se sabe el email del dueño).
+   */
+  realOrders: number | null;
   owner: { email: string | null; name: string | null; suspended: boolean } | null;
   /** Fin de la prueba de Pro si la tienda sigue en prueba. */
   trialEndsAt: string | null;
@@ -90,6 +102,7 @@ export interface ActivationNoticePlan {
 
 export interface ActivationNoticeReport {
   activation_no_products: number;
+  activation_first_order: number;
   activation_share: number;
 }
 
@@ -125,6 +138,16 @@ export function activationWindow(createdAt: string, now: Date): "early" | "late"
   return age >= SHARE_AFTER_DAYS * DAY_MS ? "late" : "early";
 }
 
+/** ¿Ya pasaron los 3 días de la prueba de fuego? (dentro de la ventana de 30). */
+function firstOrderAge(createdAt: string, now: Date): boolean {
+  return activationWindow(createdAt, now) !== null && now.getTime() - time(createdAt) >= FIRST_ORDER_AFTER_DAYS * DAY_MS;
+}
+
+/** ¿La prueba de Pro sigue vigente? */
+function inTrial(trialEndsAt: string | null, now: Date): boolean {
+  return time(trialEndsAt) > now.getTime();
+}
+
 type StoreBasics = Pick<ActivationStoreRow, "status" | "createdAt" | "onboarding">;
 
 /**
@@ -137,6 +160,7 @@ export function mayNeedActivation(store: StoreBasics, now: Date): boolean {
   const win = activationWindow(store.createdAt, now);
   if (!win) return false;
   if (!activationSentAt(store.onboarding, "activation_no_products")) return true;
+  if (canFirstOrder(store, now)) return true;
   return win === "late" && canShare(store.onboarding);
 }
 
@@ -144,11 +168,27 @@ function canShare(onboarding: Json): boolean {
   return asRecord(onboarding).shared !== true && !activationSentAt(onboarding, "activation_share");
 }
 
+/** Edad y marca de la prueba de fuego (lo demás se cuenta). */
+function canFirstOrder(store: Pick<StoreBasics, "createdAt" | "onboarding">, now: Date): boolean {
+  return firstOrderAge(store.createdAt, now) && !activationSentAt(store.onboarding, "activation_first_order");
+}
+
+/**
+ * ¿Hay que contar pedidos reales? Con productos, en prueba vigente, día 3 o
+ * más y sin la prueba de fuego enviada (pura: la usa la carga y los tests).
+ */
+export function needsRealOrderCount(
+  store: Pick<ActivationStoreRow, "createdAt" | "onboarding" | "products" | "trialEndsAt">,
+  now: Date,
+): boolean {
+  return store.products > 0 && inTrial(store.trialEndsAt, now) && canFirstOrder(store, now);
+}
+
 /** Qué aviso le corresponde a la tienda hoy (sin mirar al dueño), o null. */
-export function activationKind(store: Omit<ActivationStoreRow, "owner" | "trialEndsAt">, now: Date): ActivationKind | null {
+export function activationKind(store: Omit<ActivationStoreRow, "owner">, now: Date): ActivationKind | null {
   if (!mayNeedActivation(store, now)) return null;
   const win = activationWindow(store.createdAt, now);
-  // Nunca dos avisos seguidos: el segundo espera MIN_GAP_DAYS desde el primero.
+  // Nunca dos avisos seguidos: el siguiente espera MIN_GAP_DAYS desde el último.
   const last = Math.max(
     ...ACTIVATION_KINDS.map((k) => time(activationSentAt(store.onboarding, k))).filter((t) => !Number.isNaN(t)),
     Number.NEGATIVE_INFINITY,
@@ -157,6 +197,10 @@ export function activationKind(store: Omit<ActivationStoreRow, "owner" | "trialE
 
   if (store.products === 0) {
     return activationSentAt(store.onboarding, "activation_no_products") ? null : "activation_no_products";
+  }
+  // Conteos que no se hicieron (null): no se asume nada.
+  if (needsRealOrderCount(store, now) && (store.activeProducts ?? 0) >= 1 && store.realOrders === 0) {
+    return "activation_first_order";
   }
   if (win === "late" && canShare(store.onboarding) && (store.activeProducts ?? 0) >= 1 && store.orders === 0) {
     return "activation_share";
@@ -280,8 +324,10 @@ export async function collectActivationNotices(now: Date = new Date()): Promise<
       .neq("slug", "demo")
       .lte("created_at", newest)
       .gt("created_at", oldest)
-      // Descarta en la base las que ya recibieron los dos avisos.
-      .or("onboarding->notices->>activation_no_products.is.null,onboarding->notices->>activation_share.is.null")
+      // Descarta en la base las que ya recibieron los tres avisos.
+      .or(
+        "onboarding->notices->>activation_no_products.is.null,onboarding->notices->>activation_first_order.is.null,onboarding->notices->>activation_share.is.null",
+      )
       .order("created_at", { ascending: false })
       .limit(ACTIVATION_STORE_LIMIT);
     if (error) throw new Error(error.message);
@@ -291,20 +337,54 @@ export async function collectActivationNotices(now: Date = new Date()): Promise<
     );
     if (!candidates.length) return { db, notices: [] };
 
-    // Conteos por tienda (head: sin traer filas). Activos y pedidos sólo si puede tocar "compartir".
+    // Dueños (profiles) y pruebas de las candidatas: la prueba de fuego
+    // necesita saber si sigue en prueba y el email del dueño antes de contar.
+    const ownerIds = [...new Set(candidates.map((s) => s.owner_id as string))];
+    const [profilesRes, subsRes] = await Promise.all([
+      db.from("profiles").select("id, email, name").in("id", ownerIds),
+      db.from("subscriptions").select("store_id, status, trial_ends_at").in("store_id", candidates.map((s) => s.id)),
+    ]);
+    if (profilesRes.error) throw new Error(profilesRes.error.message);
+    // Sin suscripciones sólo se pierden la prueba de fuego y el recordatorio de la prueba.
+    if (subsRes.error) console.error("[email] activación, suscripciones:", subsRes.error.message);
+    const profileById = new Map((profilesRes.data ?? []).map((p) => [p.id, p]));
+    const trialByStore = new Map(
+      (subsRes.data ?? [])
+        .filter((s) => s.status === "trialing" && s.trial_ends_at && daysUntil(s.trial_ends_at, now) > 0)
+        .map((s) => [s.store_id, s.trial_ends_at as string]),
+    );
+
+    // Conteos por tienda (head: sin traer filas). Activos, pedidos y pedidos
+    // reales sólo si puede tocar "compartir" o "la prueba de fuego".
     const counted = await mapLimit(candidates, COUNT_CONCURRENCY, async (s) => {
       const head = { count: "exact" as const, head: true };
       const products = await countOf(db.from("products").select("id", head).eq("store_id", s.id).neq("status", "archived"));
       if (products === null) return null;
-      const lateShare =
-        products > 0 && activationWindow(s.created_at, now) === "late" && canShare(s.onboarding);
-      const [activeProducts, orders] = lateShare
-        ? await Promise.all([
-            countOf(db.from("products").select("id", head).eq("store_id", s.id).eq("status", "active")),
-            countOf(db.from("orders").select("id", head).eq("store_id", s.id)),
-          ])
-        : [null, null];
-      const row: Omit<ActivationStoreRow, "owner" | "trialEndsAt"> & { ownerId: string } = {
+      const ownerId = s.owner_id as string;
+      const trialEndsAt = trialByStore.get(s.id) ?? null;
+      const lateShare = products > 0 && activationWindow(s.created_at, now) === "late" && canShare(s.onboarding);
+      const ownerEmail = profileById.get(ownerId)?.email?.trim().toLowerCase();
+      const firstOrder =
+        isEmail(ownerEmail) && needsRealOrderCount({ createdAt: s.created_at, onboarding: s.onboarding, products, trialEndsAt }, now);
+      const [activeProducts, orders, realOrders] = await Promise.all([
+        lateShare || firstOrder
+          ? countOf(db.from("products").select("id", head).eq("store_id", s.id).eq("status", "active"))
+          : Promise.resolve(null),
+        lateShare ? countOf(db.from("orders").select("id", head).eq("store_id", s.id)) : Promise.resolve(null),
+        firstOrder && ownerEmail
+          ? countOf(
+              db
+                .from("orders")
+                .select("id", head)
+                .eq("store_id", s.id)
+                .eq("source", "web")
+                .neq("status", "cancelled")
+                // El checkout guarda el email en minúsculas; sin email cuenta como de un tercero (como en §2.2).
+                .or(`customer->>email.is.null,customer->>email.neq."${ownerEmail}"`),
+            )
+          : Promise.resolve(null),
+      ]);
+      const row: Omit<ActivationStoreRow, "owner"> & { ownerId: string } = {
         id: s.id,
         slug: s.slug,
         name: s.name,
@@ -316,30 +396,16 @@ export async function collectActivationNotices(now: Date = new Date()): Promise<
         products,
         activeProducts,
         orders,
-        ownerId: s.owner_id as string,
+        realOrders,
+        trialEndsAt,
+        ownerId,
       };
       return activationKind(row, now) ? row : null;
     });
     const due = counted.filter((r): r is NonNullable<typeof r> => r !== null);
     if (!due.length) return { db, notices: [] };
 
-    const ownerIds = [...new Set(due.map((r) => r.ownerId))];
-    const storeIds = due.map((r) => r.id);
-    const [profilesRes, subsRes, authById] = await Promise.all([
-      db.from("profiles").select("id, email, name").in("id", ownerIds),
-      db.from("subscriptions").select("store_id, status, trial_ends_at").in("store_id", storeIds),
-      authOwners(db, ownerIds, now),
-    ]);
-    if (profilesRes.error) throw new Error(profilesRes.error.message);
-    // Sin suscripciones sólo se pierde el recordatorio de la prueba.
-    if (subsRes.error) console.error("[email] activación, suscripciones:", subsRes.error.message);
-    const profileById = new Map((profilesRes.data ?? []).map((p) => [p.id, p]));
-    const trialByStore = new Map(
-      (subsRes.data ?? [])
-        .filter((s) => s.status === "trialing" && s.trial_ends_at && daysUntil(s.trial_ends_at, now) > 0)
-        .map((s) => [s.store_id, s.trial_ends_at as string]),
-    );
-
+    const authById = await authOwners(db, [...new Set(due.map((r) => r.ownerId))], now);
     const rows: ActivationStoreRow[] = due.map(({ ownerId, ...row }) => {
       const profile = profileById.get(ownerId);
       const auth = authById.get(ownerId);
@@ -348,7 +414,6 @@ export async function collectActivationNotices(now: Date = new Date()): Promise<
       return {
         ...row,
         owner: profile || auth ? { email, name: profile?.name ?? null, suspended: auth?.suspended ?? false } : null,
-        trialEndsAt: trialByStore.get(row.id) ?? null,
       };
     });
     return { db, notices: pickActivationNotices({ stores: rows, now }) };
@@ -384,7 +449,7 @@ export async function deliverActivationNotices(
   now: Date = new Date(),
   skip?: ReadonlySet<string>,
 ): Promise<ActivationNoticeReport> {
-  const report: ActivationNoticeReport = { activation_no_products: 0, activation_share: 0 };
+  const report: ActivationNoticeReport = { activation_no_products: 0, activation_first_order: 0, activation_share: 0 };
   if (!plan) return report;
   const platformUrl = platformOrigin();
   const support = process.env.PLATFORM_EMAIL?.trim();
@@ -410,7 +475,9 @@ export async function deliverActivationNotices(
       const content =
         n.kind === "activation_no_products"
           ? noProductsEmail({ ...base, daysSinceCreated: daysSince(s.createdAt, now), trialDaysLeft })
-          : shareStoreEmail({ ...base, activeProducts: s.activeProducts ?? 1, trialEndsAt: s.trialEndsAt, trialDaysLeft });
+          : n.kind === "activation_first_order"
+            ? firstOrderEmail({ ...base, activeProducts: s.activeProducts ?? 1, apparel: isApparelKind(asRecord(s.onboarding).kind) })
+            : shareStoreEmail({ ...base, activeProducts: s.activeProducts ?? 1, trialEndsAt: s.trialEndsAt, trialDaysLeft });
       const result = await sendEmail({
         to: n.to,
         from: platformFrom(),

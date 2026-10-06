@@ -52,11 +52,12 @@ Variables de entorno:
 | `NEXT_PUBLIC_SITE_URL` | URL pública de la plataforma (links de Auth, metadata) |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | dominio raíz (`localhost:3000`, `ecommy-app.vercel.app`, `ecommy.app`). Con localhost o `*.vercel.app` las tiendas viven en `/s/<slug>`; con dominio propio, en `<slug>.<dominio>` |
 | `NEXT_PUBLIC_TENANT_MODE` | opcional: `path` o `subdomain` para forzar el modo |
-| `PLATFORM_WHATSAPP` | WhatsApp de la plataforma (pedidos de cambio de plan) |
+| `PLATFORM_WHATSAPP` | WhatsApp de la plataforma (pedidos de cambio de plan y botón «Seguir por WhatsApp» de `/empezar`) |
+| `NEXT_PUBLIC_DEMO_STORE_SLUG` | opcional: slug de la tienda demo que muestra el sitio (CTA «Ver una tienda de ropa funcionando» de la landing, «Tienda demo» del header y del pie). Por defecto `demo` |
 | `CRON_SECRET` | secreto del cron diario `/api/cron/daily` |
 | `RESEND_API_KEY` | opcional: API key de Resend. Sin ella no sale ningún email (se avisa una vez en el log) |
 | `EMAIL_FROM` | opcional: remitente, por defecto `Ecommy <no-reply@ecommy.app>` (el dominio tiene que estar verificado en Resend) |
-| `PLATFORM_EMAIL` | opcional: casilla de la plataforma (avisos de pedido de plan y reply-to de los mails de cuenta) |
+| `PLATFORM_EMAIL` | opcional: casilla de la plataforma (avisos de pedido de plan, pedidos de carga de catálogo de `/empezar` y reply-to de los mails de cuenta) |
 | `NEXT_PUBLIC_PLATFORM_GA4_ID` | opcional: GA4 del sitio de Ecommy (landing, planes, registro), `G-XXXX`. No afecta a las tiendas, que tienen su propio GA4 en Configuración › SEO |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | opcional: token de Google Search Console para `www.ecommy.app` |
 | `SUPABASE_SERVICE_ROLE_KEY` | opcional, sólo servidor: la usan el cron (avisos de fin de prueba y de activación) y el cobro con MercadoPago (webhook y sincronización). Sin ella esos avisos no salen y los pagos de MP no se aplican; el resto funciona igual |
@@ -79,7 +80,10 @@ aplicarla, Configuración muestra "base de datos desactualizada" y los mails sal
 avisos de stock, `0017_promotions_bxgy.sql` (8) promociones por cantidad y
 `0018_order_bundle_discount.sql` (9) descuento por cantidad a nivel pedido con recálculo en
 `create_order`; `0019_plans_yearly.sql` (10) plan anual, `0020_abandoned_checkouts.sql` (11)
-carritos abandonados y `0021_price_tiers.sql` (12) precios por cantidad. Se aplican en ese
+carritos abandonados, `0021_price_tiers.sql` (12) precios por cantidad,
+`0022_modules_print3d.sql` (13) apps y Taller 3D, `0023_store_payments.sql` (14) cobro con
+tarjeta en las tiendas y `0024_free_plan_moda.sql` (15) Free con 25 productos, remitos y
+Responder desde Starter (sólo datos de `plans`). Se aplican en ese
 orden; el código tolera que falten (cada función se oculta o degrada) y `SCHEMA_VERSION` en
 `src/lib/version.ts` indica la esperada.
 `0015_billing.sql` (esquema 6) agrega el cobro con MercadoPago (`plans.mp_plan_id`,
@@ -107,7 +111,17 @@ herramienta MCP `apply_migration`. Después regenerá los tipos en
 ```bash
 SEED_EMAIL=… SEED_PASSWORD=… SEED_STORE=demo npm run seed   # sube las imágenes a <store_id>/products/…
 SEED_EMAIL=… SEED_PASSWORD=… npm run seed -- --skip-images  # usa las URLs del proveedor
+npm run seed -- --dry-run                                   # valida el JSON y lista lo que haría, sin tocar la base
 ```
+
+**Demo de ropa** («Luna Indumentaria», marca ficticia, 30 productos con talle × color y stock por variante, `data/demo-ropa.json`): crea o usa la tienda `ropa` con preset Atelier, transferencia con 10 %, envío CABA y retiro en el local, e imágenes de ejemplo por color. Pasos y qué verificar en `docs/DEMO-ROPA.md`.
+
+```bash
+npx tsx scripts/seed-demo-ropa.mts --dry-run
+SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npx tsx scripts/seed-demo-ropa.mts
+```
+
+Formato del JSON (y los campos opcionales `options`/`variants`/`price`/`priceTiers`): `data/SCHEMA.md`.
 
 ## Scripts
 
@@ -117,7 +131,8 @@ SEED_EMAIL=… SEED_PASSWORD=… npm run seed -- --skip-images  # usa las URLs d
 | `npm run lint` | ESLint |
 | `npm test` | Vitest (precios, tema, bloques, tenant, planes…) |
 | `npm run e2e` | Smoke E2E del sitio público con Playwright (ver "CI y E2E") |
-| `npm run seed` | Importa `data/products.json` a una tienda (`SEED_STORE`) |
+| `npm run seed` | Importa `data/products.json` (o `SEED_FILE`) a una tienda (`SEED_STORE`) |
+| `npx tsx scripts/seed-demo-ropa.mts` | Tienda demo de ropa `ropa` (ver `docs/DEMO-ROPA.md`) |
 | `npm run create-admin` | Alta de un usuario con `signUp` (la tienda se crea en `/app/nueva`) |
 | `npx tsx scripts/move-media-to-store.mts <slug>` | Mueve objetos sueltos del bucket a `<store_id>/…` |
 | `npm run scrape` | Scraper del catálogo DAZ → `data/products.json` + `public/img` |

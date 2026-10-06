@@ -19,13 +19,34 @@ import {
 } from "./index";
 
 describe("hasFeature / limitOf", () => {
-  it("Free: sin importador ni precios masivos, 50 productos", () => {
+  it("Free: sin importador ni precios masivos, 25 productos, sin remitos ni Responder", () => {
     const free = defaultPlan("free");
     expect(hasFeature(free, "catalog.import_web")).toBe(false);
     expect(hasFeature(free, "pricing.bulk")).toBe(false);
     expect(hasFeature(free, "marketing.coupons")).toBe(true);
-    expect(limitOf(free, "products")).toBe(50);
+    expect(hasFeature(free, "orders.print")).toBe(false);
+    expect(hasFeature(free, "orders.replies")).toBe(false);
+    expect(limitOf(free, "products")).toBe(25);
+    expect(limitOf(free, "staff")).toBe(1);
     expect(limitOf(free, "pages")).toBe(1);
+  });
+
+  it("remitos y Responder desde Starter", () => {
+    for (const code of ["starter", "pro", "business"] as const) {
+      expect(hasFeature(defaultPlan(code), "orders.print")).toBe(true);
+      expect(hasFeature(defaultPlan(code), "orders.replies")).toBe(true);
+    }
+    expect(featureMinPlan("orders.print")).toBe("starter");
+    expect(featureMinPlan("orders.replies")).toBe("starter");
+    expect(upgradeMessage("orders.replies")).toBe("Esta función está disponible desde el plan Starter.");
+  });
+
+  it("parsePlan: una fila free sin la clave nueva (antes de 0024) toma el default del código", () => {
+    const p = parsePlan({ code: "free", features: { "orders.print": true }, limits: { products: 50 } });
+    expect(hasFeature(p, "orders.replies")).toBe(false);
+    // Lo que diga la base manda: hasta aplicar 0024, remitos y 50 productos.
+    expect(hasFeature(p, "orders.print")).toBe(true);
+    expect(limitOf(p, "products")).toBe(50);
   });
 
   it("Pro: ilimitado (null) en productos", () => {
@@ -37,7 +58,7 @@ describe("hasFeature / limitOf", () => {
 
   it("sin plan → no hay features y rigen los límites de Free", () => {
     expect(hasFeature(null, "catalog.variants")).toBe(false);
-    expect(limitOf(null, "products")).toBe(50);
+    expect(limitOf(null, "products")).toBe(25);
   });
 
   it("los planes son monótonos: lo que tiene uno lo tiene el siguiente", () => {
@@ -88,9 +109,9 @@ describe("assertFeature / assertLimit", () => {
 
   it("límites: permite llegar justo, no pasarse", () => {
     const ctx = { plan: defaultPlan("free") };
-    expect(() => assertLimit(ctx, "products", 49)).not.toThrow();
-    expect(() => assertLimit(ctx, "products", 50)).toThrow(PlanError);
-    expect(() => assertLimit(ctx, "products", 45, 10)).toThrow("hasta 50 productos");
+    expect(() => assertLimit(ctx, "products", 24)).not.toThrow();
+    expect(() => assertLimit(ctx, "products", 25)).toThrow(PlanError);
+    expect(() => assertLimit(ctx, "products", 20, 10)).toThrow("hasta 25 productos");
     expect(() => assertLimit({ plan: defaultPlan("pro") }, "products", 10_000)).not.toThrow();
   });
 

@@ -2,11 +2,13 @@ import { MessageSquareReply } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PlanGate } from "@/components/admin/PlanGate";
 import { FrequentReplies } from "@/components/admin/replies/FrequentReplies";
 import { ReplyDesk } from "@/components/admin/replies/ReplyDesk";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/display";
 import { requireAdmin } from "@/lib/auth";
+import { hasFeature } from "@/lib/plans";
 import { storeUrl } from "@/lib/tenant/urls";
 
 import { searchProductsForReply } from "./actions";
@@ -18,20 +20,39 @@ export const metadata: Metadata = { title: "Responder" };
  * Respuestas listas (PRODUCT-THESIS §4.2): el puente WhatsApp → operación,
  * sin bot. El comerciante busca el producto, elige la variante y copia la
  * respuesta con precio, stock y link; Ecommy nunca manda nada solo.
- * En todos los planes.
+ * Desde Starter (feature `orders.replies`, 0024); en Free, el candado.
  */
 export default async function ReplyPage() {
   const ctx = await requireAdmin();
+  const header = (
+    <PageHeader
+      title="Responder"
+      section="orders"
+      icon={<MessageSquareReply />}
+      description="Te preguntan por WhatsApp. Buscá el producto y copiá la respuesta con precio, stock y link."
+    />
+  );
+
+  if (!hasFeature(ctx.plan, "orders.replies")) {
+    return (
+      <>
+        {header}
+        <PlanGate
+          feature="orders.replies"
+          plan={ctx.plan}
+          description="Buscás el producto por el que te preguntan y copiás la respuesta con precio, stock, descuento por transferencia y link. También las de envío, retiro y cómo pagar."
+        >
+          {null}
+        </PlanGate>
+      </>
+    );
+  }
+
   const [d, initial] = await Promise.all([getReplyDeskData(ctx), searchProductsForReply({ q: "" })]);
 
   return (
     <>
-      <PageHeader
-        title="Responder"
-        section="orders"
-        icon={<MessageSquareReply />}
-        description="Te preguntan por WhatsApp. Buscá el producto y copiá la respuesta con precio, stock y link."
-      />
+      {header}
 
       {d.maintenance ? (
         <p role="status" className="mb-4 rounded-adm-lg bg-adm-accent-2-soft px-4 py-3 text-[13px] text-adm-fg">

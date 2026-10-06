@@ -103,7 +103,7 @@ export const POSTS: RedPiece[] = [
     days: [3],
     hook: "Vendiste $ 100.000. ¿Cuánto te queda?",
     caption:
-      "No cobramos comisión por venta: tu cliente te transfiere, lo acuerdan por WhatsApp o paga con tarjeta en tu propio Mercado Pago. Lo que pagás es el plan, fijo por mes, y hay uno gratis hasta 50 productos.",
+      "No cobramos comisión por venta: tu cliente te transfiere, lo acuerdan por WhatsApp o paga con tarjeta en tu propio Mercado Pago. Lo que pagás es el plan, fijo por mes, y hay uno gratis hasta 25 productos.",
     cta: "Planes en ecommy.app/planes.",
     hashtags: HASHTAGS,
     check: "No nombrar comisiones de otras plataformas sin verificarlas (MARKETING.md §4).",
@@ -120,7 +120,7 @@ export const POSTS: RedPiece[] = [
         template: "gancho",
         title: "Lo que pagás es el plan:",
         accent: "fijo por mes.",
-        body: "Hay uno gratis hasta 50 productos.",
+        body: "Hay uno gratis hasta 25 productos.",
       },
       {
         template: "gancho",
@@ -334,7 +334,7 @@ export const POSTS: RedPiece[] = [
     channels: IG_TT,
     days: [15],
     hook: "No todas las ventas entran por la web.",
-    caption: "Pedidos manuales que descuentan stock y remitos para imprimir, en todos los planes.",
+    caption: "Pedidos manuales que descuentan stock en todos los planes, y remitos para imprimir desde Starter.",
     cta: "Link en la bio.",
     hashtags: HASHTAGS,
     slides: [

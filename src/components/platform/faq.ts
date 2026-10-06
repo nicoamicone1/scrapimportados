@@ -6,7 +6,7 @@
  * "desde qué plan" salen de los planes de la base (`plan-notes`).
  */
 
-import type { PlanInfo } from "@/lib/plans";
+import { PLAN_DEFAULTS, type PlanInfo } from "@/lib/plans";
 import { validYearlyOffer, yearlyMonthsPaid } from "@/lib/plans/yearly";
 
 import { minPlanName, type PlanLike } from "./plan-notes";
@@ -29,8 +29,11 @@ export interface FaqItem {
   a: string;
 }
 
-/** Plan para la FAQ: con `priceYearly` (0019) arma la respuesta del pago anual. */
-export type FaqPlan = PlanLike & Partial<Pick<PlanInfo, "priceYearly">>;
+/**
+ * Plan para la FAQ: con `priceYearly` (0019) arma la respuesta del pago anual;
+ * con `code` y `limits`, el tope de productos de Free sale de la base.
+ */
+export type FaqPlan = PlanLike & Partial<Pick<PlanInfo, "priceYearly" | "code" | "limits">>;
 
 export interface FaqContext {
   /** Dirección de ejemplo de una tienda en este entorno (`exampleStoreAddress()`). */
@@ -73,6 +76,8 @@ export function platformFaq({ storeAddress, plans = [], mpEnabled = false }: Faq
   const csvPlan = minPlanName(plans, "catalog.import_csv") ?? "Starter";
   const domainPlan = minPlanName(plans, "domain.custom") ?? "Pro";
   const exportPlan = minPlanName(plans, "orders.export") ?? "Pro";
+  const freeProducts = plans.find((p) => p.code === "free")?.limits?.products ?? PLAN_DEFAULTS.free.limits.products;
+  const overFree = freeProducts === null ? "" : ` (por ejemplo, más de ${freeProducts} productos, sin contar los archivados)`;
   return [
     {
       id: "comision",
@@ -87,7 +92,7 @@ export function platformFaq({ storeAddress, plans = [], mpEnabled = false }: Faq
     {
       id: "prueba",
       q: "¿Qué pasa cuando termina la prueba de 14 días?",
-      a: "Si no elegiste un plan pago, tu tienda pasa a Free. No se borra nada: los productos, pedidos y páginas quedan; lo que excede el plan (por ejemplo, más de 50 productos, sin contar los archivados) queda bloqueado para crear hasta que subas de plan.",
+      a: `Si no elegiste un plan pago, tu tienda pasa a Free. No se borra nada: los productos, pedidos y páginas quedan; lo que excede el plan${overFree} queda bloqueado para crear hasta que subas de plan.`,
     },
     {
       id: "cambio-plan",

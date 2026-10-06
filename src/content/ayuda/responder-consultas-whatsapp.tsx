@@ -8,7 +8,7 @@ export const meta: HelpArticleMeta = {
   description: "La pantalla Responder del panel: buscás el producto, elegís la variante y copiás la respuesta armada. Más las respuestas fijas de envío y pago.",
   section: "pedidos",
   publishedAt: "2026-10-05",
-  updatedAt: "2026-10-05",
+  updatedAt: "2026-10-06",
   readingMinutes: 2,
   panel: { href: "/admin/responder", label: "Responder" },
   related: ["compartir-tu-tienda", "zonas-de-envio"],
@@ -19,7 +19,7 @@ export const body = (
     <p>
       Te escriben por WhatsApp: “¿tenés la remera negra en M?”. En lugar de abrir Productos, mirar el stock y escribir la respuesta a mano,
       entrá a <strong>Responder</strong> (en el menú, debajo de Clientes). Buscás el producto, elegís la variante y copiás un mensaje que ya
-      trae el precio, el stock y el link a la ficha.
+      trae el precio, el stock y el link a la ficha. Responder está desde el plan Starter y en la prueba de 14 días.
     </p>
     <Callout tone="nota">
       <p>

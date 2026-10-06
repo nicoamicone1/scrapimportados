@@ -28,7 +28,8 @@ export const maxDuration = 300;
  * no hacen nada.
  *
  * Avisos de activación (src/lib/email/activation-notices.ts): día 2 sin
- * productos y día 7 sin compartir ni pedidos. Se juntan después del
+ * productos, día 3 "la prueba de fuego" (con productos, en prueba y sin
+ * pedido real) y día 7 sin compartir ni pedidos. Se juntan después del
  * mantenimiento (así ven el estado de la prueba ya actualizado), con las
  * mismas dos variables.
  *

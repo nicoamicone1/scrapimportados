@@ -7,6 +7,7 @@ import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { bulkChangeOrderStatus, changeOrderStatus, markOrdersPaid } from "@/app/admin/(panel)/pedidos/actions";
+import { PlanGate, usePlanFeature } from "@/components/admin/PlanGate";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DropdownItem, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
@@ -42,6 +43,8 @@ export interface OrdersTableProps {
  */
 export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: OrdersTableProps) {
   const router = useRouter();
+  // Remitos desde Starter (`orders.print`): en Free no se ofrece imprimir desde la fila.
+  const canPrint = usePlanFeature("orders.print");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [cancelOpen, setCancelOpen] = useState(false);
   const [paidTarget, setPaidTarget] = useState<string[] | null>(null);
@@ -173,10 +176,14 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
         <DropdownItem icon={<Wallet />} disabled={!unpaid} onSelect={() => setPaidTarget([o.id])}>
           Marcar pagado
         </DropdownItem>
-        <DropdownSeparator />
-        <DropdownItem icon={<Printer />} onSelect={() => printIds([o.id])}>
-          Imprimir remito
-        </DropdownItem>
+        {canPrint ? (
+          <>
+            <DropdownSeparator />
+            <DropdownItem icon={<Printer />} onSelect={() => printIds([o.id])}>
+              Imprimir remito
+            </DropdownItem>
+          </>
+        ) : null}
       </DropdownMenu>
     );
   };
@@ -231,9 +238,11 @@ export function OrdersTable({ rows, methodNames, timeZone, filters, empty }: Ord
             <Button size="sm" icon={<Wallet />} className="max-lg:h-11" onClick={() => setPaidTarget(sel)}>
               Marcar pagados
             </Button>
-            <Button size="sm" icon={<Printer />} className="max-lg:h-11" onClick={() => printIds(sel)}>
-              Imprimir remitos
-            </Button>
+            <PlanGate feature="orders.print" mode="inline" label="Imprimir remitos" className="max-lg:h-11">
+              <Button size="sm" icon={<Printer />} className="max-lg:h-11" onClick={() => printIds(sel)}>
+                Imprimir remitos
+              </Button>
+            </PlanGate>
             <Button size="sm" variant="ghost" icon={<X />} className="max-lg:h-11" onClick={() => setSelected(new Set())}>
               Deseleccionar
             </Button>

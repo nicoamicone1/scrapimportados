@@ -11,7 +11,7 @@ export const meta: HelpArticleMeta = {
   description: "Remitos en hoja A4 o ticket de 80 mm, de a uno o varios juntos, y la exportación de productos, inventario, pedidos y clientes para tu contador o una planilla.",
   section: "pedidos",
   publishedAt: "2026-09-23",
-  updatedAt: "2026-09-23",
+  updatedAt: "2026-10-06",
   readingMinutes: 2,
   panel: { href: "/admin/pedidos", label: "Pedidos" },
 };
@@ -20,7 +20,7 @@ export const body = (
   <>
     <p>
       Para armar paquetes con el papel en la mano y para pasarle los números a tu contador, el panel tiene dos herramientas: los remitos
-      imprimibles, en todos los planes, y la exportación a CSV, desde el plan Pro.
+      imprimibles, desde el plan Starter, y la exportación a CSV, desde el plan Pro. Durante la prueba de 14 días tenés las dos.
     </p>
 
     <h2 id="remito">Imprimir un remito</h2>

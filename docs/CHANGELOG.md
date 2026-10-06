@@ -2,6 +2,21 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
+## Sin publicar
+
+Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere aplicar la migración 0024 (esquema 15).
+
+### Agregado
+
+- Mail de activación del día 3, «La prueba de fuego»: a las tiendas en prueba, con productos activos y sin un pedido real todavía (pedido web no cancelado de alguien que no sea el dueño), entre el día 3 y el 30. Trae la dirección de la tienda, el mensaje listo para mandarle a una clienta habitual («Ahora podés pedir directo acá: … Elegís talle y color y te llega el total.»; sin «talle y color» fuera de los rubros de ropa) y lo que vas a ver en Inicio cuando llegue el pedido. Respeta los dos días entre avisos y sale una sola vez. La secuencia queda: 48 h sin productos → día 3 prueba de fuego → día 7 compartir.
+
+### Cambiado
+
+- Plan Free: hasta 25 productos (eran 50). Remitos para imprimir y Responder pasan a estar desde Starter (siguen en la prueba de 14 días). Nueva función de plan `orders.replies` («Respuestas listas para WhatsApp»), editable en /platform/planes. Lo que excede Free no se borra: los productos cargados siguen a la venta y no se pueden crear más.
+- Responder muestra el candado «Disponible en Starter» en Free, y la búsqueda de productos para responder lo valida en el servidor. En Pedidos, «Imprimir remito» lleva el candado en Free.
+- Mail de fin de prueba: dice qué pierde la tienda según su uso real («Tenés 84 productos: en Free el tope es 25…», «Tenés 3 usuarios: Free es para 1…») y que Responder y los remitos quedan desde Starter.
+- Preguntas frecuentes y ayuda (Planes, prueba y equipo; Remitos y exportar; Responder) con el Free nuevo. El tope de productos de la pregunta «¿Qué pasa cuando termina la prueba?» sale de los planes de la base.
+
 ## v0.10.0 — 2026-10-05 · Hoy se resuelve desde el inicio, respuestas listas para WhatsApp y qué pasó esta semana
 
 Tesis de producto: [`PRODUCT-THESIS.md`](PRODUCT-THESIS.md).

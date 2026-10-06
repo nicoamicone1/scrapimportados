@@ -64,7 +64,7 @@ function fmt(date: Date, timeZone: string, options: Intl.DateTimeFormatOptions):
   return new Intl.DateTimeFormat("es-AR", { ...options, timeZone }).format(date);
 }
 
-/** "hasta 50 productos y sólo la página de inicio" (`pages: 1`: la home y nada más). */
+/** "hasta 25 productos y sólo la página de inicio" (`pages: 1`: la home y nada más). */
 export function freeLimitsText(limits: Pick<PlanLimits, "products" | "pages"> = PLAN_DEFAULTS.free.limits): string {
   const parts: string[] = [];
   if (limits.products !== null) parts.push(`hasta ${limits.products.toLocaleString("es-AR")} productos`);

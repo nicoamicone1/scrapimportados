@@ -11,7 +11,7 @@ export const meta: HelpArticleMeta = {
   description: "Qué incluye cada plan, qué pasa cuando termina la prueba gratis, cómo pedir un cambio de plan y cómo sumar a tu equipo con roles.",
   section: "cuenta",
   publishedAt: "2026-09-23",
-  updatedAt: "2026-09-23",
+  updatedAt: "2026-10-06",
   readingMinutes: 3,
   panel: { href: "/admin/plan", label: "Plan" },
   related: ["primeros-pasos", "lo-que-exige-la-ley"],
@@ -28,8 +28,8 @@ export const body = (
     <ArticleTable
       head={["Plan", "Lo que agrega"]}
       rows={[
-        ["Free", "La tienda completa: catálogo con variantes, zonas de envío por mapa, remitos, checkout por WhatsApp, cupones y todo lo legal. Dos estilos (Nórdico y Mercado) y la portada."],
-        ["Starter", "Importar y actualizar desde planilla, los 10 estilos, páginas extra, promociones programadas, Google Analytics, Tag Manager y Meta Pixel, y equipo."],
+        ["Free", "La tienda completa: catálogo con variantes, zonas de envío por mapa, checkout por WhatsApp, cupones y todo lo legal. Dos estilos (Nórdico y Mercado) y la portada."],
+        ["Starter", "Responder (respuestas listas para WhatsApp), remitos para imprimir, importar y actualizar desde planilla, los 10 estilos, páginas extra, promociones programadas, Google Analytics, Tag Manager y Meta Pixel, y equipo."],
         ["Pro", "Importar desde otra web, precios masivos con deshacer, dominio propio, registro de auditoría, exportar a CSV, CSS personalizado y productos sin tope."],
         ["Business", "A medida: más tiendas, catálogos grandes o una mudanza asistida."],
       ]}

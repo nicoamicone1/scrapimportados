@@ -6,6 +6,7 @@ import { brandColors, renderEmail, safeHref } from "./layout";
 import { resetEmailWarnings, sendEmail, setEmailTimingForTests, storeFrom } from "./send";
 import {
   customerCancelReason,
+  freePlanRestrictions,
   newOrderSellerEmail,
   orderCancelledEmail,
   orderPaidEmail,
@@ -300,8 +301,29 @@ describe("plantillas de cuenta", () => {
     expect(trialEndingEmail({ ...base, trialEndsAt: "2026-09-24T12:00:00Z", daysLeft: 1 }).subject).toBe("Tu prueba de Pro termina mañana");
     const ended = trialEndedEmail({ ...base, endedAt: "2026-09-23T12:00:00Z" });
     expect(ended.subject).toBe("Tu prueba terminó: Taller Luna pasó a Free");
-    expect(ended.text).toContain("Hasta 50 productos");
+    expect(ended.text).toContain("Hasta 25 productos");
+    expect(ended.text).toContain("Responder y los remitos para imprimir, desde Starter.");
     expect(ended.html).toContain("https://www.ecommy.app/admin/plan");
+  });
+
+  it("Prueba por vencer: qué pierde según el uso real de la tienda", () => {
+    const over = trialEndingEmail({ ...base, trialEndsAt: "2026-09-26T12:00:00Z", daysLeft: 3, usage: { products: 84, members: 3 } });
+    expect(over.text).toContain("Tenés 84 productos: en Free el tope es 25. Los que ya están siguen a la venta, pero no podés crear más.");
+    expect(over.text).toContain("Tenés 3 usuarios: Free es para 1 y no podés invitar a nadie más.");
+    expect(over.text).toContain("Responder y los remitos para imprimir, desde Starter.");
+    expect(over.text).not.toContain("Hasta 25 productos");
+
+    const small = trialEndingEmail({ ...base, trialEndsAt: "2026-09-24T12:00:00Z", daysLeft: 1, usage: { products: 1, members: 1 } });
+    expect(small.subject).toBe("Tu prueba de Pro termina mañana");
+    expect(small.text).toContain("Tenés 1 producto: en Free entran hasta 25.");
+    expect(small.text).not.toContain("usuarios");
+    expect(small.text).toContain("Responder y los remitos para imprimir, desde Starter.");
+
+    // Sin conteos (falló la consulta): el texto general.
+    const unknown = trialEndingEmail({ ...base, trialEndsAt: "2026-09-26T12:00:00Z", daysLeft: 3, usage: { products: null, members: null } });
+    expect(unknown.text).toContain("Hasta 25 productos y 3 fotos por producto.");
+    expect(unknown.text).not.toContain("Tenés");
+    expect(freePlanRestrictions()).toEqual(freePlanRestrictions({ products: null, members: null }));
   });
 });
 

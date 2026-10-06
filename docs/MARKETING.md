@@ -26,7 +26,7 @@ Si cambia algo de esta tabla, cambiá el copy en los cuatro documentos. Los plan
 | Precios masivos | %, monto o margen sobre el costo; por categoría, marca, etiqueta, producto o rango de precio; con redondeo, vista previa y **Deshacer** (también deshace precios que entraron por importación). Pro | `/admin/precios`, `undo_price_batch` |
 | Legal AR (todos los planes) | Botón de arrepentimiento con bandeja en el panel, link a Defensa del Consumidor, QR de Data Fiscal, "precio sin impuestos nacionales", plantillas de políticas | `Footer.tsx`, `/admin/configuracion/legales` |
 | SEO y medición | Título y descripción por producto con vista previa, sitemap, robots, JSON-LD, Open Graph, redirecciones 301 (con importación CSV). GA4, Tag Manager y Meta Pixel cargando sólo el ID: desde Starter | `/admin/configuracion/seo` |
-| Operación | Remitos para imprimir, pedidos manuales, aviso de pedidos nuevos en el panel, inventario con historial, equipo con invitación por link y roles, auditoría (Pro), exportación CSV (Pro) | admin |
+| Operación | Remitos para imprimir (desde Starter), Responder: respuestas listas para WhatsApp con precio, stock y link (desde Starter), pedidos manuales, aviso de pedidos nuevos en el panel, inventario con historial, equipo con invitación por link y roles, auditoría (Pro), exportación CSV (Pro) | admin |
 | Lo que NO hay (hoy) | Otras pasarelas además de Mercado Pago, etiquetas de correo (OCA, Andreani), sincronización con Mercado Libre, facturación electrónica, emails automáticos al comprador (en curso), cuentas de cliente con login, carritos abandonados, precios mayoristas por cantidad, app store | `FEATURES-AUDIT.md` §3 |
 
 ### Planes (defaults de la migración)
@@ -34,7 +34,7 @@ Si cambia algo de esta tabla, cambiá el copy en los cuatro documentos. Los plan
 | | Free | Starter | Pro | Business |
 | --- | --- | --- | --- | --- |
 | Precio | $ 0 | $ 14.999 / mes | $ 34.999 / mes | A medida |
-| Productos | 50 | 500 | Ilimitados | Ilimitados |
+| Productos | 25 | 500 | Ilimitados | Ilimitados |
 | Páginas | 1 (inicio) | 6 | Ilimitadas | Ilimitadas |
 | Usuarios | 1 | 3 | 10 | Ilimitados |
 | Estilos | 2 | 10 | 10 + CSS propio | 10 + CSS propio |
@@ -43,7 +43,8 @@ Si cambia algo de esta tabla, cambiá el copy en los cuatro documentos. Los plan
 | Promos programadas / cupones | — / 3 | 10 / 20 | Sin tope | Sin tope |
 | GA4, GTM, Meta Pixel | — | Sí | Sí | Sí |
 | Dominio propio, auditoría, export CSV | — | — | Sí | Sí |
-| Zonas por mapa, remitos, legales AR, checkout WhatsApp | Sí | Sí | Sí | Sí |
+| Remitos para imprimir, Responder | — | Sí | Sí | Sí |
+| Zonas por mapa, legales AR, checkout WhatsApp | Sí | Sí | Sí | Sí |
 
 Los precios son de ejemplo (spec §14.1): **el precio real lo decidís vos**. En todo el copy público, mandá a `/planes` en vez de escribir el número, así no queda desactualizado en posts viejos.
 
@@ -92,7 +93,7 @@ Decirlo ahorra soporte, reembolsos y malas reseñas. Si el prospecto cae acá, r
 | "Ya tengo el catálogo de WhatsApp Business." | No tiene talles con stock, no calcula el envío y no registra el pedido. Probalo 14 días al lado del catálogo y comparás. |
 | "No tengo tiempo de cargar todo." | Cargás los 20 que más vendés y compartís. El resto lo sumás de a poco; la tienda funciona desde el primer producto. Si ya tenés una planilla, la subís en CSV. |
 | "No sé de diseño." | Elegís el rubro y arranca con un estilo pensado para ropa: fotos grandes, sin adornos. Cambiás logo y colores y listo. |
-| "¿Y si después no pago?" | Pasás a Free: no se borra nada. Hasta 50 productos es gratis. |
+| "¿Y si después no pago?" | Pasás a Free: no se borra nada. Hasta 25 productos es gratis. |
 
 ### 2.2 La ferretería o casa de electro de barrio con la lista del proveedor en Excel
 
@@ -180,13 +181,13 @@ Regla: comparar sólo lo que podés sostener con una captura o un link. Precios 
 
 | Plan | Para quién (una línea) | Lo que lo define en el copy |
 | --- | --- | --- |
-| Free | "Para probar con tus primeros 50 productos." | $ 0, sin vencimiento, 2 estilos, checkout WhatsApp y transferencia, zonas por mapa, legales. Sin importador ni Pixel |
+| Free | "Para probar con tus primeros 25 productos." | $ 0, sin vencimiento, 2 estilos, checkout WhatsApp y transferencia, zonas por mapa, legales. Sin importador, Pixel, Responder ni remitos |
 | Starter | "Para vender todos los días." | 500 productos, los 10 estilos, CSV, promos y cupones, Meta Pixel y GA4, 3 usuarios |
 | Pro | "Para el que actualiza precios cada semana o tiene catálogo grande." | Productos ilimitados, precios masivos con deshacer, importar desde otra web, dominio propio, export, auditoría |
 | Business | "Para varias sucursales, catálogos muy grandes o necesidades a medida." | Se habla por WhatsApp |
 
 - **La prueba es el producto.** Todo el copy empuja a "Crear tu tienda" y a probar Pro 14 días, no a elegir plan el día 1. Frase: "Probás todo Pro 14 días, sin tarjeta. Después elegís: si no pagás nada, pasás a Free y no perdés nada."
-- **Antes de que venza la prueba** (día 10 y día 13), el mensaje dice qué va a dejar de funcionar según lo que la tienda usa de verdad ("Tenés 212 productos: en Free se quedan visibles pero no podés crear más de 50"). Hoy es manual por WhatsApp; cuando estén los emails, automatizarlo.
+- **Antes de que venza la prueba** (día 10 y día 13), el mensaje dice qué va a dejar de funcionar según lo que la tienda usa de verdad ("Tenés 212 productos: en Free se quedan visibles pero no podés crear más de 25"). El mail de fin de prueba ya lo dice con el uso real (productos y usuarios) y agrega que Responder y los remitos quedan desde Starter; el WhatsApp del día 10 sigue siendo manual.
 - **Precio en el copy:** mandá a `/planes`. Si lo escribís, "desde $ X por mes, precio final", nunca "a partir de" sin decir qué incluye.
 - **Cobro hoy:** manual. "Quiero este plan" en `/admin/plan` abre tu WhatsApp; cobrás por transferencia y activás el plan en `/platform/tiendas/<id>`. Decilo como ventaja: "Pagás por transferencia, como tus clientes".
 

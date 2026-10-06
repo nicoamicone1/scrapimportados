@@ -7,7 +7,7 @@ import { SUPABASE_URL } from "@/lib/supabase/env";
 import { platformOrigin, storeUrl } from "@/lib/tenant/urls";
 
 import { emailEnabled, isEmail, platformFrom, sendEmail, wasSent, warnEmailDisabled } from "./send";
-import { trialEndedEmail, trialEndingEmail } from "./templates";
+import { trialEndedEmail, trialEndingEmail, type StoreUsage } from "./templates";
 
 /*
  * Avisos de fin de la prueba de Pro (cron diario, /api/cron/daily).
@@ -22,6 +22,11 @@ import { trialEndedEmail, trialEndingEmail } from "./templates";
  * que ya existe; `markOnboarding` conserva las claves que no conoce). Se
  * guarda la FECHA de fin a la que se refiere el aviso, así si el superadmin
  * extiende la prueba, el aviso de la nueva fecha vuelve a salir una vez.
+ *
+ * El aviso de "termina" (sale una vez, cuando faltan 3 días o menos) dice
+ * qué pierde la tienda al pasar a Free con su uso real: productos no
+ * archivados (lo que cuenta contra el límite) y miembros activos del equipo,
+ * contados acá con service role.
  */
 
 const DAY_MS = 86_400_000;
@@ -49,6 +54,8 @@ interface Notice {
   ownerEmail: string;
   ownerName: string | null;
   trialEndsAt: string;
+  /** Uso real (sólo en "termina"); `null` = no se contó. */
+  usage: StoreUsage | null;
 }
 
 export interface TrialNoticePlan {
@@ -184,14 +191,42 @@ export async function collectTrialNotices(now: Date = new Date()): Promise<Trial
         ownerEmail,
         ownerName: owner?.name ?? null,
         trialEndsAt: sub.trial_ends_at,
+        usage: null,
       };
       (kind === "trial_ended" ? plan.ended : plan.ending).push(notice);
     }
+    await Promise.all(
+      plan.ending.map(async (n) => {
+        n.usage = await storeUsage(db, n.storeId);
+      }),
+    );
     return plan;
   } catch (err) {
     console.error("[email] avisos de prueba:", err instanceof Error ? err.message : err);
     return null;
   }
+}
+
+async function countOf(query: PromiseLike<{ count: number | null; error: { message: string } | null }>): Promise<number | null> {
+  const { count, error } = await query;
+  if (error) {
+    console.error("[email] fin de prueba, conteo:", error.message);
+    return null;
+  }
+  return count ?? 0;
+}
+
+/**
+ * Productos no archivados y miembros activos de la tienda (head: sin traer
+ * filas). Un conteo que falla queda en `null` y el mail usa el texto general.
+ */
+async function storeUsage(db: Admin, storeId: string): Promise<StoreUsage> {
+  const head = { count: "exact" as const, head: true };
+  const [products, members] = await Promise.all([
+    countOf(db.from("products").select("id", head).eq("store_id", storeId).neq("status", "archived")),
+    countOf(db.from("store_members").select("user_id", head).eq("store_id", storeId).eq("is_active", true)),
+  ]);
+  return { products, members };
 }
 
 /** Email actual de cada dueño en auth.users (si la Admin API falla, queda profiles). */
@@ -255,6 +290,7 @@ export async function deliverTrialNotices(
               ...base,
               trialEndsAt: n.trialEndsAt,
               daysLeft: Math.max(1, Math.ceil((new Date(n.trialEndsAt).getTime() - now.getTime()) / DAY_MS)),
+              usage: n.usage,
             })
           : trialEndedEmail({ ...base, endedAt: n.trialEndsAt });
       const result = await sendEmail({

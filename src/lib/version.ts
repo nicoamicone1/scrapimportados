@@ -13,7 +13,7 @@ export const APP_VERSION = "0.10.0";
  * con `app_meta.schema_version` (Configuración muestra un aviso si la base
  * está atrasada). Subila junto con la migración que la actualiza.
  */
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 
 export interface ChangelogEntry {
   version: string;

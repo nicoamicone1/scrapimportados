@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useState, useTransition, type R
 import { toast } from "sonner";
 
 import { changeOrderStatus, markOrdersPaid, updateOrderTracking } from "@/app/admin/(panel)/pedidos/actions";
+import { PlanGate } from "@/components/admin/PlanGate";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator } from "@/components/ui/DropdownMenu";
 import {
@@ -223,9 +224,12 @@ export function OrderHeaderActions() {
 
   return (
     <>
-      <ButtonLink href={`/admin/pedidos/imprimir?ids=${id}`} external icon={<Printer />} className="max-sm:h-11">
-        Imprimir remito
-      </ButtonLink>
+      {/* Remitos desde Starter (`orders.print`): en Free, el candado que lleva a Plan. */}
+      <PlanGate feature="orders.print" mode="inline" label="Imprimir remito" className="max-sm:h-11">
+        <ButtonLink href={`/admin/pedidos/imprimir?ids=${id}`} external icon={<Printer />} className="max-sm:h-11">
+          Imprimir remito
+        </ButtonLink>
+      </PlanGate>
       {status === "cancelled" ? (
         <Button variant="primary" icon={<RotateCcw />} loading={a.loading} onClick={a.reopen} className="max-sm:h-11">
           Reabrir pedido

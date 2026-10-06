@@ -1,8 +1,8 @@
 /**
  * Planes: feature flags y límites (spec §14.1). Fuente única del lado TS;
  * los valores efectivos viven en `public.plans` (editables desde /platform)
- * y `PLAN_DEFAULTS` es su espejo (seed de la migración 0011) para textos,
- * comparaciones y tests. Si cambiás uno, cambiá el otro.
+ * y `PLAN_DEFAULTS` es su espejo (seed de la migración 0011, Free achicado
+ * en 0024) para textos, comparaciones y tests. Si cambiás uno, cambiá el otro.
  */
 
 export const PLAN_CODES = ["free", "starter", "pro", "business"] as const;
@@ -29,6 +29,7 @@ export const FEATURES = {
   "theme.all_presets": { label: "Todos los estilos de tienda" },
   "shipping.polygons": { label: "Zonas de envío por mapa" },
   "orders.print": { label: "Remitos para imprimir" },
+  "orders.replies": { label: "Respuestas listas para WhatsApp" },
   "orders.export": { label: "Exportar pedidos y catálogo (CSV)" },
   "analytics.integrations": { label: "Google Analytics, Tag Manager y Meta Pixel" },
   "domain.custom": { label: "Dominio propio" },
@@ -73,6 +74,9 @@ export const PLAN_DEFAULTS: Record<PlanCode, { features: PlanFeatures; limits: P
       "content.landings": false,
       "theme.custom_css": false,
       "theme.all_presets": false,
+      // 0024: remitos y Responder desde Starter (docs/gtm/PLAN-GTM.md §7 y §11).
+      "orders.print": false,
+      "orders.replies": false,
       "orders.export": false,
       "analytics.integrations": false,
       "domain.custom": false,
@@ -80,7 +84,8 @@ export const PLAN_DEFAULTS: Record<PlanCode, { features: PlanFeatures; limits: P
       "audit.log": false,
     },
     limits: {
-      products: 50,
+      // 0024: 25 (era 50). Con 50 y variantes, una marca de ropa chica vivía gratis para siempre.
+      products: 25,
       pages: 1,
       staff: 1,
       promotions: 0,

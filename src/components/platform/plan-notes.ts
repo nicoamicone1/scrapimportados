@@ -86,6 +86,7 @@ const FEATURE_BENEFITS: Record<FeatureKey, string> = {
   "theme.all_presets": "Todos los estilos de tienda",
   "shipping.polygons": "Zonas de envío dibujadas en el mapa",
   "orders.print": "Remitos listos para imprimir",
+  "orders.replies": "Respuestas a WhatsApp con precio, stock y link",
   "orders.export": "Pedidos y catálogo a CSV cuando quieras",
   "analytics.integrations": "Google Analytics, Tag Manager y Meta Pixel",
   "domain.custom": "Tu dominio propio",

@@ -7,6 +7,7 @@ import { catalogDb } from "@/lib/admin/catalog-db";
 import { searchTerm } from "@/lib/admin/products";
 import type { ReplyProductHit } from "@/lib/admin/replies";
 import { requireAdmin } from "@/lib/auth";
+import { assertFeature } from "@/lib/plans";
 import { applyPromotions, type Promotion } from "@/lib/pricing";
 import { fetchActivePromotionsFresh } from "@/lib/store/promotions";
 import { storeUrl } from "@/lib/tenant/urls";
@@ -19,10 +20,12 @@ const LIMIT = 8;
  * respuesta. Sin texto, los últimos editados. Excluye archivados; los
  * borradores vuelven con `status: "draft"` para avisar que el link no anda.
  * Los precios son los de la tienda: con las promociones vigentes aplicadas.
+ * Desde Starter (`orders.replies`).
  */
 export async function searchProductsForReply(input: { q: string }): Promise<ActionResult<ReplyProductHit[]>> {
   return runAction(async () => {
     const ctx = await requireAdmin();
+    assertFeature(ctx, "orders.replies");
     const parsed = schema.safeParse(input);
     if (!parsed.success) return fail("Búsqueda inválida.");
     const { supabase, store } = ctx;

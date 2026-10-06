@@ -1,0 +1,3171 @@
+{
+  "scrapedAt": "2026-10-06T00:00:00.000Z",
+  "source": "demo:luna-indumentaria",
+  "currency": "ARS",
+  "note": "Catálogo de ejemplo (marca ficticia) para la tienda demo de ropa. Ver docs/DEMO-ROPA.md.",
+  "store": {
+    "name": "Luna Indumentaria",
+    "tagline": "Ropa de mujer para todos los días. Envíos en CABA y retiro en el local.",
+    "kind": "moda",
+    "preset": "atelier",
+    "whatsapp": "5491100000000",
+    "lowStockThreshold": 3,
+    "transfer": {
+      "discountPercent": 10,
+      "bankName": "Banco de ejemplo",
+      "holder": "Luna Indumentaria (cuenta de ejemplo)",
+      "alias": "ALIAS.DE.EJEMPLO"
+    },
+    "shippingZones": [
+      {
+        "name": "CABA",
+        "type": "provinces",
+        "provinces": [
+          "AR-C"
+        ],
+        "cost": 4500,
+        "freeOver": 120000,
+        "etaText": "24 a 48 hs hábiles",
+        "notes": "Moto a domicilio en la Ciudad de Buenos Aires."
+      }
+    ],
+    "pickupLocations": [
+      {
+        "name": "Local de Palermo",
+        "address": "Palermo, CABA (dirección de ejemplo)",
+        "hoursText": "Lunes a viernes de 11 a 19, sábados de 11 a 15",
+        "instructions": "Te avisamos por WhatsApp cuando tu pedido está listo para retirar."
+      }
+    ]
+  },
+  "swatches": {
+    "Negro": "#1B1A18",
+    "Blanco": "#F4F2EE",
+    "Arena": "#D8C7A8",
+    "Crudo": "#EAE2D2",
+    "Gris jaspeado": "#A3A09B",
+    "Gris topo": "#857B72",
+    "Verde oliva": "#66683F",
+    "Terracota": "#B1593A",
+    "Bordó": "#6B1E2A",
+    "Azul marino": "#1F2A44",
+    "Caramelo": "#A26C3A",
+    "Celeste": "#A9C6DD",
+    "Rosa viejo": "#C4968E",
+    "Floral azul": "#3E5A80",
+    "Floral terracota": "#C27A54",
+    "Rayas azules": "#2E4A7A",
+    "Rayas negras": "#2F2E2C",
+    "Surtido claro": "#DCD5C8",
+    "Surtido oscuro": "#3A3835"
+  },
+  "categories": [
+    {
+      "id": 1,
+      "name": "Remeras",
+      "slug": "remeras",
+      "parent": 0
+    },
+    {
+      "id": 2,
+      "name": "Buzos y camperas",
+      "slug": "buzos-y-camperas",
+      "parent": 0
+    },
+    {
+      "id": 3,
+      "name": "Pantalones",
+      "slug": "pantalones",
+      "parent": 0
+    },
+    {
+      "id": 4,
+      "name": "Vestidos",
+      "slug": "vestidos",
+      "parent": 0
+    },
+    {
+      "id": 5,
+      "name": "Camisas",
+      "slug": "camisas",
+      "parent": 0
+    },
+    {
+      "id": 6,
+      "name": "Accesorios",
+      "slug": "accesorios",
+      "parent": 0
+    }
+  ],
+  "products": [
+    {
+      "id": 1001,
+      "sku": "LU-RE01",
+      "name": "Remera básica de algodón",
+      "slug": "remera-basica-de-algodon",
+      "images": [],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Algodón peinado de buen gramaje: no transparenta y no se deforma con los lavados. Calce al cuerpo; si estás entre dos talles, llevá el más grande. Llevando 3 o más (mezclás colores y talles) te sale más barata cada una.",
+      "price": 26000,
+      "cost": 10900,
+      "featured": true,
+      "tags": [
+        "basicos"
+      ],
+      "priceTiers": [
+        {
+          "min_qty": 3,
+          "price": 23500
+        },
+        {
+          "min_qty": 6,
+          "price": 21900
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Blanco",
+            "Arena"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-RE01-NEG-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-RE01-NEG-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-RE01-NEG-L",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE01-NEG-XL",
+          "stock": 1
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "S"
+          },
+          "sku": "LU-RE01-BLA-S",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "M"
+          },
+          "sku": "LU-RE01-BLA-M",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "L"
+          },
+          "sku": "LU-RE01-BLA-L",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE01-BLA-XL",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "S"
+          },
+          "sku": "LU-RE01-ARE-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "M"
+          },
+          "sku": "LU-RE01-ARE-M",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "L"
+          },
+          "sku": "LU-RE01-ARE-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE01-ARE-XL",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "id": 1002,
+      "sku": "LU-RE02",
+      "name": "Remera rayada marinera",
+      "slug": "remera-rayada-marinera",
+      "images": [],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Rayas tejidas, no estampadas: no se cuartean ni se borran. Cuello bote y manga tres cuartos. Va con pantalón, con pollera y debajo de un saco.",
+      "price": 29000,
+      "cost": 12200,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Rayas azules",
+            "Rayas negras"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Rayas azules",
+            "Talle": "S"
+          },
+          "sku": "LU-RE02-RAAZ-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Rayas azules",
+            "Talle": "M"
+          },
+          "sku": "LU-RE02-RAAZ-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Rayas azules",
+            "Talle": "L"
+          },
+          "sku": "LU-RE02-RAAZ-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Rayas azules",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE02-RAAZ-XL",
+          "stock": 1
+        },
+        {
+          "options": {
+            "Color": "Rayas negras",
+            "Talle": "S"
+          },
+          "sku": "LU-RE02-RANE-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Rayas negras",
+            "Talle": "M"
+          },
+          "sku": "LU-RE02-RANE-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Rayas negras",
+            "Talle": "L"
+          },
+          "sku": "LU-RE02-RANE-L",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Rayas negras",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE02-RANE-XL",
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "id": 1003,
+      "sku": "LU-RE03",
+      "name": "Remera holgada de algodón peinado",
+      "slug": "remera-holgada-de-algodon-peinado",
+      "images": [],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Corte amplio con hombro caído. Si la querés más al cuerpo, pedí un talle menos del que usás. Algodón suave que mejora con cada lavado.",
+      "price": 31000,
+      "compareAt": 34000,
+      "cost": 13000,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Gris jaspeado",
+            "Verde oliva",
+            "Negro"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "S"
+          },
+          "sku": "LU-RE03-GRJA-S",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "M"
+          },
+          "sku": "LU-RE03-GRJA-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "L"
+          },
+          "sku": "LU-RE03-GRJA-L",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE03-GRJA-XL",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "S"
+          },
+          "sku": "LU-RE03-VEOL-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "M"
+          },
+          "sku": "LU-RE03-VEOL-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "L"
+          },
+          "sku": "LU-RE03-VEOL-L",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE03-VEOL-XL",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-RE03-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-RE03-NEG-M",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-RE03-NEG-L",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE03-NEG-XL",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "id": 1004,
+      "sku": "LU-RE04",
+      "name": "Musculosa acanalada",
+      "slug": "musculosa-acanalada",
+      "images": [],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Morley acanalado con elastano: se adapta al cuerpo y vuelve a su forma. Breteles anchos que tapan el corpiño. Desde 3 unidades, precio especial.",
+      "price": 24000,
+      "cost": 10100,
+      "tags": [
+        "basicos"
+      ],
+      "priceTiers": [
+        {
+          "min_qty": 3,
+          "price": 21500
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Blanco",
+            "Negro",
+            "Terracota"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "S"
+          },
+          "sku": "LU-RE04-BLA-S",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "M"
+          },
+          "sku": "LU-RE04-BLA-M",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "L"
+          },
+          "sku": "LU-RE04-BLA-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-RE04-NEG-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-RE04-NEG-M",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-RE04-NEG-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "S"
+          },
+          "sku": "LU-RE04-TER-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "M"
+          },
+          "sku": "LU-RE04-TER-M",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "L"
+          },
+          "sku": "LU-RE04-TER-L",
+          "stock": 5
+        }
+      ]
+    },
+    {
+      "id": 1005,
+      "sku": "LU-RE05",
+      "name": "Remera manga larga de modal",
+      "slug": "remera-manga-larga-de-modal",
+      "images": [],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Modal liviano y fresco, con caída. Sirve sola en media estación y como primera capa en invierno. No hace pelotitas.",
+      "price": 32000,
+      "cost": 13400,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Bordó"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-RE05-NEG-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-RE05-NEG-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-RE05-NEG-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE05-NEG-XL",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "S"
+          },
+          "sku": "LU-RE05-BOR-S",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "M"
+          },
+          "sku": "LU-RE05-BOR-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "L"
+          },
+          "sku": "LU-RE05-BOR-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE05-BOR-XL",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1006,
+      "sku": "LU-RE06",
+      "name": "Remera cuello alto de morley",
+      "slug": "remera-cuello-alto-de-morley",
+      "images": [],
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Polera finita para usar debajo de todo. Cuello doble que no se estira. Abriga sin hacer bulto bajo un buzo o un tapado.",
+      "price": 30000,
+      "cost": 12600,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Crudo",
+            "Gris topo"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-RE06-NEG-S",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-RE06-NEG-M",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-RE06-NEG-L",
+          "stock": 1
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE06-NEG-XL",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "S"
+          },
+          "sku": "LU-RE06-CRU-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "M"
+          },
+          "sku": "LU-RE06-CRU-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "L"
+          },
+          "sku": "LU-RE06-CRU-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE06-CRU-XL",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "S"
+          },
+          "sku": "LU-RE06-GRTO-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "M"
+          },
+          "sku": "LU-RE06-GRTO-M",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "L"
+          },
+          "sku": "LU-RE06-GRTO-L",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE06-GRTO-XL",
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "id": 1007,
+      "sku": "LU-BU01",
+      "name": "Buzo canguro de frisa",
+      "slug": "buzo-canguro-de-frisa",
+      "images": [],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Buzos y camperas",
+          "slug": "buzos-y-camperas"
+        }
+      ],
+      "shortDescription": "Frisa invisible, por dentro afelpada. Capucha con forro y bolsillo canguro. Calce amplio: si te gusta al cuerpo, pedí un talle menos.",
+      "price": 68000,
+      "cost": 28600,
+      "featured": true,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Gris jaspeado",
+            "Negro",
+            "Verde oliva"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "S"
+          },
+          "sku": "LU-BU01-GRJA-S",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "M"
+          },
+          "sku": "LU-BU01-GRJA-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "L"
+          },
+          "sku": "LU-BU01-GRJA-L",
+          "stock": 1
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "XL"
+          },
+          "sku": "LU-BU01-GRJA-XL",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-BU01-NEG-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-BU01-NEG-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-BU01-NEG-L",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-BU01-NEG-XL",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "S"
+          },
+          "sku": "LU-BU01-VEOL-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "M"
+          },
+          "sku": "LU-BU01-VEOL-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "L"
+          },
+          "sku": "LU-BU01-VEOL-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "XL"
+          },
+          "sku": "LU-BU01-VEOL-XL",
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "id": 1008,
+      "sku": "LU-BU02",
+      "name": "Buzo cuello redondo de frisa",
+      "slug": "buzo-cuello-redondo-de-frisa",
+      "images": [],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Buzos y camperas",
+          "slug": "buzos-y-camperas"
+        }
+      ],
+      "shortDescription": "El buzo de todos los días. Puños y cintura en rib para que no se estire. Lavalo del revés y te dura años.",
+      "price": 59000,
+      "compareAt": 66000,
+      "cost": 24800,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Crudo",
+            "Azul marino"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "S"
+          },
+          "sku": "LU-BU02-CRU-S",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "M"
+          },
+          "sku": "LU-BU02-CRU-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "L"
+          },
+          "sku": "LU-BU02-CRU-L",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "XL"
+          },
+          "sku": "LU-BU02-CRU-XL",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Azul marino",
+            "Talle": "S"
+          },
+          "sku": "LU-BU02-AZMA-S",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Azul marino",
+            "Talle": "M"
+          },
+          "sku": "LU-BU02-AZMA-M",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Azul marino",
+            "Talle": "L"
+          },
+          "sku": "LU-BU02-AZMA-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Azul marino",
+            "Talle": "XL"
+          },
+          "sku": "LU-BU02-AZMA-XL",
+          "stock": 5
+        }
+      ]
+    },
+    {
+      "id": 1009,
+      "sku": "LU-BU03",
+      "name": "Saco de hilo trenzado",
+      "slug": "saco-de-hilo-trenzado",
+      "images": [],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Buzos y camperas",
+          "slug": "buzos-y-camperas"
+        }
+      ],
+      "shortDescription": "Tejido trenzado con botones de madera. Abriga sin pesar y combina con todo. Lavado a mano o en programa de lana.",
+      "price": 72000,
+      "cost": 30200,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Crudo",
+            "Caramelo",
+            "Negro"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "S"
+          },
+          "sku": "LU-BU03-CRU-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "M"
+          },
+          "sku": "LU-BU03-CRU-M",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "L"
+          },
+          "sku": "LU-BU03-CRU-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "S"
+          },
+          "sku": "LU-BU03-CAR-S",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "M"
+          },
+          "sku": "LU-BU03-CAR-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "L"
+          },
+          "sku": "LU-BU03-CAR-L",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-BU03-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-BU03-NEG-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-BU03-NEG-L",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "id": 1010,
+      "sku": "LU-CA01",
+      "name": "Campera de corderoy con corderito",
+      "slug": "campera-de-corderoy-con-corderito",
+      "images": [],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Buzos y camperas",
+          "slug": "buzos-y-camperas"
+        }
+      ],
+      "shortDescription": "Corderoy grueso por fuera y corderito por dentro, cuello incluido. Abriga de verdad en pleno invierno. Calce recto, entra un buzo debajo.",
+      "price": 138000,
+      "cost": 58000,
+      "featured": true,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Caramelo",
+            "Verde oliva"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "S"
+          },
+          "sku": "LU-CA01-CAR-S",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "M"
+          },
+          "sku": "LU-CA01-CAR-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "L"
+          },
+          "sku": "LU-CA01-CAR-L",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "S"
+          },
+          "sku": "LU-CA01-VEOL-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "M"
+          },
+          "sku": "LU-CA01-VEOL-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "L"
+          },
+          "sku": "LU-CA01-VEOL-L",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1011,
+      "sku": "LU-CA02",
+      "name": "Campera inflable corta",
+      "slug": "campera-inflable-corta",
+      "images": [],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Buzos y camperas",
+          "slug": "buzos-y-camperas"
+        }
+      ],
+      "shortDescription": "Liviana, rompeviento y con capucha desmontable. Relleno que no se apelmaza. Se guarda en su propia bolsita para el viaje.",
+      "price": 125000,
+      "compareAt": 145000,
+      "cost": 52500,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Arena"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-CA02-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-CA02-NEG-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-CA02-NEG-L",
+          "stock": 1
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "S"
+          },
+          "sku": "LU-CA02-ARE-S",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "M"
+          },
+          "sku": "LU-CA02-ARE-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "L"
+          },
+          "sku": "LU-CA02-ARE-L",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "id": 1012,
+      "sku": "LU-CA03",
+      "name": "Tapado de paño largo",
+      "slug": "tapado-de-pano-largo",
+      "images": [],
+      "categories": [
+        {
+          "id": 2,
+          "name": "Buzos y camperas",
+          "slug": "buzos-y-camperas"
+        }
+      ],
+      "shortDescription": "Paño con lana, largo hasta la rodilla y forrado. Se agotó esta temporada: dejanos tu mail y te avisamos cuando vuelva.",
+      "price": 158000,
+      "cost": 66400,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Gris topo"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-CA03-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-CA03-NEG-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-CA03-NEG-L",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "S"
+          },
+          "sku": "LU-CA03-GRTO-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "M"
+          },
+          "sku": "LU-CA03-GRTO-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "L"
+          },
+          "sku": "LU-CA03-GRTO-L",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1013,
+      "sku": "LU-PA01",
+      "name": "Pantalón recto de gabardina",
+      "slug": "pantalon-recto-de-gabardina",
+      "images": [],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Tiro alto, pierna recta y gabardina con un poco de elastano. Cómodo para estar todo el día. Talles numéricos: si dudás, mirá la tabla o escribinos.",
+      "price": 56000,
+      "cost": 23500,
+      "featured": true,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Arena",
+            "Verde oliva"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "36",
+            "38",
+            "40",
+            "42",
+            "44"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "36"
+          },
+          "sku": "LU-PA01-NEG-36",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "38"
+          },
+          "sku": "LU-PA01-NEG-38",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "40"
+          },
+          "sku": "LU-PA01-NEG-40",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "42"
+          },
+          "sku": "LU-PA01-NEG-42",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "44"
+          },
+          "sku": "LU-PA01-NEG-44",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "36"
+          },
+          "sku": "LU-PA01-ARE-36",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "38"
+          },
+          "sku": "LU-PA01-ARE-38",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "40"
+          },
+          "sku": "LU-PA01-ARE-40",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "42"
+          },
+          "sku": "LU-PA01-ARE-42",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Arena",
+            "Talle": "44"
+          },
+          "sku": "LU-PA01-ARE-44",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "36"
+          },
+          "sku": "LU-PA01-VEOL-36",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "38"
+          },
+          "sku": "LU-PA01-VEOL-38",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "40"
+          },
+          "sku": "LU-PA01-VEOL-40",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "42"
+          },
+          "sku": "LU-PA01-VEOL-42",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "44"
+          },
+          "sku": "LU-PA01-VEOL-44",
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "id": 1014,
+      "sku": "LU-PA02",
+      "name": "Pantalón ancho de lino",
+      "slug": "pantalon-ancho-de-lino",
+      "images": [],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Lino con viscosa, así se arruga menos. Pierna ancha y cintura con elástico atrás. Fresco para el verano y la oficina.",
+      "price": 62000,
+      "cost": 26000,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Crudo",
+            "Negro"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "36",
+            "38",
+            "40",
+            "42",
+            "44"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "36"
+          },
+          "sku": "LU-PA02-CRU-36",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "38"
+          },
+          "sku": "LU-PA02-CRU-38",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "40"
+          },
+          "sku": "LU-PA02-CRU-40",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "42"
+          },
+          "sku": "LU-PA02-CRU-42",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "44"
+          },
+          "sku": "LU-PA02-CRU-44",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "36"
+          },
+          "sku": "LU-PA02-NEG-36",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "38"
+          },
+          "sku": "LU-PA02-NEG-38",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "40"
+          },
+          "sku": "LU-PA02-NEG-40",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "42"
+          },
+          "sku": "LU-PA02-NEG-42",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "44"
+          },
+          "sku": "LU-PA02-NEG-44",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1015,
+      "sku": "LU-PA03",
+      "name": "Pantalón de corderoy",
+      "slug": "pantalon-de-corderoy",
+      "images": [],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Corderoy fino, tiro alto y pierna recta. Abriga más que la gabardina y no se marca en las rodillas.",
+      "price": 64000,
+      "compareAt": 72000,
+      "cost": 26900,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Caramelo",
+            "Bordó"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "36",
+            "38",
+            "40",
+            "42",
+            "44"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "36"
+          },
+          "sku": "LU-PA03-CAR-36",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "38"
+          },
+          "sku": "LU-PA03-CAR-38",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "40"
+          },
+          "sku": "LU-PA03-CAR-40",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "42"
+          },
+          "sku": "LU-PA03-CAR-42",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "44"
+          },
+          "sku": "LU-PA03-CAR-44",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "36"
+          },
+          "sku": "LU-PA03-BOR-36",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "38"
+          },
+          "sku": "LU-PA03-BOR-38",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "40"
+          },
+          "sku": "LU-PA03-BOR-40",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "42"
+          },
+          "sku": "LU-PA03-BOR-42",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "44"
+          },
+          "sku": "LU-PA03-BOR-44",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1016,
+      "sku": "LU-PA04",
+      "name": "Pantalón de frisa con puño",
+      "slug": "pantalon-de-frisa-con-puno",
+      "images": [],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Frisa afelpada, cintura con cordón y puño en el tobillo. Para casa, para viajar o para salir con zapatillas. Hace juego con el buzo canguro.",
+      "price": 48000,
+      "cost": 20200,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Gris jaspeado",
+            "Negro"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "S"
+          },
+          "sku": "LU-PA04-GRJA-S",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "M"
+          },
+          "sku": "LU-PA04-GRJA-M",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "L"
+          },
+          "sku": "LU-PA04-GRJA-L",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Gris jaspeado",
+            "Talle": "XL"
+          },
+          "sku": "LU-PA04-GRJA-XL",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-PA04-NEG-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-PA04-NEG-M",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-PA04-NEG-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-PA04-NEG-XL",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1017,
+      "sku": "LU-PA05",
+      "name": "Pantalón sastrero de pinzas",
+      "slug": "pantalon-sastrero-de-pinzas",
+      "images": [],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Pinzas adelante, pierna amplia y largo al piso con taco bajo. Tela que no brilla ni hace pelotitas. Va con remera o con camisa.",
+      "price": 69000,
+      "cost": 29000,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Gris topo"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "36",
+            "38",
+            "40",
+            "42",
+            "44"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "36"
+          },
+          "sku": "LU-PA05-NEG-36",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "38"
+          },
+          "sku": "LU-PA05-NEG-38",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "40"
+          },
+          "sku": "LU-PA05-NEG-40",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "42"
+          },
+          "sku": "LU-PA05-NEG-42",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "44"
+          },
+          "sku": "LU-PA05-NEG-44",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "36"
+          },
+          "sku": "LU-PA05-GRTO-36",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "38"
+          },
+          "sku": "LU-PA05-GRTO-38",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "40"
+          },
+          "sku": "LU-PA05-GRTO-40",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "42"
+          },
+          "sku": "LU-PA05-GRTO-42",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "44"
+          },
+          "sku": "LU-PA05-GRTO-44",
+          "stock": 3
+        }
+      ]
+    },
+    {
+      "id": 1018,
+      "sku": "LU-PA06",
+      "name": "Pantalón palazzo de fibrana",
+      "slug": "pantalon-palazzo-de-fibrana",
+      "images": [],
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Fibrana fresca con mucha caída y cintura elástica completa. Se lava en lavarropas y no necesita plancha.",
+      "price": 52000,
+      "cost": 21800,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Terracota",
+            "Floral azul"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-PA06-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-PA06-NEG-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-PA06-NEG-L",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-PA06-NEG-XL",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "S"
+          },
+          "sku": "LU-PA06-TER-S",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "M"
+          },
+          "sku": "LU-PA06-TER-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "L"
+          },
+          "sku": "LU-PA06-TER-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Terracota",
+            "Talle": "XL"
+          },
+          "sku": "LU-PA06-TER-XL",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "S"
+          },
+          "sku": "LU-PA06-FLAZ-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "M"
+          },
+          "sku": "LU-PA06-FLAZ-M",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "L"
+          },
+          "sku": "LU-PA06-FLAZ-L",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "XL"
+          },
+          "sku": "LU-PA06-FLAZ-XL",
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "id": 1019,
+      "sku": "LU-VE01",
+      "name": "Vestido camisero de lino",
+      "slug": "vestido-camisero-de-lino",
+      "images": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Vestidos",
+          "slug": "vestidos"
+        }
+      ],
+      "shortDescription": "Largo midi, botones hasta abajo y cinto de la misma tela. Se usa cerrado o abierto como saco liviano. Lino con viscosa que se arruga poco.",
+      "price": 89000,
+      "cost": 37400,
+      "featured": true,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Crudo",
+            "Negro"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "S"
+          },
+          "sku": "LU-VE01-CRU-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "M"
+          },
+          "sku": "LU-VE01-CRU-M",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "L"
+          },
+          "sku": "LU-VE01-CRU-L",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-VE01-NEG-S",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-VE01-NEG-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-VE01-NEG-L",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1020,
+      "sku": "LU-VE02",
+      "name": "Vestido midi de fibrana estampado",
+      "slug": "vestido-midi-de-fibrana-estampado",
+      "images": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Vestidos",
+          "slug": "vestidos"
+        }
+      ],
+      "shortDescription": "Escote en V, manga corta con volado y falda con vuelo. Fibrana estampada que no transparenta. Para el día y para un casamiento de día.",
+      "price": 72000,
+      "compareAt": 82000,
+      "cost": 30200,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Floral azul",
+            "Floral terracota"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "S"
+          },
+          "sku": "LU-VE02-FLAZ-S",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "M"
+          },
+          "sku": "LU-VE02-FLAZ-M",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Floral azul",
+            "Talle": "L"
+          },
+          "sku": "LU-VE02-FLAZ-L",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Floral terracota",
+            "Talle": "S"
+          },
+          "sku": "LU-VE02-FLTE-S",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Floral terracota",
+            "Talle": "M"
+          },
+          "sku": "LU-VE02-FLTE-M",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Floral terracota",
+            "Talle": "L"
+          },
+          "sku": "LU-VE02-FLTE-L",
+          "stock": 7
+        }
+      ]
+    },
+    {
+      "id": 1021,
+      "sku": "LU-VE03",
+      "name": "Vestido corto de morley",
+      "slug": "vestido-corto-de-morley",
+      "images": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Vestidos",
+          "slug": "vestidos"
+        }
+      ],
+      "shortDescription": "Al cuerpo, manga larga y largo arriba de la rodilla. Con botas en invierno y con zapatillas en primavera.",
+      "price": 62000,
+      "cost": 26000,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Bordó"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-VE03-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-VE03-NEG-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-VE03-NEG-L",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "S"
+          },
+          "sku": "LU-VE03-BOR-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "M"
+          },
+          "sku": "LU-VE03-BOR-M",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Bordó",
+            "Talle": "L"
+          },
+          "sku": "LU-VE03-BOR-L",
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "id": 1022,
+      "sku": "LU-VE04",
+      "name": "Vestido largo con breteles",
+      "slug": "vestido-largo-con-breteles",
+      "images": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Vestidos",
+          "slug": "vestidos"
+        }
+      ],
+      "shortDescription": "Satén mate, corte al bies y breteles regulables. Largo al tobillo. Para fiestas y eventos; si medís menos de 1,60 m, consultanos el largo.",
+      "price": 94000,
+      "cost": 39500,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Verde oliva"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-VE04-NEG-S",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-VE04-NEG-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-VE04-NEG-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "S"
+          },
+          "sku": "LU-VE04-VEOL-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "M"
+          },
+          "sku": "LU-VE04-VEOL-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Verde oliva",
+            "Talle": "L"
+          },
+          "sku": "LU-VE04-VEOL-L",
+          "stock": 5
+        }
+      ]
+    },
+    {
+      "id": 1023,
+      "sku": "LU-VE05",
+      "name": "Vestido de punto acanalado",
+      "slug": "vestido-de-punto-acanalado",
+      "images": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "Vestidos",
+          "slug": "vestidos"
+        }
+      ],
+      "shortDescription": "Tejido acanalado abrigado, cuello alto y largo midi. Marca la silueta sin apretar. Ideal con botas de caña alta.",
+      "price": 78000,
+      "cost": 32800,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Gris topo",
+            "Caramelo"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "S"
+          },
+          "sku": "LU-VE05-GRTO-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "M"
+          },
+          "sku": "LU-VE05-GRTO-M",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Gris topo",
+            "Talle": "L"
+          },
+          "sku": "LU-VE05-GRTO-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "S"
+          },
+          "sku": "LU-VE05-CAR-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "M"
+          },
+          "sku": "LU-VE05-CAR-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Caramelo",
+            "Talle": "L"
+          },
+          "sku": "LU-VE05-CAR-L",
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "id": 1024,
+      "sku": "LU-CM01",
+      "name": "Camisa de lino holgada",
+      "slug": "camisa-de-lino-holgada",
+      "images": [],
+      "categories": [
+        {
+          "id": 5,
+          "name": "Camisas",
+          "slug": "camisas"
+        }
+      ],
+      "shortDescription": "Corte amplio y largo a la cadera. Se usa abierta sobre una musculosa o anudada en la cintura. Lino con viscosa, fresca y fácil de planchar.",
+      "price": 58000,
+      "cost": 24400,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Blanco",
+            "Crudo",
+            "Celeste"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "S"
+          },
+          "sku": "LU-CM01-BLA-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "M"
+          },
+          "sku": "LU-CM01-BLA-M",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "L"
+          },
+          "sku": "LU-CM01-BLA-L",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM01-BLA-XL",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "S"
+          },
+          "sku": "LU-CM01-CRU-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "M"
+          },
+          "sku": "LU-CM01-CRU-M",
+          "stock": 1
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "L"
+          },
+          "sku": "LU-CM01-CRU-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Crudo",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM01-CRU-XL",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "S"
+          },
+          "sku": "LU-CM01-CEL-S",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "M"
+          },
+          "sku": "LU-CM01-CEL-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "L"
+          },
+          "sku": "LU-CM01-CEL-L",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM01-CEL-XL",
+          "stock": 3
+        }
+      ]
+    },
+    {
+      "id": 1025,
+      "sku": "LU-CM02",
+      "name": "Camisa de poplín clásica",
+      "slug": "camisa-de-poplin-clasica",
+      "images": [],
+      "categories": [
+        {
+          "id": 5,
+          "name": "Camisas",
+          "slug": "camisas"
+        }
+      ],
+      "shortDescription": "Poplín de algodón que no transparenta. Cuello firme y puños con dos botones. La que resuelve la oficina y la reunión.",
+      "price": 52000,
+      "cost": 21800,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Blanco",
+            "Celeste"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "S"
+          },
+          "sku": "LU-CM02-BLA-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "M"
+          },
+          "sku": "LU-CM02-BLA-M",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "L"
+          },
+          "sku": "LU-CM02-BLA-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Blanco",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM02-BLA-XL",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "S"
+          },
+          "sku": "LU-CM02-CEL-S",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "M"
+          },
+          "sku": "LU-CM02-CEL-M",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "L"
+          },
+          "sku": "LU-CM02-CEL-L",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Celeste",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM02-CEL-XL",
+          "stock": 1
+        }
+      ]
+    },
+    {
+      "id": 1026,
+      "sku": "LU-CM03",
+      "name": "Blusa de fibrana con volados",
+      "slug": "blusa-de-fibrana-con-volados",
+      "images": [],
+      "categories": [
+        {
+          "id": 5,
+          "name": "Camisas",
+          "slug": "camisas"
+        }
+      ],
+      "shortDescription": "Escote redondo con lazo y volados en los puños. Fibrana suave que no se pega al cuerpo. Va por dentro o por fuera del pantalón.",
+      "price": 49000,
+      "cost": 20600,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Floral terracota"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-CM03-NEG-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-CM03-NEG-M",
+          "stock": 7
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-CM03-NEG-L",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Floral terracota",
+            "Talle": "S"
+          },
+          "sku": "LU-CM03-FLTE-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Floral terracota",
+            "Talle": "M"
+          },
+          "sku": "LU-CM03-FLTE-M",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Floral terracota",
+            "Talle": "L"
+          },
+          "sku": "LU-CM03-FLTE-L",
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "id": 1027,
+      "sku": "LU-CM04",
+      "name": "Camisa de gasa con lazo",
+      "slug": "camisa-de-gasa-con-lazo",
+      "images": [],
+      "categories": [
+        {
+          "id": 5,
+          "name": "Camisas",
+          "slug": "camisas"
+        }
+      ],
+      "shortDescription": "Gasa liviana con lazo al cuello que se ata como quieras. Trae musculosa interior para que no transparente.",
+      "price": 55000,
+      "cost": 23100,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro",
+            "Rosa viejo"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-CM04-NEG-S",
+          "stock": 0
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-CM04-NEG-M",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-CM04-NEG-L",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM04-NEG-XL",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Rosa viejo",
+            "Talle": "S"
+          },
+          "sku": "LU-CM04-ROVI-S",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Rosa viejo",
+            "Talle": "M"
+          },
+          "sku": "LU-CM04-ROVI-M",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Rosa viejo",
+            "Talle": "L"
+          },
+          "sku": "LU-CM04-ROVI-L",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Rosa viejo",
+            "Talle": "XL"
+          },
+          "sku": "LU-CM04-ROVI-XL",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "id": 1028,
+      "sku": "LU-AC01",
+      "name": "Pañuelo de seda estampado",
+      "slug": "panuelo-de-seda-estampado",
+      "images": [],
+      "categories": [
+        {
+          "id": 6,
+          "name": "Accesorios",
+          "slug": "accesorios"
+        }
+      ],
+      "shortDescription": "Pañuelo cuadrado de 70 × 70 cm. Al cuello, en el pelo o atado a la cartera. Viene en caja, listo para regalar.",
+      "price": 22000,
+      "cost": 9200,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Floral azul",
+            "Floral terracota"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Floral azul"
+          },
+          "sku": "LU-AC01-FLAZ",
+          "stock": 8
+        },
+        {
+          "options": {
+            "Color": "Floral terracota"
+          },
+          "sku": "LU-AC01-FLTE",
+          "stock": 1
+        }
+      ]
+    },
+    {
+      "id": 1029,
+      "sku": "LU-AC02",
+      "name": "Bufanda tejida de lana",
+      "slug": "bufanda-tejida-de-lana",
+      "images": [],
+      "categories": [
+        {
+          "id": 6,
+          "name": "Accesorios",
+          "slug": "accesorios"
+        }
+      ],
+      "shortDescription": "Lana con acrílico, larga y suave: no pica. Tejida en punto inglés. Hace juego con el saco de hilo.",
+      "price": 28000,
+      "cost": 11800,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Crudo",
+            "Gris topo",
+            "Bordó"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Crudo"
+          },
+          "sku": "LU-AC02-CRU",
+          "stock": 6
+        },
+        {
+          "options": {
+            "Color": "Gris topo"
+          },
+          "sku": "LU-AC02-GRTO",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Bordó"
+          },
+          "sku": "LU-AC02-BOR",
+          "stock": 5
+        }
+      ]
+    },
+    {
+      "id": 1030,
+      "sku": "LU-AC03",
+      "name": "Medias de algodón por 3 pares",
+      "slug": "medias-de-algodon-por-3-pares",
+      "images": [],
+      "categories": [
+        {
+          "id": 6,
+          "name": "Accesorios",
+          "slug": "accesorios"
+        }
+      ],
+      "shortDescription": "Tres pares de medias de algodón con puño suave que no marca. Talle único del 35 al 40. Llevando 3 paquetes te sale más barato cada uno.",
+      "price": 12000,
+      "cost": 5000,
+      "priceTiers": [
+        {
+          "min_qty": 3,
+          "price": 10500
+        }
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Surtido claro",
+            "Surtido oscuro"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Surtido claro"
+          },
+          "sku": "LU-AC03-SUCL",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Surtido oscuro"
+          },
+          "sku": "LU-AC03-SUOS",
+          "stock": 1
+        }
+      ]
+    }
+  ]
+}

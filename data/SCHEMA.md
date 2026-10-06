@@ -42,3 +42,41 @@
 - `supplierWebPrice` = el "Precio web" que publica el proveedor (solo referencia, no se usa).
 - El payload incluye `pricing: { webSurcharge, markup, cashDiscount }`.
 - Productos variables: usar `price_range.min_amount` como base si `price` no sirve; el front muestra "desde".
+
+## Campos opcionales: catálogo propio con talles y colores
+
+`scripts/seed-from-json.mts` acepta, además del formato DAZ, productos con variantes propias (lo usa `data/demo-ropa.json`, ver `docs/DEMO-ROPA.md`). Todo es opcional y retrocompatible: un producto sin `variants` se importa como siempre (una variante "Default" con `prices.web.final`).
+
+```json
+{
+  "source": "demo:luna-indumentaria",
+  "swatches": { "Negro": "#1B1A18", "Arena": "#D8C7A8" },
+  "store": { "...": "sólo lo lee scripts/seed-demo-ropa.mts" },
+  "categories": [ { "id": 1, "name": "Remeras", "slug": "remeras", "parent": 0 } ],
+  "products": [
+    {
+      "id": 1001,
+      "sku": "LU-RE01",
+      "name": "Remera básica de algodón",
+      "slug": "remera-basica-de-algodon",
+      "images": [],
+      "categories": [ { "id": 1, "name": "Remeras", "slug": "remeras" } ],
+      "shortDescription": "texto plano",
+      "price": 26000,
+      "compareAt": 30000,
+      "cost": 10900,
+      "featured": true,
+      "tags": ["basicos"],
+      "priceTiers": [ { "min_qty": 3, "price": 23500 } ],
+      "options": [ { "name": "Color", "values": ["Negro", "Arena"] }, { "name": "Talle", "values": ["S", "M"] } ],
+      "variants": [ { "options": { "Color": "Negro", "Talle": "M" }, "sku": "LU-RE01-NEG-M", "stock": 2 } ]
+    }
+  ]
+}
+```
+
+- `price` (venta), `compareAt` (precio tachado, mayor a `price`) y `cost` pisan a `prices`; cada variante puede traer su propio `price` y `compareAt`.
+- `variants[].options` tiene una entrada por cada opción del producto, con valores de `options[].values`. El seed valida cada producto con el mismo schema del panel (`productSchema`): combinaciones, SKUs y tramos inválidos frenan la importación.
+- `priceTiers`: precios por cantidad (migración 0021 y plan con `pricing.tiers`); si la base los rechaza, el producto se importa sin tramos y se avisa.
+- `swatches`: color (valor de la opción "Color") → hex. Con `--placeholders`, cada producto sin `images` recibe una imagen de ejemplo SVG por color, y cada variante muestra la de su color.
+- Re-importar no pisa el stock de variantes existentes ni sus imágenes.

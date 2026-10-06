@@ -73,21 +73,63 @@ export function welcomeEmail(d: WelcomeEmailData): EmailContent {
 // Prueba de Pro
 // ---------------------------------------------------------------------------
 
-/** Qué queda limitado en Free (según `PLAN_DEFAULTS`, espejo de la tabla `plans`). */
-export function freePlanRestrictions(): string[] {
+/** Uso real de la tienda para el aviso de fin de prueba (`null` = no se pudo contar). */
+export interface StoreUsage {
+  /** Productos no archivados (lo que cuenta contra el límite del plan). */
+  products: number | null;
+  /** Miembros activos del equipo (el dueño incluido). */
+  members: number | null;
+}
+
+/**
+ * Qué queda limitado en Free (según `PLAN_DEFAULTS`, espejo de la tabla
+ * `plans`). Con `usage`, las primeras líneas hablan de lo que la tienda usa
+ * de verdad. Lo que excede Free no se borra ni se oculta: queda bloqueado
+ * para crear (los productos cargados siguen a la venta).
+ */
+export function freePlanRestrictions(usage?: StoreUsage): string[] {
   const free = PLAN_DEFAULTS.free;
-  return [
-    `Hasta ${free.limits.products} productos y ${free.limits.images_per_product} fotos por producto.`,
+  const maxProducts = free.limits.products;
+  const maxStaff = free.limits.staff;
+  const out: string[] = [];
+  const products = usage?.products;
+  if (typeof products === "number" && maxProducts !== null) {
+    out.push(
+      products > maxProducts
+        ? `Tenés ${plural(products, "producto", "productos")}: en Free el tope es ${maxProducts}. Los que ya están siguen a la venta, pero no podés crear más.`
+        : `Tenés ${plural(products, "producto", "productos")}: en Free entran hasta ${maxProducts}.`,
+    );
+    out.push(`Hasta ${free.limits.images_per_product} fotos por producto.`);
+  } else {
+    out.push(
+      maxProducts === null
+        ? `Hasta ${free.limits.images_per_product} fotos por producto.`
+        : `Hasta ${maxProducts} productos y ${free.limits.images_per_product} fotos por producto.`,
+    );
+  }
+  const members = usage?.members;
+  if (typeof members === "number" && maxStaff !== null && members > maxStaff) {
+    out.push(`Tenés ${plural(members, "usuario", "usuarios")}: Free es para ${maxStaff} y no podés invitar a nadie más.`);
+  }
+  const replies = !free.features["orders.replies"];
+  const print = !free.features["orders.print"];
+  if (replies && print) out.push(`Responder y los remitos para imprimir, desde ${fromPlan("orders.replies")}.`);
+  else if (replies) out.push(`Responder, desde ${fromPlan("orders.replies")}.`);
+  else if (print) out.push(`Los remitos para imprimir, desde ${fromPlan("orders.print")}.`);
+  out.push(
     free.limits.pages === 1 ? "Una sola página: la de inicio." : `Hasta ${free.limits.pages} páginas.`,
     "Sin promociones programadas ni cambios masivos de precios.",
     "Sin importar catálogos desde planillas ni desde otra web.",
     "Sin dominio propio, equipo, auditoría ni Google Analytics / Meta Pixel.",
-  ];
+  );
+  return out;
 }
 
 export interface TrialEndingEmailData extends AccountEmailBase {
   trialEndsAt: string;
   daysLeft: number;
+  /** Uso real de la tienda: "Tenés 84 productos: en Free el tope es 25…". */
+  usage?: StoreUsage | null;
 }
 
 export function trialEndingEmail(d: TrialEndingEmailData): EmailContent {
@@ -110,7 +152,7 @@ export function trialEndingEmail(d: TrialEndingEmailData): EmailContent {
         ],
       },
       { t: "section", title: "Qué cambia en Free" },
-      { t: "list", items: freePlanRestrictions() },
+      { t: "list", items: freePlanRestrictions(d.usage ?? undefined) },
       { t: "button", href: `${d.platformUrl}/admin/plan`, label: "Elegir un plan" },
     ],
     footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
@@ -268,6 +310,76 @@ export function shareStoreEmail(d: ShareStoreEmailData): EmailContent {
           ],
           muted: true,
         },
+    ],
+    footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
+  });
+}
+
+/** Rubros de ropa (`stores.onboarding.kind`): el mensaje para la clienta habla de talle y color. */
+const APPAREL_KINDS: readonly string[] = ["moda", "marca"];
+
+/** ¿El rubro de la tienda es ropa? (para el texto listo de la prueba de fuego). */
+export function isApparelKind(kind: unknown): boolean {
+  return typeof kind === "string" && APPAREL_KINDS.includes(kind);
+}
+
+/** Texto listo para mandarle a una clienta habitual (prueba de fuego). */
+export function firstOrderInvite(storeUrl: string, apparel: boolean): string {
+  const how = apparel ? "Elegís talle y color y te llega el total." : "Elegís lo que querés y te llega el total.";
+  return `Ahora podés pedir directo acá: ${storeUrl}. ${how}`;
+}
+
+export interface FirstOrderEmailData extends AccountEmailBase {
+  /** Productos activos (publicados) de la tienda. */
+  activeProducts: number;
+  /** Rubro de ropa: el mensaje dice "talle y color". */
+  apparel?: boolean;
+}
+
+/**
+ * Día 3 con productos y sin pedido real (activation-notices.ts): la prueba
+ * de fuego. Que una clienta habitual haga su próximo pedido por la tienda,
+ * con el texto listo y lo que el dueño va a ver en el panel cuando llegue.
+ */
+export function firstOrderEmail(d: FirstOrderEmailData): EmailContent {
+  const host = d.storeUrl.replace(/^https?:\/\//, "");
+  const products = Math.max(1, Math.round(d.activeProducts));
+  const subject = "La prueba de fuego: pedile a una clienta que haga su próximo pedido por acá";
+  return renderEmail({
+    subject,
+    preheader: `${d.storeName} ya está publicada en ${host}. Falta el primer pedido de una clienta de verdad.`,
+    brand: platformBrand(d.platformUrl),
+    blocks: [
+      { t: "heading", text: "La prueba de fuego" },
+      {
+        t: "p",
+        content: [
+          hello(d.ownerName),
+          ` ${d.storeName} ya está publicada en `,
+          { href: d.storeUrl, label: host },
+          " con ",
+          { b: plural(products, "producto activo", "productos activos") },
+          ". Falta lo que más importa: que una clienta haga un pedido por ahí.",
+        ],
+      },
+      { t: "section", title: "Mandale esto a una clienta habitual" },
+      { t: "box", blocks: [{ t: "p", content: firstOrderInvite(d.storeUrl, d.apparel ?? false) }] },
+      { t: "p", content: "Elegí a alguien que te compra seguido: su próximo pedido, en vez de llegar por chat, entra por la tienda." },
+      { t: "section", title: "Qué vas a ver cuando llegue" },
+      {
+        t: "list",
+        items: [
+          [{ b: "Inicio" }, ": «1 por confirmar», arriba de todo."],
+          "El pedido con número, lo que eligió, el total y cómo quiere pagar.",
+          "«Confirmar pago» cuando te transfiere y «Avisar por WhatsApp» desde el mismo pedido.",
+        ],
+      },
+      { t: "button", href: `${d.platformUrl}/admin/compartir`, label: "Ver el link y los mensajes" },
+      d.supportEmail && {
+        t: "p",
+        content: "Si algo no sale como esperabas, respondé este mail y lo vemos.",
+        muted: true,
+      },
     ],
     footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
   });
