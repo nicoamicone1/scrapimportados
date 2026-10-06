@@ -10,7 +10,7 @@ import { SAMPLE_ORDER } from "./Hero";
 /*
  * Escenas del panel que todavía no tienen captura (docs/PRODUCT-THESIS.md
  * §4.2 y §4.3): "Qué pasó esta semana" y "Respuestas listas". Mocks
- * tipográficos con los datos de la tienda de ejemplo (Taller Luna), sin JS
+ * tipográficos con los datos de la tienda de ejemplo (Tienda Luna), sin JS
  * ni botones de verdad: son ilustraciones, así que van `aria-hidden` y el
  * texto de al lado cuenta lo mismo.
  */
@@ -20,9 +20,9 @@ const CARD = "rounded-[24px] bg-eco-paper p-5 shadow-[0_0_0_1px_var(--eco-line),
 /** "Qué pasó esta semana": el número y, abajo, por qué. */
 export function WeekScene() {
   const lines = [
-    { k: "Producto", text: "Tazas vendió 31 % menos." },
-    { k: "Precio", text: "Subiste los precios de Tazas un 12 % el martes." },
-    { k: "Stock", text: "El set de 4 tazas de gres se quedó sin stock el jueves." },
+    { k: "Producto", text: "Pantalones vendió 31 % menos." },
+    { k: "Precio", text: "Subiste los precios de Pantalones un 12 % el martes." },
+    { k: "Stock", text: "El pantalón wide beige en 38 se quedó sin stock el jueves." },
   ];
   return (
     <div aria-hidden className={cn(CARD, "lp-tilt-l")}>
@@ -47,26 +47,27 @@ export function WeekScene() {
 
 /** "Respuestas listas": buscás el producto y copiás la respuesta armada. */
 export function RepliesScene({ storeAddress }: { storeAddress: string }) {
-  const [jarra] = SAMPLE_ORDER.items;
+  const [remera] = SAMPLE_ORDER.items;
   return (
     <div aria-hidden className={cn(CARD, "lp-tilt-r")}>
       <p className="flex h-11 items-center gap-2 rounded-[12px] border-2 border-eco-ink px-3 text-[15px] text-eco-ink">
         <Search className="size-4 shrink-0 text-eco-text-muted" strokeWidth={1.75} />
-        jarra
+        remera negra
         <span className="h-5 w-[2px] bg-eco-azul" />
       </p>
       <div className="mt-3 flex min-w-0 items-center gap-3 rounded-[14px] bg-eco-niebla px-3 py-2.5 text-[13px] text-eco-ink">
         <span className="size-9 shrink-0 rounded-[10px] bg-eco-durazno" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold">{jarra.name}</span>
+          <span className="block truncate font-semibold">{remera.name}</span>
           <span className="tnum block text-eco-text-muted">
-            Azul: 3 · Verde: sin stock · {formatMoney(jarra.total)}
+            S: 5 · M: 3 · L: sin stock · {formatMoney(remera.total)}
           </span>
         </span>
       </div>
       <div className="eco-bubble-r mt-4 ml-auto w-[94%] bg-eco-durazno px-3.5 py-2.5 text-[13px] leading-snug text-eco-ink [--eco-bubble-r:16px]">
-        Sí, tenemos la jarra de cerámica en azul. Sale <span className="tnum">{formatMoney(jarra.total)}</span>, con{" "}
-        {SAMPLE_ORDER.transferPercent} % menos por transferencia. Podés comprarla acá: <span className="break-all">{storeAddress}/jarra</span>
+        Sí, tenemos {remera.name} en M. Nos quedan las últimas 3 unidades. Sale <span className="tnum">{formatMoney(remera.total)}</span>, con{" "}
+        {SAMPLE_ORDER.transferPercent} % menos pagando por transferencia. Podés comprarlo acá:{" "}
+        <span className="break-all">{storeAddress}/producto/remera-oversize-negra</span>
       </div>
       <p className="mt-3 flex justify-end">
         <span className="inline-flex h-9 items-center gap-2 rounded-[10px] bg-eco-ink px-3.5 text-[13px] font-medium text-white">

@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import type { AdminContext } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { getOnboardingStatus, type OnboardingStatus } from "@/lib/onboarding";
-import { storeDisplayHost, storeUrl } from "@/lib/tenant/urls";
+import { storeUrl } from "@/lib/tenant/urls";
 
 import { DrawnCheck } from "./DrawnCheck";
 import { DismissOnboarding, ShareStoreLink } from "./OnboardingActions";
@@ -17,7 +17,9 @@ import { ProgressArc } from "./ProgressArc";
  * pomelo con el único botón pomelo de la pantalla ("empezá por acá"); los
  * demás pasos quedan como una lista corta, y los hechos llevan un check que se
  * dibuja. Se tilda sola mirando la base (`src/lib/onboarding.ts`); "compartí
- * tu link" se marca al copiarlo. Devuelve `null` cuando está completo u oculto.
+ * tu link" se marca al copiarlo, y cuando es el siguiente muestra el texto
+ * listo para la historia (con el link). Devuelve `null` cuando está completo
+ * u oculto.
  */
 export async function OnboardingChecklist({
   ctx,
@@ -65,18 +67,18 @@ export async function OnboardingChecklist({
                 Empezá por acá · paso {nextIndex + 1} de {total}
               </p>
               <h3 className="mt-1.5 text-[17px] leading-6 font-semibold text-adm-fg">{next.title}</h3>
-              <p className="mt-1 max-w-[46ch] text-[13px] text-adm-fg">
-                {next.id === "shared" ? (
-                  <>
-                    Tu tienda está en <span className="font-semibold">{storeDisplayHost(ctx.store)}</span>. {next.description}
-                  </>
-                ) : (
-                  next.description
-                )}
-              </p>
+              <p className="mt-1 max-w-[46ch] text-[13px] text-adm-fg">{next.description}</p>
+              {next.shareText ? (
+                <figure className="mt-3 max-w-[46ch]">
+                  <figcaption className="sr-only">Texto para la historia</figcaption>
+                  <blockquote className="eco-bubble bg-adm-surface px-3.5 py-2.5 text-[13px] leading-relaxed break-words text-adm-fg shadow-adm-card [--eco-bubble-r:14px]">
+                    {next.shareText}
+                  </blockquote>
+                </figure>
+              ) : null}
               <div className="mt-4">
                 {next.id === "shared" ? (
-                  <ShareStoreLink url={url} storeName={ctx.store.name} moreHref={next.href} primary />
+                  <ShareStoreLink url={url} storeName={ctx.store.name} shareText={next.shareText} moreHref={next.href} primary />
                 ) : (
                   <ButtonLink href={next.href} variant="accent" size="lg" iconRight={<ArrowRight className="dsh-go" />} className="group">
                     {next.cta}

@@ -11,16 +11,20 @@ import { Button, buttonClass } from "@/components/ui/Button";
 
 /**
  * "Compartí tu link": copiar o mandar por WhatsApp (y tildar el paso), más
- * el acceso a `/admin/compartir` (QR y mensajes listos).
+ * el acceso a `/admin/compartir` (QR y mensajes listos). Con `shareText`
+ * (el texto para la historia), se copia y se manda ese texto, que ya trae el
+ * link; sin él, el link solo.
  */
 export function ShareStoreLink({
   url,
   storeName,
+  shareText,
   moreHref,
   primary = true,
 }: {
   url: string;
   storeName: string;
+  shareText?: string;
   moreHref?: string;
   /** Es el próximo paso: botón pomelo (máximo uno por pantalla, BRAND §5.3). */
   primary?: boolean;
@@ -35,20 +39,20 @@ export function ShareStoreLink({
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copiado.");
+      await navigator.clipboard.writeText(shareText ?? url);
+      toast.success(shareText ? "Texto copiado. Pegalo en tu historia o en tu estado." : "Link copiado.");
       mark();
     } catch {
-      toast.error("No se pudo copiar. Seleccioná el link y copialo a mano.");
+      toast.error(shareText ? "No se pudo copiar. Seleccioná el texto y copialo a mano." : "No se pudo copiar. Seleccioná el link y copialo a mano.");
     }
   };
 
-  const whatsapp = `https://wa.me/?text=${encodeURIComponent(`Mirá mi tienda online, ${storeName}: ${url}`)}`;
+  const whatsapp = `https://wa.me/?text=${encodeURIComponent(shareText ?? `Mirá mi tienda online, ${storeName}: ${url}`)}`;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button size={primary ? "lg" : "sm"} variant={primary ? "accent" : "secondary"} icon={<Copy />} onClick={copy} loading={pending}>
-        Copiar link
+        {shareText ? "Copiar texto" : "Copiar link"}
       </Button>
       <a
         href={whatsapp}

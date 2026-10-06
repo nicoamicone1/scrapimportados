@@ -5,7 +5,7 @@ import { STORE_KINDS } from "@/lib/tenant/kinds";
 import { PRESETS } from "@/lib/theme";
 
 import { pickFaq, platformFaq } from "./faq";
-import { exampleStoreAddress, formatLegalDate, platformWhatsappHref } from "./site";
+import { demoStoreSlug, exampleStoreAddress, formatLegalDate, platformWhatsappHref } from "./site";
 import { glyphSubset, presetMinPlan, presetSpecimens, SPECIMEN_PRODUCTS, specimenFontsHref } from "./specimens";
 
 const plans = PLAN_CODES.map((code) => ({ code, name: PLAN_NAMES[code], features: PLAN_DEFAULTS[code].features }));
@@ -24,6 +24,14 @@ describe("site", () => {
     expect(platformWhatsappHref("5493816173548", "Hola, ¿qué tal?")).toBe(
       "https://wa.me/5493816173548?text=Hola%2C%20%C2%BFqu%C3%A9%20tal%3F",
     );
+  });
+
+  it("toma el slug de la tienda demo de la env, con `demo` por defecto", () => {
+    expect(demoStoreSlug(undefined)).toBe("demo");
+    expect(demoStoreSlug("")).toBe("demo");
+    expect(demoStoreSlug(" Demo-Ropa ")).toBe("demo-ropa");
+    expect(demoStoreSlug("../admin")).toBe("demo");
+    expect(demoStoreSlug("-ropa")).toBe("demo");
   });
 
   it("muestra la dirección de ejemplo según el modo de tiendas", () => {

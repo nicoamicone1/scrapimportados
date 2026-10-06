@@ -11,18 +11,28 @@ import { CTA_ARROW, CTA_PRIMARY, H1, TEXT_LINK } from "../brand";
 import { BrowserFrame, PhoneFrame } from "./Frames";
 import { SHOTS } from "./shots";
 
-/** El pedido de ejemplo de toda la landing (#1042): mismos números en el chat, el recibo y el checkout. */
+/**
+ * El pedido de ejemplo de toda la landing (#1042): mismos números en el chat,
+ * el recibo, el antes/después, las respuestas listas y el checkout. Es de
+ * ropa (docs/gtm/PLAN-GTM.md §3): cada ítem con su talle, como lo arma la
+ * tienda (`variantTitle` entre paréntesis en el mensaje de WhatsApp).
+ */
 export const SAMPLE_ORDER = {
   number: 1042,
-  store: "Taller Luna",
+  store: "Tienda Luna",
   customer: "Rosa Quiroga",
   items: [
-    { name: "Jarra de cerámica esmaltada 1 L", qty: 1, total: 18900 },
-    { name: "Set 4 tazas de gres", qty: 1, total: 26500 },
+    { name: "Remera oversize negra", variantTitle: "M", qty: 1, total: 18900 },
+    { name: "Pantalón wide beige", variantTitle: "38", qty: 1, total: 26500 },
   ],
   transferPercent: 10,
   shipping: { label: "Envío CABA", price: 3200, line: "Envío a Av. Corrientes 4120, CABA" },
 };
+
+/** "Remera oversize negra · M" (nombre y talle, como en el recibo). */
+export function sampleItemLabel(item: { name: string; variantTitle?: string | null }): string {
+  return item.variantTitle ? `${item.name} · ${item.variantTitle}` : item.name;
+}
 
 export function sampleTotals() {
   const subtotal = SAMPLE_ORDER.items.reduce((a, i) => a + i.total, 0);
@@ -33,11 +43,12 @@ export function sampleTotals() {
 const i = (n: number) => ({ "--i": n }) as CSSProperties;
 
 /**
- * Hero: el dolor (vender por WhatsApp e Instagram con planilla y memoria) y
- * la promesa (orden), no la lista de módulos (docs/PRODUCT-THESIS.md §4.4).
- * La bajada cuenta el circuito: pedido en la tienda → pago → pedido
- * registrado → "Hoy" en el panel. UNA acción de marca con la reversión de
- * riesgo pegada, y a la derecha el producto funcionando: la
+ * Hero: el dolor concreto de quien vende ropa por Instagram y WhatsApp
+ * (preguntar talle por talle) y el resultado (el pedido llega armado), no la
+ * lista de módulos (docs/gtm/PLAN-GTM.md §6). La bajada cuenta el circuito:
+ * la clienta elige talle y color → paga → el pedido llega a WhatsApp → el
+ * stock baja solo. UNA acción de marca (la carga del catálogo, /empezar) con
+ * la reversión de riesgo pegada, y a la derecha el producto funcionando: la
  * tienda real (captura) en un marco con curva y, encima, el celular del
  * comerciante con el pedido entrando por WhatsApp (el mensaje lo arma
  * `buildOrderMessage`, el mismo que usa la tienda). Todo sobre un arco
@@ -62,31 +73,32 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
         <div className="min-w-0">
           <p className="eco-pop inline-flex items-center gap-2 rounded-full bg-eco-paper py-1.5 pr-3.5 pl-2 text-[13px] font-medium text-eco-ink shadow-[0_0_0_1px_var(--eco-line)]">
             <span className="eco-bubble size-5 bg-eco-pomelo [--eco-bubble-r:8px]" aria-hidden />
-            Hecho para vender en Argentina · Sin comisión por venta
+            Para marcas que venden por Instagram y WhatsApp
           </p>
-          <h1 className={cn(H1, "eco-pop mt-6 max-w-[12ch] xl:text-[80px]")} style={i(1)}>
-            Vendés por WhatsApp e Instagram. Ahora, con{" "}
+          <h1 className={cn(H1, "eco-pop mt-6 max-w-[13ch] xl:text-[80px]")} style={i(1)}>
+            Dejá de preguntar «¿qué talle?». El pedido te llega{" "}
             <span className="lp-mark">
-              orden
+              armado
               <svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden>
                 <path d="M3 14 C 50 4, 140 2, 197 11" pathLength={1} fill="none" stroke="var(--eco-pomelo)" strokeWidth="7" strokeLinecap="round" className="eco-draw" />
               </svg>
             </span>
             .
           </h1>
-          <p className="eco-pop mt-7 max-w-[36ch] text-[19px] leading-[1.35] text-eco-ink sm:text-[21px]" style={i(2)}>
-            Tu cliente arma el pedido en tu tienda y paga como siempre, por transferencia o Mercado Pago. A vos te llega registrado y, al
-            abrir el panel, sabés qué tenés que hacer hoy.
+          <p className="eco-pop mt-7 max-w-[38ch] text-[19px] leading-[1.35] text-eco-ink sm:text-[21px]" style={i(2)}>
+            Tu clienta elige talle y color en tu tienda, paga por transferencia o Mercado Pago, y a vos te llega el pedido a WhatsApp con
+            todo. El stock baja solo. Sin comisión por venta.
           </p>
           <div className="eco-pop mt-9 flex flex-wrap items-center gap-x-6 gap-y-3" style={i(3)}>
-            <Link href={startHref} className={cn(CTA_PRIMARY, "h-14 pl-7 text-[16px]")}>
+            {/* El label largo entra en dos líneas en el celular (la pastilla crece, no se desborda). */}
+            <Link href={startHref} className={cn(CTA_PRIMARY, "h-auto min-h-14 max-w-full py-2 pl-7 text-left text-[16px] leading-snug")}>
               {startLabel}
-              <span className={cn(CTA_ARROW, "size-10")}>
+              <span className={cn(CTA_ARROW, "size-10 shrink-0")}>
                 <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
               </span>
             </Link>
             <Link href={demoHref} className={cn(TEXT_LINK, "inline-flex min-h-11 items-center text-[15px]")}>
-              Ver una tienda funcionando
+              Ver una tienda de ropa funcionando
             </Link>
           </div>
           <ul className="eco-pop mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[14px] text-eco-ink" style={i(4)}>

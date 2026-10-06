@@ -86,6 +86,16 @@ export function storyMessage(f: ShareFacts): string {
   return lines.join("\n");
 }
 
+/**
+ * Texto para la primera historia (o estado) después de crear la tienda: el
+ * paso "Compartí el link" de los primeros pasos (docs/gtm/PLAN-GTM.md §10).
+ * Con variantes habla de talle y color; sin ellas, de lo que se elige.
+ */
+export function orderHereMessage(url: string, opts: { variants?: boolean } = {}): string {
+  const how = opts.variants === false ? "Elegís lo que querés" : "Elegís talle y color";
+  return `Ahora podés pedir directo acá: ${url}. ${how} y te llega el total.`;
+}
+
 export function shareMessages(f: ShareFacts): ShareMessage[] {
   return [
     {

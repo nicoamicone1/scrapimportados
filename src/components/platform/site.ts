@@ -1,4 +1,4 @@
-import { isFallbackMode, storeUrl } from "@/lib/tenant/urls";
+import { isFallbackMode, storeHref, storeUrl } from "@/lib/tenant/urls";
 
 /*
  * Datos públicos del sitio de la plataforma (landing, planes, legales,
@@ -54,4 +54,22 @@ export function exampleStoreAddress(slug = "tu-tienda", rootDomain?: string): st
 /** `true` cuando las tiendas viven en subdominio propio (`<slug>.<dominio>`). */
 export function storesUseSubdomains(rootDomain?: string): boolean {
   return !isFallbackMode(rootDomain);
+}
+
+/** Slug por defecto de la tienda demo de la landing. */
+export const DEFAULT_DEMO_STORE_SLUG = "demo";
+
+/**
+ * Slug de la tienda demo que muestra el sitio ("Ver una tienda de ropa
+ * funcionando", "Tienda demo" del header y del pie): `NEXT_PUBLIC_DEMO_STORE_SLUG`
+ * o `demo` si falta o no es un slug válido (minúsculas, números y guiones).
+ */
+export function demoStoreSlug(value: string | undefined = process.env.NEXT_PUBLIC_DEMO_STORE_SLUG): string {
+  const slug = (value ?? "").trim().toLowerCase();
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(slug) ? slug : DEFAULT_DEMO_STORE_SLUG;
+}
+
+/** Link a la tienda demo (relativo en modo fallback, absoluto con subdominios). */
+export function demoStoreHref(rootDomain?: string): string {
+  return storeHref({ slug: demoStoreSlug() }, "/", rootDomain);
 }

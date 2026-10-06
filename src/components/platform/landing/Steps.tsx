@@ -28,15 +28,15 @@ function CreateVisual({ address }: { address: string }) {
     <StepVisual className="bg-eco-paper shadow-[0_0_0_1px_var(--eco-line)]">
       <p className="text-[12px] font-semibold text-eco-text-muted">Nombre de tu tienda</p>
       <p className={cn(DISPLAY, "mt-1.5 flex h-12 items-center rounded-[12px] border-2 border-eco-ink px-3.5 text-[19px] text-eco-ink")}>
-        Taller Luna
+        Tienda Luna
         <span className="ml-0.5 h-6 w-[2px] animate-pulse bg-eco-azul" />
       </p>
       <div className="mt-4 flex flex-wrap gap-1.5 text-[12px] font-medium">
-        <span className="rounded-full border border-eco-line px-2.5 py-1 text-eco-text-muted">Moda</span>
         <span className="inline-flex items-center gap-1 rounded-full bg-eco-ink px-2.5 py-1 text-white">
           <Check className="size-3 text-eco-pomelo" strokeWidth={2.5} />
-          Artesanías
+          Moda
         </span>
+        <span className="rounded-full border border-eco-line px-2.5 py-1 text-eco-text-muted">Artesanías</span>
         <span className="rounded-full border border-eco-line px-2.5 py-1 text-eco-text-muted">Librería</span>
       </div>
       <p className="eco-reveal mt-5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-eco-azul-soft px-3 py-1.5 text-[12px] font-medium text-eco-azul-dark">
@@ -48,10 +48,10 @@ function CreateVisual({ address }: { address: string }) {
 }
 
 const CSV_ROWS = [
-  { name: "Jarra de cerámica 1 L", price: 18900, stock: "14" },
-  { name: "Set 4 tazas de gres", price: 26500, stock: "3" },
-  { name: "Fuente ovalada 32 cm", price: 21700, stock: "8" },
-  { name: "Mate de calabaza", price: 12800, stock: "22" },
+  { name: "Remera oversize negra · M", price: 18900, stock: "14" },
+  { name: "Pantalón wide beige · 38", price: 26500, stock: "3" },
+  { name: "Buzo de frisa gris · L", price: 32400, stock: "8" },
+  { name: "Vestido de lino · S", price: 29800, stock: "5" },
 ];
 
 function CatalogVisual() {
@@ -88,8 +88,8 @@ function ShareVisual({ address }: { address: string }) {
           <span className="block size-full rounded-full border-2 border-eco-ink bg-eco-durazno" />
         </span>
         <span className="min-w-0 leading-tight">
-          <span className="block text-[13px] font-semibold text-white">tallerluna</span>
-          <span className="block text-[12px] text-eco-bruma">Cerámica hecha a mano · Tucumán</span>
+          <span className="block text-[13px] font-semibold text-white">tiendaluna</span>
+          <span className="block text-[12px] text-eco-bruma">Ropa de mujer · Tucumán</span>
         </span>
       </div>
       <p className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full bg-eco-ink-3 px-3 py-1.5 text-[12px] font-medium text-eco-azul-light">
@@ -97,7 +97,7 @@ function ShareVisual({ address }: { address: string }) {
         <span className="truncate">{address}</span>
       </p>
       <div className="eco-reveal eco-bubble mt-4 w-[88%] bg-eco-paper px-3 py-2 text-[12px] leading-snug text-eco-ink [--eco-bubble-r:16px]">
-        <span className="font-semibold">Pedido #1043</span> en Taller Luna
+        <span className="font-semibold">Pedido #1043</span> en Tienda Luna
         <span className="tnum block text-eco-text-muted">2 productos · Total: {formatMoney(31400)}</span>
       </div>
       <span className="eco-reveal absolute right-5 bottom-5 flex size-8 items-center justify-center rounded-full bg-eco-pomelo text-[12px] font-bold text-eco-ink">1</span>

@@ -30,20 +30,20 @@ interface BeforeStep {
 }
 
 function beforeSteps(total: number): BeforeStep[] {
-  const [jarra, tazas] = SAMPLE_ORDER.items;
+  const [remera, pantalon] = SAMPLE_ORDER.items;
   return [
-    { tool: "Instagram", who: "client", text: "Hola, ¿precio de la jarra?" },
-    { tool: "WhatsApp", who: "client", text: "¿La tenés en azul? ¿Cuánto sale el envío a Almagro?" },
+    { tool: "Instagram", who: "client", text: "Hola, ¿precio de la remera negra?" },
+    { tool: "WhatsApp", who: "client", text: "¿La tenés en M? ¿Y el pantalón beige en 38? ¿Cuánto sale el envío a Almagro?" },
     {
       tool: "Calculadora",
       who: "you",
       numeric: true,
-      text: `${formatMoney(jarra.total)} + ${formatMoney(tazas.total)} − ${SAMPLE_ORDER.transferPercent} % + ${formatMoney(SAMPLE_ORDER.shipping.price)} = ?`,
+      text: `${formatMoney(remera.total)} + ${formatMoney(pantalon.total)} − ${SAMPLE_ORDER.transferPercent} % + ${formatMoney(SAMPLE_ORDER.shipping.price)} = ?`,
     },
     { tool: "WhatsApp", who: "you", text: `Son ${formatMoney(total)}. Te paso el alias.` },
     { tool: "App del banco", who: "you", text: "¿Ya entró la transferencia de Rosa?", attachment: "comprobante.jpg" },
-    { tool: "Planilla", who: "you", numeric: true, text: "Fila 214 · Rosa Q. · jarra azul + tazas · pagó" },
-    { tool: "Notas del celular", who: "you", text: "Mandar a Rosa: Corrientes 4120" },
+    { tool: "Planilla", who: "you", numeric: true, text: "Fila 214 · Rosa Q. · remera M + pantalón 38 · pagó" },
+    { tool: "Notas del celular", who: "you", text: "¿Me queda otra negra en M? Mandar a Rosa: Corrientes 4120" },
     { tool: "Tu memoria", who: "you", text: "¿Qué tenía que mandar hoy?" },
   ];
 }
@@ -119,7 +119,7 @@ function After({ total }: { total: number }) {
       </div>
       <ol className="mt-6 space-y-5">
         <AfterStep label="Tu tienda">
-          Rosa ve el precio, el stock en azul y el envío a Almagro, y arma el pedido sola.
+          Rosa elige la remera en M y el pantalón en 38, ve qué talles hay y cuánto sale el envío a Almagro, y arma el pedido sola.
         </AfterStep>
         <AfterStep label="Pedido registrado">
           <span className="eco-bubble mt-0.5 mb-2 inline-flex max-w-full flex-wrap items-baseline gap-x-2 bg-eco-paper px-3 py-1.5 text-[13px] text-eco-ink [--eco-bubble-r:14px]">
@@ -130,8 +130,8 @@ function After({ total }: { total: number }) {
           <span className="block">Te llega a WhatsApp armado y queda en tu panel, con número.</span>
         </AfterStep>
         <AfterStep label="Cobro">
-          Paga por transferencia con {SAMPLE_ORDER.transferPercent} % menos o con Mercado Pago en cuotas. Mientras tanto, el stock queda
-          reservado.
+          Paga por transferencia con {SAMPLE_ORDER.transferPercent} % menos o con Mercado Pago en cuotas. Mientras tanto, esos talles quedan
+          reservados: el stock baja solo.
         </AfterStep>
         <AfterStep label="Hoy">
           <span className="mt-1 block rounded-[18px] bg-eco-paper p-3.5 text-eco-ink">

@@ -12,7 +12,7 @@ import { pickFaq, platformFaq } from "@/components/platform/faq";
 import { BeforeAfter } from "@/components/platform/landing/BeforeAfter";
 import { CommissionCalc } from "@/components/platform/landing/CommissionCalc";
 import { BrowserFrame, PhoneShot } from "@/components/platform/landing/Frames";
-import { Hero, SAMPLE_ORDER, sampleTotals } from "@/components/platform/landing/Hero";
+import { Hero, sampleItemLabel, SAMPLE_ORDER, sampleTotals } from "@/components/platform/landing/Hero";
 import { CatalogDemo, CheckoutDemo, PricesDemo, ZonesDemo } from "@/components/platform/landing/PanelDemos";
 import { RepliesScene, WeekScene } from "@/components/platform/landing/PanelScenes";
 import { SHOTS } from "@/components/platform/landing/shots";
@@ -21,7 +21,7 @@ import { StoreDemo, type DemoKind } from "@/components/platform/landing/StoreDem
 import { PlanCards, PlanCtaLink } from "@/components/platform/PlanCards";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { availability, landingPlanLines, type PlanLike } from "@/components/platform/plan-notes";
-import { exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site";
+import { demoStoreHref, demoStoreSlug, exampleStoreAddress, PLATFORM_EMAIL } from "@/components/platform/site";
 import { presetSpecimens, SPECIMEN_SCENES, specimenPlanLabel } from "@/components/platform/specimens";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSession } from "@/lib/auth";
@@ -29,13 +29,13 @@ import { billingEnabled } from "@/lib/billing/mercadopago";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { listPublicPlans, type PublicPlan } from "@/lib/plans/catalog";
-import { platformOrigin, storeHref } from "@/lib/tenant/urls";
+import { platformOrigin } from "@/lib/tenant/urls";
 import { PRESET_LIST } from "@/lib/theme";
 import { APP_NAME } from "@/lib/version";
 
-const TITLE = "Ecommy · Vendés por WhatsApp e Instagram, con orden";
+const TITLE = "Ecommy · El pedido te llega armado, con talle y color";
 const DESCRIPTION =
-  "Para comercios argentinos que venden por WhatsApp e Instagram: tu tienda, cada pedido registrado y un panel que te dice qué hacer hoy. Cobrás por transferencia o con tu Mercado Pago, sin comisión por venta. 14 días de Pro gratis.";
+  "Para marcas que venden por Instagram y WhatsApp: tu clienta elige talle y color, paga por transferencia o Mercado Pago, y el pedido te llega armado a WhatsApp. Sin comisión por venta.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -65,7 +65,7 @@ function steps(plans: readonly PlanLike[]): [StepCopy, StepCopy, StepCopy] {
     },
     {
       title: "Cargás el catálogo",
-      text: `A mano, con fotos, talles, colores y stock por variante. O desde tu planilla en CSV (desde ${csvPlan}), o importando tu tienda de WooCommerce o Shopify (${webPlan}, incluido en la prueba).`,
+      text: `A mano, con fotos, talles, colores y stock por variante. O desde tu planilla en CSV (desde ${csvPlan}), o importando tu tienda de WooCommerce o Shopify (${webPlan}, incluido en la prueba). O nos pasás tu Instagram y tu lista de precios, y te cargamos los 30 productos que más vendés.`,
       time: "lo que tardes en revisarlo",
     },
     {
@@ -251,10 +251,14 @@ function InkMark({ size }: { size: number }) {
 export default async function LandingPage() {
   const [{ user }, plans] = await Promise.all([getSession(), plansOrEmpty()]);
   const signedIn = Boolean(user);
+  // Registro directo: lo usan la demo de estilos y las tarjetas de planes.
   const start = signedIn ? "/app/nueva" : "/registro";
-  const startLabel = signedIn ? "Crear una tienda" : "Crear tu tienda gratis";
-  const demo = storeHref({ slug: "demo" });
-  const luna = exampleStoreAddress("taller-luna");
+  // La acción de marca de la landing (hero y cierre): sin sesión, la carga de
+  // catálogo de /empezar (docs/gtm/PLAN-GTM.md §6); con sesión, otra tienda.
+  const offer = signedIn ? "/app/nueva" : "/empezar";
+  const offerLabel = signedIn ? "Crear una tienda" : "Cargamos tu catálogo y lo probás 14 días";
+  const demo = demoStoreHref();
+  const luna = exampleStoreAddress("tienda-luna");
 
   const specimens = presetSpecimens();
   const kinds: DemoKind[] = specimens.map((s) => ({
@@ -323,7 +327,7 @@ export default async function LandingPage() {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <LazyFontSheets />
 
-      <Hero startHref={start} startLabel={startLabel} demoHref={demo} demoAddress={exampleStoreAddress("demo")} orderUrl={`https://${luna}/pedido/8f3k2`} />
+      <Hero startHref={offer} startLabel={offerLabel} demoHref={demo} demoAddress={exampleStoreAddress(demoStoreSlug())} orderUrl={`https://${luna}/pedido/8f3k2`} />
 
       {/* Antes / Con Ecommy: la operación, no la tienda ------------------ */}
       <Sheet id="antes" label="antes-t" className="bg-eco-pomelo-soft [--lp-pb:96px] md:[--lp-pb:128px]">
@@ -363,7 +367,7 @@ export default async function LandingPage() {
             </p>
           </div>
           <div className="mt-12">
-            <StoreDemo kinds={kinds} initialKind="artesanias" addressTemplate={exampleStoreAddress("__slug__")} startHref={start} />
+            <StoreDemo kinds={kinds} initialKind="moda" addressTemplate={exampleStoreAddress("__slug__")} startHref={start} />
           </div>
         </div>
       </Sheet>
@@ -375,7 +379,7 @@ export default async function LandingPage() {
             <div>
               <p className={EYEBROW}>Cómo funciona</p>
               <h2 id="como-funciona-t" className={cn(H2, "mt-3 max-w-[16ch]")}>
-                De cero a tu primer pedido, en una tarde.
+                Tres pasos y el link en tu bio.
               </h2>
             </div>
             <p className="max-w-[38ch] text-[15px] leading-relaxed text-eco-text-muted">
@@ -423,7 +427,7 @@ export default async function LandingPage() {
                       {SAMPLE_ORDER.items.map((item) => (
                         <tr key={item.name}>
                           <th scope="row" className="py-1 pr-3 text-left font-normal">
-                            {item.qty} × {item.name}
+                            {item.qty} × {sampleItemLabel(item)}
                           </th>
                           <td className="py-1 text-right whitespace-nowrap">{formatMoney(item.total)}</td>
                         </tr>
@@ -707,15 +711,15 @@ export default async function LandingPage() {
           <InkMark size={136} />
           <div>
             <h2 id="cta-t" className={cn(H2, "max-w-[17ch] text-[40px] leading-[0.98] sm:text-[60px] lg:text-[76px]")}>
-              La tienda la armás hoy. Mañana abrís el panel y sabés qué hacer.
+              {signedIn ? "Otra marca, otra tienda. El mismo panel." : "Pasanos tu Instagram. Te devolvemos la tienda con tus productos."}
             </h2>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
-                href={start}
-                className="group inline-flex h-14 items-center gap-3 rounded-full bg-eco-ink pr-2 pl-7 text-[16px] font-semibold text-white transition-[background-color,transform] duration-[240ms] ease-eco-out hover:bg-eco-ink-2 active:scale-[0.98]"
+                href={offer}
+                className="group inline-flex min-h-14 max-w-full items-center gap-3 rounded-full bg-eco-ink py-2 pr-2 pl-7 text-left text-[16px] leading-snug font-semibold text-white transition-[background-color,transform] duration-[240ms] ease-eco-out hover:bg-eco-ink-2 active:scale-[0.98]"
               >
-                {startLabel}
-                <span className="inline-flex size-10 items-center justify-center rounded-full bg-eco-pomelo text-eco-ink transition-transform duration-[420ms] ease-eco-spring group-hover:translate-x-1 group-hover:-rotate-45">
+                {offerLabel}
+                <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-eco-pomelo text-eco-ink transition-transform duration-[420ms] ease-eco-spring group-hover:translate-x-1 group-hover:-rotate-45">
                   <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
                 </span>
               </Link>

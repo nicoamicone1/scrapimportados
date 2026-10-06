@@ -3,12 +3,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
-import { storeHref } from "@/lib/tenant/urls";
 import { APP_NAME, APP_VERSION } from "@/lib/version";
 
 import { BrandLockup, BrandMark, CTA_ARROW, CTA_PRIMARY, DISPLAY } from "./brand";
 import { MobileMenu, ScrollAwareHeader } from "./PlatformChromeClient";
-import { PLATFORM_EMAIL } from "./site";
+import { demoStoreHref, PLATFORM_EMAIL } from "./site";
 
 /** Tile de marca (SVG). Se re-exporta para quien ya lo importaba de acá (AppHeader). */
 export { BrandMark };
@@ -19,7 +18,7 @@ function navLinks() {
     { href: "/#probar", label: "Estilos" },
     { href: "/planes", label: "Planes" },
     { href: "/ayuda", label: "Ayuda" },
-    { href: storeHref({ slug: "demo" }), label: "Tienda demo" },
+    { href: demoStoreHref(), label: "Tienda demo" },
   ];
 }
 
@@ -42,7 +41,9 @@ function HeaderLockup() {
  */
 export function PlatformHeader({ signedIn }: { signedIn: boolean }) {
   const links = navLinks();
-  const start = signedIn ? "/app/nueva" : "/registro";
+  // Sin sesión, el CTA lleva a la carga de catálogo (/empezar); el registro
+  // directo queda a un link desde ahí. Con sesión, a crear otra tienda.
+  const start = signedIn ? "/app/nueva" : "/empezar";
   const account = signedIn ? { href: "/app", label: "Mis tiendas" } : { href: "/login", label: "Ingresar" };
   return (
     <ScrollAwareHeader className="lp-header sticky top-0 z-40 px-3 pt-2 sm:px-4 sm:pt-3">
@@ -72,12 +73,12 @@ export function PlatformHeader({ signedIn }: { signedIn: boolean }) {
             {account.label}
           </Link>
           <Link href={start} className={cn(CTA_PRIMARY, "h-11 pl-4 text-[14px] max-[359px]:pr-4 sm:pl-5")}>
-            <span className="whitespace-nowrap">{signedIn ? "Crear tienda" : <>Crear tienda<span className="max-sm:hidden"> gratis</span></>}</span>
+            <span className="whitespace-nowrap">{signedIn ? "Crear tienda" : "Empezar"}</span>
             <span className={cn(CTA_ARROW, "size-7 max-[359px]:hidden")}>
               <ArrowRight className="size-3.5" strokeWidth={2} aria-hidden />
             </span>
           </Link>
-          <MobileMenu links={links} account={account} cta={{ href: start, label: signedIn ? "Crear una tienda" : "Crear tu tienda gratis" }} />
+          <MobileMenu links={links} account={account} cta={{ href: start, label: signedIn ? "Crear una tienda" : "Empezar" }} />
         </div>
       </div>
     </ScrollAwareHeader>
@@ -137,7 +138,7 @@ export function PlatformFooter({ signedIn = false, overlap = false }: { signedIn
             { href: "/#como-funciona", label: "Cómo funciona" },
             { href: "/#probar", label: "Estilos por rubro" },
             { href: "/planes", label: "Planes" },
-            { href: storeHref({ slug: "demo" }), label: "Tienda demo" },
+            { href: demoStoreHref(), label: "Tienda demo" },
           ]}
         />
         <FooterLinks

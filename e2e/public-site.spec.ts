@@ -7,7 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
  */
 
 /** Rutas del sitemap de la plataforma (src/app/sitemap.ts). */
-const STATIC_ROUTES = ["/", "/planes", "/contacto", "/terminos", "/privacidad", "/ayuda", "/guias"];
+const STATIC_ROUTES = ["/", "/empezar", "/planes", "/contacto", "/terminos", "/privacidad", "/ayuda", "/guias"];
 /** Muestra de artículos (slugs de src/content/ayuda y src/content/guias). */
 const ARTICLE_ROUTES = [
   "/ayuda/importar-csv",

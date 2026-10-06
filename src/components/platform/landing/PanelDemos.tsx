@@ -70,10 +70,10 @@ function Segmented<T extends string>({
 /* ------------------------------------------------------------------ */
 
 const PRICE_ROWS = [
-  { name: "Jarra de cerámica esmaltada 1 L", price: 17500 },
-  { name: "Set 4 tazas de gres", price: 24540 },
-  { name: "Fuente ovalada 32 cm", price: 20090 },
-  { name: "Mate de calabaza forrado", price: 11850 },
+  { name: "Remera oversize negra", price: 17500 },
+  { name: "Pantalón wide beige", price: 24540 },
+  { name: "Buzo de frisa gris", price: 30000 },
+  { name: "Vestido de lino", price: 27590 },
 ];
 type Rounding = "none" | "10" | "100";
 const ROUNDING: { value: Rounding; label: string }[] = [
@@ -143,7 +143,7 @@ export function PricesDemo() {
             ]}
           />
           <span className="text-[13px] text-adm-fg-muted">en</span>
-          <span className="inline-flex h-9 items-center rounded-adm border border-adm-input-border px-3 text-[13px] font-medium">Cocina y mesa · 64 variantes</span>
+          <span className="inline-flex h-9 items-center rounded-adm border border-adm-input-border px-3 text-[13px] font-medium">Ropa de mujer · 64 variantes</span>
         </div>
         <div>
           <div className="flex items-baseline justify-between">
@@ -352,8 +352,8 @@ export function CatalogDemo() {
 /* ------------------------------------------------------------------ */
 
 const CART = [
-  { name: "Jarra de cerámica esmaltada 1 L", qty: 1, total: 18900 },
-  { name: "Set 4 tazas de gres", qty: 1, total: 26500 },
+  { name: "Remera oversize negra", variantTitle: "M", qty: 1, total: 18900 },
+  { name: "Pantalón wide beige", variantTitle: "38", qty: 1, total: 26500 },
 ];
 const DELIVERY = {
   ship: { label: "Envío a domicilio", detail: "CABA · 24 a 48 h", price: 3200, line: "Envío a Av. Corrientes 4120, CABA" },

@@ -6,6 +6,7 @@ import {
   displayUrl,
   freeShippingThreshold,
   INSTAGRAM_BIO_MAX,
+  orderHereMessage,
   productMessage,
   replyMessage,
   shareMessages,
@@ -83,5 +84,10 @@ describe("mensajes para compartir", () => {
     expect(categoryMessage({ name: "Mates", storeName: "Taller Luna", url: "https://x.app/categoria/mates" })).toBe(
       "Mirá Mates en Taller Luna: https://x.app/categoria/mates",
     );
+  });
+
+  it("orderHereMessage: el texto de la primera historia, con talle y color si hay variantes", () => {
+    expect(orderHereMessage(base.url)).toBe("Ahora podés pedir directo acá: https://taller-luna.ecommy.app. Elegís talle y color y te llega el total.");
+    expect(orderHereMessage(base.url, { variants: false })).toBe("Ahora podés pedir directo acá: https://taller-luna.ecommy.app. Elegís lo que querés y te llega el total.");
   });
 });
