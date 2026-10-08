@@ -6,14 +6,14 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.10.0";
+export const APP_VERSION = "0.11.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
  * con `app_meta.schema_version` (Configuración muestra un aviso si la base
  * está atrasada). Subila junto con la migración que la actualiza.
  */
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 
 export interface ChangelogEntry {
   version: string;
@@ -28,6 +28,26 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.11.0",
+    date: "2026-10-08",
+    title: "Pasar la tienda a otra persona",
+    sections: {
+      added: [
+        "Usuarios › «Pasar la tienda»: la tienda queda a nombre de otra persona con todo lo cargado. Si ya está en el equipo pasa al instante; si no, le llega un link por mail (vence en 7 días) para aceptarla con su cuenta o creándola. Vos elegís si seguís como administrador o salís del equipo.",
+        "Antes de confirmar ves qué pasa: quién queda a cargo, qué pasa con vos, la prueba de Pro, el cobro con Mercado Pago, los datos de cobro que hay que revisar y quién más sigue en el equipo.",
+        "La primera vez que una tienda cambia de dueño, si nunca se pagó un plan, quien la recibe arranca 14 días de Pro gratis.",
+        "Mails al nuevo dueño: «ya está a tu nombre» o el link para recibirla, con lo que conviene revisar.",
+        "Ayuda: «Pasar la tienda a otra persona».",
+      ],
+      changed: [
+        "Usuarios marca quién tiene la tienda «A su nombre». A esa persona nadie le puede cambiar el rol, desactivarla ni sacarla del equipo: primero tiene que pasar la tienda.",
+        "Al pasar la tienda se desconecta el cobro con tarjeta de Mercado Pago (la cuenta conectada es del dueño anterior). Con débito automático del plan vigente no se puede pasar hasta cancelar la renovación.",
+        "Recibir una tienda respeta el máximo de 3 tiendas a tu nombre por cuenta.",
+      ],
+      fixed: [],
+    },
+  },
   {
     version: "0.10.0",
     date: "2026-10-05",
