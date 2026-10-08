@@ -4,8 +4,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requirePermission } from "@/lib/admin/require";
+import { parseTransferResult, transferError, trialAfterTransfer } from "@/lib/admin/transfer";
+import { loadTransferPanel } from "@/lib/admin/users";
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
 import { logAudit } from "@/lib/audit";
+import { notifyStoreTransferOffer, notifyStoreTransferred } from "@/lib/email/notify";
 import { requireAdmin, ROLE_LABELS } from "@/lib/auth";
 import { assertFeature } from "@/lib/plans";
 import { assertUsage } from "@/lib/plans/server";
@@ -15,14 +18,18 @@ import { createPublicClient } from "@/lib/supabase/server";
  * Equipo de la tienda activa (store_members) y "Mi cuenta". Gestionar el
  * equipo es sólo del dueño (permiso `users.manage`; además la RLS de
  * store_members sólo deja escribir al dueño y el trigger
- * `store_members_guard_owner` impide dejar la tienda sin dueño o cambiarse
- * el propio rol). Sumar gente depende del plan (`team.members` + límite `staff`).
+ * `store_members_guard_owner` impide dejar la tienda sin dueño, cambiarse
+ * el propio rol o sacarle el rol de dueño al titular). Sumar gente depende
+ * del plan (`team.members` + límite `staff`). Pasar la tienda a otra persona
+ * (cambio de titular) es sólo del titular: ver `transferStore`.
  */
 
 const idSchema = z.string().uuid("Usuario inválido.");
 const assignableRole = z.enum(["owner", "admin", "staff"], { errorMap: () => ({ message: "Elegí un rol." }) });
 
 function dbError(message: string): string | null {
+  const transfer = transferError(message);
+  if (transfer) return transfer;
   if (/al menos un dueño/i.test(message)) return "La tienda tiene que tener al menos un dueño activo.";
   if (/propio rol|desactivar tu cuenta/i.test(message)) return "No podés cambiar tu propio rol ni desactivar tu cuenta.";
   if (/ya es parte del equipo/i.test(message)) return "Esa persona ya es parte del equipo.";
@@ -175,6 +182,78 @@ export async function revokeInvite(input: { id: string }): Promise<ActionResult>
     if (data) {
       await logAudit(ctx, { action: "user.invite_revoke", entity: "store_invite", entityId: parsed.data.id, summary: `Anuló la invitación de ${data.email}` });
     }
+    return ok();
+  });
+}
+
+// ---------------------------------------------------------------------
+// Pasar la tienda a otra persona (migración 0024)
+// ---------------------------------------------------------------------
+
+const transferSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Ingresá un email válido."),
+  keepPrevious: z.boolean(),
+});
+
+export type TransferStoreResult =
+  | { status: "transferred"; email: string; trialEndsAt: string | null; leftTeam: boolean }
+  | { status: "pending"; email: string; token: string; expiresAt: string };
+
+/**
+ * Pasa la tienda: si el email es de alguien del equipo, queda a su nombre
+ * ya; si no, crea un link de 7 días (`/invitacion/tienda/<token>`) que se
+ * manda por mail y se puede copiar. La auditoría la escribe la base.
+ */
+export async function transferStore(input: { email: string; keepPrevious: boolean }): Promise<ActionResult<TransferStoreResult>> {
+  return runAction(async () => {
+    const ctx = await requirePermission("users.manage");
+    const parsed = transferSchema.safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    const { email, keepPrevious } = parsed.data;
+    const panel = await loadTransferPanel(ctx);
+    if (!panel) return fail("Falta actualizar la base de datos para pasar tiendas (migración 0024).");
+    if (!panel.canTransfer) return fail("Sólo quien tiene la tienda a su nombre puede pasarla.");
+
+    // Si el anterior se queda y la prueba no arranca, el equipo suma una persona: respeta el límite del plan.
+    // (profiles por RLS sólo muestra al equipo: si no aparece, no es miembro.)
+    const trial = trialAfterTransfer(panel.subscription, { alreadyTransferred: panel.alreadyTransferred });
+    if (keepPrevious && panel.titularId && !trial) {
+      const { data: target } = await ctx.supabase.from("profiles").select("id").eq("email", email).maybeSingle();
+      const { data: member } = target
+        ? await ctx.supabase.from("store_members").select("is_active").eq("store_id", ctx.store.id).eq("user_id", target.id).maybeSingle()
+        : { data: null };
+      if (!member?.is_active) await assertUsage(ctx, "staff");
+    }
+
+    const { data, error } = await ctx.supabase.rpc("transfer_store", { p_store_id: ctx.store.id, p_email: email, p_keep_previous: keepPrevious });
+    if (error) return fail(dbError(error.message) ?? error.message);
+    const res = parseTransferResult(data);
+    if (!res) return fail("No pudimos pasar la tienda. Probá de nuevo.");
+
+    const fromName = ctx.profile.name?.trim() || ctx.user.email || "El dueño de la tienda";
+    const store = { slug: ctx.store.slug, name: ctx.store.name, custom_domain: ctx.store.custom_domain, custom_domain_verified: ctx.store.custom_domain_verified };
+    if (res.status === "transferred") {
+      notifyStoreTransferred({ transferId: res.id, store, to: email, fromName, trialEndsAt: res.trialEndsAt });
+      return ok<TransferStoreResult>({ status: "transferred", email, trialEndsAt: res.trialEndsAt, leftTeam: panel.actorIsTitular && !keepPrevious });
+    }
+    notifyStoreTransferOffer({
+      transferId: res.id,
+      store,
+      to: email,
+      fromName,
+      token: res.token,
+      expiresAt: res.expiresAt,
+      trial: Boolean(trial),
+    });
+    return ok<TransferStoreResult>({ status: "pending", email, token: res.token, expiresAt: res.expiresAt });
+  });
+}
+
+export async function cancelStoreTransfer(): Promise<ActionResult> {
+  return runAction(async () => {
+    const ctx = await requirePermission("users.manage");
+    const { error } = await ctx.supabase.rpc("cancel_store_transfer", { p_store_id: ctx.store.id });
+    if (error) return fail(dbError(error.message) ?? error.message);
     return ok();
   });
 }

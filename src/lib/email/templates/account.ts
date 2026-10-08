@@ -272,3 +272,85 @@ export function shareStoreEmail(d: ShareStoreEmailData): EmailContent {
     footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Pasar la tienda a otra persona (0024)
+// ---------------------------------------------------------------------------
+
+/** Lo que conviene revisar al recibir una tienda armada por otra persona. */
+function transferChecklist(platformUrl: string): Inline[][] {
+  return [
+    [{ href: `${platformUrl}/admin/configuracion/pagos`, label: "Cómo cobrás" }, ": el CBU o alias y el WhatsApp siguen siendo los que cargó el dueño anterior."],
+    [{ href: `${platformUrl}/admin/configuracion/tienda`, label: "El email de contacto de la tienda" }, ": ahí llegan los avisos de pedidos nuevos."],
+    [{ href: `${platformUrl}/admin/usuarios`, label: "Quién más está en el equipo" }, ": podés cambiar roles o sacar a quien ya no tenga que entrar."],
+  ];
+}
+
+export interface StoreTransferredEmailData extends AccountEmailBase {
+  /** Quien pasó la tienda (nombre o email). */
+  fromName: string;
+  /** Prueba de Pro que arrancó con el traspaso. */
+  trialEndsAt?: string | null;
+}
+
+/** Al nuevo dueño cuando ya era del equipo y la tienda pasó a su nombre al instante. */
+export function storeTransferredEmail(d: StoreTransferredEmailData): EmailContent {
+  const subject = `${d.storeName} ya está a tu nombre`;
+  return renderEmail({
+    subject,
+    preheader: `${d.fromName} te pasó la tienda: ahora tenés control total del panel y del equipo.`,
+    brand: platformBrand(d.platformUrl),
+    blocks: [
+      { t: "heading", text: subject },
+      {
+        t: "p",
+        content: [hello(d.ownerName), ` ${d.fromName} te pasó `, { href: d.storeUrl, label: d.storeName }, ". Ahora la tenés a tu nombre, con control total del panel y del equipo."],
+      },
+      d.trialEndsAt && {
+        t: "p",
+        content: ["Tenés el plan Pro gratis hasta el ", { b: formatDate(d.trialEndsAt) }, ", sin tarjeta. Después elegís un plan o seguís en Free sin perder nada."],
+      },
+      { t: "section", title: "Antes de vender, revisá" },
+      { t: "list", items: transferChecklist(d.platformUrl) },
+      { t: "button", href: `${d.platformUrl}/admin`, label: "Abrir el panel" },
+    ],
+    footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
+  });
+}
+
+export interface StoreTransferOfferEmailData extends AccountEmailBase {
+  fromName: string;
+  /** `/invitacion/tienda/<token>` absoluto. */
+  acceptUrl: string;
+  expiresAt: string;
+  /** Si al recibirla arranca la prueba de Pro. */
+  trial: boolean;
+}
+
+/** A quien todavía no es del equipo: el link para recibir la tienda. */
+export function storeTransferOfferEmail(d: StoreTransferOfferEmailData): EmailContent {
+  const host = d.storeUrl.replace(/^https?:\/\//, "");
+  const subject = `${d.fromName} te pasa ${d.storeName}`;
+  return renderEmail({
+    subject,
+    preheader: `Con el link la tienda queda a tu nombre, con todo lo que tiene cargado. Vence el ${formatDate(d.expiresAt)}.`,
+    brand: platformBrand(d.platformUrl),
+    blocks: [
+      { t: "heading", text: subject },
+      {
+        t: "p",
+        content: [hello(d.ownerName), ` ${d.fromName} te quiere pasar `, { href: d.storeUrl, label: host }, " para que la sigas vos, con todo lo que tiene cargado."],
+      },
+      {
+        t: "p",
+        content: ["Entrá con este email (o creá tu cuenta con él) y aceptá: la tienda queda a tu nombre. El link vence el ", { b: formatDate(d.expiresAt) }, "."],
+      },
+      d.trial && { t: "p", content: [`Al recibirla arrancan 14 días de Pro gratis, sin tarjeta.`] },
+      { t: "button", href: d.acceptUrl, label: "Recibir la tienda" },
+      { t: "section", title: "Después, revisá" },
+      { t: "list", items: transferChecklist(d.platformUrl) },
+      { t: "p", content: ["Si no esperabas este mail, ignoralo: sin aceptar el link no pasa nada."], muted: true },
+    ],
+    footer: accountFooter(d.platformUrl, d.supportEmail ?? null),
+  });
+}

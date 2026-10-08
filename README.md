@@ -6,7 +6,7 @@ personalizable, panel de administración (`/admin`) y checkout sin pasarela
 (transferencia con descuento o coordinación por WhatsApp; el pedido siempre queda
 registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y límites.
 
-Versión actual: **0.10.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
+Versión actual: **0.11.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
 cobro de planes con MercadoPago: [`docs/BILLING.md`](docs/BILLING.md) ·
@@ -95,7 +95,9 @@ herramienta MCP `apply_migration`. Después regenerá los tipos en
 
 - Cada persona se registra en **`/registro`** y crea su tienda en **`/app/nueva`**
   (trial de 14 días de Pro). Hasta 3 tiendas por cuenta. El equipo se suma desde
-  `/admin/usuarios` (invitación por link).
+  `/admin/usuarios` (invitación por link). Desde ahí también se pasa la tienda a
+  otra persona (cambia `stores.owner_id`, el titular; link `/invitacion/tienda/<token>`
+  si no es del equipo; migración 0024).
 - `profiles.is_platform_admin` habilita **`/platform`** (tiendas, planes, trials).
 - En desarrollo ya existe el superadmin dueño de la tienda demo: ver
   [`docs/DEV-ACCESS.md`](docs/DEV-ACCESS.md). Con `DEV_LOGIN_EMAIL` y `DEV_LOGIN_PASSWORD`

@@ -18,6 +18,8 @@ import {
   orderReceivedEmail,
   orderShippedEmail,
   planRequestEmail,
+  storeTransferOfferEmail,
+  storeTransferredEmail,
   welcomeEmail,
   withdrawalSellerEmail,
   type OrderEmailData,
@@ -389,6 +391,70 @@ export function notifyStoreCreated(input: {
       }),
       tags: tags("welcome", { slug }),
       idempotencyKey: `welcome/${storeId}`,
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cuenta: pasar la tienda a otra persona
+// ---------------------------------------------------------------------------
+
+interface TransferNoticeBase {
+  /** `store_transfers.id`: clave de idempotencia. */
+  transferId: string;
+  store: { slug: string; name: string; custom_domain?: string | null; custom_domain_verified?: boolean | null };
+  to: string;
+  toName?: string | null;
+  fromName: string;
+}
+
+/** Al nuevo dueño (ya era del equipo): la tienda pasó a su nombre. */
+export function notifyStoreTransferred(input: TransferNoticeBase & { trialEndsAt: string | null }): void {
+  if (!isEmail(input.to)) return;
+  schedule("tienda pasada", async () => {
+    const support = platformSupportEmail();
+    await sendEmail({
+      to: input.to,
+      from: platformFrom(),
+      replyTo: support,
+      ...storeTransferredEmail({
+        storeName: input.store.name,
+        storeUrl: storeUrl(input.store),
+        platformUrl: platformOrigin(),
+        ownerName: input.toName ?? null,
+        supportEmail: support,
+        fromName: input.fromName,
+        trialEndsAt: input.trialEndsAt,
+      }),
+      tags: tags("store_transferred", input.store),
+      idempotencyKey: `store-transfer/${input.transferId}`,
+    });
+  });
+}
+
+/** A quien todavía no es del equipo: el link para recibir la tienda. */
+export function notifyStoreTransferOffer(input: TransferNoticeBase & { token: string; expiresAt: string; trial: boolean }): void {
+  if (!isEmail(input.to)) return;
+  schedule("traspaso de tienda", async () => {
+    const support = platformSupportEmail();
+    const platformUrl = platformOrigin();
+    await sendEmail({
+      to: input.to,
+      from: platformFrom(),
+      replyTo: support,
+      ...storeTransferOfferEmail({
+        storeName: input.store.name,
+        storeUrl: storeUrl(input.store),
+        platformUrl,
+        ownerName: input.toName ?? null,
+        supportEmail: support,
+        fromName: input.fromName,
+        acceptUrl: `${platformUrl}/invitacion/tienda/${input.token}`,
+        expiresAt: input.expiresAt,
+        trial: input.trial,
+      }),
+      tags: tags("store_transfer_offer", input.store),
+      idempotencyKey: `store-transfer-offer/${input.transferId}`,
     });
   });
 }

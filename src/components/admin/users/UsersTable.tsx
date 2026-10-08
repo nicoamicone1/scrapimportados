@@ -36,7 +36,18 @@ type DialogState =
   | { kind: "active"; user: AdminUser }
   | null;
 
-export function UsersTable({ users, currentUserId, canManage }: { users: AdminUser[]; currentUserId: string; canManage: boolean }) {
+export function UsersTable({
+  users,
+  currentUserId,
+  titularId = null,
+  canManage,
+}: {
+  users: AdminUser[];
+  currentUserId: string;
+  /** Quien tiene la tienda a su nombre (`stores.owner_id`): sólo deja de ser dueño pasando la tienda. */
+  titularId?: string | null;
+  canManage: boolean;
+}) {
   const router = useRouter();
   const [dialog, setDialog] = useState<DialogState>(null);
   const team = users;
@@ -75,6 +86,8 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
           ) : (
             team.map((u) => {
               const isMe = u.id === currentUserId;
+              const isTitular = u.id === titularId;
+              const locked = isMe || isTitular;
               const role = ROLE_BADGE[u.role];
               return (
                 <TR key={u.id}>
@@ -96,6 +109,7 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
                   </TD>
                   <TD>
                     <Badge tone={role.tone}>{role.label}</Badge>
+                    {isTitular ? <div className="mt-1 text-xs text-adm-fg-muted">A su nombre</div> : null}
                   </TD>
                   <TD>{u.is_active ? <Badge tone="green">Activo</Badge> : <Badge tone="neutral">Desactivado</Badge>}</TD>
                   <TD muted className="hidden md:table-cell">
@@ -124,16 +138,19 @@ export function UsersTable({ users, currentUserId, canManage }: { users: AdminUs
                           </button>
                         }
                       >
-                        <DropdownItem icon={<ShieldCheck />} disabled={isMe} onSelect={() => setDialog({ kind: "role", user: u })}>
+                        <DropdownItem icon={<ShieldCheck />} disabled={locked} onSelect={() => setDialog({ kind: "role", user: u })}>
                           Cambiar rol
                         </DropdownItem>
                         <DropdownSeparator />
-                        <DropdownItem icon={<Power />} danger={u.is_active} disabled={isMe} onSelect={() => setDialog({ kind: "active", user: u })}>
+                        <DropdownItem icon={<Power />} danger={u.is_active} disabled={locked} onSelect={() => setDialog({ kind: "active", user: u })}>
                           {u.is_active ? "Desactivar" : "Reactivar"}
                         </DropdownItem>
-                        <DropdownItem icon={<UserMinus />} danger disabled={isMe} onSelect={() => setDialog({ kind: "remove", user: u })}>
+                        <DropdownItem icon={<UserMinus />} danger disabled={locked} onSelect={() => setDialog({ kind: "remove", user: u })}>
                           Quitar del equipo
                         </DropdownItem>
+                        {isTitular && !isMe ? (
+                          <p className="px-3 py-1.5 text-xs text-adm-fg-muted">Tiene la tienda a su nombre: para cambiarle el rol, primero tiene que pasarla.</p>
+                        ) : null}
                       </DropdownMenu>
                     </TD>
                   ) : null}

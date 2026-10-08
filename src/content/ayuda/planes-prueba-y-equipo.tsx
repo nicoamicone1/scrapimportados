@@ -11,10 +11,10 @@ export const meta: HelpArticleMeta = {
   description: "Qué incluye cada plan, qué pasa cuando termina la prueba gratis, cómo pedir un cambio de plan y cómo sumar a tu equipo con roles.",
   section: "cuenta",
   publishedAt: "2026-09-23",
-  updatedAt: "2026-09-23",
+  updatedAt: "2026-10-08",
   readingMinutes: 3,
   panel: { href: "/admin/plan", label: "Plan" },
-  related: ["primeros-pasos", "lo-que-exige-la-ley"],
+  related: ["pasar-la-tienda", "primeros-pasos", "lo-que-exige-la-ley"],
 };
 
 export const body = (
@@ -72,7 +72,7 @@ export const body = (
     <ArticleTable
       head={["Rol", "Qué puede hacer"]}
       rows={[
-        ["Dueño", "Todo, incluido el equipo. Puede haber más de un dueño."],
+        ["Dueño", "Todo, incluido el equipo. Puede haber más de un dueño, pero la tienda está a nombre de una sola persona."],
         ["Administrador", "Todo menos invitar gente y cambiar roles."],
         ["Staff", "El día a día: pedidos, productos, stock y contenido. No entra a Configuración, Usuarios ni Auditoría ni cambia precios en masa."],
       ]}
@@ -87,6 +87,10 @@ export const body = (
     <p>
       Una cuenta puede tener hasta tres tiendas propias, cada una con su plan, su dirección y su equipo. Las creás desde{" "}
       <strong>Mis tiendas › Crear tienda</strong> y cambiás de una a otra con el selector de tienda de la barra de arriba del panel.
+    </p>
+    <p>
+      Si la tienda la va a seguir otra persona, se la podés pasar sin rehacerla: ver{" "}
+      <Link href="/ayuda/pasar-la-tienda">Pasar la tienda a otra persona</Link>.
     </p>
   </>
 );
