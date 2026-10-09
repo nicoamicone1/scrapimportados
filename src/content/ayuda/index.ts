@@ -8,6 +8,7 @@ import * as estilo from "./estilo-colores-tipografias";
 import * as importarCsv from "./importar-csv";
 import * as importarTienda from "./importar-desde-otra-tienda";
 import * as ley from "./lo-que-exige-la-ley";
+import * as pasarTienda from "./pasar-la-tienda";
 import * as pedidos from "./pedidos-y-cobros";
 import * as planes from "./planes-prueba-y-equipo";
 import * as portada from "./portada-y-paginas";
@@ -37,6 +38,7 @@ const MODULES: { meta: HelpArticleMeta; body: HelpArticle["body"] }[] = [
   analytics,
   ley,
   planes,
+  pasarTienda,
 ];
 
 export const HELP_ARTICLES: readonly HelpArticle[] = MODULES.map((m) => ({ ...m.meta, body: m.body }));

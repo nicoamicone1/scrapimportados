@@ -3320,6 +3320,62 @@ export type Database = {
           },
         ]
       }
+      store_transfers: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          from_user_id: string | null
+          id: string
+          keep_previous: boolean
+          status: string
+          store_id: string
+          to_email: string
+          to_user_id: string | null
+          token: string | null
+          trial_ends_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          from_user_id?: string | null
+          id?: string
+          keep_previous?: boolean
+          status?: string
+          store_id: string
+          to_email: string
+          to_user_id?: string | null
+          token?: string | null
+          trial_ends_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          from_user_id?: string | null
+          id?: string
+          keep_previous?: boolean
+          status?: string
+          store_id?: string
+          to_email?: string
+          to_user_id?: string | null
+          token?: string | null
+          trial_ends_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_transfers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           created_at: string
@@ -3658,6 +3714,13 @@ export type Database = {
         Returns: Json
       }
       accept_store_invite: { Args: { p_token: string }; Returns: string }
+      accept_store_transfer: { Args: { p_token: string }; Returns: Json }
+      cancel_store_transfer: { Args: { p_store_id: string }; Returns: boolean }
+      get_store_transfer: { Args: { p_token: string }; Returns: Json }
+      transfer_store: {
+        Args: { p_email: string; p_keep_previous?: boolean; p_store_id: string }
+        Returns: Json
+      }
       adjust_stock: {
         Args: {
           p_delta: number

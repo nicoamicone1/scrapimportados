@@ -4,7 +4,7 @@ Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changel
 
 ## Sin publicar
 
-Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere aplicar la migración 0024 (esquema 15).
+Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere aplicar la migración 0025 (esquema 16).
 
 ### Agregado
 
@@ -16,6 +16,24 @@ Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere ap
 - Responder muestra el candado «Disponible en Starter» en Free, y la búsqueda de productos para responder lo valida en el servidor. En Pedidos, «Imprimir remito» lleva el candado en Free.
 - Mail de fin de prueba: dice qué pierde la tienda según su uso real («Tenés 84 productos: en Free el tope es 25…», «Tenés 3 usuarios: Free es para 1…») y que Responder y los remitos quedan desde Starter.
 - Preguntas frecuentes y ayuda (Planes, prueba y equipo; Remitos y exportar; Responder) con el Free nuevo. El tope de productos de la pregunta «¿Qué pasa cuando termina la prueba?» sale de los planes de la base.
+## v0.11.0 — 2026-10-08 · Pasar la tienda a otra persona
+
+Migración: `supabase/migrations/0024_store_transfer.sql` (schema_version 15).
+
+### Agregado
+
+- Usuarios › «Pasar la tienda»: la tienda queda a nombre de otra persona con todo lo cargado. Si ya está en el equipo pasa al instante; si no, le llega un link por mail (`/invitacion/tienda/<token>`, vence en 7 días) para aceptarla con su cuenta o creándola. Vos elegís si seguís como administrador o salís del equipo.
+- Antes de confirmar ves qué pasa: quién queda a cargo, qué pasa con vos, la prueba de Pro, el cobro con Mercado Pago, los datos de cobro que hay que revisar y quién más sigue en el equipo.
+- La primera vez que una tienda cambia de dueño, si nunca se pagó un plan, quien la recibe arranca 14 días de Pro gratis.
+- Mails al nuevo dueño: «ya está a tu nombre» o el link para recibirla, con lo que conviene revisar.
+- Ayuda: «Pasar la tienda a otra persona».
+
+### Cambiado
+
+- Usuarios marca quién tiene la tienda «A su nombre». A esa persona nadie le puede cambiar el rol, desactivarla ni sacarla del equipo: primero tiene que pasar la tienda.
+- Al pasar la tienda se desconecta el cobro con tarjeta de Mercado Pago (la cuenta conectada es del dueño anterior). Con débito automático del plan vigente no se puede pasar hasta cancelar la renovación.
+- Recibir una tienda respeta el máximo de 3 tiendas a tu nombre por cuenta.
+- Todo traspaso queda en Auditoría (`store.transfer`, `store.transfer_offer`, `store.transfer_accept`, `store.transfer_cancel`).
 
 ## v0.10.0 — 2026-10-05 · Hoy se resuelve desde el inicio, respuestas listas para WhatsApp y qué pasó esta semana
 

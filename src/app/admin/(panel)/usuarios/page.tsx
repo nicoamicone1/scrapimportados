@@ -4,11 +4,12 @@ import type { Metadata } from "next";
 import { NoPermission } from "@/components/admin/settings/NoPermission";
 import { LimitBanner } from "@/components/admin/LimitBanner";
 import { InviteButton, InvitesCard } from "@/components/admin/users/InviteButton";
+import { TransferStoreCard } from "@/components/admin/users/TransferStoreCard";
 import { UsersTable } from "@/components/admin/users/UsersTable";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/display";
 import { can } from "@/lib/admin/permissions";
-import { listInvites, listUsers } from "@/lib/admin/users";
+import { listInvites, listUsers, loadTransferPanel } from "@/lib/admin/users";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Usuarios" };
@@ -22,6 +23,7 @@ const MATRIX: { label: string; owner: boolean; admin: boolean; staff: boolean }[
   { label: "Configuración y exportaciones", owner: true, admin: true, staff: false },
   { label: "Auditoría y lista de usuarios", owner: true, admin: true, staff: false },
   { label: "Invitar gente, cambiar roles y quitar del equipo", owner: true, admin: false, staff: false },
+  { label: "Pasar la tienda a otra persona (sólo quien la tiene a su nombre)", owner: true, admin: false, staff: false },
 ];
 
 function Yes({ on }: { on: boolean }) {
@@ -39,7 +41,11 @@ export default async function UsuariosPage() {
     );
   }
   const canManage = can(ctx.membership, "users.manage");
-  const [users, invites] = await Promise.all([listUsers(ctx), canManage ? listInvites(ctx) : Promise.resolve([])]);
+  const [users, invites, transfer] = await Promise.all([
+    listUsers(ctx),
+    canManage ? listInvites(ctx) : Promise.resolve([]),
+    canManage ? loadTransferPanel(ctx) : Promise.resolve(null),
+  ]);
   const active = users.filter((u) => u.is_active).length;
   const pendingInvites = invites.filter((i) => !i.expired).length;
 
@@ -63,7 +69,9 @@ export default async function UsuariosPage() {
       {canManage ? <LimitBanner limit="staff" used={active + pendingInvites} className="mb-4" /> : null}
       <InvitesCard invites={invites} />
 
-      <UsersTable users={users} currentUserId={ctx.user.id} canManage={canManage} />
+      <UsersTable users={users} currentUserId={ctx.user.id} titularId={ctx.store.owner_id} canManage={canManage} />
+
+      {transfer ? <TransferStoreCard storeName={ctx.store.name} panel={transfer} users={users} /> : null}
 
       <details className="group mt-6 max-w-3xl rounded-adm-lg border border-adm-border bg-adm-surface">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">

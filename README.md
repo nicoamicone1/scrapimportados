@@ -6,7 +6,7 @@ personalizable, panel de administración (`/admin`) y checkout sin pasarela
 (transferencia con descuento o coordinación por WhatsApp; el pedido siempre queda
 registrado). Los planes (Free, Starter, Pro, Business) habilitan funciones y límites.
 
-Versión actual: **0.10.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
+Versión actual: **0.11.0** (ver `src/lib/version.ts` y `docs/CHANGELOG.md`).
 Especificación completa: [`docs/ECOMMY-SPEC.md`](docs/ECOMMY-SPEC.md) (§14: multi-tienda) ·
 diseño: [`docs/DESIGN.md`](docs/DESIGN.md) · deploy: [`docs/DEPLOY.md`](docs/DEPLOY.md) ·
 cobro de planes con MercadoPago: [`docs/BILLING.md`](docs/BILLING.md) ·
@@ -82,7 +82,8 @@ avisos de stock, `0017_promotions_bxgy.sql` (8) promociones por cantidad y
 `create_order`; `0019_plans_yearly.sql` (10) plan anual, `0020_abandoned_checkouts.sql` (11)
 carritos abandonados, `0021_price_tiers.sql` (12) precios por cantidad,
 `0022_modules_print3d.sql` (13) apps y Taller 3D, `0023_store_payments.sql` (14) cobro con
-tarjeta en las tiendas y `0024_free_plan_moda.sql` (15) Free con 25 productos, remitos y
+tarjeta en las tiendas, `0024_store_transfer.sql` (15) pasar la tienda a otra persona y
+`0025_free_plan_moda.sql` (16) Free con 25 productos, remitos y
 Responder desde Starter (sólo datos de `plans`). Se aplican en ese
 orden; el código tolera que falten (cada función se oculta o degrada) y `SCHEMA_VERSION` en
 `src/lib/version.ts` indica la esperada.
@@ -99,7 +100,9 @@ herramienta MCP `apply_migration`. Después regenerá los tipos en
 
 - Cada persona se registra en **`/registro`** y crea su tienda en **`/app/nueva`**
   (trial de 14 días de Pro). Hasta 3 tiendas por cuenta. El equipo se suma desde
-  `/admin/usuarios` (invitación por link).
+  `/admin/usuarios` (invitación por link). Desde ahí también se pasa la tienda a
+  otra persona (cambia `stores.owner_id`, el titular; link `/invitacion/tienda/<token>`
+  si no es del equipo; migración 0024).
 - `profiles.is_platform_admin` habilita **`/platform`** (tiendas, planes, trials).
 - En desarrollo ya existe el superadmin dueño de la tienda demo: ver
   [`docs/DEV-ACCESS.md`](docs/DEV-ACCESS.md). Con `DEV_LOGIN_EMAIL` y `DEV_LOGIN_PASSWORD`

@@ -7,7 +7,7 @@
 | # | Qué | Dónde | Por qué | Estado |
 | --- | --- | --- | --- | --- |
 | 1 | Mergear la rama y deployar | GitHub → Vercel (proyecto `scrapimportados`) | Landing nueva, `/empezar`, checklist, planes y emails | ☐ |
-| 2 | Aplicar la migración `supabase/migrations/0024_free_plan_moda.sql` | Supabase SQL Editor del proyecto `asudscbvsrmulbpozjmq` o `supabase db push` | Free pasa a 25 productos, remitos y Responder desde Starter. Sin esto el código tolera la diferencia pero `/planes` sigue mostrando 50 | ☐ |
+| 2 | Aplicar la migración `supabase/migrations/0025_free_plan_moda.sql` | Supabase SQL Editor del proyecto `asudscbvsrmulbpozjmq` o `supabase db push` | Free pasa a 25 productos, remitos y Responder desde Starter. Sin esto el código tolera la diferencia pero `/planes` sigue mostrando 50 | ☐ |
 | 3 | Regenerar tipos | `supabase gen types typescript` → `src/lib/supabase/database.types.ts` | Sólo si la migración agrega columnas (ver nota del agente de planes en el changelog) | ☐ |
 | 4 | Agregar en Vercel `NEXT_PUBLIC_DEMO_STORE_SLUG=ropa` (production) | Vercel → Settings → Environment Variables | El CTA "Ver una tienda de ropa funcionando" apunta ahí. Hasta que exista la tienda `ropa`, dejá `demo` | ☐ |
 | 5 | Sembrar la tienda demo de ropa | Terminal local con `.env.local` del proyecto (URL y anon key de Supabase, ROOT_DOMAIN): primero `npx tsx scripts/seed-demo-ropa.mts --dry-run`, después `SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npx tsx scripts/seed-demo-ropa.mts` con tu cuenta de admin de plataforma (deja la tienda `ropa` en Pro para que no venza). Ver `docs/DEMO-ROPA.md` | Sin demo de ropa no hay CTA secundario ni video para los DMs | ☐ |
