@@ -4,6 +4,8 @@
 
 ## Antes de la llamada (45 a 60 minutos, el día anterior)
 
+Atajo con 10 a 15 productos en vez de 30 (la oferta «te armo tu tienda sin costo»): `docs/DEMO-PROSPECTA.md`, unos 20 minutos con `scripts/prospect-store.mts`.
+
 1. Crear la tienda a su nombre desde tu cuenta (hasta 3 tiendas por cuenta; después la transferís invitándola como dueña desde Usuarios o la creás con su mail).
 2. Cargar los 30 productos más vendidos desde sus fotos de Instagram y su lista de precios, con talles y colores y un stock estimado (preguntale por WhatsApp "¿cuántas de cada talle tenés de la remera X?" para 2 o 3 productos: sirve para que el stock sea real en la demo).
 3. Preset Atelier, su logo si lo tiene, transferencia con el descuento que ya usa, zona de envío de su ciudad y retiro si tiene showroom.

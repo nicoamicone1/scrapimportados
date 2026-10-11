@@ -1,0 +1,15 @@
+{
+  "slug": "mycloset",
+  "nombre": "My Closet",
+  "instagram": "@my_closet.ar",
+  "whatsapp": "549...",
+  "ciudad": "Buenos Aires",
+  "rubro": "moda",
+  "transferencia_descuento": 10,
+  "retiro": { "nombre": "Showroom", "direccion": "", "horarios": "" },
+  "productos": [
+    { "nombre": "Remera oversize", "precio": 28000, "talles": ["S", "M", "L"], "colores": ["negro", "blanco"], "stock": 3 },
+    { "nombre": "Jean mom", "precio": 52000, "talles": ["36", "38", "40", "42"], "colores": ["celeste"] },
+    { "nombre": "Cartera de cuero", "precio": 45000 }
+  ]
+}

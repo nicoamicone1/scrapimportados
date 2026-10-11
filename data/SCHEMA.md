@@ -80,3 +80,4 @@
 - `priceTiers`: precios por cantidad (migración 0021 y plan con `pricing.tiers`); si la base los rechaza, el producto se importa sin tramos y se avisa.
 - `swatches`: color (valor de la opción "Color") → hex. Con `--placeholders`, cada producto sin `images` recibe una imagen de ejemplo SVG por color, y cada variante muestra la de su color.
 - Re-importar no pisa el stock de variantes existentes ni sus imágenes.
+- `scripts/prospect-store.mts` genera este formato (más el bloque `store`) a partir de un JSON mínimo de prospecta: `data/prospectos/README.md`.

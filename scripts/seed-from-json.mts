@@ -22,8 +22,9 @@
  * (sólo precio, costo y SKU) ni las imágenes (salvo --force-images). Las
  * imágenes se suben a `media/<store_id>/products/<productId>/…`.
  *
- * `scripts/seed-demo-ropa.mts` reutiliza este módulo (loadSource, printPlan,
- * connect, resolveStore, seedCatalog) para la tienda demo de ropa.
+ * `scripts/seed-demo-ropa.mts` (tienda demo de ropa) y `scripts/prospect-store.mts`
+ * (tienda de una prospecta) reutilizan este módulo (loadSource/parseSource,
+ * printPlan, connect, findStore, seedCatalog).
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -189,21 +190,29 @@ export function validateCatalog(source: SourceFile): SourceIssue[] {
   return issues;
 }
 
-/** Lee y valida el archivo (formato + reglas del panel). Corta con un error legible. */
-export async function loadSource(file: string): Promise<SourceFile> {
-  const full = path.resolve(process.cwd(), file);
-  const raw = await readFile(full, "utf8");
-  const parsed = sourceFileSchema.safeParse(JSON.parse(raw));
+/**
+ * Valida un catálogo ya leído (formato + reglas del panel). `label` nombra el
+ * origen en los errores. Corta con un error legible.
+ */
+export function parseSource(raw: unknown, label: string): SourceFile {
+  const parsed = sourceFileSchema.safeParse(raw);
   if (!parsed.success) {
     const lines = parsed.error.issues.slice(0, 20).map((i) => `  · ${i.path.join(".")}: ${i.message}`);
-    throw new Error(`${file} no tiene el formato esperado:\n${lines.join("\n")}`);
+    throw new Error(`${label} no tiene el formato esperado:\n${lines.join("\n")}`);
   }
   const issues = validateCatalog(parsed.data);
   if (issues.length) {
     const lines = issues.slice(0, 30).map((i) => `  · ${i.product}: ${i.message}`);
-    throw new Error(`${file} tiene ${issues.length} error(es):\n${lines.join("\n")}`);
+    throw new Error(`${label} tiene ${issues.length} error(es):\n${lines.join("\n")}`);
   }
   return parsed.data;
+}
+
+/** Lee y valida el archivo (formato + reglas del panel). Corta con un error legible. */
+export async function loadSource(file: string): Promise<SourceFile> {
+  const full = path.resolve(process.cwd(), file);
+  const raw = await readFile(full, "utf8");
+  return parseSource(JSON.parse(raw), file);
 }
 
 // ---------------------------------------------------------------------------

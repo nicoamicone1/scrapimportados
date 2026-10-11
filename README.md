@@ -124,6 +124,13 @@ npx tsx scripts/seed-demo-ropa.mts --dry-run
 SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npx tsx scripts/seed-demo-ropa.mts
 ```
 
+**Tienda de una prospecta** (10 a 15 productos suyos desde un JSON mínimo: nombre, precio, talles, colores): crea o usa la tienda del `slug` del JSON con preset Atelier, su WhatsApp, transferencia con descuento, envío CABA o «A coordinar», imágenes de ejemplo por color, e imprime el link y el mensaje para mandarle. Formato en `data/prospectos/README.md`, pasos en `docs/DEMO-PROSPECTA.md`.
+
+```bash
+npx tsx scripts/prospect-store.mts data/prospectos/ejemplo-mycloset.json --dry-run
+SEED_EMAIL=… SEED_PASSWORD=… npx tsx scripts/prospect-store.mts data/prospectos/<slug>.json
+```
+
 Formato del JSON (y los campos opcionales `options`/`variants`/`price`/`priceTiers`): `data/SCHEMA.md`.
 
 ## Scripts
@@ -136,6 +143,7 @@ Formato del JSON (y los campos opcionales `options`/`variants`/`price`/`priceTie
 | `npm run e2e` | Smoke E2E del sitio público con Playwright (ver "CI y E2E") |
 | `npm run seed` | Importa `data/products.json` (o `SEED_FILE`) a una tienda (`SEED_STORE`) |
 | `npx tsx scripts/seed-demo-ropa.mts` | Tienda demo de ropa `ropa` (ver `docs/DEMO-ROPA.md`) |
+| `npx tsx scripts/prospect-store.mts <json>` | Tienda de una prospecta desde `data/prospectos/<slug>.json` (ver `docs/DEMO-PROSPECTA.md`) |
 | `npm run create-admin` | Alta de un usuario con `signUp` (la tienda se crea en `/app/nueva`) |
 | `npx tsx scripts/move-media-to-store.mts <slug>` | Mueve objetos sueltos del bucket a `<store_id>/…` |
 | `npm run scrape` | Scraper del catálogo DAZ → `data/products.json` + `public/img` |

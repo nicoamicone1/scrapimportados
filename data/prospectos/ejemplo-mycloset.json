@@ -1,0 +1,25 @@
+{
+  "_nota": "Ejemplo para probar el script. Los 12 productos, precios, talles, colores y stock son FICTICIOS y genéricos: no son de la marca real @my_closet.ar ni salen de su Instagram. El WhatsApp es un placeholder. Para su tienda de verdad, copiá _plantilla.json y cargá sus productos (docs/DEMO-PROSPECTA.md).",
+  "slug": "mycloset",
+  "nombre": "My Closet",
+  "instagram": "@my_closet.ar",
+  "whatsapp": "5491100000000",
+  "ciudad": "Buenos Aires",
+  "rubro": "moda",
+  "transferencia_descuento": 10,
+  "retiro": { "nombre": "Showroom", "direccion": "", "horarios": "" },
+  "productos": [
+    { "nombre": "Remera oversize de algodón", "precio": 28000, "talles": ["S", "M", "L"], "colores": ["negro", "blanco", "arena"], "destacado": true },
+    { "nombre": "Musculosa acanalada", "precio": 19500, "talles": ["S", "M", "L"], "colores": ["negro", "blanco", "rosa viejo"] },
+    { "nombre": "Camisa de lino", "precio": 46000, "talles": ["S", "M", "L", "XL"], "colores": ["blanco", "celeste"], "destacado": true },
+    { "nombre": "Blusa con volados", "precio": 38000, "talles": ["S", "M", "L"], "colores": ["negro", "salvia"] },
+    { "nombre": "Vestido midi floreado", "precio": 62000, "precio_antes": 70000, "talles": ["S", "M", "L"], "colores": ["floral azul", "floral terracota"], "destacado": true },
+    { "nombre": "Jean mom tiro alto", "precio": 52000, "talles": ["36", "38", "40", "42", "44"], "colores": ["jean claro", "jean oscuro"], "stock": 2 },
+    { "nombre": "Pantalón palazzo", "precio": 44000, "talles": ["S", "M", "L"], "colores": ["negro", "beige"] },
+    { "nombre": "Pollera midi plisada", "precio": 39000, "talles": ["S", "M", "L"], "colores": ["negro", "caramelo"] },
+    { "nombre": "Buzo canguro frizado", "precio": 48000, "talles": ["S", "M", "L", "XL"], "colores": ["gris melange", "verde oliva"] },
+    { "nombre": "Campera de jean", "precio": 68000, "talles": ["S", "M", "L"], "colores": ["jean"], "stock": 2 },
+    { "nombre": "Conjunto de plush", "precio": 72000, "talles": ["S", "M", "L"], "colores": ["gris topo", "crudo"], "categoria": "Conjuntos" },
+    { "nombre": "Cartera bandolera", "precio": 42000, "colores": ["negro", "suela"], "stock": 4 }
+  ]
+}

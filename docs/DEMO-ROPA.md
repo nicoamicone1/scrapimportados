@@ -17,7 +17,7 @@
 | Imágenes | Una imagen de ejemplo por color (SVG: plano del color, nombre, color, talles y «Foto de ejemplo»). Al elegir un color, la ficha muestra la suya |
 | Plan | Pro activo si corrés el script con un admin de plataforma; si no, los 14 días de Pro del alta |
 
-Archivos: `data/demo-ropa.json` (catálogo + bloque `store` con la configuración), `scripts/seed-demo-ropa.mts` (tienda y configuración) que usa `scripts/seed-from-json.mts` (catálogo, el mismo seed de siempre) y `scripts/lib/placeholder-svg.mts` (imágenes de ejemplo).
+Archivos: `data/demo-ropa.json` (catálogo + bloque `store` con la configuración), `scripts/seed-demo-ropa.mts` (tienda y configuración, con `scripts/lib/store-setup.mts`, que comparte con la tienda de prospectas) que usa `scripts/seed-from-json.mts` (catálogo, el mismo seed de siempre) y `scripts/lib/placeholder-svg.mts` (imágenes de ejemplo).
 
 ## Antes de empezar
 
@@ -80,4 +80,4 @@ Las imágenes dicen «Foto de ejemplo» a propósito. Para mostrarla en público
 2. En la tabla de variantes, asigná a cada color su foto (la ficha cambia de foto al elegir el color).
 3. No corras `--force-images` después: borra también las fotos que subiste.
 
-Para la demo con un prospecto (PLAN-GTM §9) no uses esta tienda: cargá su catálogo con sus fotos en una tienda a su nombre. Luna sirve para la landing, los videos y la primera conversación.
+Para la demo con un prospecto (PLAN-GTM §9) no uses esta tienda: cargá su catálogo con sus fotos en una tienda a su nombre (`docs/DEMO-PROSPECTA.md`: 10 a 15 productos en 20 minutos con `scripts/prospect-store.mts`). Luna sirve para la landing, los videos y la primera conversación.
