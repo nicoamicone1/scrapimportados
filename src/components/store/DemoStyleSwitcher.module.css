@@ -1,0 +1,601 @@
+/*
+ * Selector de estilos de la demo (ver DemoStyleSwitcher.tsx). Marca Ecommy con
+ * valores fijos (docs/BRAND.md §5–§9): no usa ninguna variable del tema de la
+ * tienda, así se ve igual con los 10 presets y con el CSS a medida. Las curvas
+ * de movimiento leen `--eco-*` (globals.css, en :root) con respaldo fijo.
+ */
+
+.root {
+  --sw-ink: #10162f;
+  --sw-ink-2: #1a2244;
+  --sw-ink-3: #2a3358;
+  --sw-pomelo: #ff5a3c;
+  --sw-pomelo-dark: #f2472a;
+  --sw-pomelo-soft: #ffe9e2;
+  --sw-pomelo-ink: #b02c14;
+  --sw-mist: #e9ecf8;
+  --sw-bruma: #9aa3c7;
+  --sw-paper: #ffffff;
+  --sw-niebla: #f4f5f9;
+  --sw-line: #dfe2ec;
+  --sw-muted: #5b627a;
+  --sw-azul: #2f4bff;
+  --sw-azul-soft: #e8ecff;
+  --sw-azul-light: #8fa0ff;
+  --sw-ease-out: var(--eco-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  --sw-ease-spring: var(--eco-ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
+  --sw-shadow: 0 18px 48px -14px rgb(16 22 47 / 0.42), 0 2px 6px rgb(16 22 47 / 0.14);
+
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color-scheme: light;
+  color: var(--sw-ink);
+  font-family: var(--font-archivo, "Archivo"), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.3;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  transition:
+    opacity 240ms var(--sw-ease-out),
+    transform 420ms var(--sw-ease-spring),
+    visibility 0s;
+}
+
+/* Final del pie a la vista (links legales, crédito): se corre y no se puede tocar. */
+.root[data-away="1"] {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, 16px, 0);
+  transition:
+    opacity 240ms var(--sw-ease-out),
+    transform 240ms var(--sw-ease-out),
+    visibility 0s 240ms;
+}
+
+/* WhatsApp de la tienda a la izquierda: la pastilla sube por encima (botón de 56 px). */
+.root[data-fab="left"] {
+  bottom: 84px;
+}
+
+@media (min-width: 640px) {
+  .root {
+    left: 24px;
+    bottom: 24px;
+  }
+  .root[data-fab="left"] {
+    bottom: 92px;
+  }
+}
+
+/* Reset defensivo: el CSS personalizado de una tienda puede tocar etiquetas sueltas. */
+.root,
+.root * {
+  box-sizing: border-box;
+}
+.root :where(a, button, p, h2, span, i, svg) {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  text-shadow: none;
+  text-decoration: none;
+  float: none;
+}
+.root :where(button) {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.root :where(a, button):focus-visible {
+  outline: 2px solid var(--sw-azul);
+  outline-offset: 2px;
+}
+
+/* ---------- Cerrado: pastilla tinta con la burbuja ---------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 32px - 56px - 12px);
+  animation: sw-pop 720ms var(--sw-ease-spring) 300ms both;
+}
+
+.pill,
+.mini {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgb(233 236 248 / 0.14);
+  box-shadow: var(--sw-shadow);
+  transition:
+    background-color 140ms var(--sw-ease-out),
+    transform 140ms var(--sw-ease-out);
+}
+.root .pill {
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px 0 3px;
+  border-radius: 999px;
+  background: var(--sw-ink);
+  color: var(--sw-mist);
+}
+.root .pill:hover {
+  background: var(--sw-ink-2);
+}
+.root .pill:active,
+.root .mini:active {
+  transform: scale(0.98);
+}
+.root .pill:focus-visible,
+.root .mini:focus-visible,
+.root .minimize:focus-visible {
+  outline-color: var(--sw-azul-light);
+  box-shadow:
+    0 0 0 4px var(--sw-ink),
+    var(--sw-shadow);
+}
+
+.bubble {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px 12px 12px 3px;
+  background: var(--sw-pomelo);
+  color: var(--sw-ink);
+}
+.glyph {
+  width: 58%;
+  height: 58%;
+}
+
+.pillLabel {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.pillStrong {
+  font-weight: 600;
+  color: #ffffff;
+}
+.pillSoft {
+  color: var(--sw-bruma);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sep {
+  margin: 0 6px;
+}
+
+/* Achicado: sólo la burbuja (recordado en la sesión). */
+.root .mini {
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--sw-pomelo);
+}
+.root .mini:hover {
+  background: var(--sw-pomelo-dark);
+}
+.mini .bubble {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.root .minimize {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgb(233 236 248 / 0.14);
+  border-radius: 999px;
+  background: var(--sw-ink);
+  color: var(--sw-bruma);
+  box-shadow: var(--sw-shadow);
+  transition:
+    color 140ms var(--sw-ease-out),
+    background-color 140ms var(--sw-ease-out);
+}
+.root .minimize:hover {
+  background: var(--sw-ink-2);
+  color: #ffffff;
+}
+.minimize svg {
+  width: 16px;
+  height: 16px;
+}
+
+/*
+ * Mobile: siempre la burbuja sola, del mismo alto (56 px) y a la misma altura que el
+ * botón de WhatsApp (bottom 16 px), para que se lean como pareja y no tapen el contenido.
+ */
+@media (max-width: 639.98px) {
+  .desktopOnly,
+  .pillLabel,
+  .root .minimize {
+    display: none;
+  }
+  .root .pill,
+  .root .mini {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+    border-color: transparent;
+    border-radius: 19px 19px 19px 5px;
+    background: var(--sw-pomelo);
+  }
+  .root .pill:hover,
+  .root .mini:hover {
+    background: var(--sw-pomelo-dark);
+  }
+  .pill .bubble {
+    width: 100%;
+    height: 100%;
+    background: none;
+  }
+  .glyph {
+    width: 54%;
+    height: 54%;
+  }
+  .root .panel {
+    max-height: calc(100dvh - 16px - 56px - 10px - 16px);
+  }
+}
+
+/* Globito de mobile (una vez por sesión): la cola apunta a la burbuja. */
+.hint {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  margin-left: 4px;
+  padding: 0 14px;
+  border: 1px solid rgb(233 236 248 / 0.14);
+  border-radius: 14px 14px 14px 4px;
+  background: var(--sw-ink);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--sw-shadow);
+  cursor: pointer;
+  transform-origin: 0 100%;
+  animation: sw-pop 420ms var(--sw-ease-spring) both;
+}
+@media (min-width: 640px) {
+  .mobileOnly {
+    display: none;
+  }
+}
+
+/* ---------- Abierto: panel en burbuja (la esquina recta apunta a la pastilla) ---------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: min(372px, calc(100vw - 32px));
+  max-height: calc(100dvh - 16px - 44px - 10px - 16px);
+  overflow: hidden;
+  border: 1px solid rgb(16 22 47 / 0.08);
+  border-radius: 22px 22px 22px 6px;
+  background: var(--sw-paper);
+  box-shadow: 0 28px 70px -18px rgb(16 22 47 / 0.5), 0 3px 10px rgb(16 22 47 / 0.12);
+  transform-origin: 24px 100%;
+  animation: sw-pop 420ms var(--sw-ease-spring) both;
+}
+.root[data-fab="left"] .panel {
+  max-height: calc(100dvh - 84px - 56px - 10px - 16px);
+}
+
+.head {
+  position: relative;
+  flex: none;
+  padding: 18px 20px 18px;
+  overflow: hidden;
+  background: var(--sw-ink);
+  color: var(--sw-mist);
+}
+/* El arco: anillos finos derivados de la panza de la «e» (BRAND §7.2). */
+.head::before,
+.head::after {
+  content: "";
+  position: absolute;
+  border: 1.5px solid var(--sw-ink-3);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.head::before {
+  width: 190px;
+  height: 190px;
+  top: -112px;
+  right: -64px;
+}
+.head::after {
+  width: 120px;
+  height: 120px;
+  top: -77px;
+  right: -29px;
+  border-color: var(--sw-pomelo);
+  opacity: 0.55;
+}
+
+.root .eyebrow {
+  position: relative;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sw-pomelo);
+}
+.root .title {
+  position: relative;
+  margin-top: 6px;
+  padding-right: 36px;
+  font-size: 23px;
+  font-weight: 750;
+  font-stretch: 112%;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+.root .lead {
+  position: relative;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--sw-bruma);
+  text-wrap: pretty;
+}
+
+.root .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--sw-bruma);
+  transition:
+    color 140ms var(--sw-ease-out),
+    background-color 140ms var(--sw-ease-out);
+}
+.root .close:hover {
+  background: var(--sw-ink-2);
+  color: #ffffff;
+}
+.root .close:focus-visible {
+  outline-color: var(--sw-azul-light);
+  outline-offset: -2px;
+}
+.close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sw-line) transparent;
+}
+
+.root .group {
+  padding: 12px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sw-muted);
+}
+
+.root .option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--sw-ink);
+  transition: background-color 140ms var(--sw-ease-out);
+}
+.root .option:hover {
+  background: var(--sw-niebla);
+}
+.root .option[aria-current="true"] {
+  background: var(--sw-azul-soft);
+}
+.root .option:focus-visible {
+  outline-offset: -2px;
+}
+
+.swatch {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 48px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--sw-niebla);
+  box-shadow: inset 0 0 0 1px rgb(16 22 47 / 0.14);
+}
+.root .swatch i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgb(127 127 127 / 0.28);
+}
+
+.optionText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+.optionName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.root .tag {
+  padding: 2px 7px 2px;
+  border-radius: 6px 6px 6px 2px;
+  background: var(--sw-pomelo-soft);
+  color: var(--sw-pomelo-ink);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+.optionMood {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--sw-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.option[aria-busy="true"] .optionMood {
+  color: var(--sw-azul);
+  animation: sw-pulse 1s var(--sw-ease-out) infinite alternate;
+}
+
+.check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--sw-azul);
+}
+
+.foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 18px;
+  border-top: 1px solid var(--sw-line);
+  background: var(--sw-niebla);
+}
+.root .footText {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--sw-muted);
+}
+.footStrong {
+  display: block;
+  font-weight: 600;
+  color: var(--sw-ink);
+}
+
+.root .cta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 5px 0 16px;
+  border-radius: 999px;
+  background: var(--sw-pomelo);
+  color: var(--sw-ink);
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition: background-color 140ms var(--sw-ease-out);
+}
+.root .cta:hover {
+  background: var(--sw-pomelo-dark);
+}
+.root .cta:active {
+  transform: scale(0.98);
+}
+.ctaArrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--sw-ink);
+  color: #ffffff;
+  transition: transform 420ms var(--sw-ease-spring);
+}
+.ctaArrow svg {
+  width: 16px;
+  height: 16px;
+}
+.cta:hover .ctaArrow {
+  transform: translateX(2px) rotate(45deg);
+}
+
+@keyframes sw-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.94);
+  }
+}
+@keyframes sw-pulse {
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar,
+  .panel,
+  .hint,
+  .option[aria-busy="true"] .optionMood {
+    animation: none;
+  }
+  .root,
+  .root *,
+  .root *::before,
+  .root *::after {
+    transition: none !important;
+  }
+}
+
+@media print {
+  .root {
+    display: none;
+  }
+}

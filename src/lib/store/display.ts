@@ -3,7 +3,8 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 
 import { bestPaymentDiscount, type Promotion } from "@/lib/pricing";
-import { parseTheme, PRESETS, type Theme } from "@/lib/theme";
+import { LUNA_ANNOUNCEMENT, LUNA_DESIGN_ID, LUNA_FAVICON_URL, LUNA_LOGO_LIGHT_URL, LUNA_LOGO_URL, LUNA_THEME } from "@/lib/showcase/luna";
+import { isDarkTheme, parseTheme, PRESETS, type Theme } from "@/lib/theme";
 
 import { getPaymentMethods, type StorePaymentMethod } from "./payment-methods";
 import { getActivePromotions } from "./promotions";
@@ -52,18 +53,52 @@ export function transferLabelFor(name: string): string {
   return /transfer/i.test(name) ? "transferencia" : name.toLowerCase();
 }
 
+/** Tienda cuya portada se puede ver con cualquier preset (`?estilo=`, ver `src/proxy.ts`). */
+export const PREVIEW_STORE_SLUG = "demo";
+
+const DEV_THEME_COOKIE = "ecommy_dev_theme";
+
+/**
+ * SÓLO EN DESARROLLO: ¿la tienda `demo` se ve con el diseño a medida de Luna
+ * (cookie `ecommy_dev_theme=luna`)? Muestra lo que la tienda va a tener
+ * después de `scripts/seed-demo-ropa.mts` (tema, logo, favicon, anuncio,
+ * menús, imágenes de categoría y portada) sin escribir en la base. En
+ * producción siempre es `false`. Lo usan `getStoreDisplay` y la portada y el
+ * layout de `/s/[store]` (docs/DEMO-ROPA.md).
+ */
+export async function isLunaDevPreview(): Promise<boolean> {
+  if (process.env.NODE_ENV !== "development") return false;
+  try {
+    const [jar, h] = await Promise.all([cookies(), headers()]);
+    return jar.get(DEV_THEME_COOKIE)?.value === LUNA_DESIGN_ID && h.get("x-store-slug") === PREVIEW_STORE_SLUG;
+  } catch {
+    // fuera de un request (build): sin vista previa
+    return false;
+  }
+}
+
 /**
  * SÓLO EN DESARROLLO: la cookie `ecommy_dev_theme=<preset>` pisa el preset del
- * tema y `ecommy_dev_net=1` activa el precio neto, para probar sin tocar
- * `store_settings` (que es compartido). En producción no hace nada.
+ * tema (`luna` en la tienda demo: el diseño a medida completo, ver
+ * `isLunaDevPreview`) y `ecommy_dev_net=1` activa el precio neto, para probar
+ * sin tocar `store_settings` (que es compartido). En producción no hace nada.
  */
 async function devThemeOverride(settings: StoreSettings): Promise<StoreSettings> {
   if (process.env.NODE_ENV !== "development") return settings;
   try {
     const jar = await cookies();
-    const id = jar.get("ecommy_dev_theme")?.value;
+    const id = jar.get(DEV_THEME_COOKIE)?.value;
     let out = settings;
     if (id && id in PRESETS) out = { ...out, theme: PRESETS[id as keyof typeof PRESETS] };
+    else if (await isLunaDevPreview()) {
+      out = {
+        ...out,
+        theme: LUNA_THEME,
+        logo_url: LUNA_LOGO_URL,
+        favicon_url: LUNA_FAVICON_URL,
+        announcement: LUNA_ANNOUNCEMENT,
+      };
+    }
     // `ecommy_dev_net=1`: fuerza el precio sin impuestos nacionales para revisarlo.
     if (jar.get("ecommy_dev_net")?.value === "1") out = { ...out, tax: { ...out.tax, show_net_price: true } };
     return out;
@@ -72,9 +107,6 @@ async function devThemeOverride(settings: StoreSettings): Promise<StoreSettings>
   }
   return settings;
 }
-
-/** Tienda cuya portada se puede ver con cualquier preset (`?estilo=`, ver `src/proxy.ts`). */
-export const PREVIEW_STORE_SLUG = "demo";
 
 /**
  * Vista previa por preset (sólo la tienda demo, en cualquier entorno): el proxy
@@ -89,7 +121,9 @@ async function previewThemeOverride(settings: StoreSettings): Promise<StoreSetti
     const id = h.get("x-store-preview-style");
     if (!id || !Object.hasOwn(PRESETS, id)) return settings;
     const preset = PRESETS[id as keyof typeof PRESETS];
-    return { ...settings, theme: { ...preset, footer: { ...preset.footer, showCredit: settings.theme.footer.showCredit } } };
+    // El logo de Luna es tinta: sobre un estilo oscuro va su versión en crema.
+    const logo = settings.logo_url === LUNA_LOGO_URL && isDarkTheme(preset) ? LUNA_LOGO_LIGHT_URL : settings.logo_url;
+    return { ...settings, logo_url: logo, theme: { ...preset, footer: { ...preset.footer, showCredit: settings.theme.footer.showCredit } } };
   } catch {
     return settings;
   }

@@ -23,6 +23,7 @@
  * imágenes (salvo forceImages). Las imágenes se suben a
  * `media/<store_id>/products/<productId>/…`.
  */
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -36,6 +37,7 @@ import { productSchema, type ProductInput } from "../src/lib/schemas/product";
 import { slugify } from "../src/lib/slug";
 import type { Database, Json } from "../src/lib/supabase/database.types";
 
+import { garmentSvg } from "./lib/garment-svg.mjs";
 import { placeholderSvg } from "./lib/placeholder-svg.mjs";
 
 try {
@@ -569,14 +571,25 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     const images: { url: string; alt: string; color: string | null }[] = [];
 
     const colors = colorValues(p)?.values ?? [null];
+    // "imageStyle": "illustrated" en la raíz del JSON: ilustración de la prenda
+    // (scripts/lib/garment-svg.mts) si el nombre se reconoce; si no, el placeholder.
+    const illustrated = (source as { imageStyle?: unknown }).imageStyle === "illustrated";
     for (const color of colors) {
-      const svg = placeholderSvg({
-        title: p.name,
-        color: color ?? undefined,
-        detail: sizeLine(p),
-        background: (color && source.swatches?.[color]) || source.swatches?.default || "",
-      });
-      const file = `ejemplo-${slugify(color ?? "producto") || "producto"}.svg`;
+      const background = (color && source.swatches?.[color]) || source.swatches?.default || "";
+      const drawn = illustrated ? garmentSvg({ name: p.name, color: color ?? undefined, hex: background, seed: p.slug }) : null;
+      const svg =
+        drawn ??
+        placeholderSvg({
+          title: p.name,
+          color: color ?? undefined,
+          detail: sizeLine(p),
+          background,
+        });
+      // La ilustración lleva un hash del contenido: el bucket cachea 1 año, así la URL cambia si cambia el dibujo.
+      const colorSlug = slugify(color ?? "producto") || "producto";
+      const file = drawn
+        ? `ilustracion-${colorSlug}-${createHash("sha1").update(drawn).digest("hex").slice(0, 8)}.svg`
+        : `ejemplo-${colorSlug}.svg`;
       try {
         const url = await upload(mediaPath(storeId, "products", productId, file), svg, "image/svg+xml");
         images.push({ url, alt: color ? `${p.name}, ${color.toLowerCase()}` : p.name, color });

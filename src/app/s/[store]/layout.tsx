@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { StoreAnalytics } from "@/components/store/Analytics";
 import { CartDrawer } from "@/components/store/CartDrawer";
+import { DemoStyleSwitcher } from "@/components/store/DemoStyleSwitcher";
 import { StoreFooter } from "@/components/store/Footer";
 import { StoreHeader } from "@/components/store/Header";
 import { MaintenanceGate } from "@/components/store/MaintenanceGate";
@@ -14,13 +16,14 @@ import { previewHomeBlocks } from "@/lib/blocks/preview";
 import { getProfile, listMyStores } from "@/lib/auth";
 import ConfigureMoney from "@/components/store/ConfigureMoney";
 import { CartProvider } from "@/lib/cart";
-import { getStoreDisplay } from "@/lib/store/display";
+import { LUNA_MENUS, LUNA_THEME, lunaHomeBlocks } from "@/lib/showcase/luna";
+import { getStoreDisplay, isLunaDevPreview, PREVIEW_STORE_SLUG } from "@/lib/store/display";
 import { getMenus } from "@/lib/store/menus";
 import { getPublishedPage } from "@/lib/store/pages";
 import { absoluteUrl } from "@/lib/store/seo";
 import { getTenant } from "@/lib/tenant/resolve";
 import { platformUrl } from "@/lib/tenant/urls";
-import { cssVars, isDarkTheme, themeFontsHref } from "@/lib/theme";
+import { cssVars, isDarkTheme, PRESET_LIST, PRESETS, themeFontsHref } from "@/lib/theme";
 
 import "./store.css";
 
@@ -84,11 +87,14 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
   const store = tenant.store;
   if (!store) notFound();
 
-  const [display, menus, home] = await Promise.all([
+  const [display, storedMenus, home, luna] = await Promise.all([
     getStoreDisplay(store.id),
     getMenus(store.id),
     getPublishedPage(store.id, "home"),
+    isLunaDevPreview(),
   ]);
+  // Sólo en desarrollo (cookie `ecommy_dev_theme=luna` en la demo): los menús que deja el seed.
+  const menus = luna ? { ...storedMenus, ...LUNA_MENUS } : storedMenus;
   const { settings, paymentMethods, zones, pickups, promotions } = display;
   const { theme } = settings;
   const fontsHref = themeFontsHref(theme);
@@ -103,13 +109,23 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
     whatsapp: Boolean(display.card.whatsappPhone),
     saved: home?.blocks,
   });
-  const firstBlock = (previewBlocks ?? home?.blocks)?.find((blk) => !blk.style.hidden);
+  const lunaBlocks =
+    luna && !previewBlocks
+      ? lunaHomeBlocks({ now: new Date(), transferDiscount: display.card.transferPercent, whatsapp: Boolean(display.card.whatsappPhone) })
+      : null;
+  const firstBlock = (previewBlocks ?? lunaBlocks ?? home?.blocks)?.find((blk) => !blk.style.hidden);
   const homeStartsWithHero =
     firstBlock?.type === "hero" && Boolean(firstBlock.settings.imageUrl) && heroIsFullBleed(firstBlock, theme.style.hero);
 
   const maintenance = settings.maintenance.enabled;
   const adminBypass = maintenance ? await isAdminViewer(store.id) : false;
   const wa = settings.whatsapp_button;
+
+  // Demo pública: selector «Probá otro estilo» (fuera de .store-root, así el
+  // CSS de la tienda no lo alcanza). El original es el diseño a medida Luna.
+  const isDemo = store.slug === PREVIEW_STORE_SLUG;
+  const previewStyleId = isDemo ? (await headers()).get("x-store-preview-style") : null;
+  const previewStyle = previewStyleId && Object.hasOwn(PRESETS, previewStyleId) ? previewStyleId : null;
 
   return (
     <>
@@ -191,6 +207,21 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
         </StoreBaseProvider>
       </div>
       <StoreAnalytics integrations={settings.integrations} />
+      {isDemo ? (
+        <DemoStyleSwitcher
+          current={previewStyle}
+          presets={PRESET_LIST.map((p) => {
+            const c = PRESETS[p.id].colors;
+            return { id: p.id, name: p.name, mood: p.mood, colors: [c.background, c.text, c.primary, c.accent] as const };
+          })}
+          original={{
+            name: "A medida",
+            mood: "Luna: ropa por fases",
+            colors: [LUNA_THEME.colors.background, LUNA_THEME.colors.text, LUNA_THEME.colors.primary, LUNA_THEME.colors.accent],
+          }}
+          fabSide={wa.enabled && settings.whatsapp_phone ? wa.position : null}
+        />
+      ) : null}
     </>
   );
 }

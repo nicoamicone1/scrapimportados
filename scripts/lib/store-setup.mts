@@ -1,8 +1,9 @@
 /**
  * Alta y configuración de una tienda para los seeds (bloque `store`): crea
- * la tienda con create_store() o usa la existente, aplica preset, WhatsApp,
- * transferencia con descuento, «quedan pocas», zonas de envío y retiro, y la
- * deja en Pro activo si la cuenta es admin de plataforma.
+ * la tienda con create_store() o usa la existente, aplica preset (o un diseño
+ * a medida, `design`), WhatsApp, transferencia con descuento, «quedan pocas»,
+ * zonas de envío y retiro, y la deja en Pro activo si la cuenta es admin de
+ * plataforma.
  *
  * Lo usan `scripts/seed-demo-ropa.mts` (demo de ropa, bloque `store` de
  * data/demo-ropa.json) y `scripts/prospect-store.mts` (tienda de una
@@ -10,12 +11,45 @@
  */
 import { z } from "zod";
 
+import { saveThemeSchema } from "../../src/lib/schemas/appearance";
 import { isValidE164, normalizePhone } from "../../src/lib/schemas/settings";
 import { pickupLocationSchema, shippingZoneSchema } from "../../src/lib/schemas/shipping";
 import type { Json } from "../../src/lib/supabase/database.types";
+import { LUNA_ANNOUNCEMENT, LUNA_FAVICON_URL, LUNA_LOGO_URL, LUNA_MENUS, LUNA_THEME } from "../../src/lib/showcase/luna";
+import type { Announcement } from "../../src/lib/store/settings";
 import { PRESETS } from "../../src/lib/theme/presets";
+import type { Theme } from "../../src/lib/theme/schema";
 
 import { findStore, log, money, must, type Db, type SeedStore } from "../seed-from-json.mjs";
+
+// ---------------------------------------------------------------------------
+// Diseños a medida
+// ---------------------------------------------------------------------------
+
+/**
+ * Diseño a medida de una tienda demo: lo mismo que un dueño puede cargar desde
+ * el panel (tema con CSS propio, logo, favicon, anuncio y menús). La portada y
+ * las imágenes de categoría las pone el seed que lo usa (necesitan el catálogo).
+ */
+export interface StoreDesign {
+  label: string;
+  theme: Theme;
+  logoUrl: string;
+  faviconUrl: string;
+  announcement: Announcement;
+  menus: { header: Json; footer: Json };
+}
+
+export const DESIGNS: Record<string, StoreDesign> = {
+  luna: {
+    label: "Luna (tema a medida con CSS propio)",
+    theme: LUNA_THEME,
+    logoUrl: LUNA_LOGO_URL,
+    faviconUrl: LUNA_FAVICON_URL,
+    announcement: LUNA_ANNOUNCEMENT,
+    menus: { header: LUNA_MENUS.header as unknown as Json, footer: LUNA_MENUS.footer as unknown as Json },
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Bloque `store`
@@ -27,6 +61,15 @@ export const storeConfigSchema = z.object({
   /** Rubro del alta (create_store): "moda" → preset atelier. */
   kind: z.string().default("moda"),
   preset: z.string().refine((id) => Object.hasOwn(PRESETS, id), "Preset desconocido (ver src/lib/theme/presets.ts)."),
+  /**
+   * Diseño a medida (`luna`): pisa el tema del preset y carga logo, favicon,
+   * anuncio y menús. Sin esto, el tema es el del preset. El preset se sigue
+   * usando para el rubro y la portada de fábrica del alta.
+   */
+  design: z
+    .string()
+    .refine((id) => Object.hasOwn(DESIGNS, id), `Diseño desconocido (hay: ${Object.keys(DESIGNS).join(", ")}).`)
+    .optional(),
   whatsapp: z.string().transform(normalizePhone).refine(isValidE164, "WhatsApp con código de país y área, sin 0 ni 15."),
   lowStockThreshold: z.number().int().min(0).max(100).default(3),
   /** Ciudad y provincia del alta (dirección de la tienda en create_store). */
@@ -113,14 +156,30 @@ export function parseStoreConfig(raw: unknown, whatsappOverride?: string) {
     if (!r.success) throw new Error(`store.pickupLocations.${i} (${p.name}): ${r.error.issues.map((x) => x.message).join("; ")}`);
     return r.data;
   });
-  return { config, zones, pickups };
+  const design = config.design ? DESIGNS[config.design] : null;
+  if (design) {
+    // El tema tiene que pasar las mismas reglas que el editor de Apariencia (incluido el CSS
+    // personalizado): si no, el dueño no podría volver a guardarlo desde el panel.
+    const r = saveThemeSchema.safeParse(design.theme);
+    if (!r.success) {
+      throw new Error(`store.design (${config.design}): el tema no pasa las reglas del panel: ${r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`);
+    }
+  }
+  return { config, zones, pickups, design };
 }
 
 export type ParsedStore = ReturnType<typeof parseStoreConfig>;
 
 /** Lo que haría con la tienda (--dry-run). `whatsappNote`: de dónde sale el número. */
-export function printStorePlan({ config, zones, pickups }: ParsedStore, slug: string, whatsappNote: string) {
-  log(`Tienda «${slug}»: ${config.name} · rubro ${config.kind} · preset ${config.preset}`);
+export function printStorePlan({ config, zones, pickups, design }: ParsedStore, slug: string, whatsappNote: string) {
+  log(`Tienda «${slug}»: ${config.name} · rubro ${config.kind} · preset ${config.preset}${design ? ` · diseño ${config.design}` : ""}`);
+  if (design) {
+    const css = design.theme.custom_css ?? "";
+    console.info(`    Diseño: ${design.label} · CSS personalizado de ${(new TextEncoder().encode(css).length / 1024).toFixed(1)} KB (máx. 20 KB; requiere Pro: theme.custom_css)`);
+    console.info(`    Logo ${design.logoUrl} · favicon ${design.faviconUrl} · anuncio «${design.announcement.text}»`);
+    const labels = (items: Json) => (Array.isArray(items) ? items.map((i) => String((i as { label?: unknown }).label ?? "")).join(", ") : "");
+    console.info(`    Menús: encabezado (${labels(design.menus.header)}) · pie (${labels(design.menus.footer)})`);
+  }
   console.info(`    WhatsApp: ${config.whatsapp}${whatsappNote ? ` (${whatsappNote})` : ""}`);
   console.info(
     `    Transferencia: ${config.transfer.discountPercent} % de descuento · alias ${config.transfer.alias || "(sin alias)"} · titular ${config.transfer.holder || "(sin titular)"}`,
@@ -190,9 +249,9 @@ export interface ApplySettingsOptions {
   overwriteWhatsapp: boolean;
 }
 
-/** Configuración idempotente: preset, WhatsApp, transferencia, envíos y retiro (por nombre). */
+/** Configuración idempotente: preset o diseño, WhatsApp, transferencia, envíos y retiro (por nombre). */
 export async function applySettings(supabase: Db, store: SeedStore, parsed: ParsedStore, opts: ApplySettingsOptions) {
-  const { config, zones, pickups } = parsed;
+  const { config, zones, pickups, design } = parsed;
   const storeId = store.id;
 
   // ---------------- store_settings ----------------
@@ -226,7 +285,10 @@ export async function applySettings(supabase: Db, store: SeedStore, parsed: Pars
     .update({
       tagline: current.tagline || config.tagline || null,
       whatsapp_phone: opts.overwriteWhatsapp || !current.whatsapp_phone ? config.whatsapp : current.whatsapp_phone,
-      theme: PRESETS[config.preset as keyof typeof PRESETS] as unknown as Json,
+      theme: (design ? design.theme : PRESETS[config.preset as keyof typeof PRESETS]) as unknown as Json,
+      ...(design
+        ? { logo_url: design.logoUrl, favicon_url: design.faviconUrl, announcement: design.announcement as unknown as Json }
+        : {}),
       checkout: nextCheckout as Json,
       low_stock_threshold: config.lowStockThreshold,
       ...(setInstagram ? { social: { ...social, instagram: config.instagram } as Json } : {}),
@@ -234,8 +296,17 @@ export async function applySettings(supabase: Db, store: SeedStore, parsed: Pars
     .eq("store_id", storeId);
   if (settings.error) throw new Error(`configuración: ${settings.error.message}`);
   log(
-    `Configuración: preset ${config.preset}, WhatsApp, «quedan pocas» desde ${config.lowStockThreshold}${setInstagram ? ", Instagram" : ""}`,
+    `Configuración: ${design ? `diseño ${config.design} (tema, logo, favicon y anuncio)` : `preset ${config.preset}`}, WhatsApp, «quedan pocas» desde ${config.lowStockThreshold}${setInstagram ? ", Instagram" : ""}`,
   );
+
+  // ---------------- Menús del diseño ----------------
+  if (design) {
+    for (const [handle, items] of Object.entries(design.menus)) {
+      const r = await supabase.from("menus").upsert({ store_id: storeId, handle, items }, { onConflict: "store_id,handle" });
+      if (r.error) throw new Error(`menú ${handle}: ${r.error.message}`);
+    }
+    log("Menús: encabezado y pie del diseño");
+  }
 
   // ---------------- Medios de pago ----------------
   const methods = must(

@@ -5,10 +5,12 @@ import { JsonLd } from "@/components/store/JsonLd";
 import { ProductCard } from "@/components/store/ProductCard";
 import { StoreLink } from "@/components/store/StoreLink";
 import { previewHomeBlocks } from "@/lib/blocks/preview";
+import { bestPaymentDiscount } from "@/lib/pricing";
 import { resolveBlockData } from "@/lib/blocks/resolve";
 import { buildCategoryTree, listCategories } from "@/lib/store/categories";
+import { lunaHomeBlocks, withLunaCategoryImages } from "@/lib/showcase/luna";
 import { requireStore } from "@/lib/store/context";
-import { getStoreDisplay } from "@/lib/store/display";
+import { getStoreDisplay, isLunaDevPreview } from "@/lib/store/display";
 import { getPublishedPage } from "@/lib/store/pages";
 import { listProducts } from "@/lib/store/products";
 import { buildMetadata, organizationJsonLd, websiteJsonLd } from "@/lib/store/seo";
@@ -68,10 +70,24 @@ export default async function HomePage({ params }: Props) {
     whatsapp: Boolean(card.whatsappPhone),
     saved: page?.blocks,
   });
-  const blocks = preview ?? page?.blocks ?? [];
+  // Sólo en desarrollo, con la cookie `ecommy_dev_theme=luna` en la demo: la portada que deja el seed (docs/DEMO-ROPA.md).
+  const luna = !preview && (await isLunaDevPreview());
+  const lunaBlocks = luna
+    ? lunaHomeBlocks({
+        now: new Date(),
+        // Como el seed: el descuento del medio de pago (aunque el tema no lo muestre en las tarjetas).
+        transferDiscount: bestPaymentDiscount(display.paymentMethods)?.discountPercent ?? 0,
+        whatsapp: Boolean(card.whatsappPhone),
+        // Como el seed: el envío gratis más bajo de las zonas (sin depender de la barra de envío gratis).
+        freeShippingFrom: Math.min(...display.zones.map((z) => (z.freeOver && z.freeOver > 0 ? z.freeOver : Infinity))),
+        timeZone: settings.timezone,
+      })
+    : null;
+  const blocks = preview ?? lunaBlocks ?? page?.blocks ?? [];
 
   if (blocks.some((b) => !b.style.hidden)) {
-    const data = await resolveBlockData(store.id, blocks, display.promotions);
+    const resolved = await resolveBlockData(store.id, blocks, display.promotions);
+    const data = luna ? { ...resolved, categories: withLunaCategoryImages(resolved.categories) } : resolved;
     const visible = blocks.filter((b) => !b.style.hidden);
     // El hero (primer bloque) o un heading nivel 1 ya ponen el h1; si no, uno oculto.
     const hasH1 = (visible[0]?.type === "hero") || visible.some((b) => b.type === "heading" && b.settings.level === 1);

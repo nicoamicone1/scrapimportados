@@ -3,11 +3,13 @@
   "source": "demo:luna-indumentaria",
   "currency": "ARS",
   "note": "Catálogo de ejemplo (marca ficticia) para la tienda demo de ropa. Ver docs/DEMO-ROPA.md.",
+  "imageStyle": "illustrated",
   "store": {
     "name": "Luna Indumentaria",
     "tagline": "Ropa de mujer para todos los días. Envíos en CABA y retiro en el local.",
     "kind": "moda",
     "preset": "atelier",
+    "design": "luna",
     "whatsapp": "5491100000000",
     "lowStockThreshold": 3,
     "transfer": {

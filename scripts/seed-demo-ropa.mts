@@ -13,6 +13,7 @@
  *   --replace        # BORRA el catálogo que tenga la tienda (productos, variantes, categorías e imágenes) antes de sembrar
  *   --yes            # con --replace, sin la confirmación interactiva
  *   --force-images   # vuelve a generar las imágenes de ejemplo (borra también las fotos subidas desde el panel)
+ *   SEED_ASSET_ORIGIN=https://…     # dominio de las imágenes de categoría del diseño (default: https://www.ecommy.app)
  *
  * 1. Tienda: si no existe la crea con create_store() (rubro "moda": 14 días
  *    de Pro, home, menús y medios de pago; `demo` es un slug reservado y no
@@ -23,11 +24,17 @@
  *    borra (los que tienen pedidos se archivan), borra las categorías y los
  *    archivos del bucket, y vuelve la identidad a la de una tienda nueva:
  *    scripts/lib/store-replace.mts.
- * 3. Configuración (idempotente): preset del JSON (atelier), WhatsApp (sólo
- *    pisa el cargado con SEED_WHATSAPP), transferencia con su descuento,
- *    umbral de "quedan pocas", zonas de envío y puntos de retiro (por nombre).
+ * 3. Configuración (idempotente): el diseño del JSON (`design: "luna"`: tema
+ *    a medida con CSS propio, logo, favicon, anuncio y menús; sin `design`, el
+ *    tema del preset), WhatsApp (sólo pisa el cargado con SEED_WHATSAPP),
+ *    transferencia con su descuento, umbral de "quedan pocas", zonas de envío
+ *    y puntos de retiro (por nombre).
  * 4. Catálogo: seedCatalog() de seed-from-json.mts con imágenes de ejemplo
  *    (SVG por color). Re-correrlo (sin --replace) no pisa el stock ni las imágenes.
+ * 5. Diseño (idempotente, sólo con `design`): imágenes de categoría
+ *    (`/demo/luna/cat-<slug>.svg`, sin pisar una que haya subido el dueño) y la
+ *    portada a medida (src/lib/showcase/luna/home.ts) con los ids reales de las
+ *    categorías y la cuenta regresiva a la próxima luna nueva desde hoy.
  *
  * El --dry-run no escribe nunca. Sin SEED_EMAIL/SEED_PASSWORD tampoco se
  * conecta; con ellas se conecta sólo para leer y lista lo que borraría
@@ -35,7 +42,9 @@
  */
 import { createInterface } from "node:readline/promises";
 
+import { blocksSchema, type Block } from "../src/lib/blocks/schema";
 import { starterHomeBlocks } from "../src/lib/blocks/starters";
+import { LUNA_CATEGORY_ORDER, LUNA_DESIGN_ID, lunaCategoryImage, lunaHomeBlocks } from "../src/lib/showcase/luna";
 import type { Json } from "../src/lib/supabase/database.types";
 import { storeSlugProblem } from "../src/lib/tenant/slug";
 import { storeUrl } from "../src/lib/tenant/urls";
@@ -55,6 +64,13 @@ import { cliFlags, connect, findStore, isEntry, loadSource, log, printPlan, seed
 const DEFAULT_FILE = "data/demo-ropa.json";
 const DEFAULT_SLUG = "demo";
 const DEMO_PRODUCT = "remera-basica-de-algodon";
+/**
+ * Dominio de las imágenes de categoría del diseño. Van con URL absoluta porque
+ * el formulario de categorías del panel sólo acepta URLs (con una ruta `/…`
+ * el dueño no podría volver a guardar la categoría). Los archivos son estáticos
+ * de la app (`public/demo/luna/`): se sirven en cualquier dominio del deploy.
+ */
+const DEFAULT_ASSET_ORIGIN = "https://www.ecommy.app";
 
 const sample = (names: string[], n = 8) => `${names.slice(0, n).join(", ")}${names.length > n ? `, … y ${names.length - n} más` : ""}`;
 
@@ -80,12 +96,36 @@ async function confirmReplace(slug: string, yes: boolean) {
   if (answer.trim().toLowerCase() !== slug) throw new Error("Cancelado: no se tocó nada.");
 }
 
-function homeBlocks(parsed: ParsedStore): Json {
-  return starterHomeBlocks(parsed.config.preset, {
-    storeName: parsed.config.name,
-    transferDiscount: parsed.config.transfer.discountPercent,
-    whatsapp: true,
-  }) as unknown as Json;
+/** Envío gratis más bajo entre las zonas del JSON (null = ninguna). */
+function freeShippingFrom(parsed: ParsedStore): number | null {
+  const values = parsed.zones.map((z) => z.free_over).filter((v): v is number => typeof v === "number" && v > 0);
+  return values.length ? Math.min(...values) : null;
+}
+
+/**
+ * Portada: la del diseño (`luna`, con los ids de categoría si ya existen) o la
+ * de fábrica del preset. Se valida con el schema del constructor antes de escribir.
+ */
+function homeBlocks(parsed: ParsedStore, categoryIds?: Record<string, string>): Json {
+  const blocks: Block[] =
+    parsed.config.design === LUNA_DESIGN_ID
+      ? lunaHomeBlocks({
+          now: new Date(),
+          transferDiscount: parsed.config.transfer.discountPercent,
+          whatsapp: true,
+          freeShippingFrom: freeShippingFrom(parsed),
+          categoryIds,
+        })
+      : starterHomeBlocks(parsed.config.preset, {
+          storeName: parsed.config.name,
+          transferDiscount: parsed.config.transfer.discountPercent,
+          whatsapp: true,
+        });
+  const check = blocksSchema.safeParse(blocks);
+  if (!check.success) {
+    throw new Error(`La portada no pasa el schema de bloques: ${check.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`);
+  }
+  return blocks as unknown as Json;
 }
 
 async function setHome(supabase: Db, store: SeedStore, parsed: ParsedStore) {
@@ -93,10 +133,80 @@ async function setHome(supabase: Db, store: SeedStore, parsed: ParsedStore) {
   if (r.error) console.warn(`[seed] Portada de fábrica: ${r.error.message} (queda la de create_store)`);
 }
 
+const assetOrigin = () => (process.env.SEED_ASSET_ORIGIN?.trim() || DEFAULT_ASSET_ORIGIN).replace(/\/+$/, "");
+
+/** Lo que hace el paso 5 (--dry-run). */
+function printDesignPlan(parsed: ParsedStore) {
+  if (parsed.config.design !== LUNA_DESIGN_ID) return;
+  const blocks = homeBlocks(parsed) as unknown as Block[];
+  log(`Diseño «${parsed.config.design}», después del catálogo:`);
+  console.info(`    Imágenes de categoría (si no tienen una subida desde el panel): ${LUNA_CATEGORY_ORDER.map((slug) => lunaCategoryImage(slug, assetOrigin())).join(", ")}`);
+  console.info(`    Portada a medida: ${blocks.length} bloques, validados con el schema del constructor (borra el borrador de la portada si hay):`);
+  for (const [i, b] of blocks.entries()) {
+    const s = b.settings as { title?: string; items?: unknown[]; endsAt?: string };
+    const what =
+      b.type === "countdown" ? `${s.title} → ${s.endsAt}` : s.title ? s.title : s.items ? `${s.items.length} ${b.type === "marquee" ? "textos" : "ítems"}` : "";
+    console.info(`      ${String(i + 1).padStart(2, " ")}. ${b.type.padEnd(14)} ${b.style.background.padEnd(8)} ${what}`);
+  }
+}
+
+/**
+ * Paso 5 (sólo con `design`): imágenes de categoría por slug y portada a
+ * medida con los ids reales. Idempotente: una imagen que no es del diseño
+ * (subida desde el panel) no se pisa; la portada se reescribe entera.
+ */
+async function applyDesign(supabase: Db, store: SeedStore, parsed: ParsedStore) {
+  if (parsed.config.design !== LUNA_DESIGN_ID) return;
+  const cats = await supabase.from("categories").select("id, slug, image_url").eq("store_id", store.id).in("slug", [...LUNA_CATEGORY_ORDER]);
+  if (cats.error) throw new Error(`leer categorías: ${cats.error.message}`);
+  const categoryIds: Record<string, string> = {};
+  let images = 0;
+  for (const c of cats.data ?? []) {
+    categoryIds[c.slug] = c.id;
+    if (c.image_url && !c.image_url.includes("/demo/luna/")) continue;
+    const url = lunaCategoryImage(c.slug, assetOrigin());
+    if (c.image_url === url) continue;
+    const r = await supabase.from("categories").update({ image_url: url }).eq("store_id", store.id).eq("id", c.id);
+    if (r.error) throw new Error(`imagen de la categoría ${c.slug}: ${r.error.message}`);
+    images++;
+  }
+  log(`Imágenes de categoría: ${images} actualizadas (${Object.keys(categoryIds).length}/${LUNA_CATEGORY_ORDER.length} categorías del diseño en la tienda)`);
+
+  const home = homeBlocks(parsed, categoryIds);
+  const page = await supabase.from("pages").select("id").eq("store_id", store.id).eq("slug", "home").maybeSingle();
+  if (page.error) throw new Error(`leer portada: ${page.error.message}`);
+  if (page.data) {
+    const r = await supabase.from("pages").update({ blocks: home, status: "published" }).eq("store_id", store.id).eq("id", page.data.id);
+    if (r.error) throw new Error(`portada: ${r.error.message}`);
+    // Un borrador viejo haría que el constructor abra la portada anterior.
+    const d = await supabase.from("page_drafts").delete().eq("store_id", store.id).eq("page_id", page.data.id);
+    if (d.error) throw new Error(`borrador de la portada: ${d.error.message}`);
+  } else {
+    const r = await supabase.from("pages").insert({
+      store_id: store.id,
+      title: "Inicio",
+      slug: "home",
+      type: "home",
+      status: "published",
+      blocks: home,
+      seo: { title: "", description: "" },
+      published_at: new Date().toISOString(),
+      show_in_menu: false,
+    });
+    if (r.error) throw new Error(`portada: ${r.error.message}`);
+  }
+  const blocks = home as unknown as Block[];
+  const countdown = blocks.find((b) => b.type === "countdown");
+  log(
+    `Portada a medida: ${blocks.length} bloques${countdown?.type === "countdown" ? ` · cuenta regresiva a la luna nueva del ${countdown.settings.endsAt}` : ""}`,
+  );
+}
+
 /** --dry-run: plan sin escribir; con credenciales, lee la tienda para los números reales. */
 async function dryRun(source: SourceFile, parsed: ParsedStore, opts: { file: string; slug: string; replace: boolean; whatsappNote: string }) {
   printStorePlan(parsed, opts.slug, opts.whatsappNote);
   printPlan(source, { file: opts.file, storeSlug: opts.slug });
+  printDesignPlan(parsed);
 
   const canConnect = Boolean(process.env.SEED_EMAIL && process.env.SEED_PASSWORD);
   if (!canConnect) {
@@ -173,7 +283,8 @@ async function main() {
       assertNoForeign(inv, slug, file);
     }
     await renameStore(supabase, store, parsed);
-  } else {
+  } else if (!parsed.design) {
+    // Con diseño, la portada la pone applyDesign() cuando ya existen las categorías.
     await setHome(supabase, store, parsed);
   }
 
@@ -181,6 +292,7 @@ async function main() {
   await applySettings(supabase, store, parsed, { overwriteWhatsapp: Boolean(whatsappEnv) });
   await keepPro(supabase, store);
   await seedCatalog(supabase, store, source, { forceImages: flags.forceImages });
+  await applyDesign(supabase, store, parsed);
   await supabase.auth.signOut();
 
   // ROOT_DOMAIN de urls.ts se lee al importar, antes de cargar .env.local: se pasa explícito.
