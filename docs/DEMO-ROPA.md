@@ -8,7 +8,7 @@
 | | |
 | --- | --- |
 | Tienda | `demo` renombrada a «Luna Indumentaria», rubro moda (preset **Atelier** para el alta) con el **diseño a medida «Luna»**: tema propio con CSS personalizado, logo, favicon, anuncio, menús, imágenes de categoría y portada editorial (ver [Diseño a medida](#diseño-a-medida-luna)) |
-| Catálogo | 32 productos en 6 categorías: Remeras (7), Buzos y camperas (6), Pantalones (7), Vestidos (5), Camisas (4), Accesorios (3) |
+| Catálogo | 32 productos en 6 categorías: Remeras (7), Buzos y camperas (6), Pantalones (7), Vestidos (5), Camisas (4), Accesorios (3). Dos son las prendas del pedido de ejemplo de la landing (#1042) |
 | Variantes | 253 variantes **color × talle** (S a XL, S a L o 36 a 44; accesorios por color), stock de 0 a 8 por variante: 47 agotadas y 35 con 1 o 2 unidades |
 | Para mostrar | «Quedan 2» en **Remera básica de algodón, Negro / M** · precio tachado en 5 productos · **precio por cantidad** en 3 (Remera básica: 3+ a $ 23.500 y 6+ a $ 21.900; Musculosa acanalada: 3+ a $ 21.500; Medias por 3 pares: 3+ a $ 10.500) · **Tapado de paño largo sin stock** en todas sus variantes, para mostrar «¿Querés que te avisemos cuando vuelva?» |
 | Cobro | Transferencia con **10 %** de descuento (alias `ALIAS.DE.EJEMPLO`, titular de ejemplo) y «Acordar con el vendedor» por WhatsApp |
@@ -114,9 +114,20 @@ Después, de verdad, **una sola vez**:
 $env:SEED_EMAIL='tu-mail'; $env:SEED_PASSWORD='tu-clave'; $env:SEED_WHATSAPP='549XXXXXXXXXX'; npx tsx scripts/seed-demo-ropa.mts --replace
 ```
 
-Las variables `$env:` quedan puestas mientras dure esa ventana de PowerShell; para borrar la clave al terminar: `Remove-Item Env:SEED_PASSWORD`.
+Muestra el mismo resumen y pide que escribas `demo` para seguir (sin terminal interactiva, `--yes`). La respuesta va **al script**, cuando la pregunta aparece; el `--dry-run` no pregunta nada.
 
-Muestra el mismo resumen y pide que escribas `demo` para seguir (sin terminal interactiva, `--yes`).
+Con el catálogo de electro, el `--replace` (y el `--dry-run --replace` con credenciales) tardó unos **5 minutos** en mostrar el resumen: lista el bucket carpeta por carpeta (700 carpetas de producto). No está colgado.
+
+En **PowerShell** la sintaxis `VAR=valor comando` no existe y `npm run seed -- …` puede perder el `--`. Usá:
+
+```powershell
+$env:SEED_EMAIL="tu-mail"; $env:SEED_PASSWORD="tu-clave"; $env:SEED_WHATSAPP="549XXXXXXXXXX"
+npx tsx scripts/seed-demo-ropa.mts --dry-run --replace
+npx tsx scripts/seed-demo-ropa.mts --replace
+Remove-Item Env:SEED_PASSWORD
+```
+
+> **Hecho en producción el 2026-10-11**: 689 productos, 70 categorías y 789 archivos borrados; 11 productos con pedidos archivados; 32 productos, 253 variantes y 72 imágenes de ejemplo sembrados. Re-correrlo sin `--replace` es idempotente.
 
 > **`--replace` borra el catálogo de electro y no se puede deshacer.** Antes de sembrar: borra todos los productos de `demo` con sus variantes, imágenes, categorías y movimientos de stock (los que tienen pedidos se **archivan**, como pide el panel, para no perder el historial: quedan ocultos y con el slug `…-archivado-…`), borra los archivos del bucket `media/<store_id>/` salvo `receipts/` (comprobantes de pedidos; las miniaturas de los pedidos viejos quedan sin foto), vuelve nombre, bajada, SEO, anuncio, redes, logo, encabezado y pie, políticas, datos fiscales y cuenta de transferencia a los de una tienda nueva, pone los menús y la portada de fábrica, pasa las otras páginas a borrador, desactiva promociones, zonas de envío, retiros y medios de pago que no son del JSON y borra las redirecciones. No toca pedidos, clientes, cupones, equipo, plan, dominio ni el mail y teléfono de contacto. El catálogo de electro queda sólo en el historial de git (`data/products.json`, borrado del repo junto con su scraper).
 
