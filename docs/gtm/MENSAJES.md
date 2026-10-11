@@ -2,6 +2,18 @@
 
 > Fuente: [`PLAN-GTM.md`](PLAN-GTM.md) §8.5. Regla de oro: el primer mensaje abre una conversación, no vende. Menos de 300 caracteres, una pregunta, algo que viste en su perfil, sin link.
 
+## Reglas de tono (revisión de Nico, 11 oct)
+
+Obligatorias en todos los mensajes 1 y sus respuestas. Si un ejemplo de abajo choca con estas reglas, mandan estas.
+
+1. **No decir "soy Nico" ni presentarse por nombre.** El mensaje sale de @ecommy.app y el perfil ya dice quién escribe. Si hace falta contexto, alcanza con "hago Ecommy" o "estoy armando Ecommy", pero no en todos.
+2. **No usar "de colado"** ni ninguna fórmula de falsa modestia repetida.
+3. **No fingir interés ni elogiar** ("re prolijo", "qué bueno el drop", "me encantó", "me imaginé la cantidad de consultas jaja"). Sí se puede nombrar un hecho observable y neutro ("vi que el catálogo lo tenés en las destacadas", "vi que tenés guía de talles en Drive"): es contexto honesto, no halago.
+4. **Honestidad sobre la intención.** Está bien decir que escribís porque hacés un sistema para esto y querés entender cómo lo manejan hoy. Nunca disfrazar la venta de curiosidad casual.
+5. **Se mantiene:** tono humano, relajado, rioplatense, escrito desde el celular; una sola pregunta; sin link, sin precio, sin bullets, sin emojis; 150 a 280 caracteres; imperfecciones sutiles en algunos (minúscula inicial, una tilde que falta, un "q", una coma de menos), nunca forzadas; arranques variados; cero datos inventados; sin prometer tiempos.
+
+Qué enfoque usar según la tienda que ya tiene (sin tienda, tienda abandonada o caída, tienda activa en Tiendanube o Empretienda): [`ESTRATEGIA-TIENDANUBE.md`](ESTRATEGIA-TIENDANUBE.md).
+
 ## Antes de mandar nada
 
 1. Interactuá primero: respondé una historia o comentá un post. Si no, el DM cae en "Solicitudes" sin notificación.
@@ -14,7 +26,7 @@ Reemplazá entre corchetes. `[tu nombre]` es tu nombre de pila; nunca "el equipo
 ## Instagram DM
 
 **Inicial (respondiendo a una historia suya)**
-> ¡Qué bueno el drop! Vi que la [remera X] se agotó en M el martes. Te pregunto por curiosidad, no te vendo nada: cuando se te vende algo por DM, ¿cómo llevás el stock de los talles? Estoy armando algo para marcas que venden por IG y quiero entender cómo lo hacen hoy.
+> hola! te escribo porque armo un sistema de pedidos para marcas de ropa y quiero entender cómo lo manejan hoy. vi que la [remera X] se agotó en M el martes: cuando te piden por DM y por WhatsApp el mismo día, como llevás qué talle te queda?
 
 Variantes de apertura según la señal que viste:
 - Destacada "CÓMO COMPRAR": "Vi que el catálogo lo tenés en las destacadas. ¿Cuántas veces por día te preguntan precio o talle de algo que ya está ahí?"
