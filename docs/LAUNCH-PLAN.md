@@ -337,7 +337,7 @@ Si un comercio pide que lo bajes, se baja el mismo día, de todos los canales.
 | Cobro manual de planes que no escala y se olvida | Ingresos perdidos, clientes en Pro sin pagar | Planilla de cobros con vencimientos; plan anual por transferencia; priorizar Mercado Pago (v0.2, `BILLING.md`) |
 | Sin emails automáticos (confirmación de pedido al comprador, aviso al vendedor) | Pedidos que el comercio no ve a tiempo | Aviso de pedidos nuevos en el panel; otro agente está implementando emails con Resend (checklist §3) |
 | Mails de registro que no llegan (SMTP de Supabase con límite bajo) | Registros perdidos el día del lanzamiento | SMTP propio con Resend antes de lanzar (checklist §2 y §3) |
-| Catálogo de la demo tomado de la web de un tercero | Reclamo por uso de imágenes y textos | Reemplazado por una marca ficticia (`data/demo-ropa.json`); falta correr el seed con `--replace` para borrarlo de la base (checklist §11.1) |
+| Catálogo de la demo tomado de la web de un tercero | Reclamo por uso de imágenes y textos | Reemplazado por una marca ficticia (`data/demo-ropa.json`); borrado de la base y del bucket el 2026-10-11 con el seed `--replace` (checklist §11.1) |
 | Nombre "Ecommy" con otra marca registrada | Tener que cambiar de nombre con cuentas ya abiertas | Búsqueda y registro en INPI (checklist §7) |
 | Bloqueo del WhatsApp de la plataforma por mensajes en masa | Se corta el canal de ventas y de soporte | Sólo mensajes 1 a 1 a gente con relación; número de respaldo |
 | Caída de Supabase o de Vercel el día del lanzamiento | Mala primera impresión | Monitoreo externo, mensaje de incidente preparado, rollback (checklist §10) |

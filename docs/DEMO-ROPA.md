@@ -8,8 +8,8 @@
 | | |
 | --- | --- |
 | Tienda | `demo` renombrada a «Luna Indumentaria», rubro moda, preset **Atelier** (Cormorant sobre blanco roto, tarjetas 4:5) y portada de fábrica del preset |
-| Catálogo | 30 productos en 6 categorías: Remeras (6), Buzos y camperas (6), Pantalones (6), Vestidos (5), Camisas (4), Accesorios (3) |
-| Variantes | 244 variantes **color × talle** (S a XL, S a L o 36 a 44; accesorios por color), stock de 0 a 8 por variante: 46 agotadas y 32 con 2 unidades |
+| Catálogo | 32 productos en 6 categorías: Remeras (7), Buzos y camperas (6), Pantalones (7), Vestidos (5), Camisas (4), Accesorios (3). Dos son las prendas del pedido de ejemplo de la landing (#1042) |
+| Variantes | 253 variantes **color × talle** (S a XL, S a L o 36 a 44; accesorios por color), stock de 0 a 8 por variante: 47 agotadas y 35 con 2 unidades |
 | Para mostrar | «Quedan 2» en **Remera básica de algodón, Negro / M** · precio tachado en 6 productos · **precio por cantidad** en 3 (Remera básica: 3+ a $ 23.500 y 6+ a $ 21.900; Musculosa acanalada: 3+ a $ 21.500; Medias por 3 pares: 3+ a $ 10.500) · **Tapado de paño largo sin stock** en todas sus variantes, para mostrar «¿Querés que te avisemos cuando vuelva?» |
 | Cobro | Transferencia con **10 %** de descuento (alias `ALIAS.DE.EJEMPLO`, titular de ejemplo) y «Acordar con el vendedor» por WhatsApp |
 | Entrega | Envío **CABA** $ 4.500 (gratis desde $ 120.000, 24 a 48 hs hábiles) y **retiro en el local** («Local de Palermo», dirección de ejemplo) |
@@ -46,7 +46,20 @@ Después, de verdad, **una sola vez**:
 SEED_EMAIL=tu-mail SEED_PASSWORD='tu-clave' SEED_WHATSAPP=549XXXXXXXXXX npx tsx scripts/seed-demo-ropa.mts --replace
 ```
 
-Muestra el mismo resumen y pide que escribas `demo` para seguir (sin terminal interactiva, `--yes`).
+Muestra el mismo resumen y pide que escribas `demo` para seguir (sin terminal interactiva, `--yes`). La respuesta va **al script**, cuando la pregunta aparece; el `--dry-run` no pregunta nada.
+
+Con el catálogo de electro, el `--replace` (y el `--dry-run --replace` con credenciales) tardó unos **5 minutos** en mostrar el resumen: lista el bucket carpeta por carpeta (700 carpetas de producto). No está colgado.
+
+En **PowerShell** la sintaxis `VAR=valor comando` no existe y `npm run seed -- …` puede perder el `--`. Usá:
+
+```powershell
+$env:SEED_EMAIL="tu-mail"; $env:SEED_PASSWORD="tu-clave"; $env:SEED_WHATSAPP="549XXXXXXXXXX"
+npx tsx scripts/seed-demo-ropa.mts --dry-run --replace
+npx tsx scripts/seed-demo-ropa.mts --replace
+Remove-Item Env:SEED_PASSWORD
+```
+
+> **Hecho en producción el 2026-10-11**: 689 productos, 70 categorías y 789 archivos borrados; 11 productos con pedidos archivados; 32 productos, 253 variantes y 72 imágenes de ejemplo sembrados. Re-correrlo sin `--replace` es idempotente.
 
 > **`--replace` borra el catálogo de electro y no se puede deshacer.** Antes de sembrar: borra todos los productos de `demo` con sus variantes, imágenes, categorías y movimientos de stock (los que tienen pedidos se **archivan**, como pide el panel, para no perder el historial: quedan ocultos y con el slug `…-archivado-…`), borra los archivos del bucket `media/<store_id>/` salvo `receipts/` (comprobantes de pedidos; las miniaturas de los pedidos viejos quedan sin foto), vuelve nombre, bajada, SEO, anuncio, redes, logo, encabezado y pie, políticas, datos fiscales y cuenta de transferencia a los de una tienda nueva, pone los menús y la portada de fábrica, pasa las otras páginas a borrador, desactiva promociones, zonas de envío, retiros y medios de pago que no son del JSON y borra las redirecciones. No toca pedidos, clientes, cupones, equipo, plan, dominio ni el mail y teléfono de contacto. El catálogo de electro queda sólo en el historial de git (`data/products.json`, borrado del repo junto con su scraper).
 
@@ -58,7 +71,7 @@ Muestra el mismo resumen y pide que escribas `demo` para seguir (sin terminal in
 | `SEED_STORE` | No | Otro slug (default `demo`). Si no existe, la crea con `create_store()` |
 | `SEED_FILE` | No | Otro catálogo con el mismo formato y bloque `store` (default `data/demo-ropa.json`) |
 
-Flags: `--dry-run` (no escribe), `--replace` (borra el catálogo anterior, ver arriba), `--yes` (sin la confirmación de `--replace`), `--force-images` (borra **todas** las imágenes de los 30 productos, incluidas fotos que hayas subido, y vuelve a generar las de ejemplo).
+Flags: `--dry-run` (no escribe), `--replace` (borra el catálogo anterior, ver arriba), `--yes` (sin la confirmación de `--replace`), `--force-images` (borra **todas** las imágenes de los 32 productos, incluidas fotos que hayas subido, y vuelve a generar las de ejemplo).
 
 Sin `--replace`, si la tienda tiene productos (no archivados) que no son del JSON, el script **frena sin tocar nada** y te dice cuántos son. Re-correrlo sobre la demo ya sembrada es idempotente: renombra la tienda, vuelve a aplicar preset, transferencia, envío y retiro; los productos se actualizan por su id del JSON, el **stock de las variantes existentes no se pisa** y las imágenes que ya tenga un producto tampoco. Para ver los cambios puede tardar hasta 5 minutos (caché de la tienda).
 
