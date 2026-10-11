@@ -4,7 +4,7 @@ Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changel
 
 ## Sin publicar
 
-Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere aplicar la migración 0025 (esquema 16). La 0026 (borrar tiendas, sin cambio de esquema) ya está aplicada en producción desde el 2026-10-10.
+Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Migraciones 0025 (esquema 16) y 0026 (borrar tiendas, sin cambio de esquema) aplicadas en producción el 2026-10-10.
 
 ### Agregado
 
