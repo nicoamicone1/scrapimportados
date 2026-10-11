@@ -1,13 +1,13 @@
 # Demo de ropa: Luna Indumentaria
 
-> Tienda demo para mostrarle Ecommy a marcas de ropa (PLAN-GTM §9). La demo vieja (`demo`, electro y bazar de DAZ) no sirve para eso: una marca de ropa necesita ver **talles, colores y stock por variante**.
+> La tienda demo pública de Ecommy (PLAN-GTM §9): vive en **`demo`** (`https://demo.ecommy.app`), la misma dirección del link «Tienda demo» y del CTA de la landing, así que no hay que cambiar variables. Reemplaza a la demo vieja de electro y bazar (catálogo importado de un proveedor), que no le servía a una marca de ropa: necesita ver **talles, colores y stock por variante**.
 > «Luna Indumentaria» es una marca **ficticia**: los nombres, precios, alias y dirección son de ejemplo. No la uses para cobrarle a nadie.
 
 ## Qué crea
 
 | | |
 | --- | --- |
-| Tienda | `ropa` («Luna Indumentaria»), rubro moda, preset **Atelier** (Cormorant sobre blanco roto, tarjetas 4:5) |
+| Tienda | `demo` renombrada a «Luna Indumentaria», rubro moda, preset **Atelier** (Cormorant sobre blanco roto, tarjetas 4:5) y portada de fábrica del preset |
 | Catálogo | 30 productos en 6 categorías: Remeras (6), Buzos y camperas (6), Pantalones (6), Vestidos (5), Camisas (4), Accesorios (3) |
 | Variantes | 244 variantes **color × talle** (S a XL, S a L o 36 a 44; accesorios por color), stock de 0 a 8 por variante: 46 agotadas y 32 con 2 unidades |
 | Para mostrar | «Quedan 2» en **Remera básica de algodón, Negro / M** · precio tachado en 6 productos · **precio por cantidad** en 3 (Remera básica: 3+ a $ 23.500 y 6+ a $ 21.900; Musculosa acanalada: 3+ a $ 21.500; Medias por 3 pares: 3+ a $ 10.500) · **Tapado de paño largo sin stock** en todas sus variantes, para mostrar «¿Querés que te avisemos cuando vuelva?» |
@@ -17,42 +17,52 @@
 | Imágenes | Una imagen de ejemplo por color (SVG: plano del color, nombre, color, talles y «Foto de ejemplo»). Al elegir un color, la ficha muestra la suya |
 | Plan | Pro activo si corrés el script con un admin de plataforma; si no, los 14 días de Pro del alta |
 
-Archivos: `data/demo-ropa.json` (catálogo + bloque `store` con la configuración), `scripts/seed-demo-ropa.mts` (tienda y configuración, con `scripts/lib/store-setup.mts`, que comparte con la tienda de prospectas) que usa `scripts/seed-from-json.mts` (catálogo, el mismo seed de siempre) y `scripts/lib/placeholder-svg.mts` (imágenes de ejemplo).
+Archivos: `data/demo-ropa.json` (catálogo + bloque `store` con la configuración), `scripts/seed-demo-ropa.mts` (`npm run seed`: tienda y configuración, con `scripts/lib/store-setup.mts`, que comparte con la tienda de prospectas), `scripts/lib/store-replace.mts` (el `--replace`), `scripts/seed-from-json.mts` (catálogo) y `scripts/lib/placeholder-svg.mts` (imágenes de ejemplo).
 
 ## Antes de empezar
 
 1. `.env.local` en la raíz con las variables del proyecto que ya usa la app: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y, para que el script imprima el link correcto, `NEXT_PUBLIC_ROOT_DOMAIN`. El script no usa la service-role key.
-2. Una cuenta con el mail confirmado. Conviene la tuya de **admin de plataforma**: puede crear más de 3 tiendas y el script deja la demo en Pro activo (si no, a los 14 días pasa a Free: 25 productos y sin Responder).
+2. Tu cuenta de **admin de plataforma** (o una dueña o admin de la tienda `demo`; con la de plataforma, el script además deja la demo en Pro activo). `demo` es una dirección reservada, así que el script no la crea: la creó la migración 0011 y ya existe en producción.
 3. Migraciones aplicadas hasta la 0021 como mínimo (precios por cantidad; sin ella los productos se cargan igual, sin tramos, y el script avisa). La 0016 es la de «Avisame cuando vuelva».
-4. Tu WhatsApp en formato internacional sin `+`, sin 0 y sin 15 (ej. `5491122334455`): es adonde llegan los pedidos de la demo. Sin `SEED_WHATSAPP` queda el placeholder `5491100000000` y el paso 4 de abajo no te llega a vos.
+4. Tu WhatsApp en formato internacional sin `+`, sin 0 y sin 15 (ej. `5491122334455`): es adonde llegan los pedidos de la demo. Sin `SEED_WHATSAPP` queda el número que ya tenía `demo` (o el placeholder `5491100000000` si no tenía) y el paso 5 de abajo puede no llegarte a vos.
 
 ## Comando
 
-Primero en seco (valida el JSON con los mismos schemas del panel y lista todo lo que crearía, sin conectarse a la base ni pedir credenciales):
+Primero en seco. Valida el JSON con los mismos schemas del panel y lista todo lo que crearía, sin escribir nada:
 
 ```bash
-npx tsx scripts/seed-demo-ropa.mts --dry-run
+npx tsx scripts/seed-demo-ropa.mts --dry-run --replace
 ```
 
-Después, de verdad:
+Sin credenciales no se conecta a la base: dice qué borraría `--replace`, pero no cuántos productos hay. Con `SEED_EMAIL` y `SEED_PASSWORD` el mismo comando se conecta **sólo para leer** y lista los números reales (productos que se borran y cuáles se archivan por tener pedidos, variantes, imágenes, categorías, archivos del bucket, páginas, promociones, zonas y medios de pago que se desactivan):
 
 ```bash
-SEED_EMAIL=tu-mail SEED_PASSWORD='tu-clave' SEED_WHATSAPP=549XXXXXXXXXX npx tsx scripts/seed-demo-ropa.mts
+SEED_EMAIL=tu-mail SEED_PASSWORD='tu-clave' npx tsx scripts/seed-demo-ropa.mts --dry-run --replace
 ```
+
+Después, de verdad, **una sola vez**:
+
+```bash
+SEED_EMAIL=tu-mail SEED_PASSWORD='tu-clave' SEED_WHATSAPP=549XXXXXXXXXX npx tsx scripts/seed-demo-ropa.mts --replace
+```
+
+Muestra el mismo resumen y pide que escribas `demo` para seguir (sin terminal interactiva, `--yes`).
+
+> **`--replace` borra el catálogo de electro y no se puede deshacer.** Antes de sembrar: borra todos los productos de `demo` con sus variantes, imágenes, categorías y movimientos de stock (los que tienen pedidos se **archivan**, como pide el panel, para no perder el historial: quedan ocultos y con el slug `…-archivado-…`), borra los archivos del bucket `media/<store_id>/` salvo `receipts/` (comprobantes de pedidos; las miniaturas de los pedidos viejos quedan sin foto), vuelve nombre, bajada, SEO, anuncio, redes, logo, encabezado y pie, políticas, datos fiscales y cuenta de transferencia a los de una tienda nueva, pone los menús y la portada de fábrica, pasa las otras páginas a borrador, desactiva promociones, zonas de envío, retiros y medios de pago que no son del JSON y borra las redirecciones. No toca pedidos, clientes, cupones, equipo, plan, dominio ni el mail y teléfono de contacto. El catálogo de electro queda sólo en el historial de git (`data/products.json`, borrado del repo junto con su scraper).
 
 | Variable | Obligatoria | Qué es |
 | --- | --- | --- |
-| `SEED_EMAIL` | Sí | Mail de la cuenta que va a ser dueña de la tienda (o admin, si ya existe) |
+| `SEED_EMAIL` | Sí | Mail de tu cuenta de admin de plataforma (o dueña o admin de `demo`) |
 | `SEED_PASSWORD` | Sí | Su contraseña. No la guardes en archivos del repo |
-| `SEED_WHATSAPP` | Recomendada | Tu WhatsApp para recibir los pedidos de la demo |
-| `SEED_STORE` | No | Otro slug (default `ropa`) |
-| `SEED_FILE` | No | Otro catálogo con el mismo formato (default `data/demo-ropa.json`) |
+| `SEED_WHATSAPP` | Recomendada | Tu WhatsApp para recibir los pedidos de la demo. Sin esto no se pisa el que ya tenga la tienda (si no tiene, queda el placeholder) |
+| `SEED_STORE` | No | Otro slug (default `demo`). Si no existe, la crea con `create_store()` |
+| `SEED_FILE` | No | Otro catálogo con el mismo formato y bloque `store` (default `data/demo-ropa.json`) |
 
-Flags: `--dry-run` (no toca nada), `--force-images` (borra **todas** las imágenes de los 30 productos, incluidas fotos que hayas subido, y vuelve a generar las de ejemplo).
+Flags: `--dry-run` (no escribe), `--replace` (borra el catálogo anterior, ver arriba), `--yes` (sin la confirmación de `--replace`), `--force-images` (borra **todas** las imágenes de los 30 productos, incluidas fotos que hayas subido, y vuelve a generar las de ejemplo).
 
-Es idempotente: si la tienda existe la usa (y vuelve a aplicar preset, transferencia, envío y retiro); los productos se actualizan por su id del JSON, el **stock de las variantes existentes no se pisa** y las imágenes que ya tenga un producto tampoco. Para ver los cambios puede tardar hasta 5 minutos (caché de la tienda).
+Sin `--replace`, si la tienda tiene productos (no archivados) que no son del JSON, el script **frena sin tocar nada** y te dice cuántos son. Re-correrlo sobre la demo ya sembrada es idempotente: renombra la tienda, vuelve a aplicar preset, transferencia, envío y retiro; los productos se actualizan por su id del JSON, el **stock de las variantes existentes no se pisa** y las imágenes que ya tenga un producto tampoco. Para ver los cambios puede tardar hasta 5 minutos (caché de la tienda).
 
-Al terminar imprime el link de la tienda y el de la ficha para la demo. Con subdominios es `https://ropa.<dominio>`; en modo sin subdominios, `https://<dominio>/s/ropa`.
+Al terminar imprime el link de la tienda y el de la ficha para la demo: `https://demo.<dominio>` (en modo sin subdominios, `https://<dominio>/s/demo`).
 
 ## Qué verificar en el celular
 
@@ -70,7 +80,7 @@ Hacelo una vez antes de cada demo, en el orden del guion (PLAN-GTM §9, GUION-DE
 
 ## Landing apuntando a esta demo
 
-La landing toma la tienda demo de `NEXT_PUBLIC_DEMO_STORE_SLUG` (la está sumando otro cambio de esta rama; default `demo`). Cuando la tienda `ropa` ya esté sembrada y verificada, en Vercel → Settings → Environment Variables (production) poné `NEXT_PUBLIC_DEMO_STORE_SLUG=ropa` y volvé a deployar. Hasta entonces dejala en `demo`.
+La landing toma la tienda demo de `NEXT_PUBLIC_DEMO_STORE_SLUG`, con default `demo`: como Luna vive en `demo`, no hay que cambiar nada en Vercel. Si alguna vez la definiste en `ropa`, borrala o volvela a `demo`.
 
 ## Reemplazar las imágenes de ejemplo
 

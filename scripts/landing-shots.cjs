@@ -3,7 +3,7 @@
  * Capturas reales del producto para la landing (docs/BRAND.md §8, nivel 2).
  *
  *   node scripts/landing-shots.cjs              # todas
- *   node scripts/landing-shots.cjs panel-inicio tienda-demo-m   # sólo esas
+ *   node scripts/landing-shots.cjs panel-pedidos   # sólo esa
  *
  * Genera `public/img/platform/<nombre>.webp` con el Edge instalado (igual que
  * `scripts/shots.cjs`) y las recorta/escala con `sharp` a un tamaño FIJO por
@@ -37,17 +37,17 @@ const BASE = process.env.BASE || "http://localhost:3000";
 const DESKTOP = { viewport: { width: 1440, height: 900 }, scale: 1, out: [1280, 800] };
 const MOBILE = { viewport: { width: 390, height: 844 }, scale: 2, out: [540, 1169] };
 
-/** name → ruta, si entra al panel y el dispositivo. Mantener en sync con `landing/shots.ts`. */
-const SHOTS = [
-  { name: "panel-inicio", path: "/admin", login: true, device: DESKTOP },
-  { name: "panel-pedidos", path: "/admin/pedidos", login: true, device: DESKTOP },
-  { name: "panel-productos", path: "/admin/productos", login: true, device: DESKTOP },
-  { name: "panel-apariencia", path: "/admin/apariencia", login: true, device: DESKTOP },
-  { name: "panel-pedidos-m", path: "/admin/pedidos", login: true, device: MOBILE },
-  { name: "tienda-demo", path: "/s/demo", login: false, device: DESKTOP },
-  { name: "tienda-demo-m", path: "/s/demo", login: false, device: MOBILE },
-  { name: "tienda-luna", path: "/s/taller-luna", login: false, device: DESKTOP },
-];
+/**
+ * name → ruta, si entra al panel y el dispositivo. Mantener en sync con `landing/shots.ts`.
+ *
+ * Desde 2026-10 la captura del hero (tienda-demo, tienda-demo-m) y las del
+ * panel de la landing (panel-inicio, panel-productos, panel-pedidos-m,
+ * panel-apariencia, tienda-luna) ya no se usan: mostraban la demo de electro
+ * y bazar, y las reemplazan maquetas en HTML de la tienda de ropa de ejemplo
+ * (`landing/StoreMock.tsx`, `landing/PanelScenes.tsx`). Queda sólo la lista
+ * de pedidos de las pantallas de cuenta (`PanelGlimpse`).
+ */
+const SHOTS = [{ name: "panel-pedidos", path: "/admin/pedidos", login: true, device: DESKTOP }];
 
 const HIDE_DEV_UI = "nextjs-portal, [data-nextjs-toast], [data-next-badge-root] { display: none !important; }";
 

@@ -13,7 +13,7 @@ Resumen de los ítems de abajo sin los que no conviene abrir. Si falta uno, la b
 - [ ] `PLATFORM_WHATSAPP` cargado y probado desde `/admin/plan` y `/planes` (§4.1).
 - [ ] Términos y privacidad publicados y revisados por un abogado (§7.1).
 - [ ] Planes de Vercel y Supabase aptos para uso comercial, con backups (§10.1 y §10.2).
-- [ ] Permiso por escrito para mostrar el catálogo de la tienda demo, o demo reemplazada (§11.1).
+- [ ] Demo de electro reemplazada por la de ropa en `demo` (§11.1).
 - [ ] Recorrido completo en producción: registro → confirmación de mail → `/app/nueva` → producto → checkout por transferencia y por WhatsApp → pedido visible en `/admin/pedidos` ([`DEPLOY.md`](DEPLOY.md) §5).
 - [ ] Cómo vas a cobrar los planes mientras no esté Mercado Pago: cuenta, alias y planilla (§8.1).
 - [ ] Horario y canal de soporte definidos (§9).
@@ -154,8 +154,8 @@ Según [`DEPLOY.md`](DEPLOY.md), `www.ecommy.app` es el canónico y el comodín 
 
 ## 11. Demo y landing
 
-- [ ] **11.1 Permiso para la tienda demo** — el catálogo de `demo` se importó de la web de un proveedor (`data/products.json`). El propio importador avisa que textos e imágenes de terceros pueden tener derechos. Conseguí autorización por escrito o reemplazá el catálogo antes de mostrarla en público. Dónde: el proveedor; `npm run seed` con otro catálogo.
-- [ ] **11.2 Demos por rubro**: al menos una de ropa (Atelier) y una de artesanías o deco (Mercado), con fotos propias o autorizadas. La demo actual le habla a la ferretería, no a la marca de ropa. Dónde: `/app/nueva` con tu cuenta.
+- [ ] **11.1 Reemplazar la demo de electro** — el catálogo de electro y bazar de `demo` se había importado de la web de un proveedor, sin permiso escrito (textos e imágenes de terceros). Se decidió reemplazarlo por «Luna Indumentaria» (marca ficticia, `data/demo-ropa.json`) en la misma dirección `demo`; el catálogo y el scraper ya se sacaron del repo. Falta correr una vez `SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npx tsx scripts/seed-demo-ropa.mts --replace` (borra el catálogo de electro de la base y del bucket; antes, `--dry-run --replace`). Dónde: terminal local, [`DEMO-ROPA.md`](DEMO-ROPA.md).
+- [ ] **11.2 Demos por rubro**: la de ropa (Atelier) es `demo` (11.1); falta reemplazar sus imágenes de ejemplo por fotos propias o autorizadas y, si suma, una de artesanías o deco (Mercado). Dónde: panel de `demo` → Productos; `/app/nueva` con tu cuenta.
 - [ ] **11.3 Verificar la frase "En diez minutos tenés la tienda armada"** de la landing con una grabación cronometrada real. Si no se cumple con catálogo, cambiala por algo que sí (pedido de código). Dónde: `src/app/(platform)/page.tsx`.
 - [ ] **11.4 Casos reales en la landing** sólo con autorización escrita ([`LAUNCH-PLAN.md`](LAUNCH-PLAN.md) §6.7). Dónde: pedido de código.
 - [ ] **11.5 Superadmin**: tu cuenta con `is_platform_admin` y ninguna otra. Dónde: Supabase SQL ([`DEPLOY.md`](DEPLOY.md) §2).

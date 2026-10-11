@@ -6,7 +6,7 @@ import { formatMoney } from "@/lib/money";
 
 import { DISPLAY } from "../brand";
 
-import { SAMPLE_ORDER, sampleTotals } from "./Hero";
+import { SAMPLE_ORDER, sampleTotals } from "./sample-order";
 
 /*
  * "Antes / Con Ecommy" (docs/PRODUCT-THESIS.md §4.4): el mismo pedido #1042

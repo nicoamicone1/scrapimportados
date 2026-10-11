@@ -9,36 +9,8 @@ import { buildOrderMessage } from "@/lib/store/whatsapp";
 import { CTA_ARROW, CTA_PRIMARY, H1, TEXT_LINK } from "../brand";
 
 import { BrowserFrame, PhoneFrame } from "./Frames";
-import { SHOTS } from "./shots";
-
-/**
- * El pedido de ejemplo de toda la landing (#1042): mismos números en el chat,
- * el recibo, el antes/después, las respuestas listas y el checkout. Es de
- * ropa (docs/gtm/PLAN-GTM.md §3): cada ítem con su talle, como lo arma la
- * tienda (`variantTitle` entre paréntesis en el mensaje de WhatsApp).
- */
-export const SAMPLE_ORDER = {
-  number: 1042,
-  store: "Tienda Luna",
-  customer: "Rosa Quiroga",
-  items: [
-    { name: "Remera oversize negra", variantTitle: "M", qty: 1, total: 18900 },
-    { name: "Pantalón wide beige", variantTitle: "38", qty: 1, total: 26500 },
-  ],
-  transferPercent: 10,
-  shipping: { label: "Envío CABA", price: 3200, line: "Envío a Av. Corrientes 4120, CABA" },
-};
-
-/** "Remera oversize negra · M" (nombre y talle, como en el recibo). */
-export function sampleItemLabel(item: { name: string; variantTitle?: string | null }): string {
-  return item.variantTitle ? `${item.name} · ${item.variantTitle}` : item.name;
-}
-
-export function sampleTotals() {
-  const subtotal = SAMPLE_ORDER.items.reduce((a, i) => a + i.total, 0);
-  const discount = Math.round((subtotal * SAMPLE_ORDER.transferPercent) / 100);
-  return { subtotal, discount, total: subtotal - discount + SAMPLE_ORDER.shipping.price };
-}
+import { SAMPLE_ORDER, sampleTotals } from "./sample-order";
+import { StoreMock } from "./StoreMock";
 
 const i = (n: number) => ({ "--i": n }) as CSSProperties;
 
@@ -49,7 +21,8 @@ const i = (n: number) => ({ "--i": n }) as CSSProperties;
  * la clienta elige talle y color → paga → el pedido llega a WhatsApp → el
  * stock baja solo. UNA acción de marca (la carga del catálogo, /empezar) con
  * la reversión de riesgo pegada, y a la derecha el producto funcionando: la
- * tienda real (captura) en un marco con curva y, encima, el celular del
+ * tienda de ropa de ejemplo (`StoreMock`, HTML con el preset Atelier) en un
+ * marco con curva y, encima, el celular del
  * comerciante con el pedido entrando por WhatsApp (el mensaje lo arma
  * `buildOrderMessage`, el mismo que usa la tienda). Todo sobre un arco
  * durazno; las piezas flotan lento. Sin JS: todo se ve en su lugar.
@@ -112,24 +85,20 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
         </div>
 
         {/* Composición: tienda + celular con el pedido ----------------------- */}
-        <div className="relative mx-auto aspect-[10/8.6] w-full max-w-[680px] min-w-0 xl:mr-[-24px]">
+        <div className="relative mx-auto aspect-[10/11] w-full min-[520px]:aspect-[10/9.2] max-w-[680px] min-w-0 xl:mr-[-24px]">
           <div aria-hidden className="absolute top-[4%] right-[-14%] aspect-square w-[82%] rounded-full bg-eco-durazno" />
           <div aria-hidden className="lp-rings absolute top-[-18%] right-[-34%] aspect-square w-[122%] rounded-full [--lp-ring:rgb(255_90_60/0.16)] [--lp-rings-at:50%_50%]" />
 
           <div className="eco-pop absolute top-[4%] left-0 w-[90%]" style={i(2)}>
             <div className="eco-float" style={i(1)}>
-              <BrowserFrame
-                shot={SHOTS.tiendaDemo}
-                address={demoAddress}
-                sizes="(min-width: 1024px) 620px, 90vw"
-                preload
-                className="lp-tilt-l"
-              />
+              <BrowserFrame address={demoAddress} className="lp-tilt-l" bodyClassName="aspect-square min-[520px]:aspect-[4/3]">
+                <StoreMock address={demoAddress} />
+              </BrowserFrame>
             </div>
           </div>
 
           {/* Toast del panel: el pedido nuevo (BRAND §10, pastilla tinta). */}
-          <div className="eco-pop absolute bottom-[4%] left-[2%] z-20 sm:bottom-[8%] sm:left-[6%]" style={i(22)}>
+          <div className="eco-pop absolute bottom-[-6%] left-[2%] z-20 min-[520px]:bottom-[4%] sm:bottom-[8%] sm:left-[6%]" style={i(22)}>
             <p className="flex items-center gap-2.5 rounded-full bg-eco-ink py-2 pr-4 pl-2 text-[13px] text-eco-mist shadow-[0_18px_40px_-16px_rgb(16_22_47/0.6)] sm:text-[14px]">
               <span className="eco-bubble flex size-7 items-center justify-center bg-eco-pomelo text-[11px] font-bold text-eco-ink [--eco-bubble-r:10px]" aria-hidden>
                 1

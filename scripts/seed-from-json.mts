@@ -1,30 +1,27 @@
 /**
- * Importa un catálogo JSON a Supabase (por defecto el de DAZ, `data/products.json`).
+ * Siembra un catálogo JSON (data/SCHEMA.md) en UNA tienda de Supabase. Es
+ * un módulo, no un comando: lo usan
  *
- *   SEED_EMAIL=admin@ecommy.local SEED_PASSWORD='…' npm run seed
- *   SEED_STORE=mi-tienda npm run seed  # tienda destino por slug (default: demo)
- *   SEED_FILE=data/otro.json npm run seed  # otro archivo con el mismo formato
- *   npm run seed -- --dry-run         # valida el JSON y lista lo que haría, sin tocar la base
- *   npm run seed -- --skip-images     # usa las URLs remotas (imagesRemote) sin subir nada
- *   npm run seed -- --force-images    # reemplaza las imágenes de productos que ya tenían
- *   npm run seed -- --placeholders    # productos sin imágenes: sube una de ejemplo (SVG) por color
+ *   - `scripts/seed-demo-ropa.mts` (`npm run seed`): la tienda demo «Luna
+ *     Indumentaria» (`demo`) desde data/demo-ropa.json, o el JSON de SEED_FILE;
+ *   - `scripts/prospect-store.mts`: la tienda de una prospecta desde un JSON mínimo.
  *
- * Formato: data/SCHEMA.md. Los productos pueden traer, opcionalmente,
- * `options` + `variants` (talle × color con stock por variante), `price`,
- * `compareAt`, `cost`, `priceTiers`, `featured` y `tags`; sin `variants` se
- * crea una sola variante "Default" como siempre (retrocompatible).
+ * Exporta loadSource/parseSource (formato + reglas del panel), printPlan
+ * (--dry-run), connect, findStore y seedCatalog.
  *
- * Corre como un admin logueado (RLS), sin service-role key, sobre UNA tienda
- * (`SEED_STORE`): el usuario tiene que ser dueño o admin de esa tienda. Es
- * idempotente dentro de la tienda: categorías por (`store_id`, `external_id`),
- * productos por (`store_id`, `source`, `external_id`), variantes por
- * (`product_id`, `option_values`). En productos existentes NO pisa el stock
- * (sólo precio, costo y SKU) ni las imágenes (salvo --force-images). Las
- * imágenes se suben a `media/<store_id>/products/<productId>/…`.
+ * Cada producto trae `options` + `variants` (talle × color con stock por
+ * variante; un producto sin opciones es una variante con `options: {}`),
+ * `price` y, opcionales, `compareAt`, `cost`, `priceTiers`, `featured` y
+ * `tags`. Las imágenes son de ejemplo (SVG por color, scripts/lib/placeholder-svg.mts):
+ * las fotos reales se suben desde el panel.
  *
- * `scripts/seed-demo-ropa.mts` (tienda demo de ropa) y `scripts/prospect-store.mts`
- * (tienda de una prospecta) reutilizan este módulo (loadSource/parseSource,
- * printPlan, connect, findStore, seedCatalog).
+ * Corre como un admin logueado (RLS), sin service-role key: el usuario tiene
+ * que ser dueño o admin de la tienda. Es idempotente dentro de la tienda:
+ * categorías por (`store_id`, `external_id`), productos por (`store_id`,
+ * `source`, `external_id`), variantes por (`product_id`, `option_values`). En
+ * productos existentes NO pisa el stock (sólo precio, costo y SKU) ni las
+ * imágenes (salvo forceImages). Las imágenes se suben a
+ * `media/<store_id>/products/<productId>/…`.
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -51,8 +48,6 @@ try {
 // Formato del JSON (ver data/SCHEMA.md)
 // ---------------------------------------------------------------------------
 
-const priceSchema = z.object({ base: z.number(), final: z.number() });
-
 const sourceCategorySchema = z.object({
   id: z.number().int(),
   name: z.string(),
@@ -61,7 +56,7 @@ const sourceCategorySchema = z.object({
 });
 
 const sourceVariantSchema = z.object({
-  /** {"Color": "Negro", "Talle": "M"}: una entrada por opción del producto. */
+  /** {"Color": "Negro", "Talle": "M"}: una entrada por opción del producto ({} si no tiene opciones). */
   options: z.record(z.string()).default({}),
   sku: z.string().trim().max(64).optional(),
   /** Si falta, el `price` del producto. */
@@ -73,42 +68,31 @@ const sourceVariantSchema = z.object({
 const sourceProductSchema = z
   .object({
     id: z.number().int(),
-    sku: z.string().default(""),
+    /** Referencia del producto en el JSON (no se guarda: el SKU es de cada variante). */
+    sku: z.string().optional(),
     name: z.string().trim().min(1),
     slug: z.string().trim().min(1),
-    permalink: z.string().optional(),
-    images: z.array(z.string()).default([]),
-    imagesRemote: z.array(z.string()).optional(),
+    /** Las imágenes son de ejemplo (SVG por color); las fotos se suben desde el panel. */
+    images: z.array(z.string()).max(0, "El seed no sube fotos: dejalo vacío y subilas desde el panel.").optional(),
     categories: z.array(z.object({ id: z.number().int(), name: z.string(), slug: z.string() })).default([]),
-    inStock: z.boolean().optional(),
     shortDescription: z.string().nullish(),
-    /** Formato DAZ: venta = web.final, costo = efectivo.base. */
-    prices: z.object({ efectivo: priceSchema, web: priceSchema }).optional(),
-    /** Formato catálogo propio: precio de venta (pisa a `prices`). */
-    price: z.number().positive().optional(),
+    /** Precio de venta (de cada variante, salvo que la variante traiga el suyo). */
+    price: z.number().positive(),
     compareAt: z.number().positive().optional(),
     cost: z.number().min(0).optional(),
     featured: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
     priceTiers: z.array(z.object({ min_qty: z.number().int(), price: z.number() })).optional(),
-    options: z.array(z.object({ name: z.string(), values: z.array(z.string()) })).optional(),
-    variants: z.array(sourceVariantSchema).min(1).optional(),
+    options: z.array(z.object({ name: z.string(), values: z.array(z.string()) })).default([]),
+    variants: z.array(sourceVariantSchema).min(1),
   })
-  .passthrough()
-  .superRefine((p, ctx) => {
-    if (p.price === undefined && !p.prices) {
-      ctx.addIssue({ code: "custom", path: ["price"], message: "Falta `price` (o `prices` en formato DAZ)." });
-    }
-    if (p.variants && !p.options) {
-      ctx.addIssue({ code: "custom", path: ["options"], message: "Con `variants` hace falta `options`." });
-    }
-  });
+  .passthrough();
 
 export const sourceFileSchema = z
   .object({
     scrapedAt: z.string().default(""),
     source: z.string().min(1),
-    /** Nombre de color → hex, para las imágenes de ejemplo (--placeholders). */
+    /** Nombre de color → hex, para las imágenes de ejemplo (SVG por color). */
     swatches: z.record(z.string()).optional(),
     categories: z.array(sourceCategorySchema),
     products: z.array(sourceProductSchema),
@@ -118,22 +102,9 @@ export const sourceFileSchema = z
 export type SourceFile = z.output<typeof sourceFileSchema>;
 export type SourceProduct = SourceFile["products"][number];
 
-/** ¿Producto con talles/colores propios (formato nuevo)? */
-function hasVariants(p: SourceProduct): p is SourceProduct & { variants: NonNullable<SourceProduct["variants"]> } {
-  return Array.isArray(p.variants);
-}
-
-function salePrice(p: SourceProduct): number {
-  return p.price ?? p.prices?.web.final ?? 0;
-}
-
-function costOf(p: SourceProduct): number | null {
-  return p.cost ?? p.prices?.efectivo.base ?? null;
-}
-
 /** El producto como lo valida el panel (productSchema), para el --dry-run y antes de escribir. */
-function toProductInput(p: SourceProduct & { variants: NonNullable<SourceProduct["variants"]> }): ProductInput {
-  const options = p.options ?? [];
+function toProductInput(p: SourceProduct): ProductInput {
+  const options = p.options;
   return {
     name: p.name,
     slug: p.slug,
@@ -147,9 +118,9 @@ function toProductInput(p: SourceProduct & { variants: NonNullable<SourceProduct
       title: variantTitle(v.options, options),
       option_values: v.options,
       sku: v.sku ?? null,
-      price: v.price ?? salePrice(p),
+      price: v.price ?? p.price,
       compare_at_price: v.compareAt ?? p.compareAt ?? null,
-      cost: costOf(p),
+      cost: p.cost ?? null,
       stock: v.stock,
     })),
     price_tiers: p.priceTiers ?? [],
@@ -161,7 +132,7 @@ export interface SourceIssue {
   message: string;
 }
 
-/** Errores del panel (productSchema) en los productos con variantes y SKUs repetidos en el archivo. */
+/** Errores del panel (productSchema), slugs y SKUs repetidos y categorías que no están en el archivo. */
 export function validateCatalog(source: SourceFile): SourceIssue[] {
   const issues: SourceIssue[] = [];
   const skus = new Map<string, string>();
@@ -174,7 +145,6 @@ export function validateCatalog(source: SourceFile): SourceIssue[] {
     for (const c of p.categories) {
       if (!catIds.has(c.id)) issues.push({ product: p.name, message: `categoría ${c.id} («${c.name}») no está en categories` });
     }
-    if (!hasVariants(p)) continue;
     const parsed = productSchema.safeParse(toProductInput(p));
     if (!parsed.success) {
       for (const issue of parsed.error.issues) issues.push({ product: p.name, message: `${issue.path.join(".")}: ${issue.message}` });
@@ -260,15 +230,14 @@ export function money(n: number): string {
   return `$ ${ars.format(n)}`;
 }
 
-/** Valores de la opción "Color" (o la primera opción) de un producto. */
+/** Valores de la opción "Color" de un producto (`null` si no tiene). */
 function colorValues(p: SourceProduct): { option: string; values: string[] } | null {
-  const options = p.options ?? [];
-  const color = options.find((o) => o.name.toLowerCase() === "color") ?? null;
+  const color = p.options.find((o) => o.name.toLowerCase() === "color") ?? null;
   return color ? { option: color.name, values: color.values } : null;
 }
 
 function sizeLine(p: SourceProduct): string {
-  const talle = (p.options ?? []).find((o) => o.name.toLowerCase() === "talle");
+  const talle = p.options.find((o) => o.name.toLowerCase() === "talle");
   return talle ? `Talles ${talle.values.join(" · ")}` : "Talle único";
 }
 
@@ -279,16 +248,15 @@ function sizeLine(p: SourceProduct): string {
 export interface PlanOptions {
   file: string;
   storeSlug: string;
-  placeholders: boolean;
 }
 
 export function printPlan(source: SourceFile, opts: PlanOptions) {
-  const variantProducts = source.products.filter(hasVariants);
-  const allVariants = variantProducts.flatMap((p) => p.variants);
+  const allVariants = source.products.flatMap((p) => p.variants);
+  const withOptions = source.products.filter((p) => p.options.length);
   const usable = source.categories.filter((c) => c.name.trim() && c.name.trim() !== "–");
 
   log(`Archivo: ${opts.file} · válido (formato + reglas del panel)`);
-  log(`Tienda destino: «${opts.storeSlug}» · --dry-run: no se conecta a la base`);
+  log(`Tienda destino: «${opts.storeSlug}»`);
   log(`Categorías (${usable.length}):`);
   for (const c of usable) {
     const n = source.products.filter((p) => p.categories.some((pc) => pc.id === c.id)).length;
@@ -298,41 +266,33 @@ export function printPlan(source: SourceFile, opts: PlanOptions) {
   log(`Productos (${source.products.length}):`);
   const shown = source.products.slice(0, 60);
   for (const p of shown) {
-    const parts = [money(salePrice(p))];
+    const parts = [money(p.price)];
     if (p.compareAt) parts.push(`antes ${money(p.compareAt)}`);
-    if (hasVariants(p)) {
-      const stock = p.variants.reduce((s, v) => s + v.stock, 0);
-      const out = p.variants.filter((v) => v.stock === 0).length;
-      const low = p.variants.filter((v) => v.stock > 0 && v.stock <= 2).length;
-      parts.push(`${p.variants.length} variantes`, stock === 0 ? "SIN STOCK (Avisame cuando vuelva)" : `stock ${stock}`);
-      if (stock > 0 && out) parts.push(`${out} agotadas`);
-      if (low) parts.push(`${low} con 1 o 2`);
-    } else {
-      parts.push(p.inStock === false ? "sin stock" : "1 variante");
-    }
+    const stock = p.variants.reduce((s, v) => s + v.stock, 0);
+    const out = p.variants.filter((v) => v.stock === 0).length;
+    const low = p.variants.filter((v) => v.stock > 0 && v.stock <= 2).length;
+    parts.push(
+      `${p.variants.length} variante${p.variants.length === 1 ? "" : "s"}`,
+      stock === 0 ? "SIN STOCK (Avisame cuando vuelva)" : `stock ${stock}`,
+    );
+    if (stock > 0 && out) parts.push(`${out} agotadas`);
+    if (low) parts.push(`${low} con 1 o 2`);
     if (p.priceTiers?.length) parts.push(`por cantidad: ${p.priceTiers.map((t) => `${t.min_qty}+ ${money(t.price)}`).join(", ")}`);
     if (p.featured) parts.push("destacado");
     console.info(`    ${p.name} · ${parts.join(" · ")}`);
   }
   if (source.products.length > shown.length) console.info(`    … y ${source.products.length - shown.length} más`);
 
-  const withoutImages = source.products.filter((p) => p.images.length === 0);
-  const placeholderCount = withoutImages.reduce((n, p) => n + (colorValues(p)?.values.length ?? 1), 0);
+  const placeholderCount = source.products.reduce((n, p) => n + (colorValues(p)?.values.length ?? 1), 0);
+  const soldOut = source.products.filter((p) => p.variants.every((v) => v.stock === 0)).map((p) => p.name);
   log("Resumen:");
-  console.info(`    ${source.products.length} productos · ${variantProducts.length} con talles/colores · ${allVariants.length} variantes`);
-  if (allVariants.length) {
-    const soldOut = variantProducts.filter((p) => p.variants.every((v) => v.stock === 0)).map((p) => p.name);
-    console.info(
-      `    variantes en 0: ${allVariants.filter((v) => v.stock === 0).length} · con 2: ${allVariants.filter((v) => v.stock === 2).length} · stock total ${allVariants.reduce((s, v) => s + v.stock, 0)}`,
-    );
-    console.info(`    sin stock total: ${soldOut.length ? soldOut.join(", ") : "ninguno"}`);
-  }
-  console.info(`    con precio por cantidad: ${source.products.filter((p) => p.priceTiers?.length).length}`);
+  console.info(`    ${source.products.length} productos · ${withOptions.length} con talles/colores · ${allVariants.length} variantes`);
   console.info(
-    opts.placeholders
-      ? `    imágenes de ejemplo (SVG) a subir: ${placeholderCount} (${withoutImages.length} productos sin fotos)`
-      : `    productos sin imágenes: ${withoutImages.length} (sin --placeholders quedan sin foto)`,
+    `    variantes en 0: ${allVariants.filter((v) => v.stock === 0).length} · con 2: ${allVariants.filter((v) => v.stock === 2).length} · stock total ${allVariants.reduce((s, v) => s + v.stock, 0)}`,
   );
+  console.info(`    sin stock total: ${soldOut.length ? soldOut.join(", ") : "ninguno"}`);
+  console.info(`    con precio por cantidad: ${source.products.filter((p) => p.priceTiers?.length).length}`);
+  console.info(`    imágenes de ejemplo (SVG) a subir: ${placeholderCount} (una por color; las de productos que ya tienen imágenes no se tocan)`);
 }
 
 // ---------------------------------------------------------------------------
@@ -376,25 +336,16 @@ export async function findStore(supabase: Db, slug: string): Promise<SeedStore |
   return store.data;
 }
 
-export async function resolveStore(supabase: Db, slug: string): Promise<SeedStore> {
-  const store = await findStore(supabase, slug);
-  if (!store) throw new Error(`No existe la tienda «${slug}» (o no sos miembro). Definí SEED_STORE con el slug.`);
-  return store;
-}
-
 // ---------------------------------------------------------------------------
 // Siembra
 // ---------------------------------------------------------------------------
 
-const DEFAULT_STOCK = 10;
 const BATCH = 100;
 const UPLOAD_CONCURRENCY = 8;
 
 export interface SeedOptions {
-  skipImages: boolean;
+  /** Borra las imágenes de los productos del JSON (también las fotos subidas desde el panel) y vuelve a generar las de ejemplo. */
   forceImages: boolean;
-  /** Productos sin imágenes: sube una imagen de ejemplo (SVG) por color. */
-  placeholders: boolean;
 }
 
 type VariantInsert = Database["public"]["Tables"]["product_variants"]["Insert"];
@@ -454,10 +405,9 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
             description_html: p.shortDescription?.trim() ? `<p>${escapeHtml(p.shortDescription.trim())}</p>` : null,
             status: "active",
             source: "import",
-            source_url: p.permalink ?? null,
             external_id: String(p.id),
             published_at: now,
-            metadata: { importedFrom: source.source, scrapedAt: source.scrapedAt, prices: p.prices } as Json,
+            metadata: { importedFrom: source.source, scrapedAt: source.scrapedAt } as Json,
           })),
           { onConflict: "store_id,source,external_id" },
         )
@@ -468,17 +418,15 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     log(`Productos ${Math.min((i + 1) * BATCH, source.products.length)}/${source.products.length}`);
   }
 
-  // Opciones, destacado y etiquetas: sólo en productos con variantes propias
-  // (los del formato DAZ no las traen y no se tocan).
-  const variantProducts = source.products.filter(hasVariants);
+  // Opciones, destacado y etiquetas.
   let tiersSkipped = 0;
-  await pool(variantProducts, UPLOAD_CONCURRENCY, async (p) => {
+  await pool(source.products, UPLOAD_CONCURRENCY, async (p) => {
     const productId = productIdByExt.get(String(p.id));
     if (!productId) return;
     const r = await supabase
       .from("products")
       .update({
-        options: (p.options ?? []).map((o) => ({ name: o.name, values: o.values })),
+        options: p.options.map((o) => ({ name: o.name, values: o.values })),
         featured: p.featured ?? false,
         tags: p.tags ?? [],
       })
@@ -494,13 +442,10 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
       }
     }
   });
-  if (variantProducts.length) {
-    log(`Opciones (talle/color): ${variantProducts.length} productos${tiersSkipped ? ` · ${tiersSkipped} sin precio por cantidad` : ""}`);
-  }
+  log(`Opciones (talle/color): ${source.products.length} productos${tiersSkipped ? ` · ${tiersSkipped} sin precio por cantidad` : ""}`);
 
   // ---------------- Variantes ----------------
   const productIds = [...productIdByExt.values()];
-  const firstVariant = new Map<string, string>();
   const variantByKey = new Map<string, string>();
   for (const ids of chunk(productIds, 200)) {
     const rows = must(
@@ -513,7 +458,6 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
       "leer variantes",
     );
     for (const r of rows) {
-      if (!firstVariant.has(r.product_id)) firstVariant.set(r.product_id, r.id);
       variantByKey.set(`${r.product_id}|${optionKey((r.option_values ?? {}) as OptionValues)}`, r.id);
     }
   }
@@ -524,34 +468,12 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     const productId = productIdByExt.get(String(p.id));
     if (!productId) continue;
 
-    if (!hasVariants(p)) {
-      // Formato DAZ: una sola variante "Default".
-      const common = { price: salePrice(p), cost: costOf(p), sku: p.sku || null };
-      const variantId = firstVariant.get(productId);
-      if (variantId) toUpdate.push({ id: variantId, name: p.name, patch: common });
-      else {
-        toInsert.push({
-          ...common,
-          store_id: storeId,
-          product_id: productId,
-          title: "Default",
-          option_values: {},
-          compare_at_price: null,
-          stock: p.inStock === false ? 0 : DEFAULT_STOCK,
-          track_inventory: true,
-          position: 0,
-        });
-      }
-      continue;
-    }
-
-    const options = p.options ?? [];
     p.variants.forEach((v, position) => {
       const common = {
-        title: variantTitle(v.options, options),
-        price: v.price ?? salePrice(p),
+        title: variantTitle(v.options, p.options),
+        price: v.price ?? p.price,
         compare_at_price: v.compareAt ?? p.compareAt ?? null,
-        cost: costOf(p),
+        cost: p.cost ?? null,
         sku: v.sku || null,
         position,
       };
@@ -627,13 +549,10 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     const id = productIdByExt.get(String(p.id));
     return id && (opts.forceImages || !withImages.has(id));
   });
-  const placeholders = opts.placeholders && !opts.skipImages;
-  log(
-    `Imágenes: ${pending.length} productos por procesar${opts.skipImages ? " (remotas, sin subir)" : ""}${placeholders ? " (los que no tienen fotos, con imágenes de ejemplo)" : ""}`,
-  );
+  log(`Imágenes de ejemplo: ${pending.length} productos por procesar (los que ya tienen imágenes no se tocan)`);
 
-  const upload = async (storagePath: string, bytes: Uint8Array | string, contentType: string) => {
-    const up = await supabase.storage.from(MEDIA_BUCKET).upload(storagePath, bytes, {
+  const upload = async (storagePath: string, body: string, contentType: string) => {
+    const up = await supabase.storage.from(MEDIA_BUCKET).upload(storagePath, body, {
       contentType,
       upsert: true,
       cacheControl: "31536000",
@@ -642,7 +561,6 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     return supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath).data.publicUrl;
   };
 
-  let uploaded = 0;
   let generated = 0;
   let failed = 0;
   await pool(pending, UPLOAD_CONCURRENCY, async (p, index) => {
@@ -650,40 +568,22 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     /** `color`: valor de la opción Color al que corresponde la imagen (para la foto de la variante). */
     const images: { url: string; alt: string; color: string | null }[] = [];
 
-    if (opts.skipImages) {
-      for (const u of p.imagesRemote ?? []) images.push({ url: u, alt: p.name, color: null });
-    } else {
-      for (const local of p.images) {
-        const file = path.basename(local);
-        try {
-          const bytes = await readFile(path.join(process.cwd(), "public", "img", file));
-          const type = file.endsWith(".webp") ? "image/webp" : file.endsWith(".png") ? "image/png" : "image/jpeg";
-          images.push({ url: await upload(mediaPath(storeId, "products", productId, file), bytes, type), alt: p.name, color: null });
-          uploaded++;
-        } catch (err) {
-          failed++;
-          console.warn(`[seed] No se pudo subir ${file}: ${err instanceof Error ? err.message : String(err)}`);
-        }
-      }
-      if (placeholders && p.images.length === 0) {
-        const colors = colorValues(p)?.values ?? [null];
-        for (const color of colors) {
-          const svg = placeholderSvg({
-            title: p.name,
-            color: color ?? undefined,
-            detail: sizeLine(p),
-            background: (color && source.swatches?.[color]) || source.swatches?.default || "",
-          });
-          const file = `ejemplo-${slugify(color ?? "producto") || "producto"}.svg`;
-          try {
-            const url = await upload(mediaPath(storeId, "products", productId, file), svg, "image/svg+xml");
-            images.push({ url, alt: color ? `${p.name}, ${color.toLowerCase()}` : p.name, color });
-            generated++;
-          } catch (err) {
-            failed++;
-            console.warn(`[seed] No se pudo subir ${file} de ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
-          }
-        }
+    const colors = colorValues(p)?.values ?? [null];
+    for (const color of colors) {
+      const svg = placeholderSvg({
+        title: p.name,
+        color: color ?? undefined,
+        detail: sizeLine(p),
+        background: (color && source.swatches?.[color]) || source.swatches?.default || "",
+      });
+      const file = `ejemplo-${slugify(color ?? "producto") || "producto"}.svg`;
+      try {
+        const url = await upload(mediaPath(storeId, "products", productId, file), svg, "image/svg+xml");
+        images.push({ url, alt: color ? `${p.name}, ${color.toLowerCase()}` : p.name, color });
+        generated++;
+      } catch (err) {
+        failed++;
+        console.warn(`[seed] No se pudo subir ${file} de ${p.name}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
@@ -721,7 +621,7 @@ export async function seedCatalog(supabase: Db, store: SeedStore, source: Source
     }
     if ((index + 1) % 50 === 0) log(`  imágenes ${index + 1}/${pending.length}`);
   });
-  log(`Imágenes: ${uploaded} subidas${generated ? `, ${generated} de ejemplo` : ""}, ${failed} con error`);
+  log(`Imágenes: ${generated} de ejemplo, ${failed} con error`);
 
   const count = await supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", storeId);
   log(`Listo. Productos en «${store.slug}»: ${count.count ?? "?"}`);
@@ -735,9 +635,7 @@ export function cliFlags(argv = process.argv.slice(2)) {
   const args = new Set(argv);
   return {
     dryRun: args.has("--dry-run"),
-    skipImages: args.has("--skip-images"),
     forceImages: args.has("--force-images"),
-    placeholders: args.has("--placeholders"),
   };
 }
 
@@ -745,28 +643,4 @@ export function cliFlags(argv = process.argv.slice(2)) {
 export function isEntry(metaUrl: string): boolean {
   const entry = process.argv[1];
   return Boolean(entry) && metaUrl === pathToFileURL(path.resolve(entry)).href;
-}
-
-async function main() {
-  const flags = cliFlags();
-  const file = process.env.SEED_FILE || "data/products.json";
-  const storeSlug = (process.env.SEED_STORE || "demo").trim().toLowerCase();
-
-  const source = await loadSource(file);
-  if (flags.dryRun) {
-    printPlan(source, { file, storeSlug, placeholders: flags.placeholders && !flags.skipImages });
-    return;
-  }
-
-  const supabase = await connect();
-  const store = await resolveStore(supabase, storeSlug);
-  await seedCatalog(supabase, store, source, flags);
-  await supabase.auth.signOut();
-}
-
-if (isEntry(import.meta.url)) {
-  main().catch((err: unknown) => {
-    console.error(`[seed] Error: ${err instanceof Error ? err.message : String(err)}`);
-    process.exitCode = 1;
-  });
 }

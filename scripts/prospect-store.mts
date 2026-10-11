@@ -514,10 +514,8 @@ function convert(prospect: Prospect, demo: Map<string, string>, file: string): C
       );
       return {
         id: stableId(`p:${p.slug}`),
-        sku: "",
         name: p.name,
         slug: p.slug,
-        images: [],
         categories: [{ id: category.id, name: category.name, slug: category.slug }],
         shortDescription: p.input.descripcion || undefined,
         price: p.input.precio,
@@ -673,7 +671,7 @@ async function main() {
   if (flags.dryRun) {
     printConversion(conversion, file);
     printStorePlan(parsed, slug, "el de ella: ahí le llegan los pedidos");
-    printPlan(conversion.source, { file, storeSlug: slug, placeholders: true });
+    printPlan(conversion.source, { file, storeSlug: slug });
     printHandoff(conversion, slug, parsed.config.name, true);
     return;
   }
@@ -689,7 +687,7 @@ async function main() {
   log(created ? `Tienda creada: ${store.name} (${slug})` : `Tienda existente: ${store.name} (${slug})`);
   await applySettings(supabase, store, parsed, { overwriteWhatsapp: true });
   await keepPro(supabase, store);
-  await seedCatalog(supabase, store, conversion.source, { skipImages: false, forceImages: flags.forceImages, placeholders: true });
+  await seedCatalog(supabase, store, conversion.source, { forceImages: flags.forceImages });
   await supabase.auth.signOut();
   printHandoff(conversion, slug, store.name, false);
 }

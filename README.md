@@ -109,20 +109,17 @@ herramienta MCP `apply_migration`. Después regenerá los tipos en
   en `.env.local`, `GET /admin/auth/dev-login?next=/admin` inicia sesión sin formulario
   (sólo fuera de producción).
 
-### Catálogo de ejemplo (seed)
+### Tienda demo (seed)
+
+La demo pública es **`demo`** (`https://demo.<dominio>`, el link «Tienda demo» y el CTA de la landing): «Luna Indumentaria», marca ficticia de ropa de mujer con 30 productos talle × color y stock por variante (`data/demo-ropa.json`), preset Atelier, transferencia con 10 %, envío CABA, retiro en el local e imágenes de ejemplo por color. Pasos y qué verificar en `docs/DEMO-ROPA.md`.
 
 ```bash
-SEED_EMAIL=… SEED_PASSWORD=… SEED_STORE=demo npm run seed   # sube las imágenes a <store_id>/products/…
-SEED_EMAIL=… SEED_PASSWORD=… npm run seed -- --skip-images  # usa las URLs del proveedor
-npm run seed -- --dry-run                                   # valida el JSON y lista lo que haría, sin tocar la base
+npm run seed -- --dry-run                                  # valida y lista lo que haría, sin tocar la base
+SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npm run seed -- --replace   # una vez: borra el catálogo anterior de `demo` y siembra Luna
+SEED_EMAIL=… SEED_PASSWORD=… npm run seed                  # después: re-sembrar sin borrar (frena si hay productos ajenos al JSON)
 ```
 
-**Demo de ropa** («Luna Indumentaria», marca ficticia, 30 productos con talle × color y stock por variante, `data/demo-ropa.json`): crea o usa la tienda `ropa` con preset Atelier, transferencia con 10 %, envío CABA y retiro en el local, e imágenes de ejemplo por color. Pasos y qué verificar en `docs/DEMO-ROPA.md`.
-
-```bash
-npx tsx scripts/seed-demo-ropa.mts --dry-run
-SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npx tsx scripts/seed-demo-ropa.mts
-```
+`npm run seed` es `npx tsx scripts/seed-demo-ropa.mts`; `SEED_STORE` cambia la tienda y `SEED_FILE` el catálogo (otro JSON con bloque `store`, formato en `data/SCHEMA.md`). `--replace` **borra** productos, variantes, categorías e imágenes de la tienda (los productos con pedidos se archivan): `--dry-run --replace` con las credenciales lista los números reales sin escribir.
 
 **Tienda de una prospecta** (10 a 15 productos suyos desde un JSON mínimo: nombre, precio, talles, colores): crea o usa la tienda del `slug` del JSON con preset Atelier, su WhatsApp, transferencia con descuento, envío CABA o «A coordinar», imágenes de ejemplo por color, e imprime el link y el mensaje para mandarle. Formato en `data/prospectos/README.md`, pasos en `docs/DEMO-PROSPECTA.md`.
 
@@ -131,7 +128,7 @@ npx tsx scripts/prospect-store.mts data/prospectos/ejemplo-mycloset.json --dry-r
 SEED_EMAIL=… SEED_PASSWORD=… npx tsx scripts/prospect-store.mts data/prospectos/<slug>.json
 ```
 
-Formato del JSON (y los campos opcionales `options`/`variants`/`price`/`priceTiers`): `data/SCHEMA.md`.
+Formato del catálogo JSON (`options`/`variants`/`price`/`priceTiers`): `data/SCHEMA.md`.
 
 ## Scripts
 
@@ -141,12 +138,10 @@ Formato del JSON (y los campos opcionales `options`/`variants`/`price`/`priceTie
 | `npm run lint` | ESLint |
 | `npm test` | Vitest (precios, tema, bloques, tenant, planes…) |
 | `npm run e2e` | Smoke E2E del sitio público con Playwright (ver "CI y E2E") |
-| `npm run seed` | Importa `data/products.json` (o `SEED_FILE`) a una tienda (`SEED_STORE`) |
-| `npx tsx scripts/seed-demo-ropa.mts` | Tienda demo de ropa `ropa` (ver `docs/DEMO-ROPA.md`) |
+| `npm run seed` | Tienda demo `demo` («Luna Indumentaria») desde `data/demo-ropa.json` (`scripts/seed-demo-ropa.mts`, ver `docs/DEMO-ROPA.md`) |
 | `npx tsx scripts/prospect-store.mts <json>` | Tienda de una prospecta desde `data/prospectos/<slug>.json` (ver `docs/DEMO-PROSPECTA.md`) |
 | `npm run create-admin` | Alta de un usuario con `signUp` (la tienda se crea en `/app/nueva`) |
 | `npx tsx scripts/move-media-to-store.mts <slug>` | Mueve objetos sueltos del bucket a `<store_id>/…` |
-| `npm run scrape` | Scraper del catálogo DAZ → `data/products.json` + `public/img` |
 
 Antes de entregar: `npx tsc --noEmit`, `npm run lint` y `npm test` sin errores.
 
@@ -216,6 +211,6 @@ src/
     billing/                MercadoPago Suscripciones (cliente REST, firma del webhook, estados)
     store/ admin/ pricing/ theme/ blocks/ …
 supabase/migrations/        SQL
-scripts/                    scraper, seed, create-admin, move-media-to-store
+scripts/                    seed de la demo y de prospectas, create-admin, move-media-to-store (scripts/README.md)
 docs/                       spec, diseño, deploy, billing, changelog, acceso dev, marketing y lanzamiento
 ```

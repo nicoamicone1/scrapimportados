@@ -127,7 +127,7 @@ select count(*) from public.profiles where last_seen_at > now() - interval '7 da
 
 - [ ] Cerrar los bloqueantes de [`LAUNCH-CHECKLIST.md`](LAUNCH-CHECKLIST.md) §0.
 - [ ] Revisar la tienda demo (`https://demo.ecommy.app`) de punta a punta en el celular: portada, ficha, carrito, checkout por transferencia y por WhatsApp, página de pedido. Es la prueba social principal hasta que haya casos.
-- [ ] Crear una o dos tiendas demo más con fotos propias o con permiso: una de **ropa** (Atelier) y una de **artesanías o deco** (Mercado). La demo actual es de electro y bazar: le sirve a la ferretería, no a la marca de ropa.
+- [ ] La demo es de **ropa** («Luna Indumentaria», Atelier, en `demo`; reemplaza a la de electro y bazar: [`DEMO-ROPA.md`](DEMO-ROPA.md)). Pasarle fotos propias o con permiso y, si suma, crear otra de **artesanías o deco** (Mercado).
 - [ ] Grabar el material base (pantalla del celular y de la compu, sin editar): alta de tienda completa **cronometrada**, carga de un producto con talles, checkout por WhatsApp, zona dibujada en el mapa, cambio masivo de precios y Deshacer, importación CSV por SKU. De ahí salen los primeros 15 reels.
 - [ ] Armar la lista de 25 a 30 candidatos para la beta (comercios que conocés o te pueden presentar) y separar 10 que encajen en los tres ICP.
 - [ ] Preparar la planilla semanal: embudo (§2.2), fuente de cada registro, conversaciones, objeciones escuchadas.
@@ -198,7 +198,7 @@ Día 1 = día del lanzamiento. Formatos de IG y TikTok verticales 9:16, 20 a 45 
 | 8 | IG + TikTok | Reel P06 | Subo la lista del proveedor por SKU | Link |
 | 8 | LinkedIn | Post | Lo que aprendí en la beta (3 datos reales, sin nombres sin permiso) | Comentarios |
 | 9 | IG + TikTok | Reel P07 | Traigo mi catálogo desde mi web actual con "Detectar" | Link |
-| 9 | WhatsApp | W3 a 5 comercios de barrio | Ferretería o electro | Ver la demo |
+| 9 | WhatsApp | W3 a 5 marcas de ropa | Marca de ropa que vende por Instagram | Ver la demo |
 | 10 | IG + TikTok | Reel P09 | La ley te pide 4 cosas en tu tienda | Guardá el post |
 | 10 | IG | Historias H06 | Pregunta abierta: ¿qué te frena para tener tienda? | Responder |
 | 11 | IG + TikTok | Reel P10 | Precio con transferencia desde la card | Link |
@@ -337,7 +337,7 @@ Si un comercio pide que lo bajes, se baja el mismo día, de todos los canales.
 | Cobro manual de planes que no escala y se olvida | Ingresos perdidos, clientes en Pro sin pagar | Planilla de cobros con vencimientos; plan anual por transferencia; priorizar Mercado Pago (v0.2, `BILLING.md`) |
 | Sin emails automáticos (confirmación de pedido al comprador, aviso al vendedor) | Pedidos que el comercio no ve a tiempo | Aviso de pedidos nuevos en el panel; otro agente está implementando emails con Resend (checklist §3) |
 | Mails de registro que no llegan (SMTP de Supabase con límite bajo) | Registros perdidos el día del lanzamiento | SMTP propio con Resend antes de lanzar (checklist §2 y §3) |
-| Catálogo de la demo tomado de la web de un tercero | Reclamo por uso de imágenes y textos | Confirmar el permiso por escrito o reemplazar la demo (checklist §0) |
+| Catálogo de la demo tomado de la web de un tercero | Reclamo por uso de imágenes y textos | Reemplazado por una marca ficticia (`data/demo-ropa.json`); falta correr el seed con `--replace` para borrarlo de la base (checklist §11.1) |
 | Nombre "Ecommy" con otra marca registrada | Tener que cambiar de nombre con cuentas ya abiertas | Búsqueda y registro en INPI (checklist §7) |
 | Bloqueo del WhatsApp de la plataforma por mensajes en masa | Se corta el canal de ventas y de soporte | Sólo mensajes 1 a 1 a gente con relación; número de respaldo |
 | Caída de Supabase o de Vercel el día del lanzamiento | Mala primera impresión | Monitoreo externo, mensaje de incidente preparado, rollback (checklist §10) |

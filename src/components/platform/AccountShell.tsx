@@ -11,6 +11,9 @@ import { APP_NAME } from "@/lib/version";
 import "@/app/(platform)/site.css";
 
 import { BrandLockup, BrandMark, DISPLAY, NUM } from "./brand";
+import { SHOTS } from "./landing/shots";
+import { StoreMock } from "./landing/StoreMock";
+import { LazyFontSheets } from "./LazyFontSheets";
 
 /*
  * Marco de las pantallas de cuenta del sitio (ingreso, registro, nueva
@@ -138,7 +141,7 @@ export function PanelGlimpse() {
   return (
     <div aria-hidden className="relative -mr-24 xl:-mr-28">
       <div className="eco-bubble relative translate-y-6 rotate-[-1.5deg] overflow-hidden bg-adm-surface shadow-[0_40px_80px_-40px_rgb(0_0_0/0.6)] ring-1 ring-white/10 [--eco-bubble-r:24px]">
-        <Image src="/img/platform/panel-pedidos.webp" alt="" width={1280} height={800} sizes="640px" className="block h-auto w-[640px] max-w-none" priority={false} />
+        <Image src={SHOTS.panelPedidos.src} alt="" width={SHOTS.panelPedidos.width} height={SHOTS.panelPedidos.height} sizes="640px" className="block h-auto w-[640px] max-w-none" priority={false} />
       </div>
       <div className="eco-float absolute -top-6 left-6 flex items-center gap-3 rounded-[18px] rounded-bl-[4px] bg-eco-pomelo px-4 py-3 text-[13px] text-eco-ink shadow-[0_18px_36px_-20px_rgb(0_0_0/0.6)]">
         <span className="flex size-2 rounded-full bg-eco-ink" />
@@ -151,15 +154,16 @@ export function PanelGlimpse() {
 }
 
 /**
- * La tienda en el celular (captura real de la demo) con el recibo del pedido
- * superpuesto: lo que paga el cliente, comisión de Ecommy en $ 0 y lo que
- * llega a tu cuenta.
+ * La tienda de ropa de ejemplo en el celular (`StoreMock`, la misma del hero
+ * de la landing) con el recibo del pedido superpuesto: lo que paga el
+ * cliente, comisión de Ecommy en $ 0 y lo que llega a tu cuenta.
  */
 export function StoreGlimpse() {
   return (
     <div aria-hidden className="relative flex items-end gap-6">
-      <div className="eco-bubble relative w-[230px] shrink-0 translate-y-10 overflow-hidden border-[6px] border-eco-ink bg-eco-ink shadow-[0_40px_80px_-40px_rgb(16_22_47/0.7)] [--eco-bubble-r:34px]">
-        <Image src="/img/platform/tienda-demo-m.webp" alt="" width={540} height={1169} sizes="230px" className="block h-auto w-full" />
+      <div className="eco-bubble relative aspect-[540/1169] w-[230px] shrink-0 translate-y-10 overflow-hidden border-[6px] border-eco-ink bg-eco-ink shadow-[0_40px_80px_-40px_rgb(16_22_47/0.7)] [--eco-bubble-r:34px]">
+        <StoreMock phone className="pt-4" />
+        <LazyFontSheets />
       </div>
       <div className="eco-float mb-16 min-w-0 flex-1" style={{ ["--i" as string]: 1 }}>
         <ReceiptMini />

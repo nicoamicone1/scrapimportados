@@ -3,17 +3,14 @@
   "version": "0.11.0",
   "private": true,
   "scripts": {
-    "scrape": "node scripts/scrape.mjs && node scripts/download-images.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "scrape:data": "node scripts/scrape.mjs",
-    "scrape:images": "node scripts/download-images.mjs",
     "test": "vitest run",
     "e2e": "playwright test",
     "e2e:ci": "playwright test --forbid-only",
-    "seed": "tsx scripts/seed-from-json.mts",
+    "seed": "tsx scripts/seed-demo-ropa.mts",
     "create-admin": "tsx scripts/create-admin.mts"
   },
   "dependencies": {

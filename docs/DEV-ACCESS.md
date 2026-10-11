@@ -48,13 +48,14 @@ Proyecto Supabase: `asudscbvsrmulbpozjmq`.
 ## Seed del catálogo
 
 ```bash
-SEED_EMAIL=admin@ecommy.local SEED_PASSWORD='Ecommy-2026!' SEED_STORE=demo npm run seed
-# sin subir imágenes (usa las URLs del proveedor):
-SEED_EMAIL=… SEED_PASSWORD=… npm run seed -- --skip-images
+# ver qué haría (sólo lee)
+SEED_EMAIL=admin@ecommy.local SEED_PASSWORD='Ecommy-2026!' npm run seed -- --dry-run --replace
+# sembrar «Luna Indumentaria» (ropa) en la tienda demo, vaciando antes el catálogo viejo
+SEED_EMAIL=… SEED_PASSWORD=… SEED_WHATSAPP=549… npm run seed -- --replace
 ```
 
-Estado actual de la base de desarrollo: 699 productos activos (catálogo DAZ),
-70 categorías con jerarquía, 699 variantes "Default" con stock 10, 787
+Estado esperado de la base de desarrollo tras el seed: 30 productos de ropa de «Luna Indumentaria»,
+6 categorías, 244 variantes talle × color con stock por variante, imágenes de ejemplo por color
 imágenes subidas al bucket `media` (`<store_id>/products/<product_id>/<archivo>`,
 movidas desde `products/…` con `scripts/move-media-to-store.mts` después de la 0011).
 

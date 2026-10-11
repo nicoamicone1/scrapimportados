@@ -17,7 +17,7 @@ Si cambia algo de esta tabla, cambiá el copy en los cuatro documentos. Los plan
 | Prueba | 14 días de Pro al crear la tienda, sin tarjeta ni datos de pago. Al vencer pasa a Free; no se borra nada, lo que excede el plan queda bloqueado para crear | `create_store()`, FAQ de `/planes` |
 | Tiendas por cuenta | Hasta 3, cada una con su plan y su equipo | README |
 | Dirección de la tienda | `<tienda>.ecommy.app`; dominio propio desde Pro (hoy el alta es manual, ver checklist §8) | `docs/DEPLOY.md` §6 |
-| Tienda demo | `https://demo.ecommy.app` (catálogo de electro, bazar y accesorios importado de la web de un proveedor) | `storeHref({ slug: "demo" })`, `data/products.json` |
+| Tienda demo | `https://demo.ecommy.app` («Luna Indumentaria», marca ficticia de ropa femenina: 30 productos con talle × color) | `storeHref({ slug: "demo" })`, `data/demo-ropa.json` |
 | Estilos | 10 presets por rubro: Nórdico, Mercado, Atelier, Editorial, Botica, Recreo, Lapacho, Galpón, Bodega, Neón. Free usa 2 (Nórdico y Mercado); Starter en adelante, los 10 | `src/lib/theme/presets.ts`, `FREE_THEME_PRESETS` |
 | Cobro | Transferencia (con descuento opcional, visible en la card y la ficha), "acordar por WhatsApp" con el pedido armado, o tarjeta y cuotas sin interés (3, 6, 9 o 12) con la cuenta de Mercado Pago del comercio (v0.8); el pedido queda registrado antes de derivar | `PriceTag.tsx`, landing, `CHANGELOG.md` v0.8 |
 | Reserva de stock | Plazo configurable: el pedido impago vence solo y devuelve el stock | `run_daily_maintenance()`, config de checkout |

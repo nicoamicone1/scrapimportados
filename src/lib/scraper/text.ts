@@ -1,6 +1,5 @@
 /**
- * Utilidades de texto y precios del importador, portadas de
- * `scripts/scrape.mjs` (scraper original del catálogo DAZ) y ampliadas.
+ * Utilidades de texto y precios del importador de catálogos.
  * Puras: sirven en server y en tests.
  */
 

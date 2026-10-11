@@ -57,7 +57,8 @@
     "Rayas azules": "#2E4A7A",
     "Rayas negras": "#2F2E2C",
     "Surtido claro": "#DCD5C8",
-    "Surtido oscuro": "#3A3835"
+    "Surtido oscuro": "#3A3835",
+    "Beige": "#D9C6A5"
   },
   "categories": [
     {
@@ -103,7 +104,6 @@
       "sku": "LU-RE01",
       "name": "Remera básica de algodón",
       "slug": "remera-basica-de-algodon",
-      "images": [],
       "categories": [
         {
           "id": 1,
@@ -251,7 +251,6 @@
       "sku": "LU-RE02",
       "name": "Remera rayada marinera",
       "slug": "remera-rayada-marinera",
-      "images": [],
       "categories": [
         {
           "id": 1,
@@ -352,7 +351,6 @@
       "sku": "LU-RE03",
       "name": "Remera holgada de algodón peinado",
       "slug": "remera-holgada-de-algodon-peinado",
-      "images": [],
       "categories": [
         {
           "id": 1,
@@ -487,7 +485,6 @@
       "sku": "LU-RE04",
       "name": "Musculosa acanalada",
       "slug": "musculosa-acanalada",
-      "images": [],
       "categories": [
         {
           "id": 1,
@@ -605,7 +602,6 @@
       "sku": "LU-RE05",
       "name": "Remera manga larga de modal",
       "slug": "remera-manga-larga-de-modal",
-      "images": [],
       "categories": [
         {
           "id": 1,
@@ -706,7 +702,6 @@
       "sku": "LU-RE06",
       "name": "Remera cuello alto de morley",
       "slug": "remera-cuello-alto-de-morley",
-      "images": [],
       "categories": [
         {
           "id": 1,
@@ -840,7 +835,6 @@
       "sku": "LU-BU01",
       "name": "Buzo canguro de frisa",
       "slug": "buzo-canguro-de-frisa",
-      "images": [],
       "categories": [
         {
           "id": 2,
@@ -975,7 +969,6 @@
       "sku": "LU-BU02",
       "name": "Buzo cuello redondo de frisa",
       "slug": "buzo-cuello-redondo-de-frisa",
-      "images": [],
       "categories": [
         {
           "id": 2,
@@ -1077,7 +1070,6 @@
       "sku": "LU-BU03",
       "name": "Saco de hilo trenzado",
       "slug": "saco-de-hilo-trenzado",
-      "images": [],
       "categories": [
         {
           "id": 2,
@@ -1186,7 +1178,6 @@
       "sku": "LU-CA01",
       "name": "Campera de corderoy con corderito",
       "slug": "campera-de-corderoy-con-corderito",
-      "images": [],
       "categories": [
         {
           "id": 2,
@@ -1271,7 +1262,6 @@
       "sku": "LU-CA02",
       "name": "Campera inflable corta",
       "slug": "campera-inflable-corta",
-      "images": [],
       "categories": [
         {
           "id": 2,
@@ -1356,7 +1346,6 @@
       "sku": "LU-CA03",
       "name": "Tapado de paño largo",
       "slug": "tapado-de-pano-largo",
-      "images": [],
       "categories": [
         {
           "id": 2,
@@ -1440,7 +1429,6 @@
       "sku": "LU-PA01",
       "name": "Pantalón recto de gabardina",
       "slug": "pantalon-recto-de-gabardina",
-      "images": [],
       "categories": [
         {
           "id": 3,
@@ -1600,7 +1588,6 @@
       "sku": "LU-PA02",
       "name": "Pantalón ancho de lino",
       "slug": "pantalon-ancho-de-lino",
-      "images": [],
       "categories": [
         {
           "id": 3,
@@ -1718,7 +1705,6 @@
       "sku": "LU-PA03",
       "name": "Pantalón de corderoy",
       "slug": "pantalon-de-corderoy",
-      "images": [],
       "categories": [
         {
           "id": 3,
@@ -1837,7 +1823,6 @@
       "sku": "LU-PA04",
       "name": "Pantalón de frisa con puño",
       "slug": "pantalon-de-frisa-con-puno",
-      "images": [],
       "categories": [
         {
           "id": 3,
@@ -1938,7 +1923,6 @@
       "sku": "LU-PA05",
       "name": "Pantalón sastrero de pinzas",
       "slug": "pantalon-sastrero-de-pinzas",
-      "images": [],
       "categories": [
         {
           "id": 3,
@@ -2056,7 +2040,6 @@
       "sku": "LU-PA06",
       "name": "Pantalón palazzo de fibrana",
       "slug": "pantalon-palazzo-de-fibrana",
-      "images": [],
       "categories": [
         {
           "id": 3,
@@ -2190,7 +2173,6 @@
       "sku": "LU-VE01",
       "name": "Vestido camisero de lino",
       "slug": "vestido-camisero-de-lino",
-      "images": [],
       "categories": [
         {
           "id": 4,
@@ -2275,7 +2257,6 @@
       "sku": "LU-VE02",
       "name": "Vestido midi de fibrana estampado",
       "slug": "vestido-midi-de-fibrana-estampado",
-      "images": [],
       "categories": [
         {
           "id": 4,
@@ -2360,7 +2341,6 @@
       "sku": "LU-VE03",
       "name": "Vestido corto de morley",
       "slug": "vestido-corto-de-morley",
-      "images": [],
       "categories": [
         {
           "id": 4,
@@ -2444,7 +2424,6 @@
       "sku": "LU-VE04",
       "name": "Vestido largo con breteles",
       "slug": "vestido-largo-con-breteles",
-      "images": [],
       "categories": [
         {
           "id": 4,
@@ -2528,7 +2507,6 @@
       "sku": "LU-VE05",
       "name": "Vestido de punto acanalado",
       "slug": "vestido-de-punto-acanalado",
-      "images": [],
       "categories": [
         {
           "id": 4,
@@ -2612,7 +2590,6 @@
       "sku": "LU-CM01",
       "name": "Camisa de lino holgada",
       "slug": "camisa-de-lino-holgada",
-      "images": [],
       "categories": [
         {
           "id": 5,
@@ -2746,7 +2723,6 @@
       "sku": "LU-CM02",
       "name": "Camisa de poplín clásica",
       "slug": "camisa-de-poplin-clasica",
-      "images": [],
       "categories": [
         {
           "id": 5,
@@ -2847,7 +2823,6 @@
       "sku": "LU-CM03",
       "name": "Blusa de fibrana con volados",
       "slug": "blusa-de-fibrana-con-volados",
-      "images": [],
       "categories": [
         {
           "id": 5,
@@ -2931,7 +2906,6 @@
       "sku": "LU-CM04",
       "name": "Camisa de gasa con lazo",
       "slug": "camisa-de-gasa-con-lazo",
-      "images": [],
       "categories": [
         {
           "id": 5,
@@ -3032,7 +3006,6 @@
       "sku": "LU-AC01",
       "name": "Pañuelo de seda estampado",
       "slug": "panuelo-de-seda-estampado",
-      "images": [],
       "categories": [
         {
           "id": 6,
@@ -3074,7 +3047,6 @@
       "sku": "LU-AC02",
       "name": "Bufanda tejida de lana",
       "slug": "bufanda-tejida-de-lana",
-      "images": [],
       "categories": [
         {
           "id": 6,
@@ -3124,7 +3096,6 @@
       "sku": "LU-AC03",
       "name": "Medias de algodón por 3 pares",
       "slug": "medias-de-algodon-por-3-pares",
-      "images": [],
       "categories": [
         {
           "id": 6,
@@ -3164,6 +3135,151 @@
           },
           "sku": "LU-AC03-SUOS",
           "stock": 1
+        }
+      ]
+    },
+    {
+      "id": 1031,
+      "sku": "LU-RE09",
+      "name": "Remera oversize negra",
+      "slug": "remera-oversize-negra",
+      "categories": [
+        {
+          "id": 1,
+          "name": "Remeras",
+          "slug": "remeras"
+        }
+      ],
+      "shortDescription": "Jersey de algodón pesado, hombro caído y largo a la cadera. Calce holgado: si la querés más suelta todavía, llevá un talle más.",
+      "price": 18900,
+      "cost": 7900,
+      "featured": true,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Negro"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "S",
+            "M",
+            "L",
+            "XL"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "S"
+          },
+          "sku": "LU-RE09-NEG-S",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "M"
+          },
+          "sku": "LU-RE09-NEG-M",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "L"
+          },
+          "sku": "LU-RE09-NEG-L",
+          "stock": 5
+        },
+        {
+          "options": {
+            "Color": "Negro",
+            "Talle": "XL"
+          },
+          "sku": "LU-RE09-NEG-XL",
+          "stock": 1
+        }
+      ]
+    },
+    {
+      "id": 1032,
+      "sku": "LU-PA09",
+      "name": "Pantalón wide beige",
+      "slug": "pantalon-wide-beige",
+      "categories": [
+        {
+          "id": 3,
+          "name": "Pantalones",
+          "slug": "pantalones"
+        }
+      ],
+      "shortDescription": "Tiro alto y pierna ancha en gabardina liviana. Largo para usar con zapatilla o con taco bajo.",
+      "price": 26500,
+      "cost": 11800,
+      "featured": true,
+      "options": [
+        {
+          "name": "Color",
+          "values": [
+            "Beige"
+          ]
+        },
+        {
+          "name": "Talle",
+          "values": [
+            "36",
+            "38",
+            "40",
+            "42",
+            "44"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "options": {
+            "Color": "Beige",
+            "Talle": "36"
+          },
+          "sku": "LU-PA09-BEI-36",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Beige",
+            "Talle": "38"
+          },
+          "sku": "LU-PA09-BEI-38",
+          "stock": 3
+        },
+        {
+          "options": {
+            "Color": "Beige",
+            "Talle": "40"
+          },
+          "sku": "LU-PA09-BEI-40",
+          "stock": 4
+        },
+        {
+          "options": {
+            "Color": "Beige",
+            "Talle": "42"
+          },
+          "sku": "LU-PA09-BEI-42",
+          "stock": 2
+        },
+        {
+          "options": {
+            "Color": "Beige",
+            "Talle": "44"
+          },
+          "sku": "LU-PA09-BEI-44",
+          "stock": 0
         }
       ]
     }

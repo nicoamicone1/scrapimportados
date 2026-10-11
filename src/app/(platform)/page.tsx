@@ -11,11 +11,11 @@ import { LazyFontSheets } from "@/components/platform/LazyFontSheets";
 import { pickFaq, platformFaq } from "@/components/platform/faq";
 import { BeforeAfter } from "@/components/platform/landing/BeforeAfter";
 import { CommissionCalc } from "@/components/platform/landing/CommissionCalc";
-import { BrowserFrame, PhoneShot } from "@/components/platform/landing/Frames";
-import { Hero, sampleItemLabel, SAMPLE_ORDER, sampleTotals } from "@/components/platform/landing/Hero";
+import { BrowserFrame, PhoneFrame } from "@/components/platform/landing/Frames";
+import { Hero } from "@/components/platform/landing/Hero";
+import { sampleItemLabel, SAMPLE_ORDER, sampleTotals } from "@/components/platform/landing/sample-order";
 import { CatalogDemo, CheckoutDemo, PricesDemo, ZonesDemo } from "@/components/platform/landing/PanelDemos";
-import { RepliesScene, WeekScene } from "@/components/platform/landing/PanelScenes";
-import { SHOTS } from "@/components/platform/landing/shots";
+import { PanelHomeScene, PanelOrdersPhoneScene, PanelProductsScene, RepliesScene, WeekScene } from "@/components/platform/landing/PanelScenes";
 import { Steps, type StepCopy } from "@/components/platform/landing/Steps";
 import { StoreDemo, type DemoKind } from "@/components/platform/landing/StoreDemo";
 import { PlanCards, PlanCtaLink } from "@/components/platform/PlanCards";
@@ -258,7 +258,7 @@ export default async function LandingPage() {
   const offer = signedIn ? "/app/nueva" : "/empezar";
   const offerLabel = signedIn ? "Crear una tienda" : "Cargamos tu catálogo y lo probás 14 días";
   const demo = demoStoreHref();
-  const luna = exampleStoreAddress("tienda-luna");
+  const luna = exampleStoreAddress("luna-indumentaria");
 
   const specimens = presetSpecimens();
   const kinds: DemoKind[] = specimens.map((s) => ({
@@ -507,10 +507,14 @@ export default async function LandingPage() {
             <div className="relative min-w-0 pb-10 sm:pr-10 sm:pb-6">
               <div aria-hidden className="absolute -bottom-6 -left-8 size-64 rounded-full bg-eco-durazno sm:size-80" />
               <div className="eco-reveal-right relative">
-                <BrowserFrame shot={SHOTS.panelInicio} address="ecommy.app/admin" sizes="(min-width: 1024px) 700px, 92vw" className="lp-tilt-l" />
+                <BrowserFrame address="ecommy.app/admin" className="lp-tilt-l">
+                  <PanelHomeScene />
+                </BrowserFrame>
               </div>
               <div className="eco-reveal absolute -right-1 -bottom-2 w-[32%] max-w-[210px] sm:-right-2">
-                <PhoneShot shot={SHOTS.panelPedidosMobile} sizes="210px" className="lp-tilt-r aspect-[540/1169]" />
+                <PhoneFrame className="lp-tilt-r aspect-[540/1169]">
+                  <PanelOrdersPhoneScene />
+                </PhoneFrame>
               </div>
             </div>
           </div>
@@ -556,7 +560,9 @@ export default async function LandingPage() {
             ))}
             <div className="eco-reveal hidden content-start gap-6 md:grid lg:col-span-6 lg:mt-20">
               <div className="relative">
-                <BrowserFrame shot={SHOTS.panelProductos} address="ecommy.app/admin/productos" sizes="(min-width: 1024px) 600px, 92vw" className="lp-tilt-r" />
+                <BrowserFrame address="ecommy.app/admin/productos" className="lp-tilt-r">
+                  <PanelProductsScene />
+                </BrowserFrame>
               </div>
               <p className="max-w-[48ch] text-[15px] leading-relaxed text-eco-text-muted">
                 Productos con su foto, precio y stock en una fila; editás precio y stock sin abrir la ficha.

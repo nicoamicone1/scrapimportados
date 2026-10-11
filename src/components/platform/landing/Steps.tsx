@@ -6,6 +6,8 @@ import { formatMoney } from "@/lib/money";
 
 import { DISPLAY } from "../brand";
 
+import { SAMPLE_ORDER } from "./sample-order";
+
 /*
  * "Cómo funciona" en tres pasos, cada uno con su mini-demo visual hecha con
  * CSS (sin JS): el alta con el nombre y el rubro, el catálogo que entra desde
@@ -28,7 +30,7 @@ function CreateVisual({ address }: { address: string }) {
     <StepVisual className="bg-eco-paper shadow-[0_0_0_1px_var(--eco-line)]">
       <p className="text-[12px] font-semibold text-eco-text-muted">Nombre de tu tienda</p>
       <p className={cn(DISPLAY, "mt-1.5 flex h-12 items-center rounded-[12px] border-2 border-eco-ink px-3.5 text-[19px] text-eco-ink")}>
-        Tienda Luna
+        {SAMPLE_ORDER.store}
         <span className="ml-0.5 h-6 w-[2px] animate-pulse bg-eco-azul" />
       </p>
       <div className="mt-4 flex flex-wrap gap-1.5 text-[12px] font-medium">
@@ -88,8 +90,8 @@ function ShareVisual({ address }: { address: string }) {
           <span className="block size-full rounded-full border-2 border-eco-ink bg-eco-durazno" />
         </span>
         <span className="min-w-0 leading-tight">
-          <span className="block text-[13px] font-semibold text-white">tiendaluna</span>
-          <span className="block text-[12px] text-eco-bruma">Ropa de mujer · Tucumán</span>
+          <span className="block text-[13px] font-semibold text-white">lunaindumentaria</span>
+          <span className="block text-[12px] text-eco-bruma">Ropa de mujer · CABA</span>
         </span>
       </div>
       <p className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full bg-eco-ink-3 px-3 py-1.5 text-[12px] font-medium text-eco-azul-light">
@@ -97,7 +99,7 @@ function ShareVisual({ address }: { address: string }) {
         <span className="truncate">{address}</span>
       </p>
       <div className="eco-reveal eco-bubble mt-4 w-[88%] bg-eco-paper px-3 py-2 text-[12px] leading-snug text-eco-ink [--eco-bubble-r:16px]">
-        <span className="font-semibold">Pedido #1043</span> en Tienda Luna
+        <span className="font-semibold">Pedido #1043</span> en {SAMPLE_ORDER.store}
         <span className="tnum block text-eco-text-muted">2 productos · Total: {formatMoney(31400)}</span>
       </div>
       <span className="eco-reveal absolute right-5 bottom-5 flex size-8 items-center justify-center rounded-full bg-eco-pomelo text-[12px] font-bold text-eco-ink">1</span>

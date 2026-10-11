@@ -115,7 +115,7 @@ src/
     version.ts                  APP_NAME, APP_VERSION, CHANGELOG (fuente única)
     cart.tsx                    carrito (client, localStorage) — items por variante
 supabase/migrations/*.sql
-scripts/seed-from-json.mts     importa data/products.json (catálogo DAZ) a la DB como productos publicados
+scripts/seed-demo-ropa.mts     siembra data/demo-ropa.json («Luna Indumentaria») en la tienda demo; seed-from-json.mts es el módulo común
 docs/                           esta spec + DESIGN.md + FEATURES-AUDIT.md + CHANGELOG.md
 ```
 
@@ -349,7 +349,7 @@ Ecommy pasa de "una tienda por deploy" a **una plataforma**: cualquier persona s
 
 ### 14.1 Modelo multi-tenant
 
-- **`stores`**: `id uuid pk`, `slug text unique` (subdominio; `^[a-z0-9]+(-[a-z0-9]+)*$`, 3-40, reservados: `www, app, admin, api, mail, ecommy, platform, static, cdn`; `demo` es la tienda DAZ), `name`, `owner_id uuid references auth.users`, `status text check in ('active','suspended','deleted') default 'active'`, `custom_domain text unique null`, `custom_domain_verified bool default false`, `next_order_number bigint default 1000`, `onboarding jsonb default '{}'` (pasos completados), `created_at`, `updated_at`.
+- **`stores`**: `id uuid pk`, `slug text unique` (subdominio; `^[a-z0-9]+(-[a-z0-9]+)*$`, 3-40, reservados: `www, app, admin, api, mail, ecommy, platform, static, cdn`; `demo` es la tienda demo «Luna Indumentaria»), `name`, `owner_id uuid references auth.users`, `status text check in ('active','suspended','deleted') default 'active'`, `custom_domain text unique null`, `custom_domain_verified bool default false`, `next_order_number bigint default 1000`, `onboarding jsonb default '{}'` (pasos completados), `created_at`, `updated_at`.
 - **`store_members`**: `(store_id, user_id) pk`, `role text check in ('owner','admin','staff')`, `is_active bool default true`, `invited_by`, `created_at`. `profiles` deja de tener rol global: queda `id, email, name, last_seen_at, is_platform_admin bool default false` (las columnas `role` / `is_active` se eliminan; `is_platform_admin` sólo lo escribe SQL o un superadmin).
 - **`plans`**: `code text pk` ('free','starter','pro','business'), `name`, `description`, `price_monthly numeric(12,2)`, `currency`, `position int`, `is_public bool`, `features jsonb` (mapa `feature → true/false`), `limits jsonb` (`{ products: 50, pages: 3, staff: 1, promotions: 1, coupons: 3, import_jobs_month: 0, images_per_product: 3, storage_mb: 200 }`; `null` = ilimitado). Seed: **Free** (50 productos, sólo home en el builder, sin importador, sin promos programadas, 1 usuario, sin CSS custom), **Starter** ($ 14.999/mes: 500 productos, 5 landings, importador CSV, promos/cupones, 3 usuarios), **Pro** ($ 34.999/mes: ilimitado, importador web, precios masivos, CSS custom, dominio propio, 10 usuarios, auditoría/export), **Business** (a medida). Los precios son de ejemplo y se editan desde `/platform`.
 - **`subscriptions`**: `id`, `store_id unique`, `plan_code fk plans`, `status text check in ('trialing','active','past_due','cancelled')`, `trial_ends_at`, `current_period_start/end`, `provider text null` ('manual','mercadopago'), `provider_ref`, `notes`. Al crear una tienda: `pro` en **trial de 14 días**; al vencer sin pago → `free` (barrido perezoso `expire_trials()`; las features por encima del plan quedan bloqueadas, los datos no se borran).
