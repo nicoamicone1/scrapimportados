@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { fail, ok, runAction, zodFail, type ActionResult } from "@/lib/actions";
+import { purgeStore, PurgeError } from "@/lib/admin/purge";
 import { ADMIN_STORE_COOKIE, ADMIN_STORE_COOKIE_OPTIONS, requirePlatformAdmin } from "@/lib/auth";
 import { billingEnabled, cancelPreapproval, MercadoPagoError } from "@/lib/billing/mercadopago";
 import { mercadoPagoDebitActive } from "@/lib/billing/state";
@@ -154,6 +155,24 @@ export async function setStoreStatus(input: { storeId: string; status: string })
     await auditStore(parsed.data.storeId, "platform.status", `Superadmin: estado ${parsed.data.status}`);
     revalidatePath("/platform");
     return ok();
+  });
+}
+
+/** Borra la tienda para siempre (0026): base en cascada y fotos del bucket. Pide escribir la dirección. */
+export async function purgeStoreForever(input: { storeId: string; confirm: string }): Promise<ActionResult<{ name: string; storageWarning: string | null }>> {
+  return runAction(async () => {
+    const { supabase } = await requirePlatformAdmin();
+    const parsed = z.object({ storeId: idSchema, confirm: z.string().trim().min(1, "Escribí la dirección de la tienda.") }).safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    try {
+      const res = await purgeStore(supabase, parsed.data.storeId, parsed.data.confirm);
+      const jar = await cookies();
+      if (jar.get(ADMIN_STORE_COOKIE)?.value === parsed.data.storeId) jar.delete(ADMIN_STORE_COOKIE);
+      return ok({ name: res.name, storageWarning: res.storageWarning });
+    } catch (err) {
+      if (err instanceof PurgeError) return fail(err.message);
+      throw err;
+    }
   });
 }
 

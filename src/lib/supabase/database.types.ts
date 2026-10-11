@@ -3721,6 +3721,10 @@ export type Database = {
         Args: { p_email: string; p_keep_previous?: boolean; p_store_id: string }
         Returns: Json
       }
+      purge_store: {
+        Args: { p_confirm: string; p_store_id: string }
+        Returns: Json
+      }
       adjust_stock: {
         Args: {
           p_delta: number

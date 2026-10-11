@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { extendTrial, setStorePlan, setStoreStatus } from "@/app/(platform)/platform/actions";
+import { extendTrial, purgeStoreForever, setStorePlan, setStoreStatus } from "@/app/(platform)/platform/actions";
+import { DeleteStoreDialog } from "@/components/admin/DeleteStoreDialog";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -16,6 +17,7 @@ import type { BillingPeriod } from "@/lib/plans/yearly";
 export interface StoreAdminFormsProps {
   storeId: string;
   storeName: string;
+  storeSlug: string;
   plans: { code: string; name: string }[];
   current: { plan: string; status: string; trialEndsAt: string; storeStatus: string };
   /**
@@ -40,7 +42,7 @@ const SUB_OPTIONS = [
   { value: "cancelled", label: "Cancelada (cuenta como Free)" },
 ];
 
-export function StoreAdminForms({ storeId, storeName, plans, current, period: currentPeriod, mercadoPagoDebit }: StoreAdminFormsProps) {
+export function StoreAdminForms({ storeId, storeName, storeSlug, plans, current, period: currentPeriod, mercadoPagoDebit }: StoreAdminFormsProps) {
   const router = useRouter();
   const [plan, setPlan] = useState(current.plan);
   const [status, setStatus] = useState(current.status);
@@ -51,6 +53,7 @@ export function StoreAdminForms({ storeId, storeName, plans, current, period: cu
   const [trial, setTrial] = useState(current.trialEndsAt);
   const [confirm, setConfirm] = useState<"suspended" | "deleted" | "active" | null>(null);
   const [confirmMp, setConfirmMp] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const run = (fn: () => Promise<ActionResult>, success: string) =>
@@ -116,7 +119,10 @@ export function StoreAdminForms({ storeId, storeName, plans, current, period: cu
       </Card>
 
       <Card>
-        <CardHeader title="Estado de la tienda" description="Una tienda suspendida no se ve en público; el equipo sigue entrando al panel." />
+        <CardHeader
+          title="Estado de la tienda"
+          description="Una tienda suspendida no se ve en público; el equipo sigue entrando al panel. Marcarla como borrada la oculta sin tocar los datos; «Borrar para siempre» la elimina con todo."
+        />
         <CardBody className="flex flex-wrap gap-2">
           {current.storeStatus !== "active" ? (
             <Button variant="primary" disabled={pending} onClick={() => setConfirm("active")}>
@@ -132,8 +138,22 @@ export function StoreAdminForms({ storeId, storeName, plans, current, period: cu
               Marcar como borrada
             </Button>
           ) : null}
+          {storeSlug !== "demo" ? (
+            <Button variant="danger" disabled={pending} onClick={() => setPurgeOpen(true)}>
+              Borrar para siempre
+            </Button>
+          ) : null}
         </CardBody>
       </Card>
+
+      <DeleteStoreDialog
+        open={purgeOpen}
+        onOpenChange={setPurgeOpen}
+        storeName={storeName}
+        slug={storeSlug}
+        run={(confirm) => purgeStoreForever({ storeId, confirm })}
+        afterHref="/platform"
+      />
 
       <ConfirmDialog
         open={confirmMp}

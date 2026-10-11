@@ -162,6 +162,7 @@ export default async function PlatformStorePage({ params }: PageProps<"/platform
           <StoreAdminForms
             storeId={store.id}
             storeName={store.name}
+            storeSlug={store.slug}
             plans={plans ?? []}
             current={{
               plan: sub?.plan_code ?? "free",

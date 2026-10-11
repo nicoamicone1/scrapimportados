@@ -4,10 +4,11 @@ Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changel
 
 ## Sin publicar
 
-Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere aplicar la migración 0025 (esquema 16).
+Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Requiere aplicar la migración 0025 (esquema 16). La 0026 (borrar tiendas, sin cambio de esquema) ya está aplicada en producción desde el 2026-10-10.
 
 ### Agregado
 
+- Borrar una tienda para siempre (migración `0026_store_purge.sql`). En /platform › Tienda, «Borrar para siempre»; en Configuración › Zona de peligro, «Borrar la tienda» para quien la tiene a su nombre. Hay que escribir la dirección de la tienda para confirmar. Se borran productos, fotos del bucket, pedidos, clientes, páginas, equipo y suscripción. No se puede con un débito automático de Mercado Pago que todavía cobra (primero se cancela la renovación) ni con la tienda `demo`. Queda constancia en `store_purges` (quién, cuándo y cuántos productos, pedidos y clientes tenía). «Marcar como borrada» sigue existiendo para ocultarla sin tocar los datos.
 - Mail de activación del día 3, «La prueba de fuego»: a las tiendas en prueba, con productos activos y sin un pedido real todavía (pedido web no cancelado de alguien que no sea el dueño), entre el día 3 y el 30. Trae la dirección de la tienda, el mensaje listo para mandarle a una clienta habitual («Ahora podés pedir directo acá: … Elegís talle y color y te llega el total.»; sin «talle y color» fuera de los rubros de ropa) y lo que vas a ver en Inicio cuando llegue el pedido. Respeta los dos días entre avisos y sale una sola vez. La secuencia queda: 48 h sin productos → día 3 prueba de fuego → día 7 compartir.
 
 ### Cambiado
