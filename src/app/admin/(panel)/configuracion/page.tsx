@@ -2,9 +2,11 @@ import { AlertTriangle, ChevronRight, CreditCard, Download, Palette, Scale, Sear
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DeleteStoreCard } from "@/components/admin/settings/DeleteStoreCard";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/display";
 import { getAdminSettings, getSchemaStatus, listPaymentMethodsAdmin } from "@/lib/admin/settings";
+import { requireAdmin } from "@/lib/auth";
 import { formatPercent } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Configuración" };
@@ -51,7 +53,10 @@ function SettingsList({ title, rows }: { title: string; rows: Row[] }) {
 }
 
 export default async function ConfiguracionPage() {
-  const [settings, methods, schema] = await Promise.all([getAdminSettings(), listPaymentMethodsAdmin(), getSchemaStatus()]);
+  const [settings, methods, schema, ctx] = await Promise.all([getAdminSettings(), listPaymentMethodsAdmin(), getSchemaStatus(), requireAdmin()]);
+  // Borrar la tienda: quien la tiene a su nombre o el superadmin (con rol de dueño); `purge_store` lo vuelve a validar.
+  const canPurge =
+    ctx.membership.role === "owner" && (ctx.store.owner_id === ctx.user.id || ctx.profile.is_platform_admin) && ctx.store.slug !== "demo";
 
   const activeMethods = methods.filter((m) => m.is_active);
   const paymentsStatus = activeMethods.length
@@ -150,6 +155,7 @@ export default async function ConfiguracionPage() {
             { href: "/admin/usuarios", title: "Usuarios", description: "Tu equipo, roles y cuentas por aprobar.", icon: Users },
           ]}
         />
+        {canPurge ? <DeleteStoreCard storeName={ctx.store.name} slug={ctx.store.slug} /> : null}
       </div>
     </>
   );
