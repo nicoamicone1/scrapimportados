@@ -1,0 +1,28 @@
+{
+  "_nota": "Demo para @tiendagol (merchandising de fútbol, mayorista y minorista). Instagram no se pudo leer desde el entorno (429), así que los productos salen de la lista de rubros que publica la marca (camisetas, banderas, banderines, bolsos, botineros, mates 3D, riñoneras, sets materos, llaveros, tazas, gorros, ojotas, vasos térmicos…). Precios, talles, colores, descuento por transferencia y WhatsApp son ESTIMADOS/placeholder: antes de crearla, pisalos con los de su perfil o su lista de precios. Los colores son combinaciones de club (sin escudos ni marcas).",
+  "slug": "tiendagol",
+  "nombre": "Tiendagol",
+  "instagram": "@tiendagol",
+  "whatsapp": "5491100000000",
+  "ciudad": "",
+  "rubro": "marca",
+  "transferencia_descuento": 10,
+  "retiro": { "nombre": "", "direccion": "", "horarios": "" },
+  "productos": [
+    { "nombre": "Camiseta de fútbol titular", "precio": 45000, "talles": ["S", "M", "L", "XL", "XXL"], "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco", "Rojo y negro"], "categoria": "Camisetas", "destacado": true, "descripcion": "Tela deportiva liviana, escudo y vivos bordados. Consultá por tu club y por precio mayorista." },
+    { "nombre": "Camiseta retro", "precio": 52000, "precio_antes": 60000, "talles": ["S", "M", "L", "XL"], "colores": ["Azul y amarillo", "Blanco y rojo", "Verde y blanco"], "categoria": "Camisetas", "destacado": true, "descripcion": "Modelos clásicos de los 80 y 90, cuello polo." },
+    { "nombre": "Camiseta de fútbol para chicos", "precio": 32000, "talles": ["4", "6", "8", "10", "12", "14"], "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco"], "categoria": "Camisetas" },
+    { "nombre": "Bandera de tela 150 x 90 cm", "precio": 18000, "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco", "Rojo y negro"], "categoria": "Hinchada", "destacado": true },
+    { "nombre": "Banderín de pared", "precio": 6500, "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco", "Rojo y negro", "Verde y blanco"], "categoria": "Hinchada", "stock": 5 },
+    { "nombre": "Gorro de lana con pompón", "precio": 12000, "colores": ["Azul y amarillo", "Blanco y rojo", "Rojo y negro"], "categoria": "Hinchada" },
+    { "nombre": "Mate 3D del club", "precio": 22000, "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco", "Rojo y negro"], "categoria": "Matero", "destacado": true, "descripcion": "Mate con el escudo en relieve, con bombilla." },
+    { "nombre": "Set matero con bolso", "precio": 68000, "colores": ["Azul y amarillo", "Blanco y rojo", "Rojo y negro"], "categoria": "Matero", "descripcion": "Mate, termo de 1 litro, yerbera, azucarera y bolso matero con los colores del club." },
+    { "nombre": "Vaso térmico", "precio": 21000, "colores": ["Azul y amarillo", "Blanco y rojo", "Negro"], "categoria": "Matero" },
+    { "nombre": "Taza de cerámica", "precio": 11000, "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco"], "categoria": "Matero" },
+    { "nombre": "Bolso deportivo", "precio": 38000, "colores": ["Azul y amarillo", "Blanco y rojo", "Negro"], "categoria": "Bolsos" },
+    { "nombre": "Botinero", "precio": 16000, "colores": ["Azul y amarillo", "Blanco y rojo", "Rojo y negro"], "categoria": "Bolsos" },
+    { "nombre": "Riñonera", "precio": 19000, "colores": ["Azul y amarillo", "Blanco y rojo", "Negro"], "categoria": "Bolsos" },
+    { "nombre": "Ojotas del club", "precio": 15000, "talles": ["35/36", "37/38", "39/40", "41/42", "43/44"], "colores": ["Azul y amarillo", "Blanco y rojo"], "categoria": "Accesorios" },
+    { "nombre": "Llavero de goma", "precio": 3500, "colores": ["Azul y amarillo", "Blanco y rojo", "Celeste y blanco", "Rojo y negro", "Verde y blanco"], "categoria": "Accesorios", "stock": 10 }
+  ]
+}
