@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ArticleDoc } from "@/components/platform/ArticleDoc";
-import { DISPLAY } from "@/components/platform/brand";
+import { CTA_ARROW, CTA_PRIMARY, DISPLAY } from "@/components/platform/brand";
 import { cn } from "@/lib/cn";
 import { PlatformPage } from "@/components/platform/PlatformChrome";
 import { formatLegalDate } from "@/components/platform/site";
@@ -16,6 +16,11 @@ import { APP_NAME } from "@/lib/version";
  * Estática: no lee la sesión (el header muestra "Ingresar"; con sesión, /login
  * lleva directo a /app). Se sirve desde la CDN sin pasar por Supabase. Se
  * generan todas en el build; un slug que no existe da 404.
+ *
+ * Al final de cada artículo va la invitación a crear la tienda (a estas
+ * páginas llega desde Google gente que todavía no tiene una). Como no se lee
+ * la sesión, el mismo bloque le ofrece a quien ya tiene tienda el link al
+ * panel que declara el artículo (`panel`), si lo tiene.
  */
 export const dynamicParams = false;
 
@@ -89,6 +94,33 @@ export default async function AyudaArticlePage({ params }: PageProps<"/ayuda/[sl
         headings={extractHeadings(article.body)}
         after={
           <>
+            <aside aria-labelledby="empezar-t" className="eco-bubble mt-14 bg-eco-durazno px-6 py-7 text-eco-ink [--eco-bubble-r:28px] sm:px-8">
+              <h2 id="empezar-t" className={cn(DISPLAY, "text-[22px] leading-tight sm:text-[26px]")}>
+                ¿Todavía no tenés tu tienda?
+              </h2>
+              <p className="mt-2 max-w-[52ch] text-[15px] leading-relaxed">14 días de Pro gratis, sin tarjeta. Sin comisión por venta.</p>
+              <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link href="/empezar" className={cn(CTA_PRIMARY, "h-auto min-h-12 max-w-full py-2 text-left leading-snug text-balance")}>
+                  Cargamos tu catálogo y lo probás 14 días
+                  <span className={cn(CTA_ARROW, "shrink-0")}>
+                    <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
+                  </span>
+                </Link>
+                <Link href="/registro" className="inline-flex min-h-11 items-center text-[15px] font-semibold underline decoration-2 underline-offset-4">
+                  o creala vos
+                </Link>
+              </div>
+              {article.panel ? (
+                <p className="mt-5 border-t border-eco-ink/15 pt-4 text-[14px]">
+                  ¿Ya tenés tienda?{" "}
+                  <Link href={article.panel.href} className="font-semibold underline decoration-2 underline-offset-4">
+                    Abrí {article.panel.label} en el panel
+                  </Link>
+                  .
+                </p>
+              ) : null}
+            </aside>
+
             {related.length ? (
               <nav aria-labelledby="relacionados-t" className="mt-16">
                 <h2 id="relacionados-t" className={cn(DISPLAY, "text-[22px]")}>

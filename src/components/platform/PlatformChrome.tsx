@@ -136,8 +136,11 @@ export function PlatformFooter({ signedIn = false, overlap = false }: { signedIn
           title="Producto"
           links={[
             { href: "/#como-funciona", label: "Cómo funciona" },
+            { href: "/funciones/pedidos-por-whatsapp", label: "Pedidos por WhatsApp" },
+            { href: "/funciones/cobrar-por-transferencia", label: "Cobrar por transferencia" },
             { href: "/#probar", label: "Estilos por rubro" },
             { href: "/planes", label: "Planes" },
+            { href: "/alternativa-a-tiendanube", label: "Comparar con Tiendanube" },
             { href: demoStoreHref(), label: "Tienda demo" },
           ]}
         />

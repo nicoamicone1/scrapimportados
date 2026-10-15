@@ -50,13 +50,16 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
           </p>
           <h1 className={cn(H1, "eco-pop mt-6 max-w-[13ch] xl:text-[80px]")} style={i(1)}>
             Dejá de preguntar «¿qué talle?». El pedido te llega{" "}
-            <span className="lp-mark">
-              armado
-              <svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden>
-                <path d="M3 14 C 50 4, 140 2, 197 11" pathLength={1} fill="none" stroke="var(--eco-pomelo)" strokeWidth="7" strokeLinecap="round" className="eco-draw" />
-              </svg>
+            {/* «armado.» va junto: sin esto, en algunos anchos el punto quedaba solo en otra línea. */}
+            <span className="whitespace-nowrap">
+              <span className="lp-mark">
+                armado
+                <svg viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden>
+                  <path d="M3 14 C 50 4, 140 2, 197 11" pathLength={1} fill="none" stroke="var(--eco-pomelo)" strokeWidth="7" strokeLinecap="round" className="eco-draw" />
+                </svg>
+              </span>
+              .
             </span>
-            .
           </h1>
           <p className="eco-pop mt-7 max-w-[38ch] text-[19px] leading-[1.35] text-eco-ink sm:text-[21px]" style={i(2)}>
             Tu clienta elige talle y color en tu tienda, paga por transferencia o Mercado Pago, y a vos te llega el pedido a WhatsApp con
@@ -64,7 +67,7 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
           </p>
           <div className="eco-pop mt-9 flex flex-wrap items-center gap-x-6 gap-y-3" style={i(3)}>
             {/* El label largo entra en dos líneas en el celular (la pastilla crece, no se desborda). */}
-            <Link href={startHref} className={cn(CTA_PRIMARY, "h-auto min-h-14 max-w-full py-2 pl-7 text-left text-[16px] leading-snug")}>
+            <Link href={startHref} className={cn(CTA_PRIMARY, "h-auto min-h-14 max-w-full py-2 pl-7 text-left text-[16px] leading-snug text-balance")}>
               {startLabel}
               <span className={cn(CTA_ARROW, "size-10 shrink-0")}>
                 <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
@@ -85,7 +88,7 @@ export function Hero({ startHref, startLabel, demoHref, demoAddress, orderUrl }:
         </div>
 
         {/* Composición: tienda + celular con el pedido ----------------------- */}
-        <div className="relative mx-auto aspect-[10/11] w-full min-[520px]:aspect-[10/9.2] max-w-[680px] min-w-0 xl:mr-[-24px]">
+        <div className="relative mx-auto aspect-[10/11] w-full min-[520px]:aspect-[10/9.2] max-w-[680px] min-w-0 min-[1380px]:mr-[-24px]">
           <div aria-hidden className="absolute top-[4%] right-[-14%] aspect-square w-[82%] rounded-full bg-eco-durazno" />
           <div aria-hidden className="lp-rings absolute top-[-18%] right-[-34%] aspect-square w-[122%] rounded-full [--lp-ring:rgb(255_90_60/0.16)] [--lp-rings-at:50%_50%]" />
 

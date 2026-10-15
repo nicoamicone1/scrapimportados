@@ -6,7 +6,7 @@
  */
 
 export const APP_NAME = "Ecommy";
-export const APP_VERSION = "0.11.0";
+export const APP_VERSION = "0.12.0";
 
 /**
  * Versión del esquema de base de datos que espera este código. Se compara
@@ -28,6 +28,35 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.12.0",
+    date: "2026-10-15",
+    title: "Páginas para encontrarnos en Google, guías nuevas, Free de 25 productos y borrar tiendas",
+    sections: {
+      added: [
+        "Sitio de Ecommy › «Alternativa a Tiendanube»: te dice sin vueltas cuándo te conviene quedarte en Tiendanube y cuándo Ecommy, con una comparación punto por punto, fuentes y la fecha en que se verificó cada dato.",
+        "Sitio de Ecommy › «Pedidos por WhatsApp»: el recorrido completo, desde que tu clienta elige talle y color hasta que el pedido te llega armado y aparece en Hoy, con el checkout para probar y el mensaje real.",
+        "Sitio de Ecommy › «Cobrar por transferencia»: descuento visible en cada producto, alias para copiar, stock reservado mientras te pagan y «Comisión de Ecommy $ 0». Mercado Pago queda como alternativa para tarjeta.",
+        "Guía nueva «Cuánto cuesta de verdad tener una tienda online en Argentina (2026)»: separa el plan, la comisión de la plataforma y la del medio de pago, compara cómo cobran otras plataformas con fecha de verificación y te deja una fórmula para hacer tu cuenta.",
+        "Guía nueva «Fotos de producto con el celular para tu tienda de ropa (sin estudio)»: luz de ventana, fondo, qué fotos sacar de cada prenda, cómo lograr que se vean parejas y en qué formato subirlas.",
+        "Al final de cada artículo de ayuda hay una invitación a crear tu tienda; si ya tenés una, el mismo bloque te lleva a la sección del panel de la que habla el artículo.",
+        "Borrar una tienda para siempre: en Configuración › Zona de peligro para quien la tiene a su nombre (y en la consola de plataforma). Hay que escribir la dirección de la tienda para confirmar. Se borran productos, fotos, pedidos, clientes, páginas, equipo y suscripción; no se puede con un débito automático de Mercado Pago vigente. «Marcar como borrada» sigue existiendo para ocultarla sin tocar los datos.",
+        "Mail de activación del día 3, «La prueba de fuego»: si tu tienda en prueba tiene productos y todavía no recibió un pedido real, te llega la dirección de la tienda y el mensaje listo para mandarle a una clienta habitual.",
+        "Tienda demo con diseño a medida «Luna, ropa por fases» e ilustraciones de moda en las imágenes de ejemplo, y el selector «Probá otro estilo» para verla con cualquiera de los 10 estilos.",
+      ],
+      changed: [
+        "Plan Free: hasta 25 productos (eran 50). Remitos para imprimir y Responder pasan a estar desde Starter (siguen en la prueba de 14 días). Lo que excede Free no se borra: los productos cargados siguen a la venta y no se pueden crear más.",
+        "Mail de fin de prueba: dice qué pierde la tienda según su uso real y que Responder y los remitos quedan desde Starter.",
+        "El crédito «Hecho con Ecommy» del pie de cada tienda avisa desde qué tienda llegó cada visita, para medir cuánta gente descubre Ecommy mirando tiendas de clientes.",
+        "En el pie del sitio, «Producto» suma «Pedidos por WhatsApp», «Cobrar por transferencia» y «Comparar con Tiendanube».",
+        "En el celular, el formulario de «Te cargamos el catálogo» aparece apenas entrás, sin bajar dos pantallas.",
+        "Las preguntas frecuentes del inicio quedan marcadas para que los buscadores las lean como preguntas y respuestas.",
+      ],
+      fixed: [
+        "Inicio del sitio: el punto del título ya no queda solo en otra línea, a 1280 px el celular del ejemplo ya no se corta, los botones largos no dejan una palabra sola en el celular y el mapa de envíos muestra entero «Río de la Plata».",
+      ],
+    },
+  },
   {
     version: "0.11.0",
     date: "2026-10-08",

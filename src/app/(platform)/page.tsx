@@ -313,6 +313,17 @@ export default async function LandingPage() {
             url: `${origin}/planes`,
           })),
       },
+      {
+        // Las mismas preguntas y respuestas que muestra el acordeón de la landing.
+        "@type": "FAQPage",
+        "@id": `${origin}/#faq`,
+        inLanguage: "es-AR",
+        mainEntity: landingFaq.map((item) => ({
+          "@type": "Question",
+          name: item.q,
+          acceptedAnswer: { "@type": "Answer", text: item.a },
+        })),
+      },
     ],
   };
 
@@ -722,7 +733,7 @@ export default async function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
                 href={offer}
-                className="group inline-flex min-h-14 max-w-full items-center gap-3 rounded-full bg-eco-ink py-2 pr-2 pl-7 text-left text-[16px] leading-snug font-semibold text-white transition-[background-color,transform] duration-[240ms] ease-eco-out hover:bg-eco-ink-2 active:scale-[0.98]"
+                className="group inline-flex min-h-14 max-w-full items-center gap-3 rounded-full bg-eco-ink py-2 pr-2 pl-7 text-left text-[16px] leading-snug font-semibold text-balance text-white transition-[background-color,transform] duration-[240ms] ease-eco-out hover:bg-eco-ink-2 active:scale-[0.98]"
               >
                 {offerLabel}
                 <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-eco-pomelo text-eco-ink transition-transform duration-[420ms] ease-eco-spring group-hover:translate-x-1 group-hover:-rotate-45">

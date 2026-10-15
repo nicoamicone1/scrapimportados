@@ -14,7 +14,7 @@ import "../site.css";
 
 const TITLE = "Guías para vender online en Argentina";
 const DESCRIPTION =
-  "Guías prácticas para comercios argentinos: vender por WhatsApp con orden, botón de arrepentimiento, precio sin impuestos nacionales y mudar tu tienda sin perder Google.";
+  "Guías prácticas para comercios argentinos: vender por WhatsApp con orden, cuánto cuesta una tienda online, fotos con el celular, lo que pide la ley y mudarte sin perder Google.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -47,8 +47,8 @@ export default function GuiasPage() {
             <p className={EYEBROW}>Guías</p>
             <h1 className={cn(DISPLAY, "mt-4 max-w-[16ch] text-[40px] leading-[0.98] text-balance sm:text-[56px]")}>Vender online en Argentina, sin vueltas</h1>
             <p className="mt-5 text-[17px] leading-relaxed text-adm-fg-muted">
-              Lo que conviene saber antes de abrir o mudar una tienda: qué pide la ley, cómo ordenar las ventas y cómo cuidar lo que ya ganaste en
-              Google. Sin relleno y con la fecha de la última revisión.
+              Lo que conviene saber antes de abrir o mudar una tienda: cuánto cuesta de verdad, cómo sacar las fotos, qué pide la ley, cómo ordenar
+              las ventas y cómo cuidar lo que ya ganaste en Google. Sin relleno y con la fecha de la última revisión.
             </p>
           </header>
 

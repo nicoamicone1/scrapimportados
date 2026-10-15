@@ -19,8 +19,24 @@ function prettyPhone(digits: string): string {
   return m ? `+54 ${m[1] ? "9 " : ""}${m[2]} ${m[3]}-${m[4]}` : `+${d}`;
 }
 
+/**
+ * Link del crédito «Hecho con Ecommy» con UTM, para medir en GA4 de la
+ * plataforma cuántas visitas y registros llegan desde las tiendas de clientes:
+ * `utm_source=tienda`, `utm_medium=credito` y, si se conoce, `utm_campaign=<slug>`
+ * (el slug ya es público: es el subdominio de la tienda). Un slug con otra forma
+ * no se manda.
+ */
+export function creditHref(storeSlug?: string | null, rootDomain?: string): string {
+  const query = new URLSearchParams({ utm_source: "tienda", utm_medium: "credito" });
+  const slug = storeSlug?.trim().toLowerCase();
+  if (slug && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(slug)) query.set("utm_campaign", slug);
+  return platformUrl(`/?${query.toString()}`, rootDomain);
+}
+
 interface FooterProps {
   settings: StoreSettings;
+  /** Slug de la tienda, para el `utm_campaign` del crédito (`creditHref`). */
+  storeSlug?: string;
   menu: MenuItem[];
   paymentMethods: StorePaymentMethod[];
   zones: StoreShippingZone[];
@@ -41,7 +57,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
 }
 
 /** Bloque legal obligatorio en Argentina (P0-14, P0-16) + políticas. Va en los 3 estilos. */
-function LegalBand({ settings, year }: { settings: StoreSettings; year: number }) {
+function LegalBand({ settings, year, storeSlug }: { settings: StoreSettings; year: number; storeSlug?: string }) {
   const { legal } = settings;
   const policies = POLICY_LINKS.filter((p) => settings.policies[p.key]);
   return (
@@ -76,7 +92,7 @@ function LegalBand({ settings, year }: { settings: StoreSettings; year: number }
               <>
                 {" · "}
                 {/* BRAND.md §12: texto del tema, sin logo ni color de la plataforma. Obligatorio en Free. */}
-                <a href={platformUrl("/")} target="_blank" rel="noopener" className="hover:text-fg hover:underline hover:underline-offset-2">
+                <a href={creditHref(storeSlug)} target="_blank" rel="noopener" className="hover:text-fg hover:underline hover:underline-offset-2">
                   Hecho con {APP_NAME}
                 </a>
               </>
@@ -172,7 +188,7 @@ function FlatLinks({ links, className }: { links: MenuItem[]; className?: string
  * (el nombre de la tienda gigante como cierre) o `band` (una hoja del color
  * primario que entra con las esquinas de arriba según `style.shape`).
  */
-export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }: FooterProps) {
+export function StoreFooter({ settings, storeSlug, menu, paymentMethods, zones, hasPickup }: FooterProps) {
   const year = new Date().getFullYear();
   const style = settings.theme.footer.style;
   const groups = menu.filter((g) => g.children.length);
@@ -210,7 +226,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
             {settings.name}
           </p>
         </div>
-        <LegalBand settings={settings} year={year} />
+        <LegalBand settings={settings} year={year} storeSlug={storeSlug} />
       </footer>
     );
   }
@@ -247,7 +263,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
             ) : null}
           </div>
         </div>
-        <LegalBand settings={settings} year={year} />
+        <LegalBand settings={settings} year={year} storeSlug={storeSlug} />
       </footer>
     );
   }
@@ -264,7 +280,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
           <Social settings={settings} />
           {settings.whatsapp_phone ? <FooterLink href={waLink(settings.whatsapp_phone)}>WhatsApp</FooterLink> : null}
         </div>
-        <LegalBand settings={settings} year={year} />
+        <LegalBand settings={settings} year={year} storeSlug={storeSlug} />
       </footer>
     );
   }
@@ -290,7 +306,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
           </div>
           {ship.length ? <p className="text-fg-muted lg:col-span-3">{ship.join(" · ")}</p> : null}
         </div>
-        <LegalBand settings={settings} year={year} />
+        <LegalBand settings={settings} year={year} storeSlug={storeSlug} />
       </footer>
     );
   }
@@ -344,7 +360,7 @@ export function StoreFooter({ settings, menu, paymentMethods, zones, hasPickup }
           </div>
         ) : null}
       </div>
-      <LegalBand settings={settings} year={year} />
+      <LegalBand settings={settings} year={year} storeSlug={storeSlug} />
     </footer>
   );
 }

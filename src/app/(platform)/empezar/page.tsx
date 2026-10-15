@@ -37,8 +37,10 @@ export default async function EmpezarPage() {
     <PlatformPage signedIn={Boolean(user)}>
       <section className="relative overflow-hidden">
         <CornerArc corner="tr" size={520} className="hidden bg-eco-durazno/70 md:block" />
-        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-16 sm:px-6 md:pt-20 md:pb-24 lg:grid-cols-12 lg:gap-14">
-          <div className="eco-pop min-w-0 lg:col-span-6">
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pt-12 pb-16 sm:px-6 md:pt-20 md:pb-24 lg:grid-cols-12 lg:gap-x-14 lg:gap-y-0">
+          {/* En el celular el formulario va pegado a la bajada (es a lo que se viene desde la landing) y
+              «Cómo sigue» queda debajo; en desktop, texto a la izquierda y formulario a la derecha. */}
+          <div className="eco-pop min-w-0 lg:col-span-6 lg:row-start-1">
             <p className={EYEBROW}>Empezar</p>
             <h1 className={cn(DISPLAY, "mt-4 text-[40px] leading-[0.98] text-balance sm:text-[60px]")}>
               Te cargamos el catálogo. Lo probás con tus <ArcWord>clientas</ArcWord>.
@@ -47,8 +49,18 @@ export default async function EmpezarPage() {
               Pasanos tu Instagram y tu lista de precios: cargamos tus 30 productos más vendidos con talles y colores, te mostramos el panel
               en una llamada de 30 minutos y lo probás 14 días con Pro, sin tarjeta.
             </p>
+          </div>
 
-            <h2 className="mt-10 text-[13px] font-semibold tracking-[0.06em] text-adm-fg-muted uppercase">Cómo sigue</h2>
+          <div className="min-w-0 lg:col-span-6 lg:col-start-7 lg:row-span-2 lg:row-start-1 lg:pt-4">
+            <div className="eco-pop relative rounded-eco-xl border border-eco-line bg-adm-surface p-6 shadow-[0_40px_80px_-48px_rgb(16_22_47/0.45)] sm:p-8" style={{ ["--i" as string]: 1 }}>
+              <h2 className={cn(DISPLAY, "text-[24px] leading-tight sm:text-[28px]")}>Contanos de tu marca</h2>
+              <p className="mt-2 mb-6 text-[14px] leading-relaxed text-adm-fg-muted">Cuatro datos. Con eso arrancamos.</p>
+              <CatalogRequestForm kinds={kinds} demoHref={demoStoreHref()} />
+            </div>
+          </div>
+
+          <div className="min-w-0 lg:col-span-6 lg:row-start-2">
+            <h2 className="text-[13px] font-semibold tracking-[0.06em] text-adm-fg-muted uppercase lg:mt-10">Cómo sigue</h2>
             <ol className="mt-4 space-y-3">
               {NEXT_STEPS.map((step, i) => (
                 <li key={step} className="flex gap-3.5 text-[15px] leading-relaxed">
@@ -70,14 +82,6 @@ export default async function EmpezarPage() {
               </Link>{" "}
               y cargá los productos a mano o desde una planilla.
             </p>
-          </div>
-
-          <div className="min-w-0 lg:col-span-6 lg:pt-4">
-            <div className="eco-pop relative rounded-eco-xl border border-eco-line bg-adm-surface p-6 shadow-[0_40px_80px_-48px_rgb(16_22_47/0.45)] sm:p-8" style={{ ["--i" as string]: 1 }}>
-              <h2 className={cn(DISPLAY, "text-[24px] leading-tight sm:text-[28px]")}>Contanos de tu marca</h2>
-              <p className="mt-2 mb-6 text-[14px] leading-relaxed text-adm-fg-muted">Cuatro datos. Con eso arrancamos.</p>
-              <CatalogRequestForm kinds={kinds} demoHref={demoStoreHref()} />
-            </div>
           </div>
         </div>
       </section>

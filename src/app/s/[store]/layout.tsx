@@ -186,6 +186,7 @@ export default async function StoreLayout({ children, params }: LayoutProps<"/s/
               paymentMethods={paymentMethods}
               zones={zones}
               hasPickup={pickups.length > 0}
+              storeSlug={store.slug}
             />
             <CartDrawer
               promotions={promotions}

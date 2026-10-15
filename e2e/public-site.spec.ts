@@ -15,7 +15,9 @@ const ARTICLE_ROUTES = [
   "/guias/boton-de-arrepentimiento",
   "/guias/precio-sin-impuestos-nacionales",
 ];
-const ROUTES = [...STATIC_ROUTES, ...ARTICLE_ROUTES];
+/** Páginas de captación (src/components/platform/landing-pages): funciones y comparación. */
+const LANDING_ROUTES = ["/alternativa-a-tiendanube", "/funciones/pedidos-por-whatsapp", "/funciones/cobrar-por-transferencia"];
+const ROUTES = [...STATIC_ROUTES, ...ARTICLE_ROUTES, ...LANDING_ROUTES];
 
 /**
  * Errores de consola esperables en este entorno:

@@ -2,11 +2,20 @@
 
 Espejo de `src/lib/version.ts` (la fuente única es ese archivo; `/admin/changelog` lee de ahí).
 
-## Sin publicar
+## v0.12.0 — 2026-10-15 · Páginas para encontrarnos en Google, guías nuevas, Free de 25 productos y borrar tiendas
 
-Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Migraciones 0025 (esquema 16) y 0026 (borrar tiendas, sin cambio de esquema) aplicadas en producción el 2026-10-10.
+Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11 y páginas de [`MARKETING.md`](MARKETING.md) §6.3. Migraciones 0025 (esquema 16) y 0026 (borrar tiendas, sin cambio de esquema) aplicadas en producción el 2026-10-10. Sin migraciones nuevas.
 
 ### Agregado
+
+- Sitio › `/alternativa-a-tiendanube`: cuándo te conviene quedarte en Tiendanube y cuándo Ecommy, con comparación punto por punto (diferencia, paridad o «Tiendanube tiene más»), fuentes oficiales numeradas y la fecha de verificación (`VERIFIED_AT` en `src/components/platform/landing-pages/content.ts`; al re-verificar, se cambia ahí). Datos estructurados de página, ubicación y preguntas.
+- Sitio › `/funciones/pedidos-por-whatsapp`: el circuito completo (talle y color → pedido registrado con número → mensaje armado a WhatsApp → Hoy → Responder) con `CheckoutDemo`, `RepliesScene` y `PanelHomeScene`; comparación con el catálogo de WhatsApp Business y lo que Ecommy no hace (no es un bot, no escribe en tu nombre).
+- Sitio › `/funciones/cobrar-por-transferencia`: descuento visible desde la card, alias que la clienta copia, reserva de stock que vence sola, recibo con «Comisión de Ecommy $ 0», calculadora de comisión y Mercado Pago como alternativa. Las tres páginas son estáticas (`revalidate` 10 min), con imagen para compartir, entrada en el sitemap, links en el pie y 15 tests de copy y metadata (`landing-pages.test.ts`).
+- Guías › «Cuánto cuesta de verdad tener una tienda online en Argentina (2026)» (`cuanto-cuesta-una-tienda-online`): plan, comisión de la plataforma y del medio de pago como dos cosas distintas, tabla de plataformas verificada el 2026-10-15 con fuentes, tres perfiles y la fórmula para la cuenta propia.
+- Guías › «Fotos de producto con el celular para tu tienda de ropa (sin estudio)» (`fotos-de-producto-con-el-celular`): luz, fondo, tabla de tomas, consistencia, nombres de archivo, formato y peso (lo que dice de Ecommy sale de `image-upload.ts`).
+- Ayuda: bloque «¿Todavía no tenés tu tienda?» al final de cada artículo con el CTA de `/empezar` y «o creala vos»; como la página es estática, para quien ya tiene tienda muestra el link al panel que declara `meta.panel`.
+- Inicio del sitio: nodo `FAQPage` en el JSON-LD con las 6 preguntas del acordeón.
+- Crédito «Hecho con Ecommy» del pie de las tiendas con `utm_source=tienda&utm_medium=credito&utm_campaign=<slug>` (`creditHref` en `Footer.tsx`, con test), para medir el canal de las tiendas de clientes en GA4.
 
 - Borrar una tienda para siempre (migración `0026_store_purge.sql`). En /platform › Tienda, «Borrar para siempre»; en Configuración › Zona de peligro, «Borrar la tienda» para quien la tiene a su nombre. Hay que escribir la dirección de la tienda para confirmar. Se borran productos, fotos del bucket, pedidos, clientes, páginas, equipo y suscripción. No se puede con un débito automático de Mercado Pago que todavía cobra (primero se cancela la renovación) ni con la tienda `demo`. Queda constancia en `store_purges` (quién, cuándo y cuántos productos, pedidos y clientes tenía). «Marcar como borrada» sigue existiendo para ocultarla sin tocar los datos.
 - Mail de activación del día 3, «La prueba de fuego»: a las tiendas en prueba, con productos activos y sin un pedido real todavía (pedido web no cancelado de alguien que no sea el dueño), entre el día 3 y el 30. Trae la dirección de la tienda, el mensaje listo para mandarle a una clienta habitual («Ahora podés pedir directo acá: … Elegís talle y color y te llega el total.»; sin «talle y color» fuera de los rubros de ropa) y lo que vas a ver en Inicio cuando llegue el pedido. Respeta los dos días entre avisos y sale una sola vez. La secuencia queda: 48 h sin productos → día 3 prueba de fuego → día 7 compartir.
@@ -18,10 +27,19 @@ Decisiones de [`gtm/PLAN-GTM.md`](gtm/PLAN-GTM.md) §7, §10 y §11. Migraciones
 
 ### Cambiado
 
+- Pie del sitio › «Producto»: Cómo funciona, Pedidos por WhatsApp, Cobrar por transferencia, Estilos por rubro, Planes, Comparar con Tiendanube, Tienda demo.
+- `/empezar` en mobile: el formulario va pegado a la bajada (antes quedaba después de «Cómo sigue», casi dos pantallas abajo).
+- `/guias`: la bajada y la descripción nombran las seis guías.
+- `scripts/shots.cjs`: flag `@w<px>` para elegir el ancho de la captura.
 - Plan Free: hasta 25 productos (eran 50). Remitos para imprimir y Responder pasan a estar desde Starter (siguen en la prueba de 14 días). Nueva función de plan `orders.replies` («Respuestas listas para WhatsApp»), editable en /platform/planes. Lo que excede Free no se borra: los productos cargados siguen a la venta y no se pueden crear más.
 - Responder muestra el candado «Disponible en Starter» en Free, y la búsqueda de productos para responder lo valida en el servidor. En Pedidos, «Imprimir remito» lleva el candado en Free.
 - Mail de fin de prueba: dice qué pierde la tienda según su uso real («Tenés 84 productos: en Free el tope es 25…», «Tenés 3 usuarios: Free es para 1…») y que Responder y los remitos quedan desde Starter.
 - Preguntas frecuentes y ayuda (Planes, prueba y equipo; Remitos y exportar; Responder) con el Free nuevo. El tope de productos de la pregunta «¿Qué pasa cuando termina la prueba?» sale de los planes de la base.
+
+### Corregido
+
+- Hero del sitio: «armado.» va en un `span` sin corte, así el punto no queda solo en otra línea; el margen negativo del celular arranca en 1380 px (a 1280 se cortaba); `text-balance` en los CTA largos (mobile dejaba «días» solo); el rótulo «Río de la Plata» del mapa de envíos va en dos líneas.
+
 ## v0.11.0 — 2026-10-08 · Pasar la tienda a otra persona
 
 Migración: `supabase/migrations/0024_store_transfer.sql` (schema_version 15).

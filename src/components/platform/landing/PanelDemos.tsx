@@ -505,8 +505,10 @@ export function ZonesDemo() {
         <div className="relative min-h-[220px] border-adm-border bg-eco-niebla-2 max-sm:border-b sm:border-r">
           <svg viewBox="0 0 360 260" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden>
             <path d="M258 0 H360 V260 H272 C268 220 270 180 266 150 C264 120 262 100 262 92 Z" fill="var(--eco-azul-soft)" />
-            <text x="314" y="140" textAnchor="middle" fontSize="10" fill="var(--eco-azul-dark)" fontStyle="italic">
-              Río de la Plata
+            {/* En dos líneas: con `slice` los costados se recortan cuando la caja es más angosta que el viewBox. */}
+            <text x="312" y="134" textAnchor="middle" fontSize="10" fill="var(--eco-azul-dark)" fontStyle="italic">
+              <tspan x="312">Río de</tspan>
+              <tspan x="312" dy="12">la Plata</tspan>
             </text>
             {ZONES.map((z) => {
               const on = z.id === zone;

@@ -7,6 +7,7 @@
  *   @login   entra antes por /admin/auth/dev-login (sólo dev; ver docs/DEV-ACCESS.md)
  *   @mobile  390 × 844 a 2x          @full  página completa
  *   @wait    espera 2,5 s más (animaciones, fuentes)
+ *   @w<px>   ancho del viewport (ej. @w800; alto 900, o 844 con @mobile)
  *
  * Ej.: node scripts/shots.cjs .shots landing=/@full panel=/admin@login tienda=/s/demo@mobile@full
  * BASE=http://localhost:3000 por defecto. En Git Bash anteponé MSYS_NO_PATHCONV=1
@@ -19,7 +20,7 @@ const { chromium } = require("@playwright/test");
 (async () => {
   const [outDir, ...specs] = process.argv.slice(2);
   if (!outDir || !specs.length) {
-    console.error("Uso: node scripts/shots.cjs <carpeta> <nombre>=<ruta>[@login][@mobile][@full][@wait] ...");
+    console.error("Uso: node scripts/shots.cjs <carpeta> <nombre>=<ruta>[@login][@mobile][@full][@wait][@w<px>] ...");
     process.exit(1);
   }
   fs.mkdirSync(outDir, { recursive: true });
@@ -30,8 +31,10 @@ const { chromium } = require("@playwright/test");
     const name = spec.slice(0, eq);
     const [path, ...flags] = spec.slice(eq + 1).split("@");
     const mobile = flags.includes("mobile");
+    const wFlag = flags.find((f) => /^w\d+$/.test(f));
+    const width = wFlag ? Number(wFlag.slice(1)) : mobile ? 390 : 1440;
     const ctx = await browser.newContext({
-      viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 },
+      viewport: { width, height: mobile ? 844 : 900 },
       deviceScaleFactor: mobile ? 2 : 1,
       isMobile: mobile,
       hasTouch: mobile,

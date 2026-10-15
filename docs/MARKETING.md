@@ -207,7 +207,7 @@ Regla: comparar sólo lo que podés sostener con una captura o un link. Precios 
 
 ### 6.1 Estado y límites
 
-La plataforma hoy tiene dos páginas indexables: `/` y `/planes` (más `robots.ts` y `sitemap.ts` en la raíz). Todas las keywords que no sean de marca o de "tienda online" genérica necesitan **páginas nuevas** (lista en §6.3). No inventes volúmenes: antes de priorizar, medí con Google Keyword Planner (necesita la cuenta de Google Ads) y, después del lanzamiento, con Search Console.
+Páginas indexables hoy (2026-10-15): `/`, `/planes`, `/empezar`, `/alternativa-a-tiendanube`, `/funciones/pedidos-por-whatsapp`, `/funciones/cobrar-por-transferencia`, `/guias` (6 guías) y `/ayuda` (más `robots.ts` y `sitemap.ts` en la raíz). Faltan de §6.3: `/funciones/importar-catalogo`, `/funciones/precios-masivos`, `/funciones/envios-por-zona`, `/alternativa-a-empretienda` y `/rubros/<rubro>`. No inventes volúmenes: antes de priorizar, medí con Google Keyword Planner (necesita la cuenta de Google Ads) y, después del lanzamiento, con Search Console.
 
 ### 6.2 Keywords objetivo
 
